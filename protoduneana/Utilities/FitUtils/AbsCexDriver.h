@@ -86,6 +86,13 @@ class AbsCexDriver : public ThinSliceDriver {
     std::map<int, std::vector<double>> & sample_scales,
     int split_val = 0);
 
+  void FakeDataAngleVar(
+    TTree * tree,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    const std::map<int, bool> & signal_sample_checks,
+    ThinSliceDataSet & data_set, double & flux,
+    std::map<int, std::vector<double>> & sample_scales,
+    int split_val = 0);
   void BuildMCSamples(
       //TTree * tree,
       const std::vector<ThinSliceEvent> & events,

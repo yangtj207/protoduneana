@@ -554,9 +554,19 @@ void protoana::PDSPThinSliceFitter::ScaleDataToNorm() {
 
 void protoana::PDSPThinSliceFitter::ScaleMCToData() {
   double total_nominal = 0.;
+
+  for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
+    for (size_t i = 0; i < it->second.size(); ++i) {
+      for (size_t j = 0; j < it->second[i].size(); ++j) {
+        total_nominal += it->second[i][j].GetNominalFlux();
+      }
+    }
+  }
+
+  /*
   for (auto it = fNominalFluxes.begin(); it != fNominalFluxes.end(); ++it) {
     total_nominal += it->second;
-  }
+  }*/
 
   fMCDataScale = fDataFlux/total_nominal;
   for (auto it = fNominalFluxes.begin(); it != fNominalFluxes.end(); ++it) {
@@ -574,13 +584,76 @@ void protoana::PDSPThinSliceFitter::ScaleMCToData() {
 
   std::cout << "MC Data Scale: " << fMCDataScale << std::endl;
 
+  double new_total_mc = 0., new_total_data = 0., mc_flux = 0.;
+  double data_bins = 0., mc_bins = 0.;
   for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
       for (size_t j = 0; j < it->second[i].size(); ++j) {
         it->second[i][j].SetDataMCScale(fMCDataScale);
+
+        mc_flux += it->second[i][j].GetNominalFlux();
+        const std::map<int, TH1 *> & hists
+            = it->second[i][j].GetSelectionHists();
+        for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
+          new_total_mc += it2->second->Integral();
+          for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
+            mc_bins += it2->second->GetBinContent(k);
+          }
+        }
       }
     }
   }
+  std::map<int, TH1 *> & selected_hists = fDataSet.GetSelectionHists();
+  for (auto it = selected_hists.begin(); it != selected_hists.end(); ++it) {
+    new_total_data += it->second->Integral();
+    for (int k = 1; k <= it->second->GetNbinsX(); ++k) {
+      data_bins += it->second->GetBinContent(k);
+    }
+  }
+
+  /*
+  std::cout << "Data: " << std::setprecision(20) << fDataFlux << std::endl;
+  std::cout << "MC: " << mc_flux << std::endl;
+  std::cout << "MC hists: " << new_total_mc << std::endl;
+  std::cout << "Data hists: " << new_total_data << std::endl;
+  std::cout << "MC bins: " << mc_bins << std::endl;
+  std::cout << "Data bins: " << data_bins << std::endl;
+
+  std::cout << "Data/MC: " << data_bins/mc_bins << std::endl;*/
+  double new_factor = data_bins/mc_bins;
+
+  mc_bins = 0.;
+  for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
+    for (size_t i = 0; i < it->second.size(); ++i) {
+      for (size_t j = 0; j < it->second[i].size(); ++j) {
+
+        it->second[i][j].ExtraFactor(new_factor);
+
+        const std::map<int, TH1 *> & hists
+            = it->second[i][j].GetSelectionHists();
+        for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
+          //new_total_mc += it2->second->Integral();
+          for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
+            mc_bins += it2->second->GetBinContent(k);
+          }
+        }
+
+        /*auto hists = it->second[i][j].GetSelectionHists();
+        for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
+          std::cout << "int " << it2->second->Integral() << std::endl;
+          for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
+            std::cout << it2->second->GetBinContent(k) << std::endl;
+            mc_bins += it2->second->GetBinContent(k);
+          }
+        }*/
+      }
+    }
+  }
+
+
+  //std::cout << "New MC bins: " << mc_bins << std::endl;
+  fMCBinVal = mc_bins;
+
 }
 
 void protoana::PDSPThinSliceFitter::BuildDataHists() {
@@ -599,8 +672,7 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
   else if (fFakeDataRoutine == "Toy") {
     BuildDataFromToy();
   }
-  else if (fFakeDataRoutine ==
-           "Asimov") {
+  else if (fFakeDataRoutine == "Asimov") {
     std::cout << "Doing Asimov" << std::endl;
     //fThinSliceDriver->BuildDataHists(tree, fDataSet, fDataFlux,
     //                                 fSplitVal);
@@ -1664,6 +1736,46 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
             }
           }
         }
+
+        //Finally, normalize according to the bin values
+        /*
+        if (!fUseFakeSamples && fMCBinVal > 0.) {
+          double total_bins = 0.;
+          for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
+            for (size_t i = 0; i < it->second.size(); ++i) {
+              for (size_t j = 0; j < it->second[i].size(); ++j) {         
+                const std::map<int, TH1 *> & hists
+                    = it->second[i][j].GetSelectionHists();
+                for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
+                  for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
+                    total_bins += it2->second->GetBinContent(k);
+                  }
+                }
+              }
+            }
+          }
+
+          std::cout << "\tBins: " << total_bins << std::endl;
+          double f = fMCBinVal/total_bins; 
+          std::cout << "\tMCBinVal: " << fMCBinVal << " f: " << f << std::endl;
+          std::cout << "\tTest: " << f*total_bins << std::endl;
+          total_bins = 0.;
+          for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
+            for (size_t i = 0; i < it->second.size(); ++i) {
+              for (size_t j = 0; j < it->second[i].size(); ++j) {         
+                it->second[i][j].ExtraFactor(f);
+                const std::map<int, TH1 *> & hists
+                    = it->second[i][j].GetSelectionHists();
+                for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
+                  for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
+                    total_bins += it2->second->GetBinContent(k);
+                  }
+                }
+              }
+            }
+          }
+
+        }*/
 
         std::pair<double, size_t> chi2_points
             = fThinSliceDriver->CalculateChi2(fSamples, fDataSet);

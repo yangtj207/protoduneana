@@ -114,6 +114,13 @@ physics.analyzers.rwexample.ParameterSet: [
                                             Sigma: .5
                                           },
                                           {
+                                            Cut:    "reac"
+                                            Name: "fReac11"
+                                            Range: [000., 1200.]
+                                            Nominal: 1.0 
+                                            Sigma: 1.0
+                                          },
+                                          {
                                             Cut:    "elast"
                                             Name: "fElast"
                                             Range: [000., 1200.]

@@ -15,8 +15,9 @@ AnalysisOptions: {
   #FakeDataRoutine: "G4RW"
   #FakeDataRoutine: "dEdX"
   #FakeDataRoutine: "EffVar"
-  FakeDataRoutine: "G4RWGrid"
+  #FakeDataRoutine: "G4RWGrid"
   #FakeDataRoutine: "PionAngle"
+  FakeDataRoutine: "AngleVar"
   #FakeDataRoutine: "Asimov"
   #FakeDataRoutine: "Toy"
 
@@ -60,6 +61,16 @@ AnalysisOptions: {
     RatioFile: "half_shift.root"
     Limits: [0., .4, .6, .8, 1.]
     RatioNames: ["r1", "r2", "r3", "r4", "r5"]
+  }
+
+  FakeDataAngleVar: {
+    #RatioFile: "angle_weight.root"
+    #RatioFile: "flat_pion_weights.root"
+    #RatioFile: "new_angle_weight.root"
+    RatioFile: "gaus_080_pi0.root"
+    Limits: [0., .4, .6, .8, 1.]
+    RatioNames: ["r1", "r2", "r3", "r4", "r5"]
+    PDG: 111
   }
 
   EndZCut: 222.10561
@@ -294,12 +305,12 @@ DoThrows: true
 NThrows: 10 #00
 DoScans: false 
 Do1DShifts: true
-DoSysts: true
+DoSysts: true 
 MaxRethrows: 1000
 #####################
 
-#FitType: "Normal"
-FitType: "None"
+FitType: "Normal"
+#FitType: "None"
 #FitType: "Pulls"
 #FitType: "Toy"
 

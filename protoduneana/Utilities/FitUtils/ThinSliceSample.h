@@ -327,6 +327,14 @@ class ThinSliceSample {
     ScaleHists(val);
   };
 
+  void ExtraFactor(double val) {
+    SetFactorAndScale(val*fFactor);
+  };
+
+  double GetFactor() {
+    return fFactor;
+  };
+
   void ResetFactor() {
     ScaleHists(1./fFactor);
     fVariedFlux *= (1./fFactor);
