@@ -1737,46 +1737,6 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
           }
         }
 
-        //Finally, normalize according to the bin values
-        /*
-        if (!fUseFakeSamples && fMCBinVal > 0.) {
-          double total_bins = 0.;
-          for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
-            for (size_t i = 0; i < it->second.size(); ++i) {
-              for (size_t j = 0; j < it->second[i].size(); ++j) {         
-                const std::map<int, TH1 *> & hists
-                    = it->second[i][j].GetSelectionHists();
-                for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
-                  for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
-                    total_bins += it2->second->GetBinContent(k);
-                  }
-                }
-              }
-            }
-          }
-
-          std::cout << "\tBins: " << total_bins << std::endl;
-          double f = fMCBinVal/total_bins; 
-          std::cout << "\tMCBinVal: " << fMCBinVal << " f: " << f << std::endl;
-          std::cout << "\tTest: " << f*total_bins << std::endl;
-          total_bins = 0.;
-          for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
-            for (size_t i = 0; i < it->second.size(); ++i) {
-              for (size_t j = 0; j < it->second[i].size(); ++j) {         
-                it->second[i][j].ExtraFactor(f);
-                const std::map<int, TH1 *> & hists
-                    = it->second[i][j].GetSelectionHists();
-                for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
-                  for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
-                    total_bins += it2->second->GetBinContent(k);
-                  }
-                }
-              }
-            }
-          }
-
-        }*/
-
         std::pair<double, size_t> chi2_points
             = fThinSliceDriver->CalculateChi2(fSamples, fDataSet);
         ++fNFitSteps;

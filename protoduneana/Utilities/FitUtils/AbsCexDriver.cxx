@@ -3291,18 +3291,26 @@ void protoana::AbsCexDriver::FakeDataAngleVar(
   std::map<int, TH1 *> & selected_hists = data_set.GetSelectionHists();
 
   TFile ratio_file(options.get<std::string>("RatioFile").c_str(), "OPEN");
-  std::vector<std::string> ratio_names
-      = options.get<std::vector<std::string>>("RatioNames");
+  //std::vector<std::string> ratio_names
+  //    = options.get<std::vector<std::string>>("RatioNames");
+   auto temp_ratio_names
+      = options.get<std::vector<std::pair<int, std::vector<std::string>>>>
+          ("RatioNames");
+  std::map<int, std::vector<std::string>> ratio_names(
+      temp_ratio_names.begin(), temp_ratio_names.end());
 
   std::map<int, std::vector<TH1D *>> ratios;
-  for (int i = 1; i < 5; ++i) {
+  for (int i = 1; i < 4; ++i) {
     ratios[i] = std::vector<TH1D *>();
-    for (auto n : ratio_names) {
+    for (auto n : ratio_names[i]) {
       std::string name = n + "_" + std::to_string(i);
       ratios[i].push_back((TH1D*)ratio_file.Get(name.c_str()));
+      std::cout << i << " " << name << " " << ratios[i].back() << std::endl;
     }
   }
-  std::vector<double> limits = options.get<std::vector<double>>("Limits");
+  auto temp_limits = options.get<std::vector<std::pair<int, std::vector<double>>>>("Limits");
+  std::map<int, std::vector<double>> limits(temp_limits.begin(), temp_limits.end());
+  
 
   double new_flux = 0.;
   flux = tree->GetEntries() - split_val;
@@ -3313,6 +3321,7 @@ void protoana::AbsCexDriver::FakeDataAngleVar(
     nominal_samples[it->first] = std::vector<double>(it->second.size(), 0.);
   }
 
+  std::vector<double> all_scales;
   for (int i = split_val; i < tree->GetEntries(); ++i) {
     tree->GetEntry(i);
 
@@ -3352,18 +3361,18 @@ void protoana::AbsCexDriver::FakeDataAngleVar(
          (check_PDG == 2212 && n_p > 0) ||
          (check_PDG == 111 && n_pi0 > 0))) {
       TH1D * h = 0x0;
-      //std::cout << "end p: " << true_beam_endP << std::endl;
-      if (true_beam_endP >= limits.back()) {
+      //std::cout << "end p: " << end_energy << std::endl;
+      if (end_energy >= limits[sample_ID].back()) {
         h = ratios[sample_ID].back();
-        //std::cout << limits.back() << " < " << true_beam_endP << std::endl; 
+        //std::cout << limits[sample_ID].back() << " < " << end_energy << std::endl; 
       }
       else {
-        for (size_t j = 1; j < limits.size(); ++j) {
-          if (true_beam_endP >= limits[j-1] &&
-              true_beam_endP < limits[j]) {
+        for (size_t j = 1; j < limits[sample_ID].size(); ++j) {
+          if (end_energy >= limits[sample_ID][j-1] &&
+              end_energy < limits[sample_ID][j]) {
             h = ratios[sample_ID][j-1];
-            //std::cout << limits[j-1] << " < " << true_beam_endP <<
-            //             " < " << limits[j] << std::endl;
+            //std::cout << limits[sample_ID][j-1] << " < " << end_energy <<
+            //             " < " << limits[sample_ID][j] << std::endl;
             break;
           }
         }
@@ -3373,6 +3382,7 @@ void protoana::AbsCexDriver::FakeDataAngleVar(
       int bin = h->FindBin(leading_costheta);
       scale *= h->GetBinContent(bin);
     }
+    all_scales.push_back(scale);
 
     bool is_signal = signal_sample_checks.at(sample_ID);
     ThinSliceSample * this_sample = 0x0;
@@ -3469,6 +3479,11 @@ void protoana::AbsCexDriver::FakeDataAngleVar(
         *true_beam_incidentEnergies);
     this_sample->AddIncidentEnergies(good_true_incEnergies, scale);
   }
+
+  double mean = 0.;
+  for (auto s : all_scales) mean += s;
+  mean /= all_scales.size();
+  std::cout << "Mean scale: " << mean << std::endl;
 
   for (auto it = sample_scales.begin(); it != sample_scales.end(); ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
