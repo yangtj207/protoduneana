@@ -944,9 +944,11 @@ void protoana::PDSPThinSliceFitter::NormalFit() {
     std::cout << "Found minimimum: " << std::endl;
 
 
-    std::cout << "Running Hesse" << std::endl;
-    bool hesse_good = fMinimizer->Hesse();
-    std::cout << "hesse good? " << hesse_good << std::endl;
+    if (fRunHesse) {
+      std::cout << "Running Hesse" << std::endl;
+      bool hesse_good = fMinimizer->Hesse();
+      std::cout << "hesse good? " << hesse_good << std::endl;
+    }
     /*
     std::cout <<
                  fTotalSignalParameters << " " <<
@@ -1818,6 +1820,7 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fSplitMC = pset.get<bool>("SplitMC");
   fDoThrows = pset.get<bool>("DoThrows");
   fDoScans = pset.get<bool>("DoScans");
+  fRunHesse = pset.get<bool>("RunHesse");
   fDo1DShifts = pset.get<bool>("Do1DShifts");
   fDoSysts = pset.get<bool>("DoSysts");
   fDoFluctuateStats = pset.get<bool>("FluctuateStats");

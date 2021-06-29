@@ -3987,14 +3987,13 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
     }
   }
 
-  if (abs(chi2) < 1.e-7) chi2 = 0.;
+  //if (abs(chi2) < 1.e-7) chi2 = 0.;
   //std::cout << "totals (data, mc): " << total_data << " " << total_mc << std::endl;
-  if (chi2 < 0.) {
-    std::cout << "Warning: chi2 < 0. " << std::setprecision(20) << total_data << " " << total_mc <<
-                 " " << chi2 << std::endl;
-    std::cout << "Data Integral " << data_integral << std::endl;
-
-  }
+  //if (chi2 < 0.) {
+  //  std::cout << "Warning: chi2 < 0. " << std::setprecision(20) << total_data << " " << total_mc <<
+  //               " " << chi2 << std::endl;
+  //  std::cout << "Data Integral " << data_integral << std::endl;
+  //}
 
   return {chi2, nPoints};
 }
@@ -4074,6 +4073,9 @@ void protoana::AbsCexDriver::CompareSelections(
     leg.AddEntry(data_hist, "Data");
     
     std::pair<double, size_t> chi2 = CalculateChi2(samples, data_set);
+    if (chi2.first < 0. && chi2.first > -1.e7) {
+      chi2.first = 0.;
+    }
     std::string chi2_str = "#chi^{2}/ndof = " +
                            std::to_string(chi2.first) + "/" +
                            std::to_string(chi2.second - nPars);

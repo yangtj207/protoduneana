@@ -17,8 +17,8 @@ AnalysisOptions: {
   #FakeDataRoutine: "EffVar"
   #FakeDataRoutine: "G4RWGrid"
   #FakeDataRoutine: "PionAngle"
-  FakeDataRoutine: "AngleVar"
-  #FakeDataRoutine: "Asimov"
+  #FakeDataRoutine: "AngleVar"
+  FakeDataRoutine: "Asimov"
   #FakeDataRoutine: "Toy"
 
   FakeDataScales: [
@@ -110,6 +110,7 @@ Systematics: [
   @local::SystematicsList.ediv_weight,
   @local::SystematicsList.no_track_weight
 ]
+
 
 AddSystTerm: true
 CovarianceBins: [
@@ -306,12 +307,13 @@ DrawXSecUnderflow: false
 
 ## Validation
 RandomStart: false 
-SplitMC: true 
+SplitMC: false 
 DoFakeData: true 
 FluctuateStats: false 
-DoThrows: true
+DoThrows: false 
 NThrows: 10 #00
 DoScans: false 
+RunHesse: true 
 Do1DShifts: true
 DoSysts: true 
 MaxRethrows: 1000

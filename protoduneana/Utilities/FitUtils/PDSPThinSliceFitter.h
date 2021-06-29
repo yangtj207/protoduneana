@@ -161,7 +161,7 @@ class PDSPThinSliceFitter {
   fhicl::ParameterSet fAnalysisOptions;
   double fPitch;
   std::string fSliceMethod;
-  bool fDoFakeData, fDoThrows, fDoScans, fDo1DShifts, fDoSysts/*, f1DSystPlots*/;
+  bool fDoFakeData, fDoThrows, fDoScans, fDo1DShifts, fDoSysts, fRunHesse;
   std::string fFakeDataRoutine;
   bool fDoFluctuateStats;
   bool fSplitMC;
