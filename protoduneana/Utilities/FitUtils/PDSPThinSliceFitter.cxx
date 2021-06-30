@@ -538,6 +538,7 @@ void protoana::PDSPThinSliceFitter::ScaleDataToNorm() {
   for (auto it = selected_hists.begin(); it != selected_hists.end(); ++it) {
     it->second->Scale(fDataNorm/fDataFlux);
   }
+
   for (auto it = fFakeFluxesBySample.begin();
        it != fFakeFluxesBySample.end(); ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
@@ -622,27 +623,19 @@ void protoana::PDSPThinSliceFitter::ScaleMCToData() {
   std::cout << "Data/MC: " << data_bins/mc_bins << std::endl;*/
   double new_factor = data_bins/mc_bins;
 
-  mc_bins = 0.;
+  //mc_bins = 0.;
   for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
       for (size_t j = 0; j < it->second[i].size(); ++j) {
 
         it->second[i][j].ExtraFactor(new_factor);
 
+        /*
         const std::map<int, TH1 *> & hists
             = it->second[i][j].GetSelectionHists();
         for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
           //new_total_mc += it2->second->Integral();
           for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
-            mc_bins += it2->second->GetBinContent(k);
-          }
-        }
-
-        /*auto hists = it->second[i][j].GetSelectionHists();
-        for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
-          std::cout << "int " << it2->second->Integral() << std::endl;
-          for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
-            std::cout << it2->second->GetBinContent(k) << std::endl;
             mc_bins += it2->second->GetBinContent(k);
           }
         }*/
@@ -652,7 +645,6 @@ void protoana::PDSPThinSliceFitter::ScaleMCToData() {
 
 
   //std::cout << "New MC bins: " << mc_bins << std::endl;
-  fMCBinVal = mc_bins;
 
 }
 
@@ -663,10 +655,7 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
   TFile inputFile((!fDoFakeData ? fDataFileName.c_str() : fMCFileName.c_str()),
                   "OPEN");
   TTree * tree = (TTree*)inputFile.Get(fTreeName.c_str());
-  //if (fFitType == "Toy") {
-  //  BuildDataFromToy();
-  //}
-  /*else */if (!fDoFakeData) {
+  if (!fDoFakeData) {
     fThinSliceDriver->BuildDataHists(tree, fDataSet, fDataFlux, fSplitVal);
   }
   else if (fFakeDataRoutine == "Toy") {
@@ -674,8 +663,6 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
   }
   else if (fFakeDataRoutine == "Asimov") {
     std::cout << "Doing Asimov" << std::endl;
-    //fThinSliceDriver->BuildDataHists(tree, fDataSet, fDataFlux,
-    //                                 fSplitVal);
     for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
       std::vector<ThinSliceSample> & samples_vec = it->second[0];
       fFakeDataScales[it->first] = std::vector<double>(samples_vec.size(), 1.);
@@ -700,7 +687,6 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
     fFillIncidentInFunction = true;
     fUseFakeSamples = true;
     fFitFunction(&vals[0]);
-    //fDataSet.FillHistsFromSamples(fSamples, fDataFlux);
     fDataSet.FillHistsFromSamples(fFakeSamples, fDataFlux);
     BuildFakeDataXSecs(false);
 
@@ -721,14 +707,10 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
       std::vector<ThinSliceSample> & samples_vec = it->second[0];
       fFakeDataScales[it->first] = std::vector<double>(samples_vec.size(), 0.);
     }
-    ///replace this with fFakeDataSamples or w/e
     fThinSliceDriver->BuildFakeData(tree, fFakeSamples, fIsSignalSample, fDataSet,
                                     fDataFlux, fFakeDataScales, fBeamEnergyBins,
                                     fSplitVal);
-    std::cout << "Sample scales: "; 
     BuildFakeDataXSecs(false);
-    //Replace this with whatever comes out of the fake data routines
-    std::cout << "Testing" << std::endl;
   }
 
   inputFile.Close();
@@ -1228,6 +1210,7 @@ void protoana::PDSPThinSliceFitter::RunFitAndSave() {
   }
 
   ScaleMCToData();
+
   SaveMCSamples();
 
   TDirectory * top_dir = fOutputFile.GetDirectory("");
@@ -1340,7 +1323,6 @@ void protoana::PDSPThinSliceFitter::BuildDataFromToy() {
   fFillIncidentInFunction = true;
   fUseFakeSamples = true;
   fFitFunction(&vals[0]);
-  //fDataSet.FillHistsFromSamples(fSamples, fDataFlux);
   fDataSet.FillHistsFromSamples(fFakeSamples, fDataFlux);
   BuildFakeDataXSecs(false);
 
@@ -1709,11 +1691,11 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
             for (size_t i = 0; i < it->second.size(); ++i) {
               for (size_t j = 0; j < it->second[i].size(); ++j) {
                 int flux_type = it->second[i][j].GetFluxType();
-                std::cout << std::fixed;
                 //double total = 0.;
                 //std::cout << "Varied flux1 : " << std::setprecision(8) <<it->second[i][j].GetVariedFlux() << std::endl;
                 //std::cout << "scaling by " << total_flux_factor << " " << (flux_type == 1 ? flux_factor[i] : 1.) <<
                 //             " " << total_flux_factor*(flux_type == 1 ? flux_factor[i] : 1.) << std::endl;
+
                 it->second[i][j].SetFactorAndScale(
                     total_flux_factor*(flux_type == 1 ? flux_factor[i] : 1.));
                 //std::cout << "Varied flux2 : " << std::setprecision(8) <<it->second[i][j].GetVariedFlux() << std::endl;
@@ -1726,7 +1708,6 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
             for (size_t i = 0; i < it->second.size(); ++i) {
               for (size_t j = 0; j < it->second[i].size(); ++j) {
                 int flux_type = it->second[i][j].GetFluxType();
-                std::cout << std::fixed;
                 //double total = 0.;
                 //std::cout << "Varied flux1 : " << std::setprecision(8) <<it->second[i][j].GetVariedFlux() << std::endl;
                 //std::cout << "scaling by " << total_flux_factor << " " << (flux_type == 1 ? flux_factor[i] : 1.) <<

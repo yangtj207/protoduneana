@@ -328,5 +328,17 @@ SystematicsList: {
       F: 0.16407504 
     }
   }
+  beam_cut_weight: {
+    Name: "beam_cut_weight"
+    Central: 1.0
+    LowerLimit: 0.
+    UpperLimit: 2.0
+    ThrowLimit: 0.
+    sigma: .1
+
+    Options: {
+      F: 0.2305
+    }
+  }
 }
 END_PROLOG

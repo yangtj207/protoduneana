@@ -2,10 +2,10 @@
 #include "ProtoDUNECalibration.fcl"
 #include "FitSystematics.fcl"
 
-#MCFileName:   "/dune/app/users/calcuttj/PionStudies/rDataFrame/Prod4a_5_18_21_with_data/eventSelection_mc_all.root"
-#DataFileName: "/dune/app/users/calcuttj/PionStudies/rDataFrame/Prod4a_5_18_21_with_data/eventSelection_mc_all.root"
-MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
-DataFileName: "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
+#MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
+#DataFileName: "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_data_BeamQuality.root"
+MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_29_21_with_data_5809/eventSelection_mc_all.root"
+DataFileName: "/dune/data/users/calcuttj/Prod4a_6_29_21_with_data_5809/eventSelection_data_BeamQuality.root"
 TreeName: "pduneana/beamana"
 
 DriverName: "protoana::AbsCexDriver"
@@ -17,9 +17,8 @@ AnalysisOptions: {
   #FakeDataRoutine: "EffVar"
   #FakeDataRoutine: "G4RWGrid"
   #FakeDataRoutine: "PionAngle"
-  #FakeDataRoutine: "AngleVar"
-  #FakeDataRoutine: "BeamWeight"
-  FakeDataRoutine: "Asimov"
+  FakeDataRoutine: "AngleVar"
+  #FakeDataRoutine: "Asimov"
   #FakeDataRoutine: "Toy"
 
   FakeDataScales: [
@@ -82,9 +81,6 @@ AnalysisOptions: {
     PDG: 111
   }
 
-  FakeDataBeamWeight: {
-    RatioFile: "beam_weight.root"
-  }
   EndZCut: 222.10561
   SliceCut: 464
   WirePitch: .47974
@@ -112,8 +108,7 @@ Systematics: [
   @local::G4RWSysts.g4rw_proton,
   @local::SystematicsList.beam_shift,
   @local::SystematicsList.ediv_weight,
-  @local::SystematicsList.no_track_weight,
-  @local::SystematicsList.beam_cut_weight
+  @local::SystematicsList.no_track_weight
 ]
 
 AddSystTerm: true
@@ -126,10 +121,10 @@ CovarianceBins: [
   ["g4rw_proton", 5],
   ["ediv_weight", 6],
   ["beam_shift", 7],
-  ["no_track_weight", 8],
-  ["beam_cut_weight", 9]
+  ["no_track_weight", 8]
 ]
-CovarianceFile: "full_with_dcex_beamcut.root"
+CovarianceFile: "full_with_dcex.root"
+#CovarianceFile: "full_with_no_track.root"
 CovarianceMatrix: "m"
 
 Selections: [
@@ -297,7 +292,7 @@ UpperLimit: 10.0
 LowerLimit: 0.05
 ReducedIncidentChi2: false
 FitFlux: true
-ScaleDataToNorm: true 
+ScaleDataToNorm: false 
 DataNorm: 20500. 
 #RNGSeed: 0
 
@@ -313,13 +308,13 @@ DrawXSecUnderflow: false
 
 ## Validation
 RandomStart: false 
-SplitMC: false 
-DoFakeData: true 
+SplitMC: false  
+DoFakeData: false 
 FluctuateStats: false 
 DoThrows: false 
 NThrows: 10 #00
 DoScans: false 
-RunHesse: true 
+RunHesse: true
 Do1DShifts: true
 DoSysts: true 
 MaxRethrows: 1000

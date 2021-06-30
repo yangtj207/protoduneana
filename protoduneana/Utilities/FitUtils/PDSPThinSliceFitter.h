@@ -154,7 +154,6 @@ class PDSPThinSliceFitter {
   double fTolerance, fLowerLimit, fUpperLimit;
   std::vector<std::pair<int, int>> fPlotStyle;
   bool fPlotRebinned;
-  double fMCBinVal;
   bool fRandomStart;
   std::string fDriverName;
   std::string fAnalysis;

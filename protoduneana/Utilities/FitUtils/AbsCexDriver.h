@@ -93,6 +93,13 @@ class AbsCexDriver : public ThinSliceDriver {
     ThinSliceDataSet & data_set, double & flux,
     std::map<int, std::vector<double>> & sample_scales,
     int split_val = 0);
+  void FakeDataBeamWeight(
+    TTree * tree,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    const std::map<int, bool> & signal_sample_checks,
+    ThinSliceDataSet & data_set, double & flux,
+    std::map<int, std::vector<double>> & sample_scales,
+    int split_val = 0);
   void BuildMCSamples(
       //TTree * tree,
       const std::vector<ThinSliceEvent> & events,
@@ -203,6 +210,8 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_NoTrackWeight(
       const std::map<std::string, ThinSliceSystematic> & pars);
+  void SetupSyst_BeamEffsWeight(
+      const std::map<std::string, ThinSliceSystematic> & pars);
 
   /*double GetSystWeight_BeamRes(
       const ThinSliceEvent & event,
@@ -225,6 +234,9 @@ class AbsCexDriver : public ThinSliceDriver {
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_NoTrack(
+      const ThinSliceEvent & event,
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_BeamEffs(
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
   void WrapUpSysts(TFile & output_file) override;
@@ -277,7 +289,7 @@ class AbsCexDriver : public ThinSliceDriver {
    TRandom3 fRNG = TRandom3(0);
 
    double fEffVarF, fEffVarCut;
-   double fEDivF, fEDivCut, fNoTrackF;
+   double fEDivF, fEDivCut, fNoTrackF, fBeamCutF;
    ProtoDUNETrackUtils fTrackUtil;
 
    std::vector<double> MakeTrueIncidentEnergies(
