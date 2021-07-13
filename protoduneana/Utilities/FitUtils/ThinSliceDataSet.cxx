@@ -116,6 +116,15 @@ void protoana::ThinSliceDataSet::MakeRebinnedHists() {
   }
 }
 
+void protoana::ThinSliceDataSet::Refill1DRebinned() {
+  for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
+    for (int i = 1; i <= it->second->GetNbinsX(); ++i) {
+      fSelectionHistsRebinned[it->first]->SetBinContent(
+          i, it->second->GetBinContent(i));
+    }
+  }
+}
+
 void protoana::ThinSliceDataSet::Rebin1D(TH1 * sel_hist, TH1 * rebinned) {
   for (int i = 1; i <= sel_hist->GetNbinsX(); ++i) {
     double low_x = sel_hist->GetXaxis()->GetBinLowEdge(i);
@@ -182,26 +191,54 @@ void protoana::ThinSliceDataSet::Rebin3D(TH1 * sel_hist, TH1 * rebinned) {
 
 void protoana::ThinSliceDataSet::GenerateStatFluctuation() {
 
-  for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
-    it->second->Reset();
-  }
+  //bool retry = true;
+  //while (retry) {
+    for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
+      it->second->Reset();
+      //fSelectionHistsRebinned[it->first]->Reset();
+    }
 
-  for (int i = 0; i < fTotal; ++i) {
-    double r = fRNG.Uniform();
-    std::pair<int, int> bin;
-    for (size_t j = 0; j < fCumulatives.size(); ++j) {
-      //std::cout << fCumulatives[j].second << " " <<  r <<
-      //             " "  << fCumulatives[j].second - r << std::endl;
-      if ((fCumulatives[j].second - r) > 0.) {
-        bin = fCumulatives[j].first;
+    for (int i = 0; i < fTotal; ++i) {
+      double r = fRNG.Uniform();
+      std::pair<int, int> bin;
+      for (size_t j = 0; j < fCumulatives.size(); ++j) {
+        //std::cout << fCumulatives[j].second << " " <<  r <<
+        //             " "  << fCumulatives[j].second - r << std::endl;
+        if ((fCumulatives[j].second - r) > 0.) {
+          bin = fCumulatives[j].first;
+        }
+        else {
+          break;
+        }
       }
-      else {
-        break;
+      //std::cout << "Found bin: " << bin.first << " " << bin.second << std::endl;
+      fSelectionHists[bin.first]->AddBinContent(bin.second); 
+      //fSelectionHistsRebinned[bin.first]->AddBinContent(bin.second); 
+    }
+
+    //bool good = true;
+    double new_total = 0.;
+    for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
+      for (int i = 1; i <= it->second->GetNbinsX(); ++i) {
+        if (it->second->GetBinContent(i) < 1.) {
+          std::cout << "DataSet fluctuation: Found bin with 0 content. Adding" << std::endl;
+          it->second->AddBinContent(i);
+          //fSelectionHistsRebinned[it->first]->AddBinContent(i);
+          //good = false;
+        }
+        new_total += it->second->GetBinContent(i);
       }
     }
-    //std::cout << "Found bin: " << bin.first << " " << bin.second << std::endl;
-    fSelectionHists[bin.first]->AddBinContent(bin.second); 
-  }
+
+    for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
+      it->second->Scale(new_total/fTotal);
+      //fSelectionHistsRebinned[it->first]->Scale(new_total/fTotal);
+    }
+
+    Refill1DRebinned();
+
+    //retry = !good;
+  //}
 
  // std::cout << "Bin vals: ";
  // std::cout << bin.second << " ";

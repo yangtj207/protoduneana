@@ -1,5 +1,6 @@
 #ifndef THINSLICEEVENT_hh
 #define THINSLICEEVENT_hh
+#include "TSpline.h"
 namespace protoana {
 class ThinSliceEvent {
  public:
@@ -25,6 +26,7 @@ class ThinSliceEvent {
     beam_EField = std::vector<double>();
     track_pitch = std::vector<double>();
     g4rw_weights = std::map<std::string, std::vector<double>>();
+    g4rw_splines = std::map<std::string, TSpline3*>();
     reco_daughter_track_thetas = std::vector<double>();
     reco_daughter_track_scores = std::vector<double>();
     reco_daughter_track_dQdX = std::vector<std::vector<double>>();
@@ -32,6 +34,12 @@ class ThinSliceEvent {
     reco_daughter_efield = std::vector<std::vector<double>>();
     has_pi0_shower = false;
   };
+  /*
+  ~ThinSliceEvent() {
+    for (auto s : g4rw_splines) {
+      delete s.second;
+    }
+  };*/
 
   /*
   int GetEventID() const {
@@ -241,6 +249,18 @@ class ThinSliceEvent {
     return (g4rw_weights.find(br) != g4rw_weights.end());
   };
 
+  void MakeG4RWSpline(const std::string & br) {
+    std::vector<double> vars;
+    if (!g4rw_weights[br].size()) return;
+    for (size_t i = 0; i < g4rw_weights[br].size(); ++i) {
+      vars.push_back(.1*(1+i));
+    }
+    std::string name = "g4rw_spline_event_" + std::to_string(event_ID) + "_" +
+                       std::to_string(subrun_ID);
+    g4rw_splines[br] = new TSpline3(name.c_str(), &vars[0],
+                                    &g4rw_weights[br][0], vars.size());
+  };
+
   int GetEventID() const {return event_ID;};
   int GetSubrunID() const {return subrun_ID;};
   int GetRunID() const {return run_ID;};
@@ -269,6 +289,7 @@ class ThinSliceEvent {
   std::vector<double> calibrated_dQdX, beam_EField,
                       track_pitch;
   std::map<std::string, std::vector<double>> g4rw_weights;
+  std::map<std::string, TSpline3*> g4rw_splines;
 };
 }
 #endif

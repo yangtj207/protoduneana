@@ -118,7 +118,7 @@ class PDSPThinSliceFitter {
   //std::map<int, std::string> fSystParameterNames;
   std::map<std::string, ThinSliceSystematic> fSystParameters;
   std::vector<std::string> fSystParameterNames;
-  std::vector<double> fParLimits;
+  std::vector<double> fParLimits, fParLimitsUp;
   size_t fTotalSystParameters = 0;
   std::map<std::string, size_t> fCovarianceBins;
   bool fAddSystTerm;
@@ -148,7 +148,7 @@ class PDSPThinSliceFitter {
   std::vector<fhicl::ParameterSet> fSelectionSets;
   std::vector<fhicl::ParameterSet> fSampleSets;
   std::map<int, std::string> fFluxTypes;
-  int fMaxCalls;
+  int fMaxCalls, fMaxIterations;
   size_t fNFitSteps = 0;
   unsigned int fNScanSteps;
   double fTolerance, fLowerLimit, fUpperLimit;
@@ -160,7 +160,10 @@ class PDSPThinSliceFitter {
   fhicl::ParameterSet fAnalysisOptions;
   double fPitch;
   std::string fSliceMethod;
+  bool fMultinomial;
   bool fDoFakeData, fDoThrows, fDoScans, fDo1DShifts, fDoSysts, fRunHesse;
+  bool fFixVariables;
+  std::map<std::string, double> fSystsToFix;
   std::string fFakeDataRoutine;
   bool fDoFluctuateStats;
   bool fSplitMC;

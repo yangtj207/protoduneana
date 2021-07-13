@@ -694,6 +694,7 @@ private:
   bool fTrueToReco;
   bool fDoReweight;
   bool fDoProtReweight;
+  bool fCalibrateByHand;
   bool fGetTrackMichel;
   bool fMCHasBI;
 
@@ -737,6 +738,7 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   fTrueToReco( p.get<bool>( "TrueToReco" ) ),
   fDoReweight(p.get<bool>("DoReweight")),
   fDoProtReweight(p.get<bool>("DoProtReweight")),
+  fCalibrateByHand(p.get<bool>("CalibrateByHand", true)),
   fGetTrackMichel(p.get<bool>("GetTrackMichel")) {
 
   dEdX_template_file = OpenFile(dEdX_template_name);
@@ -2682,16 +2684,34 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
 
     //New Calibration
     std::cout << "Getting reco beam calo" << std::endl;
-    std::vector< float > new_dEdX = calibration_SCE.GetCalibratedCalorimetry(*thisTrack, evt, fTrackerTag, fCalorimetryTagSCE, 2, -10.);
-    std::cout << new_dEdX.size() << " " << reco_beam_resRange_SCE.size() << std::endl;
-    for( size_t i = 0; i < new_dEdX.size(); ++i ){ reco_beam_calibrated_dEdX_SCE.push_back( new_dEdX[i] ); }
+    if (fCalibrateByHand) {
+      std::vector< float > new_dEdX
+          = calibration_SCE.GetCalibratedCalorimetry(*thisTrack, evt,
+                                                     fTrackerTag,
+                                                     fCalorimetryTagSCE, 2,
+                                                     -10.);
+      std::cout << new_dEdX.size() << " " << reco_beam_resRange_SCE.size() << std::endl;
+      for( size_t i = 0; i < new_dEdX.size(); ++i ){ reco_beam_calibrated_dEdX_SCE.push_back( new_dEdX[i] ); }
+    }
+    else {
+      for (auto dedx : reco_beam_dEdX_SCE) {
+        reco_beam_calibrated_dEdX_SCE.push_back(dedx);
+      }
+    }
     std::cout << "got calibrated dedx" << std::endl;
 
-    std::vector<double> new_dQdX = calibration_SCE.CalibratedQdX(
-        *thisTrack, evt, fTrackerTag,
-        fCalorimetryTagSCE, 2, -10.);
-    for (auto dqdx : new_dQdX) {
-      reco_beam_calibrated_dQdX_SCE.push_back(dqdx);
+    if (fCalibrateByHand) {
+      std::vector<double> new_dQdX = calibration_SCE.CalibratedQdX(
+          *thisTrack, evt, fTrackerTag,
+          fCalorimetryTagSCE, 2, -10.);
+      for (auto dqdx : new_dQdX) {
+        reco_beam_calibrated_dQdX_SCE.push_back(dqdx);
+      }
+    }
+    else {
+      for (auto dqdx : reco_beam_dQdX_SCE) {
+        reco_beam_calibrated_dQdX_SCE.push_back(dqdx);
+      }
     }
 
     std::vector<double> efield = calibration_SCE.GetEFieldVector(
@@ -2827,8 +2847,15 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
 
     }
 
-    std::vector< float > new_dEdX = calibration_NoSCE.GetCalibratedCalorimetry(  *thisTrack, evt, fTrackerTag, fCalorimetryTagNoSCE, 2, -1.);
-    for( size_t i = 0; i < new_dEdX.size(); ++i ){ reco_beam_calibrated_dEdX_NoSCE.push_back( new_dEdX[i] ); }
+    if (fCalibrateByHand) {
+      std::vector< float > new_dEdX = calibration_NoSCE.GetCalibratedCalorimetry(  *thisTrack, evt, fTrackerTag, fCalorimetryTagNoSCE, 2, -1.);
+      for( size_t i = 0; i < new_dEdX.size(); ++i ){ reco_beam_calibrated_dEdX_NoSCE.push_back( new_dEdX[i] ); }
+    }
+    else {
+      for (auto dedx : reco_beam_dEdX_NoSCE) {
+        reco_beam_calibrated_dEdX_NoSCE.push_back(dedx);
+      }
+    }
     std::cout << "got calibrated dedx" << std::endl;
     ////////////////////////////////////////////
 
@@ -3692,7 +3719,6 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
           reco_daughter_allTrack_momByRange_alt_muon.push_back(   track_p_calc.GetTrackMomentum( dummy_caloSCE[index].Range(), 13  ) );
           reco_daughter_allTrack_alt_len.push_back(    dummy_caloSCE[index].Range() );
 
-          std::vector<float> cali_dEdX_SCE = calibration_SCE.GetCalibratedCalorimetry(*pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 2);
 
           for( size_t j = 0; j < dummy_dEdx_SCE.size(); ++j ){
             reco_daughter_allTrack_resRange_SCE.back().push_back( dummy_Range_SCE[j] );
@@ -3703,14 +3729,31 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
             reco_daughter_allTrack_calo_Z.back().push_back(theXYZPoints[j].Z());
           }
 
-          for( size_t j = 0; j < cali_dEdX_SCE.size(); ++j ){
-            reco_daughter_allTrack_calibrated_dEdX_SCE.back().push_back( cali_dEdX_SCE[j] );
+          if (fCalibrateByHand) {
+            std::vector<float> cali_dEdX_SCE = calibration_SCE.GetCalibratedCalorimetry(*pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 2);
+            for( size_t j = 0; j < cali_dEdX_SCE.size(); ++j ){
+              reco_daughter_allTrack_calibrated_dEdX_SCE.back().push_back( cali_dEdX_SCE[j] );
+            }
           }
-          std::vector<double> new_dQdX = calibration_SCE.CalibratedQdX(
-              *pandora2Track, evt, "pandora2Track",
-              fPandora2CaloSCE, 2, -10.);
-          for (auto dqdx : new_dQdX) {
-            reco_daughter_allTrack_calibrated_dQdX_SCE.back().push_back(dqdx);
+          else {
+            for (auto dedx : reco_daughter_allTrack_dEdX_SCE.back()) {
+              reco_daughter_allTrack_calibrated_dEdX_SCE.back().push_back(dedx);
+            }
+          }
+
+
+          if (fCalibrateByHand) {
+            std::vector<double> new_dQdX = calibration_SCE.CalibratedQdX(
+                *pandora2Track, evt, "pandora2Track",
+                fPandora2CaloSCE, 2, -10.);
+            for (auto dqdx : new_dQdX) {
+              reco_daughter_allTrack_calibrated_dQdX_SCE.back().push_back(dqdx);
+            }
+          }
+          else {
+            for (auto dqdx : reco_daughter_allTrack_dQdX_SCE.back()) {
+              reco_daughter_allTrack_calibrated_dQdX_SCE.back().push_back(dqdx);
+            }
           }
 
           std::vector<double> efield = calibration_SCE.GetEFieldVector(
@@ -3790,12 +3833,22 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
                 resRange_plane0[j]);
           }
 
-          std::vector<float> dEdX_plane0 = calibration_SCE.GetCalibratedCalorimetry(
-              *pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 0);
-          for (size_t j = 0; j < dEdX_plane0.size(); ++j) {
-            reco_daughter_allTrack_calibrated_dEdX_SCE_plane0.back().push_back(
-                dEdX_plane0[j]);
+          if (fCalibrateByHand) {
+            std::vector<float> dEdX_plane0 = calibration_SCE.GetCalibratedCalorimetry(
+                *pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 0);
+            for (size_t j = 0; j < dEdX_plane0.size(); ++j) {
+              reco_daughter_allTrack_calibrated_dEdX_SCE_plane0.back().push_back(
+                  dEdX_plane0[j]);
+            }
           }
+          else {
+            auto dEdX_plane0 = dummy_caloSCE[plane0_index].dEdx();
+            for (auto dedx : dEdX_plane0) {
+               reco_daughter_allTrack_calibrated_dEdX_SCE_plane0.back().push_back(
+                  dedx);
+            }
+          }
+
           std::pair<double, int> plane0_chi2_ndof = trackUtil.Chi2PID(
               reco_daughter_allTrack_calibrated_dEdX_SCE_plane0.back(),
               reco_daughter_allTrack_resRange_plane0.back(), templates[2212]);
@@ -3820,17 +3873,26 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
 
         if (found_plane1) {
           auto resRange_plane1 = dummy_caloSCE[plane1_index].ResidualRange();
-          std::vector<float> dEdX_plane1 = calibration_SCE.GetCalibratedCalorimetry(
-              *pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 1);
 
           for (size_t j = 0; j < resRange_plane1.size(); ++j) {
             reco_daughter_allTrack_resRange_plane1.back().push_back(
                 resRange_plane1[j]);
           }
 
-          for (size_t j = 0; j < dEdX_plane1.size(); ++j) {
-            reco_daughter_allTrack_calibrated_dEdX_SCE_plane1.back().push_back(
-                dEdX_plane1[j]);
+          if (fCalibrateByHand) {
+            std::vector<float> dEdX_plane1 = calibration_SCE.GetCalibratedCalorimetry(
+                *pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 1);
+            for (size_t j = 0; j < dEdX_plane1.size(); ++j) {
+              reco_daughter_allTrack_calibrated_dEdX_SCE_plane1.back().push_back(
+                  dEdX_plane1[j]);
+            }
+          }
+          else {
+            auto dEdX_plane1 = dummy_caloSCE[plane1_index].dEdx();
+            for (auto dedx : dEdX_plane1) {
+               reco_daughter_allTrack_calibrated_dEdX_SCE_plane1.back().push_back(
+                  dedx);
+            }
           }
 
           std::pair<double, int> plane1_chi2_ndof = trackUtil.Chi2PID(
@@ -4383,8 +4445,16 @@ void pduneana::PDSPAnalyzer::BeamForcedTrackInfo(
         }
 
         //New Calibration
-        std::vector< float > new_dEdX = calibration_SCE.GetCalibratedCalorimetry(*pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 2);
-        for( size_t i = 0; i < new_dEdX.size(); ++i ){ reco_beam_allTrack_calibrated_dEdX.push_back( new_dEdX[i] ); }
+        if (fCalibrateByHand) {
+          std::vector< float > new_dEdX = calibration_SCE.GetCalibratedCalorimetry(*pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 2);
+          for( size_t i = 0; i < new_dEdX.size(); ++i ){ reco_beam_allTrack_calibrated_dEdX.push_back( new_dEdX[i] ); }
+        }
+        else {
+          auto dEdX = calo[index].dEdx();
+          for (auto dedx : dEdX) {
+            reco_beam_allTrack_calibrated_dEdX.push_back(dedx);
+          }
+        }
         ////////////////////////////////////////////
 
         std::pair< double, int > pid_chi2_ndof = trackUtil.Chi2PID( reco_beam_allTrack_calibrated_dEdX, reco_beam_allTrack_resRange, templates[ 2212 ] );

@@ -4,8 +4,10 @@
 
 #MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
 #DataFileName: "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_data_BeamQuality.root"
-MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_29_21_with_data_5809/eventSelection_mc_all.root"
-DataFileName: "/dune/data/users/calcuttj/Prod4a_6_29_21_with_data_5809/eventSelection_data_BeamQuality.root"
+#MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_29_21_with_data_5809/eventSelection_mc_all.root"
+#DataFileName: "/dune/data/users/calcuttj/Prod4a_6_29_21_with_data_5809/eventSelection_data_BeamQuality.root"
+MCFileName:   "/dune/data/users/calcuttj/Prod4a_7_12_21_with_data_58XX/eventSelection_mc_all.root"
+DataFileName: "/dune/data/users/calcuttj/Prod4a_7_12_21_with_data_58XX/eventSelection_data_BeamQuality.root"
 TreeName: "pduneana/beamana"
 
 DriverName: "protoana::AbsCexDriver"
@@ -107,8 +109,10 @@ Systematics: [
   @local::G4RWSysts.g4rw_DCex,
   @local::G4RWSysts.g4rw_proton,
   @local::SystematicsList.beam_shift,
+#  @local::SystematicsList.beam_shift_spline,
   @local::SystematicsList.ediv_weight,
-  @local::SystematicsList.no_track_weight
+  @local::SystematicsList.no_track_weight,
+  @local::SystematicsList.beam_cut_weight
 ]
 
 AddSystTerm: true
@@ -121,11 +125,17 @@ CovarianceBins: [
   ["g4rw_proton", 5],
   ["ediv_weight", 6],
   ["beam_shift", 7],
-  ["no_track_weight", 8]
+  #["beam_shift_spline", 7],
+  ["no_track_weight", 8],
+  ["beam_cut_weight", 9]
 ]
-CovarianceFile: "full_with_dcex.root"
-#CovarianceFile: "full_with_no_track.root"
+CovarianceFile: "full_with_dcex_beamcut.root"
 CovarianceMatrix: "m"
+
+FixVariables: true 
+SystsToFix: [
+  ["beam_shift", 0.]
+]
 
 Selections: [
   {
@@ -285,7 +295,7 @@ Samples: [
 ]
 
 ## Minimizer setup
-MaxCalls: 2000
+#MaxCalls: 2000
 NScanSteps: 100
 Tolerance: 0.001
 UpperLimit: 10.0
@@ -311,10 +321,10 @@ RandomStart: false
 SplitMC: false  
 DoFakeData: false 
 FluctuateStats: false 
-DoThrows: false 
-NThrows: 10 #00
+DoThrows: true 
+NThrows: 1000
 DoScans: false 
-RunHesse: true
+RunHesse: false 
 Do1DShifts: true
 DoSysts: true 
 MaxRethrows: 1000
