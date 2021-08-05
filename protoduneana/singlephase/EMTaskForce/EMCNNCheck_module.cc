@@ -92,6 +92,17 @@ private:
   std::vector<double> score_em;
   std::vector<double> score_trk;
   std::vector<double> score_mic;
+
+  std::vector<short> daughter_channel;
+  std::vector<short> daughter_tpc;
+  std::vector<short> daughter_plane;
+  std::vector<short> daughter_wire;
+  std::vector<double> daughter_charge;
+  std::vector<double> daughter_peakt;
+  std::vector<double> daughter_score_em;
+  std::vector<double> daughter_score_trk;
+  std::vector<double> daughter_score_mic;
+
   std::vector<int> pdg;
   std::vector<int> origin;
   std::vector<std::string> process;
@@ -142,6 +153,17 @@ void pdsp::EMCNNCheck::analyze(art::Event const& e)
   score_em.clear();
   score_trk.clear();
   score_mic.clear();
+
+  daughter_channel.clear();
+  daughter_tpc.clear();
+  daughter_plane.clear();
+  daughter_wire.clear();
+  daughter_charge.clear();
+  daughter_peakt.clear();
+  daughter_score_em.clear();
+  daughter_score_trk.clear();
+  daughter_score_mic.clear();
+
   pdg.clear();
   origin.clear();
   process.clear();
@@ -474,6 +496,16 @@ void pdsp::EMCNNCheck::analyze(art::Event const& e)
       float peakth1=hitList[hitl]->PeakTime();
       int wireh1=hitList[hitl]->WireID().Wire;
       if(std::abs(wireh1-endwire)<15 && std::abs(peakth1-endpeakt)<100 && tpcid==endtpc){
+        daughter_channel.push_back(hitList[hitl]->Channel());
+        daughter_tpc.push_back(hitList[hitl]->WireID().TPC);
+        daughter_plane.push_back(hitList[hitl]->WireID().Plane);
+        daughter_wire.push_back(hitList[hitl]->WireID().Wire);
+        daughter_charge.push_back(hitList[hitl]->Integral());
+        daughter_peakt.push_back(hitList[hitl]->PeakTime());     
+        daughter_score_em.push_back(cnn_out[hitResults.getIndex("em")]);
+        daughter_score_trk.push_back(cnn_out[hitResults.getIndex("track")]);
+        daughter_score_mic.push_back(cnn_out[hitResults.getIndex("michel")]);
+        
         ++ndaughterhits;
         average_daughter_score_mic += cnn_out[hitResults.getIndex("michel")];
         //std::cout<<hitList[hitl]->WireID().Wire<<" "<<hitList[hitl]->PeakTime()<<" "<<hitList[hitl]->Integral()<<" "<<cnn_out[hitResults.getIndex("michel")]<<std::endl;
@@ -516,6 +548,17 @@ void pdsp::EMCNNCheck::beginJob(){
   ftree->Branch("score_em", &score_em);
   ftree->Branch("score_trk", &score_trk);
   ftree->Branch("score_mic", &score_mic);
+
+  ftree->Branch("daughter_channel", &daughter_channel);
+  ftree->Branch("daughter_tpc", &daughter_tpc);
+  ftree->Branch("daughter_plane", &daughter_plane);
+  ftree->Branch("daughter_wire", &daughter_wire);
+  ftree->Branch("daughter_charge", &daughter_charge);
+  ftree->Branch("daughter_peakt", &daughter_peakt);
+  ftree->Branch("daughter_score_em", &daughter_score_em);
+  ftree->Branch("daughter_score_trk", &daughter_score_trk);
+  ftree->Branch("daughter_score_mic", &daughter_score_mic);
+
   ftree->Branch("pdg", &pdg);
   ftree->Branch("origin", &origin);
   ftree->Branch("process", &process);
