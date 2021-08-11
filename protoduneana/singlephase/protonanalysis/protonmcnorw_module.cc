@@ -432,12 +432,12 @@ class protoana::protonmcnorw : public art::EDAnalyzer {
 		double fdaughter_truth_Phi[NMAXDAUGTHERS];
 		int fdaughter_truth_Process[NMAXDAUGTHERS];
 
-		double minX =  -360.0;
-		double maxX = 360.0;
-		double minY =0.0;
-		double maxY = 600.0;
-		double minZ =  0.0;
-		double maxZ = 695.0;
+		//double minX =  -360.0;
+		//double maxX = 360.0;
+		//double minY =0.0;
+		//double maxY = 600.0;
+		//double minZ =  0.0;
+		//double maxZ = 695.0;
 
 
 		bool fVerbose;
@@ -1152,24 +1152,24 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
     			fprimary_truth_byE_origin = pi_serv->TrackIdToMCTruth_P(trueParticle->TrackId())->Origin();
 			fprimary_truth_byE_PDG = trueParticle->PdgCode();
 			fprimary_truth_byE_ID = trueParticle->TrackId();
-			std::cout<<"fprimary_truth_byE_origin:"<<fprimary_truth_byE_origin<<std::endl;
-			std::cout<<"fprimary_truth_byE_PDG:"<<fprimary_truth_byE_PDG<<std::endl;
-			std::cout<<"fprimary_truth_byE_ID:"<<fprimary_truth_byE_ID<<std::endl;
+			//std::cout<<"fprimary_truth_byE_origin:"<<fprimary_truth_byE_origin<<std::endl;
+			//std::cout<<"fprimary_truth_byE_PDG:"<<fprimary_truth_byE_PDG<<std::endl;
+			//std::cout<<"fprimary_truth_byE_ID:"<<fprimary_truth_byE_ID<<std::endl;
 		}
 
 
 		if(thisTrack != 0x0) { //this track
 			// Get the true mc particle
                          const simb::MCParticle* mcparticle0 = truthUtil.GetMCParticleFromRecoTrack(clockData, *thisTrack, evt, fTrackerTag);
-			std::cout<<"inside the this track loop "<<std::endl;
+			//std::cout<<"inside the this track loop "<<std::endl;
 			if(mcparticle0!=0x0) {
-				std::cout<<"fTruth PDG: "<<mcparticle0->PdgCode()<<std::endl;
+				//std::cout<<"fTruth PDG: "<<mcparticle0->PdgCode()<<std::endl;
 				ftruthpdg=mcparticle0->PdgCode();
 
 				truthid=mcparticle0->TrackId();
 				fprimary_truth_Isbeammatched=0;
 				if(beamid==truthid) fprimary_truth_Isbeammatched=1;
-				std::cout<<"fprimary_truth_Isbeammatched:"<<fprimary_truth_Isbeammatched<<std::endl;	
+				//std::cout<<"fprimary_truth_Isbeammatched:"<<fprimary_truth_Isbeammatched<<std::endl;	
 
 
 			}
@@ -1285,7 +1285,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 			for (auto & calo : calovector) {
 				if (calo.PlaneID().Plane == 2){ //only collection plane
 					primtrk_range.push_back(calo.Range());
-					std::cout<<"primtrk_range:"<<calo.Range()<<std::endl;
+					//std::cout<<"primtrk_range:"<<calo.Range()<<std::endl;
 					for (size_t ihit = 0; ihit < calo.dQdx().size(); ++ihit){ //loop over hits
 						primtrk_dqdx.push_back(calo.dQdx()[ihit]);
 						primtrk_resrange.push_back(calo.ResidualRange()[ihit]);
@@ -1805,7 +1805,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 						auto vmeta=fmthm.data(fprimaryID); //indices of meta data are the same as data 
 						for (size_t ii = 0; ii<vhit.size(); ++ii){ //loop over all meta data hit
 							bool fBadhit = false;
-							if (vmeta[ii]->Index() == std::numeric_limits<int>::max()){
+							if (vmeta[ii]->Index() == static_cast<unsigned int>(std::numeric_limits<int>::max())){
 								fBadhit = true;
 								//cout<<"fBadHit"<<fBadhit<<endl;
 								continue;
