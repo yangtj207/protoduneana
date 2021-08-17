@@ -101,33 +101,47 @@ void protoDUNE_X_calib::Loop(TString mn)
 
   ///plane_2 details
   TH1F *dqdx_X_hist_2 = new TH1F("dqdx_X_hist_2","plane_2;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
+  TH1F *dedx_X_hist_2 = new TH1F("dedx_X_hist_2","plane_2;X Coordinate(cm);dE/dx(ADC/cm)",144,-360,360);
   TH1F *dqdx_X_correction_hist_2 = new TH1F("dqdx_X_correction_hist_2","plane_2;X Coordinate(cm);X Correction factors",144,-360,360);
   TH1F *corrected_dqdx_X_hist_2 = new TH1F("corrected_dqdx_X_hist_2","plane_2;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
   TH1F *dqdx_X_hist_1 = new TH1F("dqdx_X_hist_1","plane_1;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
+  TH1F *dedx_X_hist_1 = new TH1F("dedx_X_hist_1","plane_1;X Coordinate(cm);dE/dx(ADC/cm)",144,-360,360);
   TH1F *dqdx_X_correction_hist_1 = new TH1F("dqdx_X_correction_hist_1","plane_1;X Coordinate(cm);X Correction factors",144,-360,360);
   TH1F *corrected_dqdx_X_hist_1 = new TH1F("corrected_dqdx_X_hist_1","plane_1;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
   TH1F *dqdx_X_hist_0 = new TH1F("dqdx_X_hist_0","plane_0;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
+  TH1F *dedx_X_hist_0 = new TH1F("dedx_X_hist_0","plane_0;X Coordinate(cm);dE/dx(ADC/cm)",144,-360,360);
   TH1F *dqdx_X_correction_hist_0 = new TH1F("dqdx_X_correction_hist_0","plane_0;X Coordinate(cm);X Correction factors",144,-360,360);
   TH1F *corrected_dqdx_X_hist_0 = new TH1F("corrected_dqdx_X_hist_0","plane_0;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
   //TH2F *dqdx_vs_X=new TH2F("dqdx_vs_X","dQ/dx vs X for all T0 tagged throughgoing muons;X coordinate(cm);dQ/dx(ADC/cm)",760,-380,380,1000,0,1000);
   //TH1F *max_min=new TH1F("max_min","maximum and minimum values",200,-400,400);
   //TH1F *no_hits=new TH1F("no_hits","no of hits for each bin",200,-400,400);
-
+  TH1F *hdqdx[3];
+  TH1F *hdedx[3];
+  for (unsigned int i = 0; i<3; ++i){
+    hdqdx[i] = new TH1F(Form("hdqdx_%d",i), Form("plane_%d;dQ/dx (ke/cm);Entries",i), 100,0,200);
+    hdedx[i] = new TH1F(Form("hdedx_%d",i), Form("plane_%d;dE/dx (MeV/cm);Entries",i), 100,0,10);
+  }    
 
   vector<vector<float>> dqdx_value_2;
+  vector<vector<float>> dedx_value_2;
   vector<float> all_dqdx_value_2;
   vector<vector<float>> dqdx_frac_correction_2;
   dqdx_value_2.resize(144);
+  dedx_value_2.resize(144);
   dqdx_frac_correction_2.resize(144);
   vector<vector<float>> dqdx_value_1;
+  vector<vector<float>> dedx_value_1;
   vector<float> all_dqdx_value_1;
   vector<vector<float>> dqdx_frac_correction_1;
   dqdx_value_1.resize(144);
+  dedx_value_1.resize(144);
   dqdx_frac_correction_1.resize(144);
   vector<vector<float>> dqdx_value_0;
+  vector<vector<float>> dedx_value_0;
   vector<float> all_dqdx_value_0;
   vector<vector<float>> dqdx_frac_correction_0;
   dqdx_value_0.resize(144);
+  dedx_value_0.resize(144);
   dqdx_frac_correction_0.resize(144);
 
   ////////////////////// Importing Y-Z plane fractional corrections /////////////
@@ -166,7 +180,7 @@ void protoDUNE_X_calib::Loop(TString mn)
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
     nb = fChain->GetEntry(jentry);   nbytes += nb;
-    if(jentry%100==0) cout<<jentry<<"/"<<real_nentries<<endl;
+    if(jentry%10000==0) cout<<jentry<<"/"<<real_nentries<<endl;
     if(jentry==0){
       time1=evttime;
       runvalue=run;
@@ -195,6 +209,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float recom_correction=recom_factor(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));
 		float corrected_dqdx_2=trkdqdx[i][2][j]*YZ_correction_factor_negativeX_2*recom_correction;
 		dqdx_value_2[x_bin-1].push_back(corrected_dqdx_2);
+		dedx_value_2[x_bin-1].push_back(trkdedx[i][2][j]);
+                hdqdx[2]->Fill(trkdqdx[i][2][j]);
+                hdedx[2]->Fill(trkdedx[i][2][j]);
 	      }//X containment
 	      if(trkhitx[i][2][j]>0 && trkhitx[i][2][j]<360 && testpos){//positive drift
 		if(trkhitx[i][2][j]>0 && trkhitx[i][2][j+1]<0) continue;
@@ -204,6 +221,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float recom_correction=recom_factor(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));
 		float corrected_dqdx_2=trkdqdx[i][2][j]*YZ_correction_factor_positiveX_2*recom_correction;
 		dqdx_value_2[x_bin-1].push_back(corrected_dqdx_2);
+		dedx_value_2[x_bin-1].push_back(trkdedx[i][2][j]);
+                hdqdx[2]->Fill(trkdqdx[i][2][j]);
+                hdedx[2]->Fill(trkdedx[i][2][j]);
 	      }//X containment
 	    } // Z containment
 	  } // Y containment
@@ -226,6 +246,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 	     	float YZ_correction_factor_negativeX_1=YZ_negativeX_hist_1->GetBinContent(YZ_negativeX_hist_1->FindBin(trkhitz[i][1][j],trkhity[i][1][j]));
 		float corrected_dqdx_1=trkdqdx[i][1][j]*YZ_correction_factor_negativeX_1*recom_correction;
 		dqdx_value_1[x_bin-1].push_back(corrected_dqdx_1);
+		dedx_value_1[x_bin-1].push_back(trkdedx[i][1][j]);
+                hdqdx[1]->Fill(trkdqdx[i][1][j]);
+                hdedx[1]->Fill(trkdedx[i][1][j]);
 	      }
 	    }
 	    if(trkhitx[i][1][j]>0 && trkhitx[i][1][j]<360 && testpos){
@@ -237,6 +260,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float YZ_correction_factor_positiveX_1=YZ_positiveX_hist_1->GetBinContent(YZ_positiveX_hist_1->FindBin(trkhitz[i][1][j],trkhity[i][1][j]));
 		float corrected_dqdx_1=trkdqdx[i][1][j]*YZ_correction_factor_positiveX_1*recom_correction;
 		dqdx_value_1[x_bin-1].push_back(corrected_dqdx_1);
+		dedx_value_1[x_bin-1].push_back(trkdedx[i][1][j]);
+                hdqdx[1]->Fill(trkdqdx[i][1][j]);
+                hdedx[1]->Fill(trkdedx[i][1][j]);
 	      }
 	    }
 	  } // Z containment
@@ -256,6 +282,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float YZ_correction_factor_negativeX_0=YZ_negativeX_hist_0->GetBinContent(YZ_negativeX_hist_0->FindBin(trkhitz[i][0][j],trkhity[i][0][j]));
 		float corrected_dqdx_0=trkdqdx[i][0][j]*YZ_correction_factor_negativeX_0*recom_correction;
 		dqdx_value_0[x_bin-1].push_back(corrected_dqdx_0);
+		dedx_value_0[x_bin-1].push_back(trkdedx[i][0][j]);
+                hdqdx[0]->Fill(trkdqdx[i][0][j]);
+                hdedx[0]->Fill(trkdedx[i][0][j]);
 	      }
 	    }
 	    if(trkhitx[i][0][j]>0 && trkhitx[i][0][j]<360 && testpos){
@@ -267,6 +296,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float YZ_correction_factor_positiveX_0=YZ_positiveX_hist_0->GetBinContent(YZ_positiveX_hist_0->FindBin(trkhitz[i][0][j],trkhity[i][0][j]));
 		float corrected_dqdx_0=trkdqdx[i][0][j]*YZ_correction_factor_positiveX_0*recom_correction;
 		dqdx_value_0[x_bin-1].push_back(corrected_dqdx_0);
+		dedx_value_0[x_bin-1].push_back(trkdedx[i][0][j]);
+                hdqdx[0]->Fill(trkdqdx[i][0][j]);
+                hdedx[0]->Fill(trkdedx[i][0][j]);
 	      }
 	    }
 	  } // Z containment
@@ -287,6 +319,8 @@ void protoDUNE_X_calib::Loop(TString mn)
       }
       float local_median_dqdx_2=TMath::Median(dqdx_value_2[i].size(),&dqdx_value_2[i][0]);
       dqdx_X_hist_2->SetBinContent(i+1,local_median_dqdx_2);
+      float local_median_dedx_2=TMath::Median(dedx_value_2[i].size(),&dedx_value_2[i][0]);
+      dedx_X_hist_2->SetBinContent(i+1,local_median_dedx_2);
     }
   }
  
@@ -324,6 +358,7 @@ void protoDUNE_X_calib::Loop(TString mn)
   //////////////////////////////////////////////////////////////////////////////////
  
   dqdx_X_hist_2->Write();
+  dedx_X_hist_2->Write();
   dqdx_X_correction_hist_2->Write();
   corrected_dqdx_X_hist_2->Write();
  ////////////////////// Getting inforamtion from dqdx_value vector ////////////////////
@@ -334,6 +369,8 @@ void protoDUNE_X_calib::Loop(TString mn)
       }
       float local_median_dqdx_1=TMath::Median(dqdx_value_1[i].size(),&dqdx_value_1[i][0]);
       dqdx_X_hist_1->SetBinContent(i+1,local_median_dqdx_1);
+      float local_median_dedx_1=TMath::Median(dedx_value_1[i].size(),&dedx_value_1[i][0]);
+      dedx_X_hist_1->SetBinContent(i+1,local_median_dedx_1);
     }
   }
  
@@ -369,6 +406,7 @@ void protoDUNE_X_calib::Loop(TString mn)
   }
   //////////////////////////////////////////////////////////////////////////////////
   dqdx_X_hist_1->Write();
+  dedx_X_hist_1->Write();
   dqdx_X_correction_hist_1->Write();
   corrected_dqdx_X_hist_1->Write();
 
@@ -381,6 +419,8 @@ void protoDUNE_X_calib::Loop(TString mn)
       }
       float local_median_dqdx_0=TMath::Median(dqdx_value_0[i].size(),&dqdx_value_0[i][0]);
       dqdx_X_hist_0->SetBinContent(i+1,local_median_dqdx_0);
+      float local_median_dedx_0=TMath::Median(dedx_value_0[i].size(),&dedx_value_0[i][0]);
+      dedx_X_hist_0->SetBinContent(i+1,local_median_dedx_0);
     }
   }
   float global_median_dqdx_0=TMath::Median(all_dqdx_value_0.size(),&all_dqdx_value_0[0]); 
@@ -419,9 +459,14 @@ void protoDUNE_X_calib::Loop(TString mn)
   //////////////////////////////////////////////////////////////////////////////////
  
   dqdx_X_hist_0->Write();
+  dedx_X_hist_0->Write();
   dqdx_X_correction_hist_0->Write();
   corrected_dqdx_X_hist_0->Write();
 
+  for (int i = 0; i<3; ++i){
+    hdqdx[i]->Write();
+    hdedx[i]->Write();
+  }
 
   file->Close(); 
   dqdx_X_hist_2->Draw();
