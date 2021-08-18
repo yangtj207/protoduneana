@@ -220,6 +220,7 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float YZ_correction_factor_positiveX_2=YZ_positiveX_hist_2->GetBinContent(YZ_positiveX_hist_2->FindBin(trkhitz[i][2][j],trkhity[i][2][j]));
 		float recom_correction=recom_factor(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));
 		float corrected_dqdx_2=trkdqdx[i][2][j]*YZ_correction_factor_positiveX_2*recom_correction;
+                //std::cout<<TrkID[i]<<" "<<trkhitx[i][2][j]<<" "<<trkhity[i][2][j]<<" "<<trkhitz[i][2][j]<<" "<<YZ_correction_factor_positiveX_2<<" "<<trkdqdx[i][2][j]<<" "<<corrected_dqdx_2<<std::endl;
 		dqdx_value_2[x_bin-1].push_back(corrected_dqdx_2);
 		dedx_value_2[x_bin-1].push_back(trkdedx[i][2][j]);
                 hdqdx[2]->Fill(trkdqdx[i][2][j]);
@@ -327,7 +328,7 @@ void protoDUNE_X_calib::Loop(TString mn)
   float global_median_dqdx_2=TMath::Median(all_dqdx_value_2.size(),&all_dqdx_value_2[0]); 
   global_med_2=global_median_dqdx_2;//Filling the Tree variable
   ofstream outfile0,outfile1,outfile2;
-  outfile2.open(Form("global_median_2_r%d.txt", run),std::ios_base::app);
+  outfile2.open(Form("global_median_2_r%d.txt", run));
   outfile2<<run<<"\t"<<global_median_dqdx_2<<std::endl;
   //////////////////////////////////////////////////////////////////////////////////////
  
@@ -376,7 +377,7 @@ void protoDUNE_X_calib::Loop(TString mn)
  
   float global_median_dqdx_1=TMath::Median(all_dqdx_value_1.size(),&all_dqdx_value_1[0]);
  global_med_1=global_median_dqdx_1;//Filling the Tree variable
-  outfile1.open(Form("global_median_1_r%d.txt", run),std::ios_base::app);
+  outfile1.open(Form("global_median_1_r%d.txt", run));
   outfile1<<run<<"\t"<<global_median_dqdx_1<<std::endl; 
  
   //////////////////////////////////////////////////////////////////////////////////////
@@ -425,7 +426,7 @@ void protoDUNE_X_calib::Loop(TString mn)
   }
   float global_median_dqdx_0=TMath::Median(all_dqdx_value_0.size(),&all_dqdx_value_0[0]); 
  global_med_0=global_median_dqdx_0;//Filling the Tree variable
-  outfile0.open(Form("global_median_0_r%d.txt",run),std::ios_base::app);
+  outfile0.open(Form("global_median_0_r%d.txt",run));
   outfile0<<run<<"\t"<<global_median_dqdx_0<<std::endl; 
   run_number=runvalue;
   event_time1=time1;
