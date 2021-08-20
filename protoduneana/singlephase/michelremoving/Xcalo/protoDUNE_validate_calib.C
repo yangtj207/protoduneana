@@ -177,28 +177,30 @@ void protoDUNE_validate_calib::Loop(TString mn)
       if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;
       
       for (int k = 0; k<3; ++k){
-        
+        bool negok = true;
+        bool posok = true;
         if (k == 2){
           if((abs(180/3.14*trackthetaxz[i])>60 && abs(180/3.14*trackthetaxz[i])<120)||abs(180/3.14*trackthetaxz[i])<10||(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)) continue;
         }
         if (k == 1){
-          if (testneg && !(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) continue;
-          if (testpos && !(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) continue;
+          if (testneg && !(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) negok = false;
+          if (testpos && !(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) posok = false;
         }
         if (k == 0){
-          if (testneg && !(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) continue;
-          if (testpos && !(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) continue;
+          if (testneg && !(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) negok = false;
+          if (testpos && !(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) posok = false;
         }
         
 	for(int j=1; j<TMath::Min(ntrkhits[i][k]-1,3000); ++j){
 	  if((trkhity[i][k][j]<600)&&(trkhity[i][k][j]>0)){
 	    if((trkhitz[i][k][j]<695)&&(trkhitz[i][k][j]>0)){
-	      if(trkhitx[i][k][j]<0 && trkhitx[i][k][j]>-360 && testneg){//negative drift
+	      if(trkhitx[i][k][j]<0 && trkhitx[i][k][j]>-360 && testneg && negok){//negative drift
 		if(trkhitx[i][k][j]<0 && trkhitx[i][k][j+1]>0) continue;
 		if(trkhitx[i][k][j]<0 && trkhitx[i][k][j-1]>0) continue;
 		x_bin=X_corr[k]->FindBin(trkhitx[i][k][j]);
 		float YZ_correction_factor_negativeX=YZ_negativeX_corr[k]->GetBinContent(YZ_negativeX_corr[k]->FindBin(trkhitz[i][k][j],trkhity[i][k][j]));
                 float X_correction_factor=X_corr[k]->GetBinContent(x_bin);
+                //float recom_correction=recom_factor(tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
                 float normcorr = ref_dQdx[k]/median_dQdx[k];
 		float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_negativeX*X_correction_factor*normcorr;
                 float corrected_dedx=dEdx(corrected_dqdx/calib_const[k], tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
@@ -206,13 +208,15 @@ void protoDUNE_validate_calib::Loop(TString mn)
 		dedx_value[k][x_bin-1].push_back(corrected_dedx);
                 hdqdx[k]->Fill(corrected_dqdx);
                 hdedx[k]->Fill(corrected_dedx);
+                //if (k==0)  cout<<event<<" neg "<<x_bin<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<endl;
 	      }//X containment
-	      if(trkhitx[i][k][j]>0 && trkhitx[i][k][j]<360 && testpos){//positive drift
+	      if(trkhitx[i][k][j]>0 && trkhitx[i][k][j]<360 && testpos && posok){//positive drift
 		if(trkhitx[i][k][j]>0 && trkhitx[i][k][j+1]<0) continue;
 		if(trkhitx[i][k][j]>0 && trkhitx[i][k][j-1]<0) continue;
 		x_bin=X_corr[k]->FindBin(trkhitx[i][k][j]);
 		float YZ_correction_factor_positiveX=YZ_positiveX_corr[k]->GetBinContent(YZ_positiveX_corr[k]->FindBin(trkhitz[i][k][j],trkhity[i][k][j]));
                 float X_correction_factor=X_corr[k]->GetBinContent(x_bin);
+                //float recom_correction=recom_factor(tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
                 float normcorr = ref_dQdx[k]/median_dQdx[k];
 		float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_positiveX*X_correction_factor*normcorr;
                 float corrected_dedx=dEdx(corrected_dqdx/calib_const[k], tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
@@ -222,6 +226,7 @@ void protoDUNE_validate_calib::Loop(TString mn)
 		dedx_value[k][x_bin-1].push_back(corrected_dedx);
                 hdqdx[k]->Fill(corrected_dqdx);
                 hdedx[k]->Fill(corrected_dedx);
+                //if (k==0)  cout<<event<<" pos "<<x_bin<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<endl;
 	      }//X containment
 	    } // Z containment
 	  } // Y containment
@@ -234,6 +239,7 @@ void protoDUNE_validate_calib::Loop(TString mn)
   ////////////////////// Getting inforamtion from dqdx_value vector ////////////////////
   for (int i = 0; i<3; ++i){
     for(size_t j=0; j<dqdx_value[i].size(); j++){
+      //std::cout<<i<<" "<<j<<" "<<dqdx_value[i][j].size()<<std::endl;
       float local_median_dqdx=TMath::Median(dqdx_value[i][j].size(),&dqdx_value[i][j][0]);
       dqdx_X_hist[i]->SetBinContent(j+1,local_median_dqdx);
       float local_median_dedx=TMath::Median(dedx_value[i][j].size(),&dedx_value[i][j][0]);

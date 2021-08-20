@@ -208,7 +208,8 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float YZ_correction_factor_negativeX_2=YZ_negativeX_hist_2->GetBinContent(YZ_negativeX_hist_2->FindBin(trkhitz[i][2][j],trkhity[i][2][j]));
 		float recom_correction=recom_factor(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));
 		float corrected_dqdx_2=trkdqdx[i][2][j]*YZ_correction_factor_negativeX_2*recom_correction;
-		dqdx_value_2[x_bin-1].push_back(corrected_dqdx_2);
+		if (mn!="3") dqdx_value_2[x_bin-1].push_back(corrected_dqdx_2);
+                else dqdx_value_2[x_bin-1].push_back(trkdqdx[i][2][j]);
 		dedx_value_2[x_bin-1].push_back(trkdedx[i][2][j]);
                 hdqdx[2]->Fill(trkdqdx[i][2][j]);
                 hdedx[2]->Fill(trkdedx[i][2][j]);
@@ -221,7 +222,8 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float recom_correction=recom_factor(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));
 		float corrected_dqdx_2=trkdqdx[i][2][j]*YZ_correction_factor_positiveX_2*recom_correction;
                 //std::cout<<TrkID[i]<<" "<<trkhitx[i][2][j]<<" "<<trkhity[i][2][j]<<" "<<trkhitz[i][2][j]<<" "<<YZ_correction_factor_positiveX_2<<" "<<trkdqdx[i][2][j]<<" "<<corrected_dqdx_2<<std::endl;
-		dqdx_value_2[x_bin-1].push_back(corrected_dqdx_2);
+		if (mn!="3") dqdx_value_2[x_bin-1].push_back(corrected_dqdx_2);
+                else dqdx_value_2[x_bin-1].push_back(trkdqdx[i][2][j]);
 		dedx_value_2[x_bin-1].push_back(trkdedx[i][2][j]);
                 hdqdx[2]->Fill(trkdqdx[i][2][j]);
                 hdedx[2]->Fill(trkdedx[i][2][j]);
@@ -246,7 +248,8 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float recom_correction=recom_factor(tot_Ef(trkhitx[i][1][j],trkhity[i][1][j],trkhitz[i][1][j]));
 	     	float YZ_correction_factor_negativeX_1=YZ_negativeX_hist_1->GetBinContent(YZ_negativeX_hist_1->FindBin(trkhitz[i][1][j],trkhity[i][1][j]));
 		float corrected_dqdx_1=trkdqdx[i][1][j]*YZ_correction_factor_negativeX_1*recom_correction;
-		dqdx_value_1[x_bin-1].push_back(corrected_dqdx_1);
+		if (mn!="3") dqdx_value_1[x_bin-1].push_back(corrected_dqdx_1);
+                else dqdx_value_1[x_bin-1].push_back(trkdqdx[i][1][j]);
 		dedx_value_1[x_bin-1].push_back(trkdedx[i][1][j]);
                 hdqdx[1]->Fill(trkdqdx[i][1][j]);
                 hdedx[1]->Fill(trkdedx[i][1][j]);
@@ -260,7 +263,8 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float recom_correction=recom_factor(tot_Ef(trkhitx[i][1][j],trkhity[i][1][j],trkhitz[i][1][j]));
 		float YZ_correction_factor_positiveX_1=YZ_positiveX_hist_1->GetBinContent(YZ_positiveX_hist_1->FindBin(trkhitz[i][1][j],trkhity[i][1][j]));
 		float corrected_dqdx_1=trkdqdx[i][1][j]*YZ_correction_factor_positiveX_1*recom_correction;
-		dqdx_value_1[x_bin-1].push_back(corrected_dqdx_1);
+		if (mn!="3") dqdx_value_1[x_bin-1].push_back(corrected_dqdx_1);
+                else dqdx_value_1[x_bin-1].push_back(trkdqdx[i][1][j]);
 		dedx_value_1[x_bin-1].push_back(trkdedx[i][1][j]);
                 hdqdx[1]->Fill(trkdqdx[i][1][j]);
                 hdedx[1]->Fill(trkdedx[i][1][j]);
@@ -282,10 +286,12 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float recom_correction=recom_factor(tot_Ef(trkhitx[i][0][j],trkhity[i][0][j],trkhitz[i][0][j]));
 		float YZ_correction_factor_negativeX_0=YZ_negativeX_hist_0->GetBinContent(YZ_negativeX_hist_0->FindBin(trkhitz[i][0][j],trkhity[i][0][j]));
 		float corrected_dqdx_0=trkdqdx[i][0][j]*YZ_correction_factor_negativeX_0*recom_correction;
-		dqdx_value_0[x_bin-1].push_back(corrected_dqdx_0);
+		if (mn!="3") dqdx_value_0[x_bin-1].push_back(corrected_dqdx_0);
+                else  dqdx_value_0[x_bin-1].push_back(trkdqdx[i][0][j]);
 		dedx_value_0[x_bin-1].push_back(trkdedx[i][0][j]);
                 hdqdx[0]->Fill(trkdqdx[i][0][j]);
                 hdedx[0]->Fill(trkdedx[i][0][j]);
+                //if (x_bin == 1) cout<<event<<" neg "<<x_bin<<" "<<trkhitx[i][0][j]<<" "<<trkhity[i][0][j]<<" "<<trkhitz[i][0][j]<<endl;
 	      }
 	    }
 	    if(trkhitx[i][0][j]>0 && trkhitx[i][0][j]<360 && testpos){
@@ -296,10 +302,12 @@ void protoDUNE_X_calib::Loop(TString mn)
 		float recom_correction=recom_factor(tot_Ef(trkhitx[i][0][j],trkhity[i][0][j],trkhitz[i][0][j]));
 		float YZ_correction_factor_positiveX_0=YZ_positiveX_hist_0->GetBinContent(YZ_positiveX_hist_0->FindBin(trkhitz[i][0][j],trkhity[i][0][j]));
 		float corrected_dqdx_0=trkdqdx[i][0][j]*YZ_correction_factor_positiveX_0*recom_correction;
-		dqdx_value_0[x_bin-1].push_back(corrected_dqdx_0);
+		if (mn!="3") dqdx_value_0[x_bin-1].push_back(corrected_dqdx_0);
+                else  dqdx_value_0[x_bin-1].push_back(trkdqdx[i][0][j]);
 		dedx_value_0[x_bin-1].push_back(trkdedx[i][0][j]);
                 hdqdx[0]->Fill(trkdqdx[i][0][j]);
                 hdedx[0]->Fill(trkdedx[i][0][j]);
+                //if (x_bin == 1) cout<<event<<" pos "<<x_bin<<" "<<trkhitx[i][0][j]<<" "<<trkhity[i][0][j]<<" "<<trkhitz[i][0][j]<<endl;
 	      }
 	    }
 	  } // Z containment
@@ -313,7 +321,7 @@ void protoDUNE_X_calib::Loop(TString mn)
 
   ////////////////////// Getting inforamtion from dqdx_value vector ////////////////////
   for(size_t i=0; i<dqdx_value_2.size(); i++){
-    // std::cout<<"no of entries in each bin "<<i<<"  "<<dqdx_value_2[i].size()<<std::endl;
+    //std::cout<<"no of entries in each bin plane 2 "<<i<<"  "<<dqdx_value_2[i].size()<<std::endl;
     if(dqdx_value_2[i].size()>5){
       for(size_t k=0; k<dqdx_value_2[i].size(); k++){
 	all_dqdx_value_2.push_back(dqdx_value_2[i][k]);
@@ -364,6 +372,7 @@ void protoDUNE_X_calib::Loop(TString mn)
   corrected_dqdx_X_hist_2->Write();
  ////////////////////// Getting inforamtion from dqdx_value vector ////////////////////
   for(size_t i=0; i<dqdx_value_1.size(); i++){
+    //std::cout<<"no of entries in each bin plane 1 "<<i<<"  "<<dqdx_value_1[i].size()<<std::endl;
     if(dqdx_value_1[i].size()>5){
       for(size_t k=0; k<dqdx_value_1[i].size(); k++){
 	all_dqdx_value_1.push_back(dqdx_value_1[i][k]);
@@ -414,6 +423,7 @@ void protoDUNE_X_calib::Loop(TString mn)
 
  ////////////////////// Getting inforamtion from dqdx_value vector ////////////////////
   for(size_t i=0; i<dqdx_value_0.size(); i++){
+    //std::cout<<"no of entries in each bin plane 0 "<<i<<"  "<<dqdx_value_0[i].size()<<std::endl;
     if(dqdx_value_0[i].size()>5){
       for(size_t k=0; k<dqdx_value_0[i].size(); k++){
 	all_dqdx_value_0.push_back(dqdx_value_0[i][k]);
