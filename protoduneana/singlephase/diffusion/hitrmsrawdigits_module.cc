@@ -8,7 +8,7 @@
 /// Contact Person: ehinkle@uchicago.edu                                   ///
 /// Written by: Ajib Paudel                                                ///
 /// Modified by: Elise Hinkle                                              ///
-/// Last Date Modified: January 15, 2021                                   ///
+/// Last Date Modified: August  20, 2021                                   ///
 //////////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -274,7 +274,7 @@ namespace protoana{
     fEventTree->Branch("hit_rms2",&hit_rms2);
     fEventTree->Branch("hit_rmsraw2",&hit_rmsraw2);
     fEventTree->Branch("hit_peakTraw2",&hit_peakTraw2);
-    fEventTree->Branch("hit_signal",hit_signal,"hit_signal[10][5000][60]/F");
+    fEventTree->Branch("hit_signal",&hit_signal,"hit_signal[10][5000][60]/F");
     fEventTree->Branch("hit_rms_true",&hit_rms_true);
     fEventTree->Branch("trkhitx2",&trkhitx2);
     fEventTree->Branch("trkhity2",&trkhity2);
@@ -614,10 +614,10 @@ namespace protoana{
 	      std::vector<float> inputsignal(fWaveformSize);
 	     
 	      if (!wirelist.empty() && evt.isRealData()){
-		const auto & wire = wirelist[ich];
+		const auto &wire = wirelist[ich];
 		if(wirelist[ich]->Channel()!=vhit[ii]->Channel()) continue;
 		//art::Ptr<recob::Wire>   wire(wireHandle, wireIter);
-		const auto & signal = wire->Signal();
+		const auto &signal = wire->Signal();
 		double hit_pk = -1;
 	
 		for (size_t itck = t0; itck <inputsignal.size(); ++itck){
