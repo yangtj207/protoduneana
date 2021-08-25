@@ -18,7 +18,7 @@ art_make_library( LIBRARY_NAME protodune_fitutils
 			    ${MF_MESSAGELOGGER}
 			    ${FHICLCPP}
 			    ${CETLIB}
-			    ${ROOT_BASIC_LIB_LIST}
+			    ROOT_BASIC_LIB_LIST
                             
 			    ${ROOT_ROOFITCORE}
 			    ${ROOT_ROOFIT}

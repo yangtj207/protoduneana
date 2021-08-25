@@ -43,6 +43,11 @@ cet_set_compiler_flags(DIAGS CAUTIOUS
 cet_report_compiler_flags()
 
 # these are minimum required versions, not the actual product versions
+find_ups_boost( ) # Needs to be first to cover for a missing transitive
+                  # dependency from artdaq_core.
+find_ups_geant4( )
+find_ups_root()
+
 find_ups_product( dunetpc v08_31_01)
 find_ups_product( larcoreobj )
 find_ups_product( larcore v1_00_00 )
@@ -70,11 +75,11 @@ find_ups_product( dunepdsprce v0_0_3 )
 find_ups_product( artdaq_core v01_03_6 )
 find_ups_product( ifdh_art )
 find_ups_product( ifdhc )
-find_ups_geant4( )
 find_ups_product( systematicstools v00_01_01 )
 find_ups_product( nusystematics v00_01_01 )
 find_ups_product( geant4reweight )
 if(DEFINED ENV{HEP_HPC_DIR} )
+  find_ups_product( hdf5 )
   find_ups_product( hep_hpc )
 endif()
 
@@ -87,7 +92,7 @@ if(DEFINED ENV{HDF5_DIR} )
   endif()
 endif()
 
-# macros for dictionary and simple_plugin
+# macros for dictionary and cet_build_plugin
 include(ArtDictionary)
 include(ArtMake)
 include(BuildPlugins)

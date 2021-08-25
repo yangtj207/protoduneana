@@ -1,15 +1,15 @@
-simple_plugin(ClusterCounter "module"
+cet_build_plugin(ClusterCounter art::module
 			larcorealg_Geometry
 			larcore_Geometry_Geometry_service
 			${ART_FRAMEWORK_SERVICES_REGISTRY}
 			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
 			${ART_ROOT_IO_TFILESERVICE_SERVICE}
 			${MF_MESSAGELOGGER}
-			${ROOT_BASIC_LIB_LIST}
+			ROOT_BASIC_LIB_LIST
 			BASENAME_ONLY
 )
 
-simple_plugin(ClusterCounter2 "module"
+cet_build_plugin(ClusterCounter2 art::module
 			lardataobj_RecoBase
 			larcorealg_Geometry
 			larcore_Geometry_Geometry_service
@@ -17,11 +17,11 @@ simple_plugin(ClusterCounter2 "module"
 			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
 			${ART_ROOT_IO_TFILESERVICE_SERVICE}
 			${MF_MESSAGELOGGER}
-			${ROOT_BASIC_LIB_LIST}
+			ROOT_BASIC_LIB_LIST
 			BASENAME_ONLY
 )
 
-simple_plugin(ClusterCounter3 "module"
+cet_build_plugin(ClusterCounter3 art::module
 			lardataobj_RecoBase
 			larcorealg_Geometry
 			larcore_Geometry_Geometry_service
@@ -29,11 +29,11 @@ simple_plugin(ClusterCounter3 "module"
 			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
 			${ART_ROOT_IO_TFILESERVICE_SERVICE}
 			${MF_MESSAGELOGGER}
-			${ROOT_BASIC_LIB_LIST}
+			ROOT_BASIC_LIB_LIST
 			BASENAME_ONLY
 )
 
-simple_plugin(ClusterCounter4 "module"
+cet_build_plugin(ClusterCounter4 art::module
                         lardataalg_DetectorInfo
 			lardataobj_RecoBase
 			larcorealg_Geometry
@@ -45,11 +45,11 @@ simple_plugin(ClusterCounter4 "module"
 			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
 			${ART_ROOT_IO_TFILESERVICE_SERVICE}
 			${MF_MESSAGELOGGER}
-			${ROOT_BASIC_LIB_LIST}
+			ROOT_BASIC_LIB_LIST
 			BASENAME_ONLY
 )
 
-simple_plugin(ClusterCounter5 "module"
+cet_build_plugin(ClusterCounter5 art::module
                         lardataalg_DetectorInfo
 			lardataobj_RecoBase
 			larcorealg_Geometry
@@ -63,11 +63,11 @@ simple_plugin(ClusterCounter5 "module"
 			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
 			${ART_ROOT_IO_TFILESERVICE_SERVICE}
 			${MF_MESSAGELOGGER}
-			${ROOT_BASIC_LIB_LIST}
+			ROOT_BASIC_LIB_LIST
 			BASENAME_ONLY
 )
 
-simple_plugin(ReadSpacePointAndCnn "module"
+cet_build_plugin(ReadSpacePointAndCnn art::module
 			lardata_ArtDataHelper
 			lardataobj_RecoBase
 			larcorealg_Geometry
@@ -77,18 +77,18 @@ simple_plugin(ReadSpacePointAndCnn "module"
 			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
 			${ART_ROOT_IO_TFILESERVICE_SERVICE}
 			${MF_MESSAGELOGGER}
-			${ROOT_BASIC_LIB_LIST}
+			ROOT_BASIC_LIB_LIST
 			BASENAME_ONLY
 )
 
-simple_plugin(ReadBeamInfo "module"
+cet_build_plugin(ReadBeamInfo art::module
       nusimdata_SimulationBase
       larcorealg_Geometry
       ${ART_FRAMEWORK_SERVICES_REGISTRY}
       ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
       ${ART_ROOT_IO_TFILESERVICE_SERVICE}
       ${MF_MESSAGELOGGER}
-      ${ROOT_BASIC_LIB_LIST}
+      ROOT_BASIC_LIB_LIST
       BASENAME_ONLY
 )
 

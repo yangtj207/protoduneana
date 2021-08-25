@@ -1,6 +1,5 @@
 #include <iostream>
 #include "cetlib_except/exception.h"
-#include "fhiclcpp/make_ParameterSet.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "cetlib/filepath_maker.h"
 #include <ROOT/RDataFrame.hxx>
@@ -246,8 +245,7 @@ int main(int argc, char ** argv){
   }
 
   cet::filepath_first_absolute_or_lookup_with_dot lookupPolicy{search_path};
-  fhicl::ParameterSet pset;
-  fhicl::make_ParameterSet(fcl_file, lookupPolicy, pset);
+  auto const pset = fhicl::ParameterSet::make(fcl_file, lookupPolicy);
   std::string tree_name = pset.get<std::string>("TreeName"); 
 
   if (pset.get<bool>("UseMT"))
@@ -274,4 +272,3 @@ int main(int argc, char ** argv){
 
   return 0;
 }
-

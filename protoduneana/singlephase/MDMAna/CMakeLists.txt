@@ -21,7 +21,7 @@ art_make( MODULE_LIBRARIES
 			${MF_MESSAGELOGGER}
 			${MF_UTILITIES}
 			cetlib cetlib_except
-			${ROOT_BASIC_LIB_LIST}
+			ROOT_BASIC_LIB_LIST
                         ${ROOT_GENVECTOR}
                         ${ROOT_GEOM}
                         ProtoDUNEUtilities

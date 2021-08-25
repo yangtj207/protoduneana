@@ -1,9 +1,9 @@
-simple_plugin(PDSPmatch "module"
+cet_build_plugin(PDSPmatch art::module
                         lardataobj_RawData
                         lardataobj_RecoBase
                         larcorealg_Geometry
                         dune-raw-data_Overlays
-                        artdaq-core_Data
+                        artdaq_core::artdaq-core_Data
                         dune_Geometry
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}
@@ -13,17 +13,17 @@ simple_plugin(PDSPmatch "module"
                         ${ART_PERSISTENCY_PROVENANCE}
                         ${MF_MESSAGELOGGER}
                         ${CETLIB}
-                        ${ROOT_BASIC_LIB_LIST}
+                        ROOT_BASIC_LIB_LIST
                         ${RCEDAMLIB}
                         BASENAME_ONLY
 )
 
-simple_plugin(PDSPmatchmc "module"
+cet_build_plugin(PDSPmatchmc art::module
                         lardataobj_RawData
                         lardataobj_RecoBase
                         larcorealg_Geometry
                         dune-raw-data_Overlays
-                        artdaq-core_Data
+                        artdaq_core::artdaq-core_Data
                         dune_Geometry
                         nusimdata_SimulationBase
                         larsim_MCCheater_PhotonBackTrackerService_service
@@ -36,7 +36,7 @@ simple_plugin(PDSPmatchmc "module"
 			${ART_PERSISTENCY_PROVENANCE}
                         ${MF_MESSAGELOGGER}
                         ${CETLIB}
-                        ${ROOT_BASIC_LIB_LIST}
+                        ROOT_BASIC_LIB_LIST
                         ${RCEDAMLIB}
                         BASENAME_ONLY
 )
