@@ -818,6 +818,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
   run = evt.run();
   subrun = evt.subRun();
   event = evt.id().event();
+  std::cout<<"########## EvtNo."<<event<<std::endl;
 
   if( !evt.isRealData() ) MC = 1;
   else MC = 0;
@@ -976,37 +977,58 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
 
 
   ///Gets the beam pfparticle
-  std::vector<const recob::PFParticle*> beamParticles = pfpUtil.GetPFParticlesFromBeamSlice(evt,fPFParticleTag);
-
-  if(beamParticles.size() == 0){
+  //std::vector<const recob::PFParticle*> beamParticles = pfpUtil.GetPFParticlesFromBeamSlice(evt,fPFParticleTag);
+  if(beam_slices.size() == 0){
     std::cout << "We found no beam particles for this event... moving on" << std::endl;
     //return;
   }
   else {
-    std::cout << "Found " << beamParticles.size() << " particles" << std::endl;
-    // Get the reconstructed PFParticle tagged as beam by Pandora
-    const recob::PFParticle* particle = beamParticles.at(0);
+    //std::cout << "Found " << beamParticles.size() << " particles" << std::endl;
     //////////////////////////////////////////////////////////////////
-    
-    
-    //If MC, attempt to match to some MCParticle
-    if( !evt.isRealData() ){
-      BeamMatchInfo(evt, particle, true_beam_particle, clockData);
+    int ii = 0; // index of beam particle candidate
+    int iiloop = 0;
+    double cut_v = 9999.; // cut value
+    for(std::vector<const recob::PFParticle*> beam_slice : beam_slices){
+      const recob::PFParticle* particle = beam_slice.at(0);
+      const TVector3 vtx = pfpUtil.GetPFParticleVertex(*particle,evt,fPFParticleTag,fTrackerTag);
+      std::cout<<"#Start position of beam particle NO."<<iiloop<<": ("<<vtx.X()<<", "<<vtx.Y()<<", "<<vtx.Z()<<")"<<std::endl;
+      
+      // add selection
+      double fom = abs(vtx.Z() - 30); // figure of merit (to be compared to the cut value)
+      //if ( (fom < cut_v) && (abs(vtx.Y() - 430) < 10) ){
+      if (fom < cut_v) {
+        cut_v = fom;
+        ii = iiloop;
+      }
+      ++iiloop;
     }
-    BeamPFPInfo(evt, particle, hitResults);
+    // Get the reconstructed PFParticle tagged as beam by Pandora // the select candidate with index ii
+    if (ii >= 0) {
+      std::cout<<"Use beam particle NO."<<ii<<std::endl;
+      const recob::PFParticle* particle = beam_slices.at(ii).at(0);
+      
+      
+      //If MC, attempt to match to some MCParticle
+      if( !evt.isRealData() ){
+        BeamMatchInfo(evt, particle, true_beam_particle, clockData);
+      }
+      BeamPFPInfo(evt, particle, hitResults);
 
-    // Determine if the beam particle is track-like or shower-like
-    const recob::Track* thisTrack = pfpUtil.GetPFParticleTrack(*particle,evt,fPFParticleTag,fTrackerTag);
-    const recob::Shower* thisShower = pfpUtil.GetPFParticleShower(*particle,evt,fPFParticleTag,fShowerTag);
-    if( thisTrack ){
-      BeamTrackInfo(evt, thisTrack, clockData);
-    }
-    else if( thisShower ){
-      BeamShowerInfo(evt, thisShower);
-    }
+      // Determine if the beam particle is track-like or shower-like
+      const recob::Track* thisTrack = pfpUtil.GetPFParticleTrack(*particle,evt,fPFParticleTag,fTrackerTag);
+      const recob::Shower* thisShower = pfpUtil.GetPFParticleShower(*particle,evt,fPFParticleTag,fShowerTag);
+      if( thisTrack ){
+        BeamTrackInfo(evt, thisTrack, clockData);
+      }
+      else if( thisShower ){
+        BeamShowerInfo(evt, thisShower);
+      }
 
-    DaughterPFPInfo(evt, particle, clockData, hitResults);
-    BeamForcedTrackInfo(evt, particle);
+      DaughterPFPInfo(evt, particle, clockData, hitResults);
+      BeamForcedTrackInfo(evt, particle);
+    }
+    else
+      std::cout<<"Did not select any beam particle in this event"<<std::endl;
   }
 
 
