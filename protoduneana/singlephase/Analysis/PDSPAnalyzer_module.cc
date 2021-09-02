@@ -71,6 +71,7 @@
 
 // ROOT includes
 #include "TTree.h"
+#include "TF1.h"
 #include "TMath.h"
 #include "TVirtualFitter.h"
 #include "TPolyLine3D.h"
@@ -81,15 +82,19 @@
 namespace pduneana {
   class PDSPAnalyzer;
 
-  bool sort_IDEs( const sim::IDE * i1, const sim::IDE * i2){
-    return( i1->z < i2->z );
-  }
 
+  //Used to fit lines to sets of reconstructed hits in order to get
+  //directions
   double distance2(double x, double y, double z, double * p);
   void line(double t, double * p, double & x, double & y, double & z);
   void SumDistance2(int &, double *, double & sum, double * par, int);
   TVector3 FitLine(const std::vector<TVector3> & input);
 
+  //Used to create truth thin slices, though this is sort of 
+  //deprecated because IDEs get ate up
+  bool sort_IDEs( const sim::IDE * i1, const sim::IDE * i2){
+    return( i1->z < i2->z );
+  }
   std::map<int, std::vector<const sim::IDE*>> slice_IDEs(
       std::vector<const sim::IDE*> ides, double the_z0, double the_pitch,
       double true_endZ){
@@ -110,6 +115,8 @@ namespace pduneana {
     return results;
   }
 
+  
+  //To make auto-finding files easier for the dEdX template file
   TFile * OpenFile(const std::string filename) {
     TFile * theFile = 0x0;
     mf::LogInfo("pduneana::OpenFile") << "Searching for " << filename;
@@ -142,8 +149,8 @@ namespace pduneana {
     return theFile;
   }
 
+  //Struct to store CNN output
   struct cnnOutput2D{
-
     cnnOutput2D();
 
     double track;
@@ -153,6 +160,7 @@ namespace pduneana {
     size_t nHits;
   };
 
+  //Struct to handle calorimetry info more easily
   struct calo_point{
 
     calo_point();
@@ -180,6 +188,7 @@ namespace pduneana {
     double x, y, z;
   };
 
+  //Util to get CNN output
   cnnOutput2D GetCNNOutputFromPFParticle(
       const recob::PFParticle & part, const art::Event & evt,
       const anab::MVAReader<recob::Hit,4> & CNN_results,
@@ -187,9 +196,10 @@ namespace pduneana {
       std::string fPFParticleTag) {
 
     cnnOutput2D output;
-    const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits = pfpUtil.GetPFParticleHits_Ptrs( part, evt, fPFParticleTag );
+    const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits
+        = pfpUtil.GetPFParticleHits_Ptrs(part, evt, fPFParticleTag);
 
-    for( size_t h = 0; h < daughterPFP_hits.size(); ++h ){
+    for (size_t h = 0; h < daughterPFP_hits.size(); ++h) {
       std::array<float,4> cnn_out = CNN_results.getOutput( daughterPFP_hits[h] );
       output.track  += cnn_out[ CNN_results.getIndex("track") ];
       output.em     += cnn_out[ CNN_results.getIndex("em") ];
@@ -203,6 +213,7 @@ namespace pduneana {
   }
 
 
+  //Another CNN output util
   cnnOutput2D GetCNNOutputFromPFParticleFromPlane( const recob::PFParticle & part, const art::Event & evt, const anab::MVAReader<recob::Hit,4> & CNN_results,  protoana::ProtoDUNEPFParticleUtils & pfpUtil, std::string fPFParticleTag, size_t planeID ){
 
     cnnOutput2D output;
@@ -222,11 +233,13 @@ namespace pduneana {
   }
 }
 
+//Useful Geant4Reweight util methods
 using protoana::G4ReweightUtils::CreateRWTraj;
 using protoana::G4ReweightUtils::BuildHierarchy;
 using protoana::G4ReweightUtils::CreateNRWTrajs;
 using protoana::G4ReweightUtils::GetNTrajWeightFromSetPars;
 
+//Constructor for cnn struct
 pduneana::cnnOutput2D::cnnOutput2D() : track(0), em(0), michel(0), none(0), nHits(0) { }
 
 class pduneana::PDSPAnalyzer : public art::EDAnalyzer {
@@ -249,6 +262,7 @@ public:
   void endJob() override;
 
   void reset();
+  //Deprecated -- To be removed
   double lateralDist( TVector3 & n, TVector3 & x0, TVector3 & p );
 
 private:
@@ -454,7 +468,7 @@ private:
   std::vector<double> g4rw_full_primary_plus_sigma_weight;
   std::vector<double> g4rw_full_primary_minus_sigma_weight;
 
-  std::vector<std::vector<double>> g4rw_full_grid_weights;
+  std::vector<std::vector<double>> g4rw_full_grid_weights, g4rw_full_grid_coeffs;
   std::vector<std::vector<double>> g4rw_primary_grid_weights;
   std::vector<double> g4rw_primary_grid_pair_weights;
 
@@ -622,9 +636,7 @@ private:
   std::vector< double > reco_daughter_allTrack_startX, reco_daughter_allTrack_endX;
   std::vector< double > reco_daughter_allTrack_startY, reco_daughter_allTrack_endY;
   std::vector< double > reco_daughter_allTrack_startZ, reco_daughter_allTrack_endZ;
-  std::vector< double > reco_daughter_allTrack_dR;
   std::vector< double > reco_daughter_allTrack_len, reco_daughter_allTrack_alt_len;
-  std::vector< double > reco_daughter_allTrack_to_vertex;
 
   std::vector<double> reco_daughter_allTrack_vertex_michel_score;
   std::vector<int> reco_daughter_allTrack_vertex_nHits;
@@ -983,6 +995,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
   else {
     std::cout << "Found " << beamParticles.size() << " particles" << std::endl;
     // Get the reconstructed PFParticle tagged as beam by Pandora
+    // To do: check multiple particles
     const recob::PFParticle* particle = beamParticles.at(0);
     //////////////////////////////////////////////////////////////////
     
@@ -991,20 +1004,29 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     if( !evt.isRealData() ){
       BeamMatchInfo(evt, particle, true_beam_particle, clockData);
     }
+
+    //Get info from the PFP object identified as beam by pandora
     BeamPFPInfo(evt, particle, hitResults);
 
     // Determine if the beam particle is track-like or shower-like
     const recob::Track* thisTrack = pfpUtil.GetPFParticleTrack(*particle,evt,fPFParticleTag,fTrackerTag);
     const recob::Shower* thisShower = pfpUtil.GetPFParticleShower(*particle,evt,fPFParticleTag,fShowerTag);
     if( thisTrack ){
+      //Get reconstructed beam track info
       BeamTrackInfo(evt, thisTrack, clockData);
     }
     else if( thisShower ){
+      //Get reconstructed beam shower info 
       BeamShowerInfo(evt, thisShower);
     }
 
+    //Get info from all PFPs associated as daughters to the primary particle
     DaughterPFPInfo(evt, particle, clockData, hitResults);
+
+    //Gets info from forcing pandora to fit a track to the beam PFP regardless
+    //of the BDT score
     BeamForcedTrackInfo(evt, particle);
+    //To do: BeamForcedShowerInfo?
   }
 
 
@@ -1015,8 +1037,11 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
 
 
   //New geant4reweight stuff
+  //To do: put in its own function
   if (!evt.isRealData() && fDoReweight) {
     if (fVerbose) std::cout << "Doing reweight" << std::endl;
+
+    //Doing reweighting if the primary is a piplus
     if (true_beam_PDG == 211) {
       G4ReweightTraj theTraj(true_beam_ID, true_beam_PDG, 0, event, {0,0});
       bool created = CreateRWTraj(*true_beam_particle, plist,
@@ -1067,41 +1092,6 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       }
 
       //Weighting according to the full heirarchy
-      /*
-      std::deque<int> to_create = {true_beam_ID};
-      std::vector<std::vector<G4ReweightTraj *>> full_created;
-      while (to_create.size()) {
-        auto part = plist[to_create[0]];
-        std::vector<G4ReweightTraj *> temp_trajs =
-            CreateNRWTrajs(*part, plist, fGeometryService,
-                           event, true);
-        std::cout << "size: " << temp_trajs.size() << std::endl;
-        for (int i = 0; i < part->NumberDaughters(); ++i) {
-          int daughter_ID = part->Daughter(i);
-          auto d_part = plist[daughter_ID];
-          if ((d_part->PdgCode() == 2212) || (d_part->PdgCode() == 2112) ||
-              (abs(d_part->PdgCode()) == 211)) {
-            to_create.push_back(daughter_ID);
-            std::cout << "Adding daughter " << to_create.back() << std::endl;
-          }
-        }
-
-
-        if (temp_trajs.size()) {
-          auto last_traj = temp_trajs.back();
-          std::cout << "created " << last_traj->GetTrackID() << " " <<
-                       last_traj->GetPDG() << std::endl;
-
-          if (temp_trajs[0]->GetPDG() == 211) {
-            full_created.push_back(temp_trajs);
-          }
-        }
-        to_create.pop_front();
-      }
-      std::cout << "Created " << full_created.size() << " reweightable pi+"
-                << std::endl;
-                */
-      
       std::vector<std::vector<G4ReweightTraj *>> new_full_created
           = BuildHierarchy(true_beam_ID, 211, plist, fGeometryService,
                            event, "LAr", true);
@@ -1140,6 +1130,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       for (size_t i = 0; i < ParSet.size(); ++i) {
         g4rw_primary_grid_weights.push_back(std::vector<double>());
         g4rw_full_grid_weights.push_back(std::vector<double>());
+        g4rw_full_grid_coeffs.push_back(std::vector<double>());
         for (size_t j = 0; j < fGridPoints.size(); ++j) {
           input[i] = fGridPoints[j];
           bool set_values = MultiRW->SetAllParameterValues(input);
@@ -1165,6 +1156,16 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
           }
         }
 
+        //Fit a polynomial to make the weighting continuous (i.e. for in fitting)
+        if (new_full_created.size()) {
+          TGraph gr(fGridPoints.size(), &fGridPoints[0], &g4rw_full_grid_weights.back()[0]);
+          gr.Fit("pol9", "Q");
+          TF1 * fit_func = (TF1*)gr.GetFunction("pol9");
+          for (int j = 0; j < fit_func->GetNpar(); ++j) {
+            g4rw_full_grid_coeffs.back().push_back(fit_func->GetParameter(j));
+          }
+        }
+
         //Reset to 1.
         input[i] = 1.;
       }
@@ -1182,6 +1183,8 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       }
     }
   }
+
+  //Weighting for if primary is proton
   if (!evt.isRealData() && fDoProtReweight && true_beam_PDG == 2212) {
     std::vector<G4ReweightTraj *> trajs = CreateNRWTrajs(
         *true_beam_particle, plist,
@@ -1208,6 +1211,8 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     }
   }
 
+  //New style of weighting to get full hierarchy (i.e. from full event not 
+  //just from the primary + downstreams) -- currently for piplus and proton
   if (!evt.isRealData()) {
     std::vector<std::vector<G4ReweightTraj *>> piplus_hierarchy 
         = BuildHierarchy(true_beam_ID, 211, plist, fGeometryService,
@@ -1272,36 +1277,6 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       //Reset to 1.
       fake_data_input[i] = 1.;
     }
-    /*
-    std::vector<std::vector<G4ReweightTraj *>> piminus_hierarchy 
-        = BuildHierarchy(true_beam_ID, -211, plist, fGeometryService,
-                         event, true);
-    std::vector<double> piminus_input(PiMinusParSet.size(), 1.);
-    for (size_t i = 0; i < PiMinusParSet.size(); ++i) {
-      g4rw_full_grid_piminus_weights.push_back(std::vector<double>());
-      for (size_t j = 0; j < fGridPoints.size(); ++j) {
-        piminus_input[i] = fGridPoints[j];
-        bool set_values = PiMinusMultiRW->SetAllParameterValues(piminus_input);
-        if (set_values) {
-          if (piminus_hierarchy.size()) {
-            std::vector<G4ReweightTraj *> & init_trajs = piminus_hierarchy[0];
-            g4rw_full_grid_piminus_weights.back().push_back(
-                GetNTrajWeightFromSetPars(init_trajs, *PiMinusMultiRW)); 
-            for (size_t k = 1; k < piminus_hierarchy.size(); ++k) {
-              std::vector<G4ReweightTraj *> & temp_trajs = piminus_hierarchy[k];
-              g4rw_full_grid_piminus_weights.back().back()
-                  *= GetNTrajWeightFromSetPars(temp_trajs, *PiMinusMultiRW);
-            }
-          }
-        }
-        else {
-          std::string message = "PiMinus: Could not Get N Traj Weight from set pars";
-          throw std::runtime_error(message);
-        }
-      }
-      piminus_input[i] = 1.;
-    }
-    */
 
     std::vector<std::vector<G4ReweightTraj *>> proton_hierarchy 
         = BuildHierarchy(true_beam_ID, 2212, plist, fGeometryService,
@@ -1537,11 +1512,9 @@ void pduneana::PDSPAnalyzer::beginJob()
   fTree->Branch("reco_daughter_allTrack_endX", &reco_daughter_allTrack_endX);
   fTree->Branch("reco_daughter_allTrack_endY", &reco_daughter_allTrack_endY);
   fTree->Branch("reco_daughter_allTrack_endZ", &reco_daughter_allTrack_endZ);
-  fTree->Branch("reco_daughter_allTrack_dR", &reco_daughter_allTrack_dR);
   fTree->Branch("reco_daughter_allTrack_calo_X", &reco_daughter_allTrack_calo_X);
   fTree->Branch("reco_daughter_allTrack_calo_Y", &reco_daughter_allTrack_calo_Y);
   fTree->Branch("reco_daughter_allTrack_calo_Z", &reco_daughter_allTrack_calo_Z);
-  fTree->Branch("reco_daughter_allTrack_to_vertex", &reco_daughter_allTrack_to_vertex);
 
   fTree->Branch("reco_daughter_allTrack_vertex_michel_score",
                 &reco_daughter_allTrack_vertex_michel_score);
@@ -1814,6 +1787,7 @@ void pduneana::PDSPAnalyzer::beginJob()
   fTree->Branch("g4rw_full_primary_minus_sigma_weight",
                 &g4rw_full_primary_minus_sigma_weight);
   fTree->Branch("g4rw_full_grid_weights", &g4rw_full_grid_weights);
+  fTree->Branch("g4rw_full_grid_coeffs", &g4rw_full_grid_coeffs);
   fTree->Branch("g4rw_full_grid_piplus_weights",  &g4rw_full_grid_piplus_weights);
   fTree->Branch("g4rw_full_grid_piplus_weights_fake_data",  &g4rw_full_grid_piplus_weights_fake_data);
   fTree->Branch("g4rw_full_grid_piminus_weights", &g4rw_full_grid_piminus_weights);
@@ -2269,11 +2243,9 @@ void pduneana::PDSPAnalyzer::reset()
   reco_daughter_allTrack_endX.clear();
   reco_daughter_allTrack_endY.clear();
   reco_daughter_allTrack_endZ.clear();
-  reco_daughter_allTrack_dR.clear();
   reco_daughter_allTrack_calo_X.clear();
   reco_daughter_allTrack_calo_Y.clear();
   reco_daughter_allTrack_calo_Z.clear();
-  reco_daughter_allTrack_to_vertex.clear();
   reco_daughter_allTrack_vertex_michel_score.clear();
   reco_daughter_allTrack_vertex_nHits.clear();
 
@@ -2313,6 +2285,7 @@ void pduneana::PDSPAnalyzer::reset()
   g4rw_full_primary_plus_sigma_weight.clear();
   g4rw_full_primary_minus_sigma_weight.clear();
   g4rw_full_grid_weights.clear();
+  g4rw_full_grid_coeffs.clear();
   g4rw_full_grid_piplus_weights.clear();
   g4rw_full_grid_piplus_weights_fake_data.clear();
   g4rw_full_grid_piminus_weights.clear();
@@ -2325,6 +2298,7 @@ void pduneana::PDSPAnalyzer::reset()
 void pduneana::PDSPAnalyzer::BeamPFPInfo(
     const art::Event & evt, const recob::PFParticle* particle,
     anab::MVAReader<recob::Hit,4> * hitResults) {
+
   //Get CNN output for the beam
   reco_beam_PFP_ID = particle->Self();
   const std::vector< art::Ptr< recob::Hit > > beamPFP_hits = pfpUtil.GetPFParticleHits_Ptrs( *particle, evt, fPFParticleTag );
@@ -2362,6 +2336,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
     detinfo::DetectorClocksData const& clockData) {
   auto allHits = evt.getValidHandle<std::vector<recob::Hit> >(fHitTag);
 
+  //Ajib's michel identifier
   if (!fSkipMVA) {
     std::pair<double, int> vertex_michel_score =
         trackUtil.GetVertexMichelScore(*thisTrack, evt, fTrackerTag, fHitTag/*,
@@ -2377,12 +2352,15 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
   if (fVerbose) std::cout << "Beam particle is track-like " << thisTrack->ID() << std::endl;
   reco_beam_type = 13;
 
+  //Flag to tell if it passes the beam cuts
+  //-- should probably take out or make it more flexible for other runs
   reco_beam_passes_beam_cuts = beam_cuts.IsBeamlike( *thisTrack, evt, "1" );
   if (fVerbose) std::cout << "Beam Cuts " << reco_beam_passes_beam_cuts << std::endl;
 
 
   reco_beam_trackID = thisTrack->ID();
 
+  //Using default pandora info -- not SCE-corrected
   reco_beam_startX = thisTrack->Trajectory().Start().X();
   reco_beam_startY = thisTrack->Trajectory().Start().Y();
   reco_beam_startZ = thisTrack->Trajectory().Start().Z();
@@ -2423,6 +2401,8 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
 
   reco_beam_len  = thisTrack->Length();
   trkf::TrackMomentumCalculator track_p_calc;
+  
+  //Calculates momentum according to CSDA range
   reco_beam_momByRange_proton = track_p_calc.GetTrackMomentum(
       thisTrack->Length(), 2212);
   reco_beam_momByRange_muon = track_p_calc.GetTrackMomentum(
@@ -2430,6 +2410,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
   ////////////////////////////////////////////////////////////////
 
 
+  //To do: remove
   std::map< const recob::Hit *, int > hitsToSlices;
   std::map< int, std::vector< const recob::Hit * > > slicesToHits;
 
@@ -2456,23 +2437,21 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
     }
 
     //This creates the slices for the thin slice method.
+    //To do: remove this
     int slice = std::floor((z - fZ0) / fPitch);
     hitsToSlices[theHit] = slice;
     slicesToHits[slice].push_back(theHit);
-
-    //if (z > max_Z){
-    //  max_Z = z;
-    //  max_X = y;
-    //  max_Y = x;
-    //}
   }
 
   //Last point is the vertex slice
+  //To do: remove
   reco_beam_vertex_slice = slicesToHits.rbegin()->first;
 
   //Primary Track Calorimetry
+  //SCE-corrected
   auto calo = trackUtil.GetRecoTrackCalorimetry(*thisTrack, evt, fTrackerTag,
                                                 fCalorimetryTagSCE);
+  //Get the correct plane (collection) because it's not always the same
   bool found_calo = false;
   size_t index = 0;
   for ( index = 0; index < calo.size(); ++index) {
@@ -2483,6 +2462,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
   }
 
   if (found_calo) {
+    //Using SCE-corrected (from calorimetry) to calculate momentum by range
     reco_beam_momByRange_alt_proton = track_p_calc.GetTrackMomentum(
         calo[index].Range(), 2212);
     reco_beam_momByRange_alt_muon = track_p_calc.GetTrackMomentum(
@@ -2551,7 +2531,12 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
     std::sort(theXYZPoints.begin(), theXYZPoints.end(), [](auto a, auto b)
         {return (a.Z() < b.Z());});
 
-    //std::cout << theXYZPoints.size() << std:;endl;
+    //Getting position + direction from SCE-corrected calorimetry
+    //Attempt to use a few different ways to do this
+    //
+    //i.e. just gitting the line from start to end
+    //or the line between first two points
+    //or fitting a line to the first 3-4 points
     if (theXYZPoints.size()) {
       reco_beam_calo_startX = theXYZPoints[0].X();
       reco_beam_calo_startY = theXYZPoints[0].Y();
@@ -2721,6 +2706,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
     }
     ////////////////////////////////////////////
 
+    //Get the chi2-based PID for the SCE-corrected beam track
     std::pair< double, int > pid_chi2_ndof = trackUtil.Chi2PID( reco_beam_calibrated_dEdX_SCE, reco_beam_resRange_SCE, templates[ 2212 ] );
     std::cout << "got chi2" << std::endl;
     reco_beam_Chi2_proton = pid_chi2_ndof.first;
@@ -2730,7 +2716,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
       std::cout << "Calo check: " << reco_beam_calibrated_dEdX_SCE.size() << " " <<
                    reco_beam_TrkPitch_SCE.size() << std::endl;
     std::vector< calo_point > reco_beam_calo_points;
-    //Doing thin slice
+    //Doing thin slice method
     if (reco_beam_calibrated_dEdX_SCE.size() &&
         reco_beam_calibrated_dEdX_SCE.size() == reco_beam_TrkPitch_SCE.size() &&
         reco_beam_calibrated_dEdX_SCE.size() == reco_beam_calo_wire.size()) {
@@ -2776,6 +2762,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
       }
 
       //Get the initial Energy KE
+      //Assumes it's a pion -- maybe make configurable To do
       //double mass = 0.;
       double init_KE = 0.;
       //std::cout << "Has BI? " << fMCHasBI << " " << evt.isRealData() << std::endl;
@@ -2906,6 +2893,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
   }
 }
 
+//info from reconstructed beam shower info
 void pduneana::PDSPAnalyzer::BeamShowerInfo(const art::Event & evt, const recob::Shower* thisShower) {
   reco_beam_type = 11;
   reco_beam_trackID = thisShower->ID();
@@ -2956,6 +2944,7 @@ void pduneana::PDSPAnalyzer::BeamShowerInfo(const art::Event & evt, const recob:
 }
 
 
+//Info from the true beam from event only in MC
 void pduneana::PDSPAnalyzer::TrueBeamInfo(
     const art::Event & evt, const simb::MCParticle* true_beam_particle,
     detinfo::DetectorClocksData const& clockData,
@@ -2965,7 +2954,6 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
   auto pfpVec
       = evt.getValidHandle<std::vector<recob::PFParticle>>(fPFParticleTag);
   true_beam_endProcess = true_beam_particle->EndProcess();
-
   true_beam_PDG         = true_beam_particle->PdgCode();
   true_beam_mass        = true_beam_particle->Mass()*1.e3;
   true_beam_ID          = true_beam_particle->TrackId();
@@ -3010,6 +2998,9 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
   true_beam_startDirZ  = true_beam_startPz / true_beam_startP;
 
   true_beam_nHits = truthUtil.GetMCParticleHits( clockData, *true_beam_particle, evt, fHitTag ).size();
+
+  //Checking all reconstructed objects to see what the true beam particle
+  //contributed to
   true_beam_reco_byHits_PFP_ID.push_back( std::vector< int >() );
   true_beam_reco_byHits_PFP_nHits.push_back( std::vector< int >() );
   true_beam_reco_byHits_allTrack_ID.push_back( std::vector< int >() );
@@ -3104,10 +3095,13 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
     true_beam_processes.push_back( true_beam_endProcess );
   }
 
+
+  //Looking at info from IDEs -- simulated energy depositions
+  //To do: might remove because the IDEs are 'eaten up' due to various
+  //changes in the simulation. So their original intent
+  //(determining slices for thin slice method) was made useless
   if (fVerbose) std::cout << "Looking at IDEs" << std::endl;
-
   auto view2_IDEs = bt_serv->TrackIdToSimIDEs_Ps( true_beam_ID, geo::View_t(2) );
-
   if (fVerbose) std::cout << "N view2 IDEs: " << view2_IDEs.size() << std::endl;
 
   true_beam_IDE_totalDep = 0.;
@@ -3406,6 +3400,7 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
       }
     }
 
+    //Look another level down
     for( int j = 0; j < part->NumberDaughters(); ++j ){
       int grand_daughter_ID = part->Daughter(j);
       auto grand_daughter_part = plist[ grand_daughter_ID ];
@@ -3419,6 +3414,8 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
 
 
 
+    //Same dumb cross checking of true particles to reconstructed objects
+    //To do: might remove
     true_beam_daughter_reco_byHits_PFP_ID.push_back( std::vector<int>() );
     true_beam_daughter_reco_byHits_PFP_nHits.push_back( std::vector<int>() );
     true_beam_daughter_reco_byHits_PFP_trackScore.push_back( std::vector<double>() );
@@ -3522,6 +3519,9 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
 
 void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
   std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
+
+  //Get beam instrumentation info
+  //Works for both MC and data, can probably merge these (To do)
   if (evt.isRealData()) {
     auto beamHandle
         = evt.getValidHandle<std::vector<beam::ProtoDUNEBeamEvent>>(
@@ -3550,6 +3550,7 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
     }
   }
 
+  //High level info about the beam trigger
   const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0)); 
   beam_inst_trigger = beamEvent.GetTimingTrigger();
   if (evt.isRealData() && !fBeamlineUtils.IsGoodBeamlineTrigger(evt)) {
@@ -3558,7 +3559,10 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
     return;
   }
 
+  //Number of tracks reconstructed in the final four fiber monitors
   int nTracks = beamEvent.GetBeamTracks().size();
+
+  //Momentum reconstructed from spectrometer
   std::vector< double > momenta = beamEvent.GetRecoBeamMomenta();
   int nMomenta = momenta.size();
 
@@ -3573,6 +3577,7 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
     if (fVerbose) std::cout << "reco P " << beam_inst_P << std::endl;
   }
 
+  //Time of flight + channel combinations
   const std::vector<double> the_tofs = beamEvent.GetTOFs();
   const std::vector<int> the_chans = beamEvent.GetTOFChans();
   for (size_t iTOF = 0; iTOF < the_tofs.size(); ++iTOF) {
@@ -3580,6 +3585,8 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
     beam_inst_TOF_Chan.push_back(the_chans[iTOF]);
   }
 
+  //position from the projected track into the TPC -- just using the first
+  //index
   if( nTracks > 0 ){
     beam_inst_X = beamEvent.GetBeamTracks()[0].Trajectory().End().X();
     beam_inst_Y = beamEvent.GetBeamTracks()[0].Trajectory().End().Y();
@@ -3593,32 +3600,42 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
   beam_inst_nTracks = nTracks;
   beam_inst_nMomenta = nMomenta;
 
+  //beamline PID 
   if (evt.isRealData()) {
     std::vector< int > pdg_cands = fBeamlineUtils.GetPID( beamEvent, 1. );
     beam_inst_PDG_candidates.insert( beam_inst_PDG_candidates.end(), pdg_cands.begin(), pdg_cands.end() );
   }
 
+  //number of fibers struck in the spectrometer monitors
   beam_inst_nFibersP1 = beamEvent.GetActiveFibers( "XBPF022697" ).size();
   beam_inst_nFibersP2 = beamEvent.GetActiveFibers( "XBPF022701" ).size();
   beam_inst_nFibersP3 = beamEvent.GetActiveFibers( "XBPF022702" ).size();
 }
 
+//Reconstructed info from all of the daughter PFP objects associated to the beam particle
 void pduneana::PDSPAnalyzer::DaughterPFPInfo(
     const art::Event & evt, const recob::PFParticle* particle,
     detinfo::DetectorClocksData const& clockData,
     anab::MVAReader<recob::Hit,4> * hitResults) {
 
+  //Get all PFParticles in the event
   auto pfpVec
       = evt.getValidHandle<std::vector<recob::PFParticle>>(fPFParticleTag);
 
+  //Used for shower info later
   auto const detProp
       = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(
           evt, clockData);
+
+  //Util for momentum by range calculation
   trkf::TrackMomentumCalculator track_p_calc;
+
+  //Iterate over all daughters
   for (size_t daughterID : particle->Daughters()) {
     const recob::PFParticle * daughterPFP = &(pfpVec->at( daughterID ));
     reco_daughter_PFP_ID.push_back( daughterID );
 
+    //Get hits info from daughter pfp
     const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits = pfpUtil.GetPFParticleHits_Ptrs( *daughterPFP, evt, fPFParticleTag );
     if (fVerbose) std::cout << "Got " << daughterPFP_hits.size() << " hits from daughter " << daughterID << std::endl;
 
@@ -3631,6 +3648,7 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
     }
     reco_daughter_PFP_nHits_collection.push_back(nHits_coll);
 
+    //Get CNN output for the daughter particle
     if (!fSkipMVA) {
       cnnOutput2D theCNNResults = GetCNNOutputFromPFParticle(
           *daughterPFP, evt, *hitResults, pfpUtil, fPFParticleTag);
@@ -3671,11 +3689,12 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
       reco_daughter_PFP_michelScore_collection.push_back( -999. );
     }
 
+    //Matching by hits to get true daughter info
     if( !evt.isRealData() ){
-      //Matching by hits
       DaughterMatchInfo(evt, daughterPFP, clockData);
     }
 
+    //If it exists (might not need this check anymore), get the forced tracking from pandora
     try{
       const recob::Track* pandora2Track = pfpUtil.GetPFParticleTrack( *daughterPFP, evt, fPFParticleTag, "pandora2Track" );
       if (fVerbose) std::cout << "pandora2 track: " << pandora2Track << std::endl;
@@ -3685,6 +3704,7 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
 
         std::cout << "Getting calo for " << pandora2Track->ID() << std::endl;
 
+        //Calorimetry info
         auto dummy_caloSCE =
             trackUtil.GetRecoTrackCalorimetry(
                 *pandora2Track, evt, "pandora2Track", fPandora2CaloSCE);
@@ -3715,8 +3735,13 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
           auto dummy_Range_SCE = dummy_caloSCE[index].ResidualRange();
           auto theXYZPoints = dummy_caloSCE[index].XYZ();
 
-          reco_daughter_allTrack_momByRange_alt_proton.push_back( track_p_calc.GetTrackMomentum( dummy_caloSCE[index].Range(), 2212 ) );
-          reco_daughter_allTrack_momByRange_alt_muon.push_back(   track_p_calc.GetTrackMomentum( dummy_caloSCE[index].Range(), 13  ) );
+          //Momentum by range calculation using SCE corrected info
+          reco_daughter_allTrack_momByRange_alt_proton.push_back(
+              track_p_calc.GetTrackMomentum(dummy_caloSCE[index].Range(),
+              2212));
+          reco_daughter_allTrack_momByRange_alt_muon.push_back(
+              track_p_calc.GetTrackMomentum(dummy_caloSCE[index].Range(),
+              13));
           reco_daughter_allTrack_alt_len.push_back(    dummy_caloSCE[index].Range() );
 
 
@@ -3762,6 +3787,7 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
             reco_daughter_allTrack_EField_SCE.back().push_back(ef);
           }
 
+          //Chi2 based PID
           std::pair<double, int> this_chi2_ndof = trackUtil.Chi2PID(
               reco_daughter_allTrack_calibrated_dEdX_SCE.back(),
               reco_daughter_allTrack_resRange_SCE.back(), templates[2212]);
@@ -3911,6 +3937,7 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         }
         //////////////////////////////////////
 
+        //Spatial + direction stuff from Pandora
         reco_daughter_allTrack_Theta.push_back(  pandora2Track->Theta() );
         reco_daughter_allTrack_Phi.push_back(  pandora2Track->Phi() );
 
@@ -3923,7 +3950,7 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         reco_daughter_allTrack_endZ.push_back(   pandora2Track->Trajectory().End().Z() );
 
         std::cout << "Getting michel" << std::endl;
-        //Using new michel tagging
+        //Using new michel tagging from Ajib
         if (!fSkipMVA) {
           std::pair<double, int> vertex_results =
               trackUtil.GetVertexMichelScore(
@@ -3944,88 +3971,12 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         }
 
         if (fVerbose) std::cout << "pandora2Length " << pandora2Track->Length() << std::endl;
+        //Another momentum by range calculation, but using the SCE-uncorrected info
         reco_daughter_allTrack_momByRange_proton.push_back( track_p_calc.GetTrackMomentum( pandora2Track->Length(), 2212 ) );
         reco_daughter_allTrack_momByRange_muon.push_back(   track_p_calc.GetTrackMomentum( pandora2Track->Length(), 13  ) );
 
-        //Match the daughters to a slice
-        //First, check whether the start or end of the daughter track are closer
-        /*
-        double d_startX = pandora2Track->Trajectory().Start().X();
-        double d_startY = pandora2Track->Trajectory().Start().Y();
-        double d_startZ = pandora2Track->Trajectory().Start().Z();
-
-        double d_endX = pandora2Track->Trajectory().End().X();
-        double d_endY = pandora2Track->Trajectory().End().Y();
-        double d_endZ = pandora2Track->Trajectory().End().Z();
-
-        double to_start_of_daughter = sqrt(
-          ( d_startX - max_X ) * ( d_startX - max_X ) +
-          ( d_startY - max_Y ) * ( d_startY - max_Y ) +
-          ( d_startZ - max_Z ) * ( d_startZ - max_Z )
-        );
-        double to_end_of_daughter = sqrt(
-          ( d_endX - max_X ) * ( d_endX - max_X ) +
-          ( d_endY - max_Y ) * ( d_endY - max_Y ) +
-          ( d_endZ - max_Z ) * ( d_endZ - max_Z )
-        );
-
-        if ( to_end_of_daughter < to_start_of_daughter ){
-          reco_daughter_allTrack_to_vertex.push_back( to_end_of_daughter );
-        }
-        else{
-          reco_daughter_allTrack_to_vertex.push_back( to_start_of_daughter );
-        }
-
-        double dr_start = std::numeric_limits<double>::max();
-        double dr_end = std::numeric_limits<double>::max();
-
-        //size_t min_start_index = 0;
-        //size_t min_end_index = 0;
-
-        for( size_t j = 0; j < thisTrack->NumberTrajectoryPoints(); ++j ){
-          double X = thisTrack->Trajectory().LocationAtPoint(j).X();
-          double Y = thisTrack->Trajectory().LocationAtPoint(j).Y();
-          double Z = thisTrack->Trajectory().LocationAtPoint(j).Z();
-
-          double dr = sqrt(
-            ( d_startX - X ) * ( d_startX - X ) +
-            ( d_startY - Y ) * ( d_startY - Y ) +
-            ( d_startZ - Z ) * ( d_startZ - Z )
-          );
-
-          if( dr < dr_start ){
-            dr_start = dr;
-            //min_start_index = j;
-          }
-
-          dr = sqrt(
-            ( d_endX - X ) * ( d_endX - X ) +
-            ( d_endY - Y ) * ( d_endY - Y ) +
-            ( d_endZ - Z ) * ( d_endZ - Z )
-          );
-
-          if( dr < dr_end ){
-            dr_end = dr;
-            //min_end_index = j;
-          }
-
-        }
-
-        //size_t min_index = 0;
-        if( dr_end < dr_start ){
-          //min_index = min_end_index;
-          reco_daughter_allTrack_dR.push_back( dr_end );
-        }
-        else{
-          //min_index = min_start_index;
-          reco_daughter_allTrack_dR.push_back( dr_start );
-        }
-        */
-        reco_daughter_allTrack_dR.push_back(-999.);
-        reco_daughter_allTrack_to_vertex.push_back(-999.);
-
       }
-      else{
+      else{  //Defaults
         reco_daughter_allTrack_ID.push_back( -999 );
         reco_daughter_allTrack_resRange_SCE.push_back( std::vector<double>() );
         reco_daughter_allTrack_dEdX_SCE.push_back( std::vector<double>() );
@@ -4072,8 +4023,6 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         reco_daughter_allTrack_endX.push_back(   -999. );
         reco_daughter_allTrack_endY.push_back(   -999. );
         reco_daughter_allTrack_endZ.push_back(   -999. );
-        reco_daughter_allTrack_to_vertex.push_back( -999. );
-        reco_daughter_allTrack_dR.push_back( -999. );
         reco_daughter_allTrack_momByRange_proton.push_back(-999.);
         reco_daughter_allTrack_momByRange_muon.push_back(-999.);
 
@@ -4090,6 +4039,7 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
     }
 
 
+    //If it exists (might not need this check anymore), get the forced shower object from pandora
     try{
       const recob::Shower* pandora2Shower = pfpUtil.GetPFParticleShower( *daughterPFP, evt, fPFParticleTag, "pandora2Shower" );
       if (fVerbose) std::cout << "pandora2 shower: " << pandora2Shower << std::endl;
@@ -4276,6 +4226,8 @@ void pduneana::PDSPAnalyzer::BeamMatchInfo(
   }
 }
 
+
+//Gets true info matched to the reconstructed daughter PFPs
 void pduneana::PDSPAnalyzer::DaughterMatchInfo(
     const art::Event & evt, const recob::PFParticle * daughterPFP,
     detinfo::DetectorClocksData const& clockData) {
@@ -4379,6 +4331,7 @@ void pduneana::PDSPAnalyzer::DaughterMatchInfo(
 
 }
 
+//Info from the forced pandora tracking applied to the beam PFParticle
 void pduneana::PDSPAnalyzer::BeamForcedTrackInfo(
     const art::Event & evt, const recob::PFParticle * particle) {
   try{

@@ -230,6 +230,7 @@ int main(int argc, char ** argv){
   std::string fcl_file;
   std::string output_file;
   std::string mc_file, data_file;
+  bool found_mc = false, found_data = false;
   // Options to run
   for (int iArg = 1; iArg < argc; iArg++) {
     if (!strcasecmp(argv[iArg],"-c")) {
@@ -237,9 +238,11 @@ int main(int argc, char ** argv){
     }
     if (!strcasecmp(argv[iArg],"-m")) {
      mc_file = argv[++iArg];
+     found_mc = true;
     }
     if (!strcasecmp(argv[iArg],"-d")) {
      data_file = argv[++iArg];
+     found_data = true;
     }
     if (!strcasecmp(argv[iArg],"-o")) {
       output_file = argv[++iArg];
@@ -269,24 +272,29 @@ int main(int argc, char ** argv){
   if (pset.get<bool>("UseMT"))
     ROOT::EnableImplicitMT(4);
 
-  ROOT::RDataFrame frame(tree_name, mc_file);
-  std::cout << "Calling DefineMC" << std::endl;
-  auto mc = DefineMC(frame, pset);
-  std::cout << "Snapshotting" << std::endl;
-  auto time0 = std::chrono::high_resolution_clock::now();
-  mc.Snapshot(tree_name, "eventSelection_mc_all.root");
-  auto time1 = std::chrono::high_resolution_clock::now();
-  std::cout << "Time: " <<
-               std::chrono::duration_cast<std::chrono::seconds>(time1 - time0).count() <<
-               std::endl;
+  if (found_mc) {
+    ROOT::RDataFrame frame(tree_name, mc_file);
+    std::cout << "Calling DefineMC" << std::endl;
+    auto mc = DefineMC(frame, pset);
+    std::cout << "Snapshotting" << std::endl;
+    auto time0 = std::chrono::high_resolution_clock::now();
+    mc.Snapshot(tree_name, "eventSelection_mc_all.root");
+    auto time1 = std::chrono::high_resolution_clock::now();
+    std::cout << "Time: " <<
+                 std::chrono::duration_cast<std::chrono::seconds>(time1 - time0).count() <<
+                 std::endl;
+  
+  }
 
-  ROOT::RDataFrame data_frame(tree_name, data_file);
-  std::cout << "Calling DefineData" << std::endl;
-  auto data = DefineData(data_frame, pset);
-  std::cout << "Snapshotting" << std::endl;
-  data.Snapshot(tree_name, "eventSelection_data_all.root");
-  data = data.Filter("passBeamQuality");
-  data.Snapshot(tree_name, "eventSelection_data_BeamQuality.root");
+  if (found_data) {
+    ROOT::RDataFrame data_frame(tree_name, data_file);
+    std::cout << "Calling DefineData" << std::endl;
+    auto data = DefineData(data_frame, pset);
+    std::cout << "Snapshotting" << std::endl;
+    data.Snapshot(tree_name, "eventSelection_data_all.root");
+    data = data.Filter("passBeamQuality");
+    data.Snapshot(tree_name, "eventSelection_data_BeamQuality.root");
+  }
 
   return 0;
 }

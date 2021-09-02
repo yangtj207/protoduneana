@@ -109,7 +109,6 @@ Systematics: [
   @local::G4RWSysts.g4rw_DCex,
   @local::G4RWSysts.g4rw_proton,
   @local::SystematicsList.beam_shift,
-#  @local::SystematicsList.beam_shift_spline,
   @local::SystematicsList.ediv_weight,
   @local::SystematicsList.no_track_weight,
   @local::SystematicsList.beam_cut_weight
@@ -125,7 +124,6 @@ CovarianceBins: [
   ["g4rw_proton", 5],
   ["ediv_weight", 6],
   ["beam_shift", 7],
-  #["beam_shift_spline", 7],
   ["no_track_weight", 8],
   ["beam_cut_weight", 9]
 ]
@@ -147,8 +145,8 @@ Selections: [
     #BinLabels: [["0 - 150", "150 - 300", "300 - 350", "350 - 400", "400 - 450", "450 - 500",
     #             "500 - 550", "550 - 600", "600 - 650", "650 - 700", "700 - 750",
     #             "750 - 800", "800 - 850", "850 - 900", "900 - 950", "950 - 1000", "1000 - 1200"]]
-    RecoBins: [[0., 200., 400., 500., 600., 800., 1200.]]
-    BinLabels: [["0 - 200", "200 - 400", "400 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
+    RecoBins: [[0., 400., 500., 600., 800., 1200.]]
+    BinLabels: [["0 - 400", "400 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
     AxisTitles: ["Reconstructed KE (MeV)"]
   },
   {
@@ -160,8 +158,8 @@ Selections: [
     #BinLabels: [["0 - 300", "300 - 350", "350 - 400", "400 - 450", "450 - 500",
     #             "500 - 550", "550 - 600", "600 - 650", "650 - 700", "700 - 750",
     #             "750 - 800", "800 - 850", "850 - 900", "900 - 950", "950 - 1000", "1000 - 1200"]]
-    RecoBins: [[0., 400., 500., 600., 800., 1200.]]
-    BinLabels: [["0 - 400", "400 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
+    RecoBins: [[0., 500., 600., 800., 1200.]]
+    BinLabels: [["0 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
     AxisTitles: ["Reconstructed KE (MeV)"]
   } ,
   {
@@ -179,7 +177,8 @@ Selections: [
     Name: "APA2"
     ID: 4
     #RecoBins: [[222, 275, 325, 375, 425, 580]]
-    RecoBins: [[222, 275, 580]]
+    #RecoBins: [[222, 275, 580]]
+    RecoBins: [[222, 234, 580]]
     AxisTitles: ["Reconstructed End Z (cm)"]
   },
   {
@@ -322,9 +321,9 @@ SplitMC: false
 DoFakeData: false 
 FluctuateStats: false 
 DoThrows: true 
-NThrows: 1000
+NThrows: 10 #00
 DoScans: false 
-RunHesse: false 
+RunHesse: true
 Do1DShifts: true
 DoSysts: true 
 MaxRethrows: 1000

@@ -6,6 +6,7 @@
 #include <map>
 
 #include "TTree.h"
+#include "TArrayD.h"
 #include "TFile.h"
 #include "THStack.h"
 #include "Math/Factory.h"
@@ -66,6 +67,7 @@ class PDSPThinSliceFitter {
   void BuildDataFromToy();
   double CalcChi2SystTerm();
   void MakeThrowsTree(TTree & tree, std::vector<double> & branches);
+  //void MakeThrowsArrays(std::vector<TVectorD *> & arrays);
 
   std::vector<double> GetBestFitParsVec();
 

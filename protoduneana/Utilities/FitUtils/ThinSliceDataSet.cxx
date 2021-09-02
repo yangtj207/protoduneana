@@ -217,6 +217,7 @@ void protoana::ThinSliceDataSet::GenerateStatFluctuation() {
     }
 
     //bool good = true;
+    /*
     double new_total = 0.;
     for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
       for (int i = 1; i <= it->second->GetNbinsX(); ++i) {
@@ -234,6 +235,7 @@ void protoana::ThinSliceDataSet::GenerateStatFluctuation() {
       it->second->Scale(new_total/fTotal);
       //fSelectionHistsRebinned[it->first]->Scale(new_total/fTotal);
     }
+    */
 
     Refill1DRebinned();
 

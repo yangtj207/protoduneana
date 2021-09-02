@@ -351,7 +351,7 @@ SystematicsList: {
   }
   ediv_weight: {
     Name: "ediv_weight"
-    Central: 1.0
+    Central: 0.5 #1.0
     LowerLimit: 0.
     UpperLimit: 1.6
     ThrowLimit: 0.0
@@ -367,7 +367,7 @@ SystematicsList: {
   }
   no_track_weight: {
     Name: "no_track_weight"
-    Central: 1.0
+    Central: 1.62 #1.0
     LowerLimit: 0.01
     UpperLimit: 3.04
     ThrowLimit: 0.01

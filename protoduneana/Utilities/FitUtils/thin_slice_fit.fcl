@@ -19,8 +19,8 @@ AnalysisOptions: {
   #FakeDataRoutine: "PionAngle"
   #FakeDataRoutine: "AngleVar"
   #FakeDataRoutine: "BeamWeight"
-  #FakeDataRoutine: "Asimov"
-  FakeDataRoutine: "Toy"
+  FakeDataRoutine: "Asimov"
+  #FakeDataRoutine: "Toy"
 
   SetToy: false 
   ToyVals: [
@@ -137,9 +137,9 @@ Systematics: [
 #Systematics[6].Options.ThrowLimitUp: 5.
 #Systematics[6].Options.SaveInfo: false 
 #Systematics[6].Options.Limits: [-.075, .075] 
-Systematics[6].Options.WeightCap: -999.
+#Systematics[6].Options.WeightCap: -999.
 
-AddSystTerm: true
+AddSystTerm: false 
 CovarianceBins: [
   ["dEdX_Cal_Spline", 0],
   ["g4rw_QE1", 1],
@@ -165,19 +165,22 @@ Selections: [
   {
     Name: "Abs"
     ID: 1
-    #RecoBins: [[0., 200., 400., 500., 600., 800., 1200.]]
-    #BinLabels: [["0 - 200", "200 - 400", "400 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
-    RecoBins: [[0., 400., 500., 600., 800., 1200.]]
-    BinLabels: [["0 - 400", "400 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
+    RecoBins: [[0., 400., 500., 600., 700., 800., 900., 1200.]]
+    BinLabels: [["0 - 400", "400 - 500", "500 - 600",
+                 "600 - 700", "700 - 800", "800 - 900",
+                 "900 - 1200"]]
+    #RecoBins: [[0., 400., 500., 600., 800., 1200.]]
+    #BinLabels: [["0 - 400", "400 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
     AxisTitles: ["Reconstructed KE (MeV)"]
   },
   {
     Name: "Cex"
     ID: 2
-    #RecoBins: [[0., 400., 500., 600., 800., 1200.]]
-    #BinLabels: [["0 - 400", "400 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
-    RecoBins: [[0., 500., 600., 800., 1200.]]
-    BinLabels: [["0 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
+    RecoBins: [[0., 500., 600., 700., 800., 900., 1200.]]
+    BinLabels: [["0 - 500", "500 - 600", "600 - 700",
+                 "700 - 800", "800 - 900", "900 - 1200"]]
+    #RecoBins: [[0., 500., 600., 800., 1200.]]
+    #BinLabels: [["0 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
     AxisTitles: ["Reconstructed KE (MeV)"]
   } ,
   {
@@ -195,7 +198,7 @@ Selections: [
     Name: "APA2"
     ID: 4
     #RecoBins: [[222, 275, 325, 375, 425, 580]]
-    RecoBins: [[222, 275, 580]]
+    RecoBins: [[222, 234, 580]]
     AxisTitles: ["Reconstructed End Z (cm)"]
   },
   {
@@ -240,37 +243,16 @@ Samples: [
     Name: "Abs"
     ID: 1
     IsSignal: true
-    SignalBins: [400., 500., 600., 800., 1000.] 
-    #SignalBins: [200., 500., 600., 800., 1200.] 
-    #SignalBins: [000., 50.,
-    #             100., 150.,
-    #             200., 250.,
-    #             300., 350.,
-    #             400., 450.,
-    #             500., 550.,
-    #             600., 650.,
-    #             700., 750.,
-    #             800., 850.,
-    #             900., 950.,
-    #             1000.]
+    #SignalBins: [400., 500., 600., 800., 1000.] 
+    SignalBins: [400., 500., 600., 700., 800., 1000.] 
     FluxType: 1
   },
   {
     Name: "Cex"
     ID: 2
     IsSignal: true
-    SignalBins: [450., 600., 800., 1200.]
-    #SignalBins: [000., 50.,
-    #             100., 150.,
-    #             200., 250.,
-    #             300., 350.,
-    #             400., 450.,
-    #             500., 550.,
-    #             600., 650.,
-    #             700., 750.,
-    #             800., 850.,
-    #             900., 950.,
-    #             1000.]
+    #SignalBins: [450., 600., 800., 1000.]
+    SignalBins: [500., 600., 700., 800., 900.]
     FluxType: 1
   },
   {
@@ -320,7 +302,7 @@ LowerLimit: 1.e-5
 ReducedIncidentChi2: false
 FitFlux: true
 ScaleDataToNorm: true 
-DataNorm: 20500. 
+DataNorm: 7189. 
 #RNGSeed: 0
 
 FitFunctionType: 2
@@ -335,15 +317,15 @@ DrawXSecUnderflow: false
 
 ## Validation
 RandomStart: false 
-SplitMC: true
+SplitMC: false 
 DoFakeData: true 
 FluctuateStats: false 
-DoThrows: true
+DoThrows: true 
 NThrows: 10 #00
-DoScans: false 
-RunHesse: true 
-Do1DShifts: true
-DoSysts: true 
+DoScans: false
+RunHesse: false 
+Do1DShifts: false
+DoSysts: false 
 MaxRethrows: 1000
 #####################
 

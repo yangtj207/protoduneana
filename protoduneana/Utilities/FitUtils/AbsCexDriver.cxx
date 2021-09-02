@@ -137,6 +137,10 @@ void protoana::AbsCexDriver::FillMCEvents(
                  split_val << "/" << tree->GetEntries() <<std::endl;
     nentries = split_val;
   }
+
+  std::vector<double> xs;
+  for (size_t i = 0; i < 20; ++i) {xs.push_back(.1*(1 + i));}
+
   for (int i = 0; i < nentries; ++i) {
     tree->GetEntry(i);
 
@@ -2159,11 +2163,11 @@ void protoana::AbsCexDriver::BuildDataHists(
       if (selected_hists.find(selection_ID) != selected_hists.end()) {
         if (selection_ID != 4 && selection_ID != 5 && selection_ID != 6) {
           double energy = reco_beam_interactingEnergy;
-          if (fExtraOptions.get<bool>("DoEnergyFix")) {
+          if (fDoEnergyFix) {
             for (size_t k = 1; k < reco_beam_incidentEnergies->size(); ++k) {
               double deltaE = ((*reco_beam_incidentEnergies)[k-1] -
                                (*reco_beam_incidentEnergies)[k]);
-              if (deltaE > fExtraOptions.get<double>("EnergyFix")) {
+              if (deltaE > fEnergyFix) {
                 energy += deltaE; 
               }
             }
@@ -2381,11 +2385,11 @@ void protoana::AbsCexDriver::FakeDataSampleScales(
       if (selected_hists.find(selection_ID) != selected_hists.end()) {
         if (selection_ID != 4 && selection_ID != 5 && selection_ID != 6) {
           double energy = reco_beam_interactingEnergy;
-          if (fExtraOptions.get<bool>("DoEnergyFix")) {
+          if (fDoEnergyFix) {
             for (size_t k = 1; k < reco_beam_incidentEnergies->size(); ++k) {
               double deltaE = ((*reco_beam_incidentEnergies)[k-1] -
                                (*reco_beam_incidentEnergies)[k]);
-              if (deltaE > fExtraOptions.get<double>("EnergyFix")) {
+              if (deltaE > fEnergyFix) {
                 energy += deltaE; 
               }
             }
@@ -2622,11 +2626,11 @@ void protoana::AbsCexDriver::FakeDataBinnedScales(
       if (selected_hists.find(selection_ID) != selected_hists.end()) {
         if (selection_ID != 4 && selection_ID != 5 && selection_ID != 6) {
           double energy = reco_beam_interactingEnergy;
-          if (fExtraOptions.get<bool>("DoEnergyFix")) {
+          if (fDoEnergyFix) {
             for (size_t k = 1; k < reco_beam_incidentEnergies->size(); ++k) {
               double deltaE = ((*reco_beam_incidentEnergies)[k-1] -
                                (*reco_beam_incidentEnergies)[k]);
-              if (deltaE > fExtraOptions.get<double>("EnergyFix")) {
+              if (deltaE > fEnergyFix) {
                 energy += deltaE; 
               }
             }
@@ -2870,11 +2874,11 @@ void protoana::AbsCexDriver::FakeDataG4RW(
       if (selected_hists.find(selection_ID) != selected_hists.end()) {
         if (selection_ID != 4 && selection_ID != 5 && selection_ID != 6) {
           double energy = reco_beam_interactingEnergy;
-          if (fExtraOptions.get<bool>("DoEnergyFix")) {
+          if (fDoEnergyFix) {
             for (size_t k = 1; k < reco_beam_incidentEnergies->size(); ++k) {
               double deltaE = ((*reco_beam_incidentEnergies)[k-1] -
                                (*reco_beam_incidentEnergies)[k]);
-              if (deltaE > fExtraOptions.get<double>("EnergyFix")) {
+              if (deltaE > fEnergyFix) {
                 energy += deltaE; 
               }
             }
@@ -3142,7 +3146,6 @@ void protoana::AbsCexDriver::FakeDataG4RWGrid(
       if (selected_hists.find(selection_ID) != selected_hists.end()) {
         if (selection_ID != 4 && selection_ID != 5 && selection_ID != 6) {
           double energy = reco_beam_interactingEnergy;
-         // if (fExtraOptions.get<bool>("DoEnergyFix")) {
           if (fDoEnergyFix) {
             for (size_t k = 1; k < reco_beam_incidentEnergies->size(); ++k) {
               double deltaE = ((*reco_beam_incidentEnergies)[k-1] -
@@ -4451,11 +4454,21 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
         alt_chi2 += (std::pow((data_val - mc_val), 2) / mc_val);
         ++alt_nPoints;
       }
-      chi2 += 2*data_val*std::log(data_val/mc_val);
-      if (std::isnan(chi2) && fMultinomial) {
-        std::cout << "Warning: " << selection_ID << " " << i << " data_val " <<
-                     data_val << " mc_val " << mc_val << " isnan" << std::endl;
-      }
+
+
+      /// Skip any bins with data == 0
+      //
+      //See PDG Stat Review:
+      //https://pdg.lbl.gov/2018/reviews/rpp2018-rev-statistics.pdf
+      //Page 6
+      //
+      if (data_val > 1.e-7)
+        chi2 += 2*data_val*std::log(data_val/mc_val);
+
+      //if (std::isnan(chi2) && fMultinomial) {
+      //  std::cout << "Warning: " << selection_ID << " " << i << " data_val " <<
+      //               data_val << " mc_val " << mc_val << " isnan" << std::endl;
+      //}
       ++nPoints;
       total_mc += mc_val;
       total_data += data_val;
@@ -4500,6 +4513,13 @@ void protoana::AbsCexDriver::CompareSelections(
     data_hist->SetLineColor(kBlack);
     data_hist->SetMarkerColor(kBlack);
     data_hist->SetMarkerStyle(20);
+
+    std::string canvas_name_no_data = "c";
+    canvas_name_no_data += (post_fit ? "PostFit" : "Nominal") +
+                   data_set.GetSelectionName(selection_ID) +
+                   "NoData";
+    TCanvas cSelectionNoData(canvas_name_no_data.c_str(), "");
+    cSelectionNoData.SetTicks();
 
     std::string canvas_name = "c";
     canvas_name += (post_fit ? "PostFit" : "Nominal") +
@@ -4552,6 +4572,22 @@ void protoana::AbsCexDriver::CompareSelections(
     for (auto it = temp_vec.rbegin(); it != temp_vec.rend(); ++it) {
       leg.AddEntry(*it);
     }
+
+    cSelectionNoData.cd();
+    mc_stack.Draw("hist");
+    std::string title_no_data = ";";
+    title_no_data += data_hist->GetXaxis()->GetTitle();
+    mc_stack.SetTitle(title_no_data.c_str());
+    mc_stack.GetHistogram()->SetTitleSize(.04, "X");
+    mc_stack.Draw("hist");
+    if (it == data_hists.begin())
+      leg.Write("leg_no_data");
+    cSelectionNoData.Write();
+    leg.Draw("same");
+
+
+
+
     leg.AddEntry(data_hist, "Data");
     
     std::pair<double, size_t> chi2 = CalculateChi2(samples, data_set);
@@ -4567,23 +4603,17 @@ void protoana::AbsCexDriver::CompareSelections(
     //std::string chi2_str = "#chi^{2} = " + std::to_string(chi2.first);
     //leg.AddEntry((TObject*)0x0, chi2_str.c_str(), "");
 
+    cSelection.cd();
+    std::string title = data_set.GetSelectionName(selection_ID);
+    title += ";";
+    title += data_hist->GetXaxis()->GetTitle();
+    mc_stack.SetTitle(title.c_str());
+
     mc_stack.Draw("hist");
     double max_mc = mc_stack.GetHistogram()->GetMaximum();
     int max_data_bin = data_hist->GetMaximumBin();
     double max_data = data_hist->GetBinContent(max_data_bin) +
                       data_hist->GetBinError(max_data_bin);
-    std::string title = data_set.GetSelectionName(selection_ID);
-    title += ";";
-    title += data_hist->GetXaxis()->GetTitle();
-    //if (selection_ID == 4) {
-    //  title += ";Reconstructed End Z (cm)";
-    //}
-    //else if (selection_ID < 4) {
-    //  title += ";Reconstructed KE (MeV)";
-    //}
-    mc_stack.SetTitle(title.c_str());
-
-    mc_stack.GetHistogram()->SetTitleSize(.04, "X");
     mc_stack.SetMaximum((max_data > max_mc ? max_data : max_mc));
     mc_stack.Draw("hist");
     data_hist->Draw("e1 same");
