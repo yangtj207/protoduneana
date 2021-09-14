@@ -794,14 +794,14 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
     double start = p.get<double>("ParameterGridStart");
     double delta = p.get<double>("ParameterGridDelta");
     int n = p.get<int>("ParameterGridN"); 
-    std::cout << "Added to grid: ";
+    //std::cout << "Added to grid: ";
     for (int i = 0; i < n; ++i) {
       fGridPoints.push_back(start);
-      std::cout << fGridPoints.back() << " ";
+      //std::cout << fGridPoints.back() << " ";
       start += delta;
     }
-    std::cout << std::endl;
-    std::cout << "Start: " << start << std::endl;
+    //std::cout << std::endl;
+    //std::cout << "Start: " << start << std::endl;
     fGridPair = p.get<std::pair<double, double>>("GridPair");
   }
   if (fDoProtReweight) {
@@ -959,16 +959,16 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
           ++n_beam_slices;
           added = true;
         }
-        std::cout << "Slice: " << slice.first << " N Part: " <<
-                     slice.second.size() << std::endl;
+        //std::cout << "Slice: " << slice.first << " N Part: " <<
+        //             slice.second.size() << std::endl;
         for (const auto * p : slice.second) {
           const recob::Track* track
               = pfpUtil.GetPFParticleTrack(*p,evt,fPFParticleTag,fTrackerTag);
           ++n_beam_particles;
           beam_particle_scores.push_back(pfpUtil.GetBeamCosmicScore(*p, evt, fPFParticleTag));
           if (track) {
-            std::cout << "Slice: " << slice.first << " ID: " << track->ID() <<
-                         std::endl;
+            //std::cout << "Slice: " << slice.first << " ID: " << track->ID() <<
+            //             std::endl;
             beam_track_IDs.push_back(track->ID());
           }
           else {
@@ -982,7 +982,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       //}
     }
   }
-  std::cout << "Got " << beam_slices.size() <<" beam slices" << std::endl;
+  //std::cout << "Got " << beam_slices.size() <<" beam slices" << std::endl;
 
 
   ///Gets the beam pfparticle
@@ -993,7 +993,8 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     //return;
   }
   else {
-    std::cout << "Found " << beamParticles.size() << " particles" << std::endl;
+    if (fVerbose)
+      std::cout << "Found " << beamParticles.size() << " particles" << std::endl;
     // Get the reconstructed PFParticle tagged as beam by Pandora
     // To do: check multiple particles
     const recob::PFParticle* particle = beamParticles.at(0);
@@ -1049,10 +1050,10 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       if (created && theTraj.GetNSteps() > 0) {
         g4rw_primary_weights.push_back(MultiRW->GetWeightFromNominal(theTraj));
 
-        std::cout << g4rw_primary_weights.size() << std::endl;
+        if (fVerbose) std::cout << g4rw_primary_weights.size() << std::endl;
         std::vector<double> weights_vec = MultiRW->GetWeightFromAll1DThrows(
             theTraj);
-        std::cout << weights_vec.size() << std::endl;
+        if (fVerbose) std::cout << weights_vec.size() << std::endl;
         g4rw_primary_weights.insert(g4rw_primary_weights.end(),
                                     weights_vec.begin(), weights_vec.end());
 
@@ -1095,13 +1096,15 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       std::vector<std::vector<G4ReweightTraj *>> new_full_created
           = BuildHierarchy(true_beam_ID, 211, plist, fGeometryService,
                            event, "LAr", true);
-      std::cout << "Created " << new_full_created.size() << " reweightable pi+"
-                << std::endl;
+      if (fVerbose) {
+        std::cout << "Created " << new_full_created.size() << " reweightable pi+"
+                  << std::endl;
+      }
 
       bool new_added = false;
       for (size_t i = 0; i < new_full_created.size(); ++i) {
         std::vector<G4ReweightTraj *> temp_trajs = new_full_created[i];
-        std::cout << i << " n trajs: " << temp_trajs.size() << std::endl;
+        if (fVerbose) std::cout << i << " n trajs: " << temp_trajs.size() << std::endl;
         for (size_t j = 0; j < temp_trajs.size(); ++j) {
           G4ReweightTraj * this_traj = temp_trajs[j];
           if (this_traj->GetNSteps() > 0) {
@@ -1213,10 +1216,10 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
 
   //New style of weighting to get full hierarchy (i.e. from full event not 
   //just from the primary + downstreams) -- currently for piplus and proton
-  if (!evt.isRealData()) {
+  if (!evt.isRealData() && fDoReweight) {
     std::vector<std::vector<G4ReweightTraj *>> piplus_hierarchy 
         = BuildHierarchy(true_beam_ID, 211, plist, fGeometryService,
-                         event, "LAr", true);
+                         event, "LAr", false);
 
     std::vector<double> input(ParSet.size(), 1.);
     for (size_t i = 0; i < ParSet.size(); ++i) {
@@ -1280,7 +1283,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
 
     std::vector<std::vector<G4ReweightTraj *>> proton_hierarchy 
         = BuildHierarchy(true_beam_ID, 2212, plist, fGeometryService,
-                         event, "LAr", true);
+                         event, "LAr", false);
     std::vector<double> proton_input(ProtParSet.size(), 1.);
     for (size_t i = 0; i < ProtParSet.size(); ++i) {
       g4rw_full_grid_proton_weights.push_back(std::vector<double>());
@@ -2483,12 +2486,8 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
           break; 
         }
       }
-      std::cout << this_index << std::endl;
       TpIndices = pandoracalo[this_index].TpIndices();
-      std::cout << "pandoracalo hits " << pandoracalo[this_index].dQdx().size() << std::endl;
     }
-    std::cout << calo_dQdX.size() << std::endl;
-    std::cout << calo[index].PlaneID().Plane << std::endl;
 
     auto theXYZPoints = calo[index].XYZ();
     std::vector< size_t > calo_hit_indices;
@@ -2668,14 +2667,12 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
     ////////////////////////////////////////////
 
     //New Calibration
-    std::cout << "Getting reco beam calo" << std::endl;
     if (fCalibrateByHand) {
       std::vector< float > new_dEdX
           = calibration_SCE.GetCalibratedCalorimetry(*thisTrack, evt,
                                                      fTrackerTag,
                                                      fCalorimetryTagSCE, 2,
                                                      -10.);
-      std::cout << new_dEdX.size() << " " << reco_beam_resRange_SCE.size() << std::endl;
       for( size_t i = 0; i < new_dEdX.size(); ++i ){ reco_beam_calibrated_dEdX_SCE.push_back( new_dEdX[i] ); }
     }
     else {
@@ -2683,7 +2680,6 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
         reco_beam_calibrated_dEdX_SCE.push_back(dedx);
       }
     }
-    std::cout << "got calibrated dedx" << std::endl;
 
     if (fCalibrateByHand) {
       std::vector<double> new_dQdX = calibration_SCE.CalibratedQdX(
@@ -2708,7 +2704,6 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
 
     //Get the chi2-based PID for the SCE-corrected beam track
     std::pair< double, int > pid_chi2_ndof = trackUtil.Chi2PID( reco_beam_calibrated_dEdX_SCE, reco_beam_resRange_SCE, templates[ 2212 ] );
-    std::cout << "got chi2" << std::endl;
     reco_beam_Chi2_proton = pid_chi2_ndof.first;
     reco_beam_Chi2_ndof = pid_chi2_ndof.second;
 
@@ -2800,7 +2795,6 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
       break; 
     }
   }
-  std::cout << "Cali index " << index << std::endl;
 
   if (found_calo) {
     auto calo_dQdX = calo_NoSCE[index].dQdx();
@@ -2843,19 +2837,9 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
         reco_beam_calibrated_dEdX_NoSCE.push_back(dedx);
       }
     }
-    std::cout << "got calibrated dedx" << std::endl;
     ////////////////////////////////////////////
 
     std::vector< calo_point > reco_beam_calo_points;
-    std::cout << "wire: " << reco_beam_calo_wire.size() << std::endl;
-    std::cout << "trkpitch: " << reco_beam_TrkPitch_NoSCE.size() << std::endl;
-    std::cout << "dqdx: " << reco_beam_dQdX_NoSCE.size() << std::endl;
-    std::cout << "dedx: " << reco_beam_dEdX_NoSCE.size() << std::endl;
-    std::cout << "cal dedx: " << reco_beam_calibrated_dEdX_NoSCE.size() << std::endl;
-    std::cout << "ind: " << calo_hit_indices.size() << std::endl;
-    std::cout << "range: " << reco_beam_resRange_NoSCE.size() << std::endl;
-    std::cout << "wire_z: " << reco_beam_calo_wire_z.size() << std::endl;
-    std::cout << "TPC: " << reco_beam_calo_TPC_NoSCE.size() << std::endl;
     if (reco_beam_calibrated_dEdX_NoSCE.size() &&
         reco_beam_calibrated_dEdX_NoSCE.size() == reco_beam_TrkPitch_NoSCE.size() &&
         reco_beam_calibrated_dEdX_NoSCE.size() == reco_beam_calo_wire.size()) {
@@ -2908,9 +2892,7 @@ void pduneana::PDSPAnalyzer::BeamShowerInfo(const art::Event & evt, const recob:
   auto calo = showerUtil.GetRecoShowerCalorimetry(*thisShower, evt, fShowerTag, "pandoraShowercalo");
   bool found_calo = false;
   size_t index = 0;
-  std::cout << "Searching for planes" << std::endl;
   for ( index = 0; index < calo.size(); ++index) {
-    std::cout << calo[index].PlaneID().Plane << std::endl;
     if (calo[index].PlaneID().Plane == 2) {
       found_calo = true;
       break; 
@@ -3107,14 +3089,11 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
   true_beam_IDE_totalDep = 0.;
   for (size_t i = 0; i < view2_IDEs.size(); ++i) {
     const sim::IDE * ide = view2_IDEs[i];
-    std::cout << " " << ide->trackID << " " << ide->z << " " << ide->energy <<
-                 std::endl;
 
     true_beam_IDE_totalDep += ide->energy;
   }
   //Sort based on ide z-position
   std::sort( view2_IDEs.begin(), view2_IDEs.end(), sort_IDEs );
-  std::cout << "Sorted" << std::endl;
 
   //This is an attempt to remove IDEs from things like delta-rays
   //that have a large gap in z to the previous
@@ -3174,15 +3153,9 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
         double y1 = true_beam_trajectory.Y(i);
         geo::Point_t test_point{x0, y0, z0};
         geo::Point_t test_point_1{x1, y1, z1};
-        const TGeoMaterial * mat = geom->Material(test_point);
-        std::cout << "Point " << i-1 << " (" << x0 << ", " << y0 <<
-                     ", " << z0 << ") Material " << mat->GetName() <<
-                     std::endl;
+        //const TGeoMaterial * mat = geom->Material(test_point);
         if (z0 < ide_z && z1 > ide_z) {
-          const TGeoMaterial * mat1 = geom->Material(test_point_1);
-          std::cout << "Point " << i << " (" << x1 << ", " << y1 <<
-                       ", " << z1 << ") Material " << mat1->GetName() <<
-                       std::endl;
+          //const TGeoMaterial * mat1 = geom->Material(test_point_1);
           init_KE = 1.e3 * true_beam_trajectory.E(i-1) - true_beam_mass;
           if (fVerbose) {
             std::cout << "Found matching position" << z0 << " " << ide_z <<
@@ -3702,13 +3675,10 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
       if( pandora2Track ){
         reco_daughter_allTrack_ID.push_back( pandora2Track->ID() );
 
-        std::cout << "Getting calo for " << pandora2Track->ID() << std::endl;
-
         //Calorimetry info
         auto dummy_caloSCE =
             trackUtil.GetRecoTrackCalorimetry(
                 *pandora2Track, evt, "pandora2Track", fPandora2CaloSCE);
-        std::cout << dummy_caloSCE.size() << std::endl;
         bool found_calo = false;
         size_t index = 0;
         for ( index = 0; index < dummy_caloSCE.size(); ++index) {
@@ -3717,7 +3687,6 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
             break; 
           }
         }
-        std::cout << index << " " << found_calo << std::endl;
 
         reco_daughter_allTrack_resRange_SCE.push_back( std::vector<double>() );
         reco_daughter_allTrack_dEdX_SCE.push_back( std::vector<double>() );
@@ -3827,7 +3796,6 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         size_t plane0_index = 0;
         bool found_plane0 = false;
         for ( plane0_index = 0; plane0_index < dummy_caloSCE.size(); ++plane0_index) {
-          std::cout << dummy_caloSCE[plane0_index].PlaneID().Plane << std::endl;
           if (dummy_caloSCE[plane0_index].PlaneID().Plane == 0) {
             found_plane0 = true;
             break; 
@@ -3836,7 +3804,6 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         size_t plane1_index = 0;
         bool found_plane1 = false;
         for ( plane1_index = 0; plane1_index < dummy_caloSCE.size(); ++plane1_index) {
-          std::cout << dummy_caloSCE[plane1_index].PlaneID().Plane << std::endl;
           if (dummy_caloSCE[plane1_index].PlaneID().Plane == 1) {
             found_plane1 = true;
             break; 
@@ -3949,7 +3916,6 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         reco_daughter_allTrack_endY.push_back(   pandora2Track->Trajectory().End().Y() );
         reco_daughter_allTrack_endZ.push_back(   pandora2Track->Trajectory().End().Z() );
 
-        std::cout << "Getting michel" << std::endl;
         //Using new michel tagging from Ajib
         if (!fSkipMVA) {
           std::pair<double, int> vertex_results =
