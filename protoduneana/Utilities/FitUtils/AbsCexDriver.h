@@ -139,6 +139,11 @@ class AbsCexDriver : public ThinSliceDriver {
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);
+  void SetupSyst_BeamShiftSpline2(
+      const std::vector<ThinSliceEvent> & events,
+      std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+      const std::map<std::string, ThinSliceSystematic> & pars,
+      TFile & output_file);
 
   std::pair<double, size_t> CalculateChi2(
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,

@@ -714,6 +714,16 @@ void protoana::AbsCexDriver::RefillMCSamples(
       std::cout << "Weight went negative after eff var spline" << std::endl;
     }
 
+    if (syst_pars.find("beam_shift_spline_2") != syst_pars.end()) {
+      int bin = selected_hist->FindBin(val[0]);
+      TSpline3 * spline
+          = fFullSelectionSplines["BeamShiftSpline2"][new_selection][bin-1];
+      weight *= spline->Eval(syst_pars.at("beam_shift_spline_2").GetValue());
+    }
+    if (weight < 0.) {
+      std::cout << "Weight went negative after beam shift spline" << std::endl;
+    }
+
     weight *= GetSystWeight_G4RW(event, syst_pars, *this_sample, new_selection/*selection_ID*/,
                                  val[0]);
 
@@ -838,6 +848,7 @@ void protoana::AbsCexDriver::SetupSysts(
   //SetupSyst_BeamRes(events, samples, pars, output_file);
   SetupSyst_BeamShift(pars, output_file);
   SetupSyst_BeamShiftSpline(events, samples, pars, output_file);
+  SetupSyst_BeamShiftSpline2(events, samples, pars, output_file);
   //SetupSyst_BeamShift2D(pars, output_file);
   SetupSyst_EffVar(events, samples, pars, output_file);
   SetupSyst_EffVarWeight(pars);
@@ -2006,6 +2017,183 @@ void protoana::AbsCexDriver::SetupSyst_dEdX_Cal(
   }
 }
 
+void protoana::AbsCexDriver::SetupSyst_BeamShiftSpline2(
+    const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    const std::map<std::string, ThinSliceSystematic> & pars,
+    TFile & output_file) {
+
+  //Get the systematic variations to the calibration constant
+  //then build systematic shift hists
+  std::vector<double> beam_shift_vals 
+      = pars.at("beam_shift_spline_2").GetOption<std::vector<double>>("ShiftVals");
+
+  //make sure the number of shifts are even
+  //such that you have same number +/-
+  if (beam_shift_vals.size() % 2) {
+    std::string message = "SetupSyst_BeamShiftSpline2 Error: ";
+    message += "odd number of shifts to reco momentum";
+    throw std::runtime_error(message);
+  }
+
+  //Get the first sample and get the selection hists
+  //also make full hist
+  std::map<int, TH1D*> full_hists;
+
+  ThinSliceSample & temp_sample = samples.begin()->second[0][0];
+  const std::map<int, TH1*> & sel_hists = temp_sample.GetSelectionHists();
+  for (auto it = sel_hists.begin(); it != sel_hists.end(); ++it) {
+    std::string sel_hist_name = it->second->GetName();
+    sel_hist_name += "Syst_BeamShiftSpline2";
+    int shift_number = -2;
+
+    fFullSelectionVars["BeamShiftSpline2"][it->first] = std::vector<TH1D*>();
+    for (size_t k = 0; k < beam_shift_vals.size(); ++k) {
+      std::string shift_name = sel_hist_name;
+      shift_name += std::to_string(shift_number);
+      fFullSelectionVars["BeamShiftSpline2"][it->first].push_back((TH1D*)it->second->Clone(shift_name.c_str()));
+      fFullSelectionVars["BeamShiftSpline2"][it->first].back()->Reset();
+
+      ++shift_number;
+      if (shift_number == 0)
+        ++shift_number;
+    }
+
+    sel_hist_name += "_FullVar";
+    full_hists[it->first] = (TH1D*)it->second->Clone(sel_hist_name.c_str());
+    full_hists[it->first]->Reset();
+  }
+
+  for (size_t i = 0; i < events.size(); ++i) {
+    const ThinSliceEvent & event = events.at(i);
+    int sample_ID = event.GetSampleID();
+    int selection_ID = event.GetSelectionID();
+
+    double reco_beam_endZ = event.GetRecoEndZ();
+
+    const std::vector<double> & reco_beam_incidentEnergies
+        = event.GetRecoIncidentEnergies();
+    double beam_inst_P = event.GetBeamInstP();
+    const std::vector<double> calibrated_dQdX
+        = event.GetdQdXCalibrated();
+    const std::vector<double> beam_EField
+        = event.GetEField();
+    const std::vector<double> track_pitch
+        = event.GetTrackPitch();
+
+
+    if (samples.find(sample_ID) == samples.end()) {
+      std::cout << "Warning: skipping sample " << sample_ID << std::endl;
+      continue;
+    }
+
+    std::vector<double> vals(beam_shift_vals.size(), 0.);
+    for (size_t j = 0; j < vals.size(); ++j) {
+      if (selection_ID == 4) {
+        TH1D * selected_hist
+            = fFullSelectionVars["BeamShiftSpline2"][selection_ID][0];
+        if (selected_hist->FindBin(reco_beam_endZ) == 0) {
+          vals[j] = selected_hist->GetBinCenter(1);
+        }
+        else if (selected_hist->FindBin(reco_beam_endZ) >
+                 selected_hist->GetNbinsX()) {
+          vals[j] = selected_hist->GetBinCenter(selected_hist->GetNbinsX());
+        }
+        else {
+          vals[j] = reco_beam_endZ;
+        }
+      }
+      else if (selection_ID > 4) {
+        vals[j] = .5;
+      }
+      else if (reco_beam_incidentEnergies.size()) {
+        //get the energy -- have to do some manipulation for the
+        //momentum shift variation and getting back to KE 
+        double energy
+            = sqrt(std::pow(beam_inst_P*beam_shift_vals[j], 2)*1.e6 +
+                   139.57*139.57) - 139.57;
+
+        if (fDoEnergyFix) {
+          for (size_t k = 1; k < reco_beam_incidentEnergies.size(); ++k) {
+            double deltaE = (reco_beam_incidentEnergies[k-1] -
+                             reco_beam_incidentEnergies[k]);
+            if (deltaE > fEnergyFix)
+              continue;
+            energy -= deltaE; 
+          }
+        }
+
+
+        TH1D * selected_hist
+            = fFullSelectionVars["BeamShiftSpline2"][selection_ID][0];
+        if (selected_hist->FindBin(energy) == 0) {
+          vals[j] = selected_hist->GetBinCenter(1);
+        }
+        else if (selected_hist->FindBin(energy) >
+                 selected_hist->GetNbinsX()) {
+          vals[j] = selected_hist->GetBinCenter(selected_hist->GetNbinsX());
+        }
+        else {
+          vals[j] = energy;
+        }
+      }
+      else {
+        TH1D * selected_hist
+            = fFullSelectionVars["BeamShiftSpline2"][selection_ID][0];
+        vals[j] = selected_hist->GetBinCenter(1);
+      }
+      fFullSelectionVars["BeamShiftSpline2"][selection_ID][j]->Fill(vals[j]);
+    }
+  }
+
+  beam_shift_vals.insert(beam_shift_vals.begin() + beam_shift_vals.size()/2,
+                    pars.at("beam_shift_spline_2").GetCentral());
+
+  TDirectory * dir = output_file.mkdir("BeamShiftSpline2_Syst");
+  dir->cd();
+
+  //Take the vars and make into ratios, then turn into splines
+  for (auto it = fFullSelectionVars["BeamShiftSpline2"].begin(); 
+       it != fFullSelectionVars["BeamShiftSpline2"].end(); ++it) {
+    int selection_ID = it->first;
+
+    //Build the full hist
+    for (auto it2 = samples.begin(); it2 != samples.end(); ++it2) {
+      for (size_t i = 0; i < it2->second.size(); ++i) {
+        for (size_t j = 0; j < it2->second[i].size(); ++j) {
+          full_hists[selection_ID]->Add(it2->second[i][j].GetSelectionHist(
+              selection_ID));
+        }
+      }
+    }
+
+    for (size_t i = 0; i < it->second.size(); ++i) {
+      it->second[i]->Write();
+      it->second[i]->Divide(full_hists[selection_ID]);
+    }
+    
+    fFullSelectionSplines["BeamShiftSpline2"][selection_ID] = std::vector<TSpline3*>();
+    for (int i = 1; i <= full_hists[selection_ID]->GetNbinsX(); ++i) {
+      std::vector<double> vals;
+      for (size_t j = 0; j < it->second.size(); ++j) {
+        vals.push_back(it->second[j]->GetBinContent(i));
+      }
+      vals.insert(vals.begin() + vals.size()/2, 1.);
+
+      std::string spline_name = full_hists[selection_ID]->GetName();
+      spline_name += "_Spline" + std::to_string(i);
+
+      fFullSelectionSplines["BeamShiftSpline2"][selection_ID].push_back(
+        new TSpline3(spline_name.c_str(), &beam_shift_vals[0], &vals[0], vals.size()));
+      TCanvas c(spline_name.c_str(), "");
+      fFullSelectionSplines["BeamShiftSpline2"][selection_ID].back()->SetMarkerStyle(20);
+      fFullSelectionSplines["BeamShiftSpline2"][selection_ID].back()->Draw("P");
+      c.Write();
+      fFullSelectionSplines["BeamShiftSpline2"][selection_ID].back()->Write(spline_name.c_str());
+    }
+  }
+}
+
 double protoana::AbsCexDriver::GetSystWeight_G4RW(
     const ThinSliceEvent & event,
     const std::map<std::string, ThinSliceSystematic> & pars,
@@ -2054,8 +2242,9 @@ double protoana::AbsCexDriver::GetSystWeight_BeamShift(
                   exp(.5*std::pow(((y_val - nominal_mean)/nominal_width), 2)
                       - .5*std::pow(((y_val - varied_mean)/varied_width), 2));
 
-  if (weight > fSystBeamShiftWeightCap && fSystBeamShiftWeightCap > 0.)
+  if (weight > fSystBeamShiftWeightCap && fSystBeamShiftWeightCap > 0.) {
     weight = fSystBeamShiftWeightCap;
+  }
 
   //fSystBeamShiftWeight = fSystBeamShiftMap->Interpolate(x_val, y_val);
   if (fSystBeamShiftTreeSave) {

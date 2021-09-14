@@ -1883,8 +1883,12 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
 
         double syst_chi2 = (fAddSystTerm ? CalcChi2SystTerm() : 0.);
 
+        //Do I need to do this in ThinSliceDriver?
+        //double reg_term  = (fAddRegTerm > CalcRegTerm(): 0.);
+        //
+
         //std::cout << (chi2_points.first + syst_chi2) << std::endl;
-        return (chi2_points.first + syst_chi2);
+        return (chi2_points.first + syst_chi2 /* + reg_term */);
       },
       fTotalSignalParameters + fTotalFluxParameters + fTotalSystParameters);
       std::cout << "Done F2" << std::endl;
@@ -1982,6 +1986,9 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fDataNorm = pset.get<double>("DataNorm", 1.);
 
   fRNG = TRandom3(pset.get<int>("RNGSeed", 0));
+
+  fAddRegTerm = pset.get<bool>("AddRegTerm", false);
+  fRegFactor = pset.get<double>("RegFactor", 0.);
 
   //Initialize systematics
   if (fDoSysts) {
@@ -2783,6 +2790,18 @@ void protoana::PDSPThinSliceFitter::MakeThrowsTree(TTree & tree, std::vector<dou
     branches.push_back(0.);
     tree.Branch(it->second.GetName().c_str(), &branches.back());
   }
+}
+
+
+double protoana::PDSPThinSliceFitter::CalcRegTerm() {
+  double result = 0.;
+  for (auto it = fSignalParameters.begin(); it != fSignalParameters.end(); ++it) {
+    for (size_t i = 0; i < it->second.size()-1; ++i) {
+      result += std::pow((it->second[i] - it->second[i+1]), 2);
+    }
+  }
+
+  return fRegFactor*result;
 }
 
 //void protoana::PDSPThinSliceFitter::MakeThrowsArrays(std::vector<TArrayD*> & arrays) {

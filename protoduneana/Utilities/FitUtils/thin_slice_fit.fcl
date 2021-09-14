@@ -119,17 +119,21 @@ AnalysisOptions: {
 }
 
 Systematics: [
+  @local::SystematicsList.beam_shift_spline_2,
   @local::SystematicsList.dEdX_Cal_Spline,
-  @local::G4RWSysts.g4rw_QE1,
-  @local::G4RWSysts.g4rw_QE2,
-  @local::G4RWSysts.g4rw_Prod,
-  @local::G4RWSysts.g4rw_DCex,
-  @local::G4RWSysts.g4rw_proton,
-  @local::SystematicsList.beam_shift,
+  ##@local::G4RWSysts.g4rw_QE1,
+  ##@local::G4RWSysts.g4rw_QE2,
+  ##@local::G4RWSysts.g4rw_Prod,
+  ##@local::G4RWSysts.g4rw_DCex,
+  ##@local::G4RWSysts.g4rw_proton,
+  ##@local::SystematicsList.beam_shift,
   @local::SystematicsList.ediv_weight,
   @local::SystematicsList.no_track_weight,
   @local::SystematicsList.beam_cut_weight
 ]
+
+Systematics[2].Central: 1.0 
+Systematics[3].Central: 1.0 
 
 #Systematics[6].Options.LowerLimit: -5.
 #Systematics[6].Options.UpperLimit: 5.
@@ -139,24 +143,25 @@ Systematics: [
 #Systematics[6].Options.Limits: [-.075, .075] 
 #Systematics[6].Options.WeightCap: -999.
 
-AddSystTerm: false 
+AddSystTerm: true 
 CovarianceBins: [
   ["dEdX_Cal_Spline", 0],
-  ["g4rw_QE1", 1],
-  ["g4rw_QE2", 2],
-  ["g4rw_Prod", 3],
-  ["g4rw_DCex", 4],
-  ["g4rw_proton", 5],
-  ["ediv_weight", 6],
-  ["beam_shift", 7],
-  ["no_track_weight", 8],
-  ["beam_cut_weight", 9]
+  #["g4rw_QE1", 1],
+  #["g4rw_QE2", 2],
+  #["g4rw_Prod", 3],
+  #["g4rw_DCex", 4],
+  #["g4rw_proton", 5],
+  ["ediv_weight", 1],
+  ["beam_shift_spline_2", 2],
+  ["no_track_weight", 3],
+  ["beam_cut_weight", 4]
 ]
-CovarianceFile: "full_with_dcex_beamcut.root"
+#CovarianceFile: "full_with_dcex_beamcut.root"
+CovarianceFile: "no_g4rw_new_shift.root"
 #CovarianceFile: "full_no_beam_shift.root"
 CovarianceMatrix: "m"
 
-FixVariables: true 
+FixVariables: false #true 
 SystsToFix: [
   ["beam_shift", 0.]
 ]
@@ -320,12 +325,12 @@ RandomStart: false
 SplitMC: false 
 DoFakeData: true 
 FluctuateStats: false 
-DoThrows: true 
-NThrows: 10 #00
-DoScans: false
+DoThrows: false 
+NThrows: 1000
+DoScans: false 
 RunHesse: false 
 Do1DShifts: false
-DoSysts: false 
+DoSysts: true
 MaxRethrows: 1000
 #####################
 

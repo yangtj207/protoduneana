@@ -65,7 +65,7 @@ class PDSPThinSliceFitter {
     std::map<int, std::vector<TH1*>> & truth_xsec_hists);
   void BuildFakeDataXSecs(bool use_scales = true);
   void BuildDataFromToy();
-  double CalcChi2SystTerm();
+  double CalcChi2SystTerm(), CalcRegTerm();
   void MakeThrowsTree(TTree & tree, std::vector<double> & branches);
   //void MakeThrowsArrays(std::vector<TVectorD *> & arrays);
 
@@ -123,7 +123,8 @@ class PDSPThinSliceFitter {
   std::vector<double> fParLimits, fParLimitsUp;
   size_t fTotalSystParameters = 0;
   std::map<std::string, size_t> fCovarianceBins;
-  bool fAddSystTerm;
+  bool fAddSystTerm, fAddRegTerm;
+  double fRegFactor = 0.;
   TMatrixD * fCovMatrix, * fCovMatrixDisplay;
   TDecompChol * fInputChol;
 
