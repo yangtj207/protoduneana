@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       protonmc
-// File:        protonmc_module.cc
+// Class:       proton4gen
+// File:        proton4gen_module.cc
 //
 // Extract protoDUNE useful information, do a firs tpre-selection and save output to a flat tree
 // 
@@ -100,22 +100,25 @@ const int NMAXDAUGTHERS = 15;
 //double prim_energy=0.0;
 
 namespace protoana {
-	class protonmc;
+	class proton4gen;
 }
 
 using protoana::G4ReweightUtils::CreateRWTraj;
 
+using protoana::G4ReweightUtils::CreateNRWTrajs;
+using protoana::G4ReweightUtils::GetNTrajPMSigmaWeights;
+using protoana::G4ReweightUtils::GetNTrajWeightFromSetPars;
 
 
-class protoana::protonmc : public art::EDAnalyzer {
+class protoana::proton4gen : public art::EDAnalyzer {
 	public:
 
-		explicit protonmc(fhicl::ParameterSet const & p);
+		explicit proton4gen(fhicl::ParameterSet const & p);
 
-		protonmc(protonmc const &) = delete;
-		protonmc(protonmc &&) = delete;
-		protonmc & operator = (protonmc const &) = delete;
-		protonmc & operator = (protonmc &&) = delete;
+		proton4gen(proton4gen const &) = delete;
+		proton4gen(proton4gen &&) = delete;
+		proton4gen & operator = (proton4gen const &) = delete;
+		proton4gen & operator = (proton4gen &&) = delete;
 
 		virtual void beginJob() override;
 		virtual void endJob() override;
@@ -139,9 +142,10 @@ class protoana::protonmc : public art::EDAnalyzer {
 
 		// fcl parameters
 		//const art::InputTag fNNetModuleLabel; //label of the module used for CNN tagging  
-		const art::InputTag fBeamModuleLabel;
+		//const art::InputTag fBeamModuleLabel;
 		std::string fCalorimetryTag;
 		std::string fTrackerTag;
+  		std::string fHitTag;
 		std::string fShowerTag;
 		std::string fPFParticleTag;
 		std::string fGeneratorTag;
@@ -168,14 +172,14 @@ class protoana::protonmc : public art::EDAnalyzer {
 
 		// Beam track
 		int fbeamtrigger;
-		double ftof;
-		int fcerenkov1;
-		int fcerenkov2;
+		//double ftof;
+		//int fcerenkov1;
+		//int fcerenkov2;
 		double fbeamtrackMomentum;
 		double fbeamtrackP[3]; //Px/Py/Pz
 		double fbeamtrackEnergy;
 		double fbeamtrackPos[3];
-		double fbeamtrackDir[3];
+		//double fbeamtrackDir[3];
 		double fbeamtrackTime;
 		int fbeamtrackPdg;
 		int fbeamtrackID;
@@ -190,19 +194,21 @@ class protoana::protonmc : public art::EDAnalyzer {
 
 
 		//beam info from spectrometer
-		std::vector<double> beamMomentum_spec;
-  		std::vector<double> beamPosx_spec;
-  		std::vector<double> beamPosy_spec;
-  		std::vector<double> beamPosz_spec;
+		//std::vector<double> beamMomentum_spec;
+  		//std::vector<double> beamPosx_spec;
+  		//std::vector<double> beamPosy_spec;
+  		//std::vector<double> beamPosz_spec;
   
-  		std::vector<double> beamDirx_spec;
-  		std::vector<double> beamDiry_spec;
-  		std::vector<double> beamDirz_spec;
+  		//std::vector<double> beamDirx_spec;
+  		//std::vector<double> beamDiry_spec;
+  		//std::vector<double> beamDirz_spec;
 
 
 		//Front face KE & Positions
+		bool Isbeam_at_ff;
 		double ke_ff;
-		std::vector<double> pos_ff;
+		bool Isendpoint_outsidetpc;
+		//std::vector<double> pos_ff;
 
 		//KE_true and KE_reco
 		std::vector<double> primtrk_ke_true;
@@ -219,28 +225,28 @@ class protoana::protonmc : public art::EDAnalyzer {
 		//true info
 		double ke_ff_true;
 		//std::vector<unsigned char> primtrk_hit_processkey;
-		std::vector< std::vector<double> > primtrk_hitx_true;
-		std::vector< std::vector<double> > primtrk_hity_true;
-		std::vector< std::vector<double> > primtrk_hitz_true;
-		std::vector< std::vector<double> > primtrk_trkid_true;
-		std::vector< std::vector<double> > primtrk_edept_true;
+		std::vector<double> primtrk_hitx_true;
+		std::vector<double> primtrk_hity_true;
+		std::vector<double> primtrk_hitz_true;
+		std::vector<double> primtrk_trkid_true;
+		std::vector<double> primtrk_edept_true;
 
 		//save all the true info  
-		std::vector< std::vector<double> > primtrk_true_x;
-		std::vector< std::vector<double> > primtrk_true_y;
-		std::vector< std::vector<double> > primtrk_true_z;
-		std::vector< std::vector<double> > primtrk_true_trkid;
-		std::vector< std::vector<double> > primtrk_true_edept;
+		std::vector<double> primtrk_true_x;
+		std::vector<double> primtrk_true_y;
+		std::vector<double> primtrk_true_z;
+		std::vector<double> primtrk_true_trkid;
+		std::vector<double> primtrk_true_edept;
 
-		std::vector< std::vector<int> > primtrk_true_wid;
+		std::vector<int> primtrk_true_wid;
 		//std::vector< std::vector<int> > primtrk_true_tpc;
 		//std::vector< std::vector<int> > primtrk_true_plane;
 
 		//mctraj info
-		std::vector< std::vector<double> > primtrj_true_x;
-		std::vector< std::vector<double> > primtrj_true_y;
-		std::vector< std::vector<double> > primtrj_true_z;
-		std::vector< std::vector<double> > primtrj_true_edept;
+		//std::vector< std::vector<double> > primtrj_true_x;
+		//std::vector< std::vector<double> > primtrj_true_y;
+		//std::vector< std::vector<double> > primtrj_true_z;
+		//std::vector< std::vector<double> > primtrj_true_edept;
 
 		//hits from pfparticles
 		std::vector<double> pfphit_peaktime_c;
@@ -284,6 +290,8 @@ class protoana::protonmc : public art::EDAnalyzer {
 		int ftruthpdg;  
 		int fprimary_truth_TrackId;
 		int fprimary_truth_Pdg;
+		int fprimary_truth_byE_origin, fprimary_truth_byE_PDG;  //What is the origin of the reconstructed beam track?
+		int fprimary_truth_byE_ID;
 		double fprimary_truth_StartPosition[4];
 		double fprimary_truth_StartPosition_MC[4];
 		double fprimary_truth_EndPosition[4];
@@ -305,15 +313,20 @@ class protoana::protonmc : public art::EDAnalyzer {
 		int fprimary_truth_NDaughters;
 
 		//carlo info
-		std::vector< std::vector<double> > primtrk_dqdx;
-		std::vector< std::vector<double> > primtrk_resrange;
-		std::vector< std::vector<double> > primtrk_dedx;
+		bool Iscalosize;
+		std::vector<double> primtrk_dqdx;
+		std::vector<double> primtrk_resrange;
+		std::vector<double> primtrk_dedx;
 		std::vector<double> primtrk_range;
-		std::vector< std::vector<double> > primtrk_hitx;
-		std::vector< std::vector<double> > primtrk_hity;
-		std::vector< std::vector<double> > primtrk_hitz;
-		std::vector< std::vector<double> > primtrk_pitch;
-		std::vector< std::vector<int> > primtrk_wid;
+		std::vector<double> primtrk_hitx;
+		std::vector<double> primtrk_hity;
+		std::vector<double> primtrk_hitz;
+		std::vector<double> primtrk_pitch;
+		std::vector<int> primtrk_wid0;
+		std::vector<int> primtrk_wid;
+  		std::vector<double> primtrk_pt;
+  		std::vector<size_t> primtrk_calo_hit_index;
+  		std::vector<int> primtrk_ch;
 
 		//hit and CNN score
 
@@ -419,53 +432,28 @@ class protoana::protonmc : public art::EDAnalyzer {
 		double fdaughter_truth_Phi[NMAXDAUGTHERS];
 		int fdaughter_truth_Process[NMAXDAUGTHERS];
 
-		double minX =  -360.0;
-		double maxX = 360.0;
-		double minY =0.0;
-		double maxY = 600.0;
-		double minZ =  0.0;
-		double maxZ = 695.0;
-
-		//g4reweight
-		int true_beam_PDG;
-		int true_beam_ID;
-		//double true_beam_len;
-		//int true_beam_nElasticScatters;
-		std::vector<double> g4rw_primary_plus_sigma_weight;
-		std::vector<double> g4rw_primary_minus_sigma_weight;
-		std::vector<double> g4rw_primary_weights;
-		std::vector<std::string> g4rw_primary_var;
-		double g4rw_primary_singular_weight;
-
-		std::vector<double> g4rw_p1; 
-		std::vector<double> g4rw_p2; 
-		std::vector<double> g4rw_set_weights;
-		//std::string fGeneratorTag;
+		//double minX =  -360.0;
+		//double maxX = 360.0;
+		//double minY =0.0;
+		//double maxY = 600.0;
+		//double minZ =  0.0;
+		//double maxZ = 695.0;
 
 
-		//Geant4Reweight stuff
-		int RW_PDG;
-		TFile FracsFile, XSecFile;
-		std::vector<fhicl::ParameterSet> ParSet;
-		G4ReweightParameterMaker ParMaker;
-                G4ReweightManager RWManager;
-		G4MultiReweighter MultiRW;
-		G4ReweighterFactory RWFactory;
-		G4Reweighter * theRW;
-
-		//bool fVerbose;
+		bool fVerbose;
 
 };
 
 
-protoana::protonmc::protonmc(fhicl::ParameterSet const & p)
+protoana::proton4gen::proton4gen(fhicl::ParameterSet const & p)
 	:
 		EDAnalyzer(p),
 		dataUtil(p.get<fhicl::ParameterSet>("DataUtils")),
 		//fNNetModuleLabel(p.get<art::InputTag>("NNetModuleLabel")),
-		fBeamModuleLabel(p.get< art::InputTag >("BeamModuleLabel")),
+		//fBeamModuleLabel(p.get< art::InputTag >("BeamModuleLabel")),
 		fCalorimetryTag(p.get<std::string>("CalorimetryTag")),
 		fTrackerTag(p.get<std::string>("TrackerTag")),
+  		fHitTag(p.get<std::string>("HitTag")),
 		fShowerTag(p.get<std::string>("ShowerTag")),
 		fPFParticleTag(p.get<std::string>("PFParticleTag")),
 		fGeneratorTag(p.get<std::string>("GeneratorTag")),
@@ -473,30 +461,25 @@ protoana::protonmc::protonmc(fhicl::ParameterSet const & p)
 		//fMCSFitter(p.get<fhicl::ParameterSet>("TrajMCSFitter")),
 
 
-		RW_PDG(p.get<int>("RW_PDG")),
-		FracsFile( (p.get< std::string >( "FracsFile" )).c_str(), "OPEN" ),
-		XSecFile( (p.get< std::string >( "XSecFile" )).c_str(), "OPEN"),
-		ParSet(p.get<std::vector<fhicl::ParameterSet>>("ParameterSet")),
-		ParMaker(ParSet, RW_PDG),
-                RWManager({p.get<fhicl::ParameterSet>("Material")}),
-		MultiRW(RW_PDG, FracsFile, ParSet,
-                        p.get<fhicl::ParameterSet>("Material"),
-                        &RWManager) {
-			theRW = RWFactory.BuildReweighter(RW_PDG, &FracsFile,
-					ParMaker.GetFSHists(),
-                                        p.get<fhicl::ParameterSet>("Material"),
-                                        &RWManager,
-					ParMaker.GetElasticHist()/*, true*/ );
+		//RW_PDG(p.get<int>("RW_PDG")),
+		//FracsFile( (p.get< std::string >( "FracsFile" )).c_str(), "OPEN" ),
+		//XSecFile( (p.get< std::string >( "XSecFile" )).c_str(), "OPEN"),
+		//ParSet(p.get<std::vector<fhicl::ParameterSet>>("ParameterSet")),
+		//ParMaker(ParSet, RW_PDG),
+		//MultiRW(RW_PDG, XSecFile, FracsFile, ParSet) {
+		//	theRW = RWFactory.BuildReweighter(RW_PDG, &XSecFile, &FracsFile,
+		//			ParMaker.GetFSHists(),
+		//			ParMaker.GetElasticHist()/*, true*/ );
+		//}
+
+		fVerbose(p.get<bool>("Verbose")) {
 		}
 
-//fVerbose(p.get<bool>("Verbose")) {
-//}
 
 
 
 
-
-void protoana::protonmc::beginJob(){
+void protoana::proton4gen::beginJob(){
 
 	art::ServiceHandle<art::TFileService> tfs;
 
@@ -508,14 +491,14 @@ void protoana::protonmc::beginJob(){
 	fPandoraBeam->Branch("Nactivefembs",                  &fNactivefembs,                 "Nactivefembs[5]/I");
 
 	fPandoraBeam->Branch("beamtrigger",                   &fbeamtrigger,                  "beamtrigger/I");
-	fPandoraBeam->Branch("tof",                           &ftof,                          "tof/D");
-	fPandoraBeam->Branch("cerenkov1",                     &fcerenkov1,                    "cerenkov1/I");
-	fPandoraBeam->Branch("cerenkov2",                     &fcerenkov2,                    "cerenkov2/I");
+	//fPandoraBeam->Branch("tof",                           &ftof,                          "tof/D");
+	//fPandoraBeam->Branch("cerenkov1",                     &fcerenkov1,                    "cerenkov1/I");
+	//fPandoraBeam->Branch("cerenkov2",                     &fcerenkov2,                    "cerenkov2/I");
 	fPandoraBeam->Branch("beamtrackMomentum",             &fbeamtrackMomentum,            "beamtrackMomentum/D");
 	fPandoraBeam->Branch("beamtrackP",                    &fbeamtrackP,                   "beamtrackP[3]/D");
 	fPandoraBeam->Branch("beamtrackEnergy",               &fbeamtrackEnergy,              "beamtrackEnergy/D");
 	fPandoraBeam->Branch("beamtrackPos",                  &fbeamtrackPos,                 "beamtrackPos[3]/D");
-	fPandoraBeam->Branch("beamtrackDir",                  &fbeamtrackDir,                 "beamtrackDir[3]/D");
+	//fPandoraBeam->Branch("beamtrackDir",                  &fbeamtrackDir,                 "beamtrackDir[3]/D");
 	fPandoraBeam->Branch("beamtrackTime",                 &fbeamtrackTime,                "beamtrackTime/D");
 	fPandoraBeam->Branch("beamtrackPdg",                  &fbeamtrackPdg,                 "beamtrackPdg/I");
 	fPandoraBeam->Branch("beamtrackID",                   &fbeamtrackID,                  "beamtrackID/I");
@@ -528,17 +511,19 @@ void protoana::protonmc::beginJob(){
 	fPandoraBeam->Branch("beamtrk_Pz",&beamtrk_Pz);
 	fPandoraBeam->Branch("beamtrk_Eng",&beamtrk_Eng);
 
-  	fPandoraBeam->Branch("beamMomentum_spec",&beamMomentum_spec);
-  	fPandoraBeam->Branch("beamPosx_spec",&beamPosx_spec);
-  	fPandoraBeam->Branch("beamPosy_spec",&beamPosy_spec);
-  	fPandoraBeam->Branch("beamPosz_spec",&beamPosz_spec);
-  	fPandoraBeam->Branch("beamDirx_spec",&beamDirx_spec);
-  	fPandoraBeam->Branch("beamDiry_spec",&beamDiry_spec);
-  	fPandoraBeam->Branch("beamDirz_spec",&beamDirz_spec);
+  	//fPandoraBeam->Branch("beamMomentum_spec",&beamMomentum_spec);
+  	//fPandoraBeam->Branch("beamPosx_spec",&beamPosx_spec);
+  	//fPandoraBeam->Branch("beamPosy_spec",&beamPosy_spec);
+  	//fPandoraBeam->Branch("beamPosz_spec",&beamPosz_spec);
+  	//fPandoraBeam->Branch("beamDirx_spec",&beamDirx_spec);
+  	//fPandoraBeam->Branch("beamDiry_spec",&beamDiry_spec);
+  	//fPandoraBeam->Branch("beamDirz_spec",&beamDirz_spec);
 
 
+	fPandoraBeam->Branch("Isbeam_at_ff",&Isbeam_at_ff);
 	fPandoraBeam->Branch("ke_ff", &ke_ff, "ke_ff/D");
-	fPandoraBeam->Branch("pos_ff",&pos_ff);
+	fPandoraBeam->Branch("Isendpoint_outsidetpc",&Isendpoint_outsidetpc);
+	//fPandoraBeam->Branch("pos_ff",&pos_ff);
 
 	fPandoraBeam->Branch("primtrk_ke_true",&primtrk_ke_true);
 	fPandoraBeam->Branch("primtrk_ke_reco",&primtrk_ke_reco);
@@ -569,10 +554,10 @@ void protoana::protonmc::beginJob(){
 	//fPandoraBeam->Branch("primtrk_true_tpc",&primtrk_true_tpc);
 	//fPandoraBeam->Branch("primtrk_true_plane",&primtrk_true_plane);
 
-	fPandoraBeam->Branch("primtrj_true_x",&primtrj_true_x);
-	fPandoraBeam->Branch("primtrj_true_y",&primtrj_true_y);
-	fPandoraBeam->Branch("primtrj_true_z",&primtrj_true_z);
-	fPandoraBeam->Branch("primtrj_true_edept",&primtrj_true_edept);
+	//fPandoraBeam->Branch("primtrj_true_x",&primtrj_true_x);
+	//fPandoraBeam->Branch("primtrj_true_y",&primtrj_true_y);
+	//fPandoraBeam->Branch("primtrj_true_z",&primtrj_true_z);
+	//fPandoraBeam->Branch("primtrj_true_edept",&primtrj_true_edept);
 
 	//fPandoraBeam->Branch("primtrk_mcs_angles_reco",&primtrk_mcs_angles_reco);
 	//fPandoraBeam->Branch("primtrk_mcs_radlengths_reco",&primtrk_mcs_radlengths_reco);
@@ -604,6 +589,9 @@ void protoana::protonmc::beginJob(){
 	fPandoraBeam->Branch("primaryRange",                  &fprimaryRange,                 "primaryRange[3]/D");
 	fPandoraBeam->Branch("primaryT0",                     &fprimaryT0,                    "primaryT0/D");
 
+  	fPandoraBeam->Branch("primary_truth_byE_origin", &fprimary_truth_byE_origin);
+  	fPandoraBeam->Branch("primary_truth_byE_PDG", &fprimary_truth_byE_PDG);
+  	fPandoraBeam->Branch("primary_truth_byE_ID", &fprimary_truth_byE_ID);
 	fPandoraBeam->Branch("primary_truth_TrackId",         &fprimary_truth_TrackId,         "primary_truth_TrackId/I");
 	fPandoraBeam->Branch("primary_truth_Pdg",             &fprimary_truth_Pdg,             "primary_truth_Pdg/I");
 	fPandoraBeam->Branch("truthpdg",                      &ftruthpdg,                      "truthpdg/I");
@@ -722,6 +710,7 @@ void protoana::protonmc::beginJob(){
 	fPandoraBeam->Branch("daughter_truth_Phi",            &fdaughter_truth_Phi,           "daughter_truth_Phi[NDAUGHTERS]/D");
 	fPandoraBeam->Branch("daughter_truth_Process",        &fdaughter_truth_Process,       "daughter_truth_Process[NDAUGHTERS]/I");
 
+	fPandoraBeam->Branch("Iscalosize",&Iscalosize);
 	fPandoraBeam->Branch("primtrk_dqdx",&primtrk_dqdx);
 	fPandoraBeam->Branch("primtrk_dedx",&primtrk_dedx);
 	fPandoraBeam->Branch("primtrk_resrange",&primtrk_resrange);
@@ -730,7 +719,12 @@ void protoana::protonmc::beginJob(){
 	fPandoraBeam->Branch("primtrk_hity",&primtrk_hity);
 	fPandoraBeam->Branch("primtrk_hitz",&primtrk_hitz);
 	fPandoraBeam->Branch("primtrk_pitch",&primtrk_pitch);
+	fPandoraBeam->Branch("primtrk_wid0",&primtrk_wid0);
 	fPandoraBeam->Branch("primtrk_wid",&primtrk_wid);
+  	fPandoraBeam->Branch("primtrk_pt",&primtrk_pt);
+  	fPandoraBeam->Branch("primtrk_calo_hit_index",&primtrk_calo_hit_index);
+  	fPandoraBeam->Branch("primtrk_ch",&primtrk_ch);
+
 
 	//fPandoraCosmics = tfs->make<TTree>("PandoraCosmics", "Cosmic tracks reconstructed with Pandora");
 	//fPandoraCosmics->Branch("run",                 &fRun,                "run/I");
@@ -747,19 +741,9 @@ void protoana::protonmc::beginJob(){
 	//fPandoraCosmics->Branch("beamtrackDir",        &fbeamtrackDir,       "beamtrackDir[3]/D");
 
 
-  	fPandoraBeam->Branch("g4rw_primary_weights", &g4rw_primary_weights);
-  	fPandoraBeam->Branch("g4rw_primary_singular_weight", &g4rw_primary_singular_weight);
-  	fPandoraBeam->Branch("g4rw_primary_plus_sigma_weight", &g4rw_primary_plus_sigma_weight);
-  	fPandoraBeam->Branch("g4rw_primary_minus_sigma_weight", &g4rw_primary_minus_sigma_weight);
-  	fPandoraBeam->Branch("g4rw_primary_var", &g4rw_primary_var);
-  	fPandoraBeam->Branch("g4rw_p1", &g4rw_p1);
-  	fPandoraBeam->Branch("g4rw_p2", &g4rw_p2);
-  	fPandoraBeam->Branch("g4rw_set_weights", &g4rw_set_weights);
-	
-
 }
 
-void protoana::protonmc::analyze(art::Event const & evt){
+void protoana::proton4gen::analyze(art::Event const & evt){
 
 	// Initialise tree parameters
 	Initialise();
@@ -818,39 +802,39 @@ void protoana::protonmc::analyze(art::Event const & evt){
 	auto mcTruths = evt.getValidHandle<std::vector<simb::MCTruth>>(fGeneratorTag);  
 	if(!evt.isRealData()){
 		//for prod. 3, new implementation to access the beam momentum from spectrometer //////////////////////////////
-  		auto beamHandle = evt.getValidHandle<std::vector<beam::ProtoDUNEBeamEvent>>("generator");
-  		std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
-  		if( beamHandle.isValid()){
-    			art::fill_ptr_vector(beamVec, beamHandle);
-  		}
-  		const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0)); //Should just have one
+  		//auto beamHandle = evt.getValidHandle<std::vector<beam::ProtoDUNEBeamEvent>>("generator");
+  		//std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
+  		//if( beamHandle.isValid()){
+    			//art::fill_ptr_vector(beamVec, beamHandle);
+  		//}
+  		//const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0)); //Should just have one
 
   		//Access momentum
-  		const std::vector< double > & momenta = beamEvent.GetRecoBeamMomenta();
-  		std::cout << "Number of reconstructed beam momenta from spec: " << momenta.size() << std::endl;
+  		//const std::vector< double > & momenta = beamEvent.GetRecoBeamMomenta();
+  		//std::cout << "Number of reconstructed beam momenta from spec: " << momenta.size() << std::endl;
 
-  		if( momenta.size() > 0 ) std::cout << "Measured Beam Momentum from spec: " << momenta.at(0) << std::endl;
+  		//if( momenta.size() > 0 ) std::cout << "Measured Beam Momentum from spec: " << momenta.at(0) << std::endl;
 		
 		//std::cout<<"beam mom size:"<<momenta.size()<<std::endl;
-        	for (size_t i = 0; i<momenta.size(); ++i){
-          		beamMomentum_spec.push_back(momenta[i]);
+        	//for (size_t i = 0; i<momenta.size(); ++i){
+          		//beamMomentum_spec.push_back(momenta[i]);
 	  		//std::cout<<"beam mom["<<i<<"]:"<<momenta[i]<<" [GeV]"<<std::endl;
-        	}
+        	//}
 
-		auto & btracks = beamEvent.GetBeamTracks();
-		std::cout<<"beam trk size:"<<btracks.size()<<std::endl;
-        	for (size_t i = 0; i<btracks.size(); ++i){
-	  		std::cout<<"beamPosx/beamPosy/beamPosz:"<<btracks[i].End().X()<<"/"<<btracks[i].End().Y()<<"/"<<btracks[i].End().Z()<<std::endl;
-	  		std::cout<<"beamDirx/beamDiry/beamDirz:"<<btracks[i].StartDirection().X()<<"/"<<btracks[i].StartDirection().Y()<<"/"<<btracks[i].StartDirection().Z()<<std::endl;
+		//auto & btracks = beamEvent.GetBeamTracks();
+		//std::cout<<"beam trk size:"<<btracks.size()<<std::endl;
+        	//for (size_t i = 0; i<btracks.size(); ++i){
+	  		//std::cout<<"beamPosx/beamPosy/beamPosz:"<<btracks[i].End().X()<<"/"<<btracks[i].End().Y()<<"/"<<btracks[i].End().Z()<<std::endl;
+	  		//std::cout<<"beamDirx/beamDiry/beamDirz:"<<btracks[i].StartDirection().X()<<"/"<<btracks[i].StartDirection().Y()<<"/"<<btracks[i].StartDirection().Z()<<std::endl;
 
-          		beamPosx_spec.push_back(btracks[i].End().X());
-          		beamPosy_spec.push_back(btracks[i].End().Y());
-          		beamPosz_spec.push_back(btracks[i].End().Z());
-          		beamDirx_spec.push_back(btracks[i].StartDirection().X());
-          		beamDiry_spec.push_back(btracks[i].StartDirection().Y());
-          		beamDirz_spec.push_back(btracks[i].StartDirection().Z());
+          		//beamPosx_spec.push_back(btracks[i].End().X());
+          		//beamPosy_spec.push_back(btracks[i].End().Y());
+          		//beamPosz_spec.push_back(btracks[i].End().Z());
+          		//beamDirx_spec.push_back(btracks[i].StartDirection().X());
+          		//beamDiry_spec.push_back(btracks[i].StartDirection().Y());
+          		//beamDirz_spec.push_back(btracks[i].StartDirection().Z());
 
-		}
+		//}
 
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -875,7 +859,6 @@ void protoana::protonmc::analyze(art::Event const & evt){
 		const simb::MCParticle* geantGoodParticle = truthUtil.GetGeantGoodParticle((*mcTruths)[0],evt);
 
 
-
 		if(geantGoodParticle != 0x0){
 			std::cout << "Found GEANT particle corresponding to the good particle with pdg = " << geantGoodParticle->PdgCode() 
 				<< " , track id = " << geantGoodParticle->TrackId()
@@ -898,6 +881,7 @@ void protoana::protonmc::analyze(art::Event const & evt){
 			fbeamtrackPdg      = geantGoodParticle->PdgCode();
 			fbeamtrackTime     = geantGoodParticle->T();
 			fbeamtrackID       = geantGoodParticle->TrackId();
+
 			//prim_energy=0;
 
 			for(size_t i_s=0; i_s < geantGoodParticle->NumberTrajectoryPoints(); i_s++){ //loop over beam tracks
@@ -909,37 +893,69 @@ void protoana::protonmc::analyze(art::Event const & evt){
 				beamtrk_Py.push_back(geantGoodParticle->Momentum(i_s).Y());
 				beamtrk_Pz.push_back(geantGoodParticle->Momentum(i_s).Z());
 
-				beamtrk_Eng.push_back(geantGoodParticle->Momentum(i_s).E()-geantGoodParticle->Mass());
+				beamtrk_Eng.push_back(geantGoodParticle->Momentum(i_s).E()-geantGoodParticle->Mass()); //KE in GeV
 			} //loop over beam trks
 
 			//Get KE at front face of TPC --------------------------------------------//
 			int key_reach_tpc=-99;
-			for (size_t kk=0; kk<beamtrk_z.size(); ++kk) {  //loop over all beam hits
-				double zpos_beam=beamtrk_z.at(kk);
-				if ((zpos_beam+0.49375)<0.01&&(zpos_beam+0.49375)>-0.01) { //find key at ff
-					key_reach_tpc=kk;
-				} //kind key at ff
-			} //loop over all beam hits  
+			if (beamtrk_z.size()){ 
+				for (size_t kk=0; kk<beamtrk_z.size(); ++kk) {  //loop over all g4 hits
+					double zpos_beam=beamtrk_z.at(kk);
+					if (zpos_beam>=0) {
+                                        	key_reach_tpc=(int)kk;
+                                        	break;
+                                	}
+			  	} //loop over all g4 hits 
+                       	  	for (size_t kk=0; kk<beamtrk_z.size(); ++kk) {  //loop over all beam hits
+                                	//std::cout<<"["<<kk<<"] beamtrk_z:"<<beamtrk_z.at(kk) <<" beamtrk_Eng:"<<beamtrk_Eng.at(kk)<<std::endl;
+					if (-1+beamtrk_z.size()>=0) { //if no negative index
+						if (beamtrk_z.at(-1+beamtrk_z.size())<0) {
+							Isendpoint_outsidetpc=true;
+						}
+					} //if no negative index
+					else { //only one point
+						if (beamtrk_z.at(0)<0) {
+							Isendpoint_outsidetpc=true;
+						}
+					} //only one point
+                          	} //loop over all beam hits
+				if (key_reach_tpc!=-99) { Isbeam_at_ff=true; }
+			}
+
+               		if (Isbeam_at_ff) { //if reach TPC ff
+                        	if (key_reach_tpc>=1) { //at least 2 points to interpolate ke_ff
+                                	double eng1_ff=beamtrk_Eng.at(key_reach_tpc-1);
+                                	double eng2_ff=beamtrk_Eng.at(key_reach_tpc);
+                                	double z1_ff=beamtrk_z.at(key_reach_tpc-1);
+                                	double z2_ff=beamtrk_z.at(key_reach_tpc);
+                                	double m_ff=(eng1_ff-eng2_ff)/(z1_ff-z2_ff);
+                                	ke_ff=1000.*(eng1_ff-m_ff*z1_ff); //unit: MeV
+                        	} //at least 2 points to interpolate ke_ff
+                        	else { //key_reach_tpc==0
+                                	ke_ff=1000.*(beamtrk_Eng.at(key_reach_tpc)); //ke_ff at z=0
+                        	} //key_reach_tpc==0
+                	} //if reach TPC ff             
 
 			//Define KE and Momentum at the entering point of TPC
-			if (key_reach_tpc!=-99) { //ke and pos at front face
-				ke_ff=1000.*(beamtrk_Eng.at(key_reach_tpc)); //unit: MeV
-				pos_ff.push_back(beamtrk_x.at(key_reach_tpc));
-				pos_ff.push_back(beamtrk_y.at(key_reach_tpc));
-				pos_ff.push_back(beamtrk_z.at(key_reach_tpc));
+			//if (key_reach_tpc!=-99) { //ke and pos at front face
+				//ke_ff=1000.*(beamtrk_Eng.at(key_reach_tpc)); //unit: MeV
+				//pos_ff.push_back(beamtrk_x.at(key_reach_tpc));
+				//pos_ff.push_back(beamtrk_y.at(key_reach_tpc));
+				//pos_ff.push_back(beamtrk_z.at(key_reach_tpc));
 
-				fprimary_truth_Momentum[0]=beamtrk_Px.at(key_reach_tpc);
-				fprimary_truth_Momentum[1]=beamtrk_Py.at(key_reach_tpc);
-				fprimary_truth_Momentum[2]=beamtrk_Pz.at(key_reach_tpc);
-			} //ke and pos at front face
-			else {
-				std::cout<<"This particle doesn't enter TPC!!!"<<std::endl;
-			}	
+				//fprimary_truth_Momentum[0]=beamtrk_Px.at(key_reach_tpc);
+				//fprimary_truth_Momentum[1]=beamtrk_Py.at(key_reach_tpc);
+				//fprimary_truth_Momentum[2]=beamtrk_Pz.at(key_reach_tpc);
+			//} //ke and pos at front face
+			//else {
+				//std::cout<<"This particle doesn't enter TPC!!!"<<std::endl;
+			//}	
 			//Get KE at front face of TPC --------------------------------------------//
 
 			//Get Truth info
 			fprimary_truth_TrackId          = geantGoodParticle->TrackId();
 			fprimary_truth_Pdg              = geantGoodParticle->PdgCode();
+
 			beamid                          = geantGoodParticle->TrackId();
 			fprimary_truth_StartPosition[3] = geantGoodParticle->T();
 			fprimary_truth_EndPosition[3]   = geantGoodParticle->EndT();
@@ -955,9 +971,9 @@ void protoana::protonmc::analyze(art::Event const & evt){
 			fprimary_truth_EndPosition_MC[3]   = geantGoodParticle->EndT();
 
 			fprimary_truth_P                = geantGoodParticle->P();
-			//fprimary_truth_Momentum[0]      = geantGoodParticle->Px();
-			//fprimary_truth_Momentum[1]      = geantGoodParticle->Py();
-			//fprimary_truth_Momentum[2]      = geantGoodParticle->Pz();
+			fprimary_truth_Momentum[0]      = geantGoodParticle->Px(); //could be wrong, not the Px at FF
+			fprimary_truth_Momentum[1]      = geantGoodParticle->Py(); //
+			fprimary_truth_Momentum[2]      = geantGoodParticle->Pz(); //
 			fprimary_truth_Momentum[3]      = geantGoodParticle->E();
 			fprimary_truth_Pt               = geantGoodParticle->Pt();
 			fprimary_truth_Mass             = geantGoodParticle->Mass();
@@ -970,118 +986,66 @@ void protoana::protonmc::analyze(art::Event const & evt){
 			fprimary_truth_NDaughters       = geantGoodParticle->NumberDaughters();
 			//fprimary_truth_Process          = int(geantGoodParticle->Trajectory().ProcessToKey(geantGoodParticle->Process()));
 			//fprimary_truth_Process           = geantGoodParticle->Process(); //HY::wired result
-			//fprimary_truth_EndProcess           = geantGoodParticle->EndProcess(); //HY:wierd result
+			fprimary_truth_EndProcess           = geantGoodParticle->EndProcess();
+				
+				
+
+			std::cout<<"-----> fprimary_truth_EndProcess:"<<fprimary_truth_EndProcess.c_str()<<std::endl;
 
 			//fprimary_backtrker_truth_Process          = int(geantGoodParticle->Trajectory().ProcessToKey(geantGoodParticle->Process()));
 
 			//g4 reweight -------------------------------------------------------------------------------------------------//
-			true_beam_PDG = geantGoodParticle->PdgCode();
-			true_beam_ID = geantGoodParticle->TrackId();
+			//true_beam_PDG = geantGoodParticle->PdgCode();
+			//true_beam_ID = geantGoodParticle->TrackId();
 			//true_beam_len = geantGoodParticle->Trajectory().TotalLength();
 
-			std::cout << "Doing reweight" << std::endl;
-			if (true_beam_PDG == RW_PDG) { //if PDG=RW_PDG
-				std::cout<<"Got particle with PDG="<<RW_PDG<<std::endl;
-				G4ReweightTraj theTraj(true_beam_ID, true_beam_PDG, 0, fevent, {0,0});
-				bool created = CreateRWTraj(*geantGoodParticle, pi_serv->ParticleList(),
-						fGeometryService_rw, fevent, &theTraj);
-				if (created && theTraj.GetNSteps()) {
-
-					g4rw_primary_singular_weight = MultiRW.GetWeightFromNominal(theTraj);
-					//the following method achieves the same result
-					//g4rw_primary_singular_weight = theRW->GetWeight(&theTraj);
-
-					std::vector<double> weights_vec = MultiRW.GetWeightFromAll1DThrows(
-							theTraj);
-					g4rw_primary_weights.insert(g4rw_primary_weights.end(),
-							weights_vec.begin(), weights_vec.end());
-
-					for (size_t i = 0; i < ParSet.size(); ++i) {
-						std::pair<double, double> pm_weights =
-							MultiRW.GetPlusMinusSigmaParWeight(theTraj, i);
-
-						g4rw_primary_plus_sigma_weight.push_back(pm_weights.first);
-						g4rw_primary_minus_sigma_weight.push_back(pm_weights.second);
-						g4rw_primary_var.push_back(ParSet[i].get<std::string>("Name"));
-					}
-
-					//--------- rw parameters using multi-dimensional array -----------------------------------------------------------------------------------------------//
-					if (ParSet.size()==2) { //if parset size=2, i.e. 2x2 array
-						for (size_t i = 0; i < 300; ++i) {
-							for (size_t j = 0; j < 200; ++j) {
-								double tmp_p1=(.9 + i*.001); //reac
-								double tmp_p2=(.9 + j*.001); //elast
-								//std::cout<<"(p1,p2):("<<tmp_p1<<","<<tmp_p2<<")"<<std::endl; 
-								std::vector<double> input_values = {tmp_p1,tmp_p2}; //HY:the index here based on the sequence of the fichl setting
-								
-								bool set_values = MultiRW.SetAllParameterValues(input_values);
-								if (!set_values) continue;
-
-								g4rw_p1.push_back(tmp_p1);
-								g4rw_p2.push_back(tmp_p2);
-								g4rw_set_weights.push_back(
-									MultiRW.GetWeightFromSetParameters(theTraj)
-								);
-
-							}
-						}
-					} //if parset size=2, i.e. 2x2 array
-					//--------- rw parameters using multi-dimensional array ----------------------------------------------------------------------------------------------//
-
-
-
-
-				}
-
-			} //if PDG=RW_PDG
 			//g4 reweight -------------------------------------------------------------------------------------------------//
-
 		}
 	}
 	else{
 		// For data we can see if this event comes from a beam trigger
 		beamTriggerEvent = dataUtil.IsBeamTrigger(evt);
 
-		art::Handle< std::vector<beam::ProtoDUNEBeamEvent> > pdbeamHandle;
-		std::vector< art::Ptr<beam::ProtoDUNEBeamEvent> > beaminfo;
-		if(evt.getByLabel(fBeamModuleLabel, pdbeamHandle))
-			art::fill_ptr_vector(beaminfo, pdbeamHandle);
+		//art::Handle< std::vector<beam::ProtoDUNEBeamEvent> > pdbeamHandle;
+		//std::vector< art::Ptr<beam::ProtoDUNEBeamEvent> > beaminfo;
+		//if(evt.getByLabel(fBeamModuleLabel, pdbeamHandle))
+			//art::fill_ptr_vector(beaminfo, pdbeamHandle);
 
-		for(unsigned int i = 0; i < beaminfo.size(); ++i){
+		//for(unsigned int i = 0; i < beaminfo.size(); ++i){
 			//if(!beaminfo[i]->CheckIsMatched()) continue;
-			fbeamtrigger = beaminfo[i]->GetTimingTrigger();
-			fbeamtrackTime = (double)beaminfo[i]->GetRDTimestamp();
+			//fbeamtrigger = beaminfo[i]->GetTimingTrigger();
+			//fbeamtrackTime = (double)beaminfo[i]->GetRDTimestamp();
 
 			// If ToF is 0-3 there was a good match corresponding to the different pair-wise combinations of the upstream and downstream channels
-			if(beaminfo[i]->GetTOFChan() >= 0)
-				ftof =  beaminfo[i]->GetTOF();
+			//if(beaminfo[i]->GetTOFChan() >= 0)
+				//ftof =  beaminfo[i]->GetTOF();
 
 			// Get Cerenkov
-			if(beaminfo[i]->GetBITrigger() == 1){
-				fcerenkov1 = beaminfo[i]->GetCKov0Status();
-				fcerenkov2 = beaminfo[i]->GetCKov1Status();
-			}
+			//if(beaminfo[i]->GetBITrigger() == 1){
+				//fcerenkov1 = beaminfo[i]->GetCKov0Status();
+				//fcerenkov2 = beaminfo[i]->GetCKov1Status();
+			//}
 
 			// Beam particle could have more than one tracks - for now take the first one, need to do this properly
-			auto & tracks = beaminfo[i]->GetBeamTracks();
-			if(!tracks.empty()){
-				fbeamtrackPos[0] = tracks[0].End().X();
-				fbeamtrackPos[1] = tracks[0].End().Y();
-				fbeamtrackPos[2] = tracks[0].End().Z();
-				fbeamtrackDir[0] = tracks[0].StartDirection().X();
-				fbeamtrackDir[1] = tracks[0].StartDirection().Y();
-				fbeamtrackDir[2] = tracks[0].StartDirection().Z();
-			}
+			//auto & tracks = beaminfo[i]->GetBeamTracks();
+			//if(!tracks.empty()){
+				//fbeamtrackPos[0] = tracks[0].End().X();
+				//fbeamtrackPos[1] = tracks[0].End().Y();
+				//fbeamtrackPos[2] = tracks[0].End().Z();
+				//fbeamtrackDir[0] = tracks[0].StartDirection().X();
+				//fbeamtrackDir[1] = tracks[0].StartDirection().Y();
+				//fbeamtrackDir[2] = tracks[0].StartDirection().Z();
+			//}
 
 			// Beam momentum
-			auto & beammom = beaminfo[i]->GetRecoBeamMomenta();
-			if(!beammom.empty())
-				fbeamtrackMomentum = beammom[0];
+			//auto & beammom = beaminfo[i]->GetRecoBeamMomenta();
+			//if(!beammom.empty())
+				//fbeamtrackMomentum = beammom[0];
 
 			// For now only take the first beam particle - need to add some criteria if more than one are found
-			break;
+			//break;
 
-		}
+		//}
 	}
 
 	/*
@@ -1123,6 +1087,7 @@ void protoana::protonmc::analyze(art::Event const & evt){
 	if(evt.getByLabel("pandoraTrack",trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
 	else return;
 	if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
+  	auto allHits = evt.getValidHandle<std::vector<recob::Hit> >(fHitTag);
 
 	art::Handle< std::vector<recob::Cluster> > clusterListHandle; // to get information about the hits
 	std::vector<art::Ptr<recob::Cluster>> clusterlist;
@@ -1179,18 +1144,32 @@ void protoana::protonmc::analyze(art::Event const & evt){
 		trkf::TrackMomentumCalculator trkm{1.};
 		recob::MCSFitResult res;
 
+
+		//HY:Get truth info --------------------------------------------------------------------------------//
+		const simb::MCParticle* trueParticle = 0x0;
+		trueParticle = truthUtil.GetMCParticleFromPFParticle(clockData, *particle, evt, fPFParticleTag);
+		if (trueParticle) {
+    			fprimary_truth_byE_origin = pi_serv->TrackIdToMCTruth_P(trueParticle->TrackId())->Origin();
+			fprimary_truth_byE_PDG = trueParticle->PdgCode();
+			fprimary_truth_byE_ID = trueParticle->TrackId();
+			//std::cout<<"fprimary_truth_byE_origin:"<<fprimary_truth_byE_origin<<std::endl;
+			//std::cout<<"fprimary_truth_byE_PDG:"<<fprimary_truth_byE_PDG<<std::endl;
+			//std::cout<<"fprimary_truth_byE_ID:"<<fprimary_truth_byE_ID<<std::endl;
+		}
+
+
 		if(thisTrack != 0x0) { //this track
 			// Get the true mc particle
                          const simb::MCParticle* mcparticle0 = truthUtil.GetMCParticleFromRecoTrack(clockData, *thisTrack, evt, fTrackerTag);
-			std::cout<<"inside the this track loop "<<std::endl;
+			//std::cout<<"inside the this track loop "<<std::endl;
 			if(mcparticle0!=0x0) {
-				std::cout<<"fTruth PDG: "<<mcparticle0->PdgCode()<<std::endl;
+				//std::cout<<"fTruth PDG: "<<mcparticle0->PdgCode()<<std::endl;
 				ftruthpdg=mcparticle0->PdgCode();
 
 				truthid=mcparticle0->TrackId();
 				fprimary_truth_Isbeammatched=0;
 				if(beamid==truthid) fprimary_truth_Isbeammatched=1;
-
+				//std::cout<<"fprimary_truth_Isbeammatched:"<<fprimary_truth_Isbeammatched<<std::endl;	
 
 
 			}
@@ -1289,29 +1268,34 @@ void protoana::protonmc::analyze(art::Event const & evt){
 				std::cerr << "WARNING::Calorimetry vector size for primary is = " << calovector.size() << std::endl;
 
 			//HY::Get the Calorimetry(s) from thisTrack
-			std::vector<double> tmp_primtrk_dqdx;	
-			std::vector<double> tmp_primtrk_resrange;	
-			std::vector<double> tmp_primtrk_dedx;	
-			std::vector<double> tmp_primtrk_hitx;	
-			std::vector<double> tmp_primtrk_hity;	
-			std::vector<double> tmp_primtrk_hitz;
-			std::vector<double> tmp_primtrk_pitch;
-			std::vector<int> tmp_primtrk_wid;
+			//std::vector<double> tmp_primtrk_dqdx;	
+			//std::vector<double> tmp_primtrk_resrange;	
+			//std::vector<double> tmp_primtrk_dedx;	
+			//std::vector<double> tmp_primtrk_hitx;	
+			//std::vector<double> tmp_primtrk_hity;	
+			//std::vector<double> tmp_primtrk_hitz;
+			//std::vector<double> tmp_primtrk_pitch;
+			//std::vector<int> tmp_primtrk_wid0;
+			//std::vector< size_t > tmp_primtrk_TpIndices;
+			//std::vector<int> tmp_primtrk_wid;
+			//std::vector<double> tmp_primtrk_pt;	
+			//std::vector<int> tmp_primtrk_ch;
+
 			//std::vector<double> tmp_primtrk_truth_Eng;
 			for (auto & calo : calovector) {
 				if (calo.PlaneID().Plane == 2){ //only collection plane
 					primtrk_range.push_back(calo.Range());
-					std::cout<<"primtrk_range:"<<calo.Range()<<std::endl;
+					//std::cout<<"primtrk_range:"<<calo.Range()<<std::endl;
 					for (size_t ihit = 0; ihit < calo.dQdx().size(); ++ihit){ //loop over hits
-						tmp_primtrk_dqdx.push_back(calo.dQdx()[ihit]);
-						tmp_primtrk_resrange.push_back(calo.ResidualRange()[ihit]);
-						tmp_primtrk_dedx.push_back(calo.dEdx()[ihit]);
-						tmp_primtrk_pitch.push_back(calo.TrkPitchVec()[ihit]);
+						primtrk_dqdx.push_back(calo.dQdx()[ihit]);
+						primtrk_resrange.push_back(calo.ResidualRange()[ihit]);
+						primtrk_dedx.push_back(calo.dEdx()[ihit]);
+						primtrk_pitch.push_back(calo.TrkPitchVec()[ihit]);
 
 						const auto &primtrk_pos=(calo.XYZ())[ihit];
-						tmp_primtrk_hitx.push_back(primtrk_pos.X());
-						tmp_primtrk_hity.push_back(primtrk_pos.Y());
-						tmp_primtrk_hitz.push_back(primtrk_pos.Z());
+						primtrk_hitx.push_back(primtrk_pos.X());
+						primtrk_hity.push_back(primtrk_pos.Y());
+						primtrk_hitz.push_back(primtrk_pos.Z());
 
 						double pos_reco[3]={primtrk_pos.X(),primtrk_pos.Y(),primtrk_pos.Z()};
 						art::ServiceHandle<geo::Geometry> geomm;
@@ -1326,10 +1310,12 @@ void protoana::protonmc::analyze(art::Event const & evt){
 							catch(geo::InvalidWireError const& e) {
 								wireID = e.suggestedWireID(); // pick the closest valid wire
 							}
-							tmp_primtrk_wid.push_back(wireID.Wire);
+							primtrk_wid0.push_back(wireID.Wire);
+
+
 						}
 						if(!tpc.isValid){
-							tmp_primtrk_wid.push_back(-9999);
+							primtrk_wid0.push_back(-9999);
 						}
 
 						//geo::WireID WireID_reco=geomm->NearestWireID(pos_reco, 2); //2 for collection plane
@@ -1338,6 +1324,17 @@ void protoana::protonmc::analyze(art::Event const & evt){
 						//std::cout<<"(x,y,z)_reco:("<<primtrk_pos.X()<<","<<primtrk_pos.Y()<<","<<primtrk_pos.Z()<<") wid:"<<WireID_reco.Wire<<std::endl;
 						//std::cout<<"dqdx="<<calo.dQdx()[ihit]<<"; resrange="<<calo.ResidualRange()[ihit]<<std::endl;
 						//std::cout<<"(X,Y,Z)="<<"("<<calo.XYZ()[ihit].X()<<","<<calo.XYZ()[ihit].Y()<<","<<calo.XYZ()[ihit].Z()<<")"<<std::endl;
+
+						//primtrk_TpIndices.push_back(calo.TpIndices()[ihit]);
+						primtrk_calo_hit_index.push_back(calo.TpIndices()[ihit]);
+						const recob::Hit & theHit = (*allHits)[ calo.TpIndices()[ihit] ];
+						primtrk_wid.push_back(theHit.WireID().Wire);
+						primtrk_pt.push_back(theHit.PeakTime());
+						primtrk_ch.push_back(theHit.Channel());	
+
+							//if (fRun==39279896&&fSubRun==152&&fevent==1165) {
+								//std::cout<<"wid:"<<theHit.WireID().Wire<<""<<std::endl;
+							//}
 
 					} //loop over hits
 				} //only collection plane
@@ -1350,25 +1347,27 @@ void protoana::protonmc::analyze(art::Event const & evt){
 			//if(mcparticle2 != 0x0) { //mcparticle
 
 			//std::vector<unsigned char> tmp_primtrk_hit_processkey;	
-			std::vector<double> tmp_primtrk_hitx_true;	
-			std::vector<double> tmp_primtrk_hity_true;	
-			std::vector<double> tmp_primtrk_hitz_true;
-			std::vector<double> tmp_primtrk_trkid_true;
-			std::vector<double> tmp_primtrk_edept_true;
+			//std::vector<double> tmp_primtrk_hitx_true;	
+			//std::vector<double> tmp_primtrk_hity_true;	
+			//std::vector<double> tmp_primtrk_hitz_true;
+			//std::vector<double> tmp_primtrk_trkid_true;
+			//std::vector<double> tmp_primtrk_edept_true;
 
-			std::vector<double> tmp_primtrk_true_x;	
-			std::vector<double> tmp_primtrk_true_y;	
-			std::vector<double> tmp_primtrk_true_z;
-			std::vector<double> tmp_primtrk_true_trkid;
-			std::vector<double> tmp_primtrk_true_edept;
-			std::vector<int> tmp_primtrk_true_wid;	
+			//std::vector<double> tmp_primtrk_true_x;	
+			//std::vector<double> tmp_primtrk_true_y;	
+			//std::vector<double> tmp_primtrk_true_z;
+			//std::vector<double> tmp_primtrk_true_trkid;
+			//std::vector<double> tmp_primtrk_true_edept;
+			//std::vector<int> tmp_primtrk_true_wid;	
 			//std::vector<int> tmp_primtrk_true_tpc;	
 			//std::vector<int> tmp_primtrk_true_plane;	
 
-			std::vector<double> tmp_primtrj_true_x;
-			std::vector<double> tmp_primtrj_true_y;
-			std::vector<double> tmp_primtrj_true_z;
-			std::vector<double> tmp_primtrj_true_edept;
+			//std::vector<double> tmp_primtrj_true_x;
+			//std::vector<double> tmp_primtrj_true_y;
+			//std::vector<double> tmp_primtrj_true_z;
+			//std::vector<double> tmp_primtrj_true_edept;
+	
+			if (geantGoodParticle1== 0x0) std::cout<<"@@@@ Empty G4 particle!!"<<std::endl;
 
 			if(geantGoodParticle1!= 0x0 && geantGoodParticle1->Process()=="primary") { //sansity check
 				//const simb::MCParticle *geantGoodParticle=pi_serv->TrackIdToMotherParticle_P(mcparticle2->TrackId());
@@ -1390,7 +1389,7 @@ void protoana::protonmc::analyze(art::Event const & evt){
 						fprimary_truth_EndPosition[0]=((truetraj.at(couple.first)).first).X();
 						fprimary_truth_EndPosition[1]=((truetraj.at(couple.first)).first).Y();
 						fprimary_truth_EndPosition[2]=((truetraj.at(couple.first)).first).Z();
-						fprimary_truth_EndProcess=truetraj.KeyToProcess(couple.second);	
+						////fprimary_truth_EndProcess=truetraj.KeyToProcess(couple.second);	
 
 						fprimary_truth_EndMomentum[0]=((truetraj.at(couple.first)).second).X();
 						fprimary_truth_EndMomentum[1]= ((truetraj.at(couple.first)).second).Y();
@@ -1400,9 +1399,12 @@ void protoana::protonmc::analyze(art::Event const & evt){
 					}
 				}
 				primtrk_end_g4process=int_label;
+				//std::cout<<"\n"<<std::endl;
 
 				//study of interaction angles
 				//if (thisTrajectoryProcessMap1.size()) { //TrajectoryProcessMap1
+				//if (thisTrajectoryProcessMap1.empty()) std::cout<<"@@@@ process map is empty"<<std::endl;
+				//if (thisTrajectoryProcessMap1.size()==0) std::cout<<"@@@ process map size is 0!"<<std::endl;
 				if (thisTrajectoryProcessMap1.size()) { //TrajectoryProcessMap1
 					for(auto const& couple1: thisTrajectoryProcessMap1) { //go through this traj with all the interaction vertices
 						interactionX.push_back(((truetraj.at(couple1.first)).first).X());
@@ -1410,6 +1412,8 @@ void protoana::protonmc::analyze(art::Event const & evt){
 						interactionZ.push_back(((truetraj.at(couple1.first)).first).Z());
 						interactionE.push_back(((truetraj.at(couple1.first)).first).E());	
 						interactionProcesslist.push_back(truetraj.KeyToProcess(couple1.second));
+
+						//std::cout<<"int_process z, E, name:"<<((truetraj.at(couple1.first)).first).Z()<<((truetraj.at(couple1.first)).first).E()<<", "<<truetraj.KeyToProcess(couple1.second)<<std::endl;
 
 						//get the TPC num 
 						double xval=((truetraj.at(couple1.first)).first).X();
@@ -1446,15 +1450,17 @@ void protoana::protonmc::analyze(art::Event const & evt){
                                                 //std::cout<<"(wid,tt)_u:"<<"("<<fGeometry->WireCoordinate(yval, zval, 0, tpcno, 0)<<","<<detProp.ConvertXToTicks(xval, 0, tpcno, 0)<<")"<<std::endl;
 
 
-						//not interested of CoulombScat	
-						if ((truetraj.KeyToProcess(couple1.second)).find("CoulombScat")!= std::string::npos) continue;
+						//not interested of CoulombScat
+						//HY:Remove the condition for CoulombScat	
+						//if ((truetraj.KeyToProcess(couple1.second)).find("CoulombScat")!= std::string::npos) continue;
 
 						//check if the interaction is in the TPC
 						auto     interactionPos4D =  (truetraj.at(couple1.first)).first ;        
 
-						if      (interactionPos4D.Z() <  minZ || interactionPos4D.Z() > maxZ ) continue;
-						else if (interactionPos4D.X() <  minX || interactionPos4D.X() > maxX ) continue;
-						else if (interactionPos4D.Y() <  minY || interactionPos4D.Y() > maxY ) continue;
+						//HY::Release the condition that interactions have to happen inside tpc
+						//if      (interactionPos4D.Z() <  minZ || interactionPos4D.Z() > maxZ ) continue;
+						//else if (interactionPos4D.X() <  minX || interactionPos4D.X() > maxX ) continue;
+						//else if (interactionPos4D.Y() <  minY || interactionPos4D.Y() > maxY ) continue;
 
 						///get the interaction angle here
 						double interactionAngle = 999999.; // This needs to be changed
@@ -1511,18 +1517,23 @@ void protoana::protonmc::analyze(art::Event const & evt){
 							}
 						} // The particle has come to an end. Let's check the daugthers.
 					}  //go through this traj with all the interaction vertices
+					if (fprimary_truth_EndProcess.find( "protonInelastic" ) == std::string::npos) {
+						interactionProcesslist.push_back(fprimary_truth_EndProcess);
+						std::cout<<"-->add inel at the end!"<<std::endl;
+					}
+
 				} //TrajectoryProcessMap1
 
 				//save all the mctraj info 
-				std::cout<<"\n MCTrajectory of this prim. trk has:"<<truetraj.size()<<" hits!!"<<std::endl;
-				for (size_t tt=0; tt<truetraj.size(); ++tt) { //loop over all the hits in this mc traj
-					tmp_primtrj_true_x.push_back(truetraj.X(tt));
-					tmp_primtrj_true_y.push_back(truetraj.Y(tt));
-					tmp_primtrj_true_z.push_back(truetraj.Z(tt));
-					tmp_primtrj_true_edept.push_back(truetraj.E(tt));
+				//std::cout<<"\n MCTrajectory of this prim. trk has:"<<truetraj.size()<<" hits!!"<<std::endl;
+				//for (size_t tt=0; tt<truetraj.size(); ++tt) { //loop over all the hits in this mc traj
+					//tmp_primtrj_true_x.push_back(truetraj.X(tt));
+					//tmp_primtrj_true_y.push_back(truetraj.Y(tt));
+					//tmp_primtrj_true_z.push_back(truetraj.Z(tt));
+					//tmp_primtrj_true_edept.push_back(truetraj.E(tt));
 					//std::cout<<"[mctraj] x/y/z/E:"<<truetraj.X(tt)<<"/"<<truetraj.Y(tt)<<"/"<<truetraj.Z(tt)<<"/"<<truetraj.E(tt)<<std::endl;  
 					//std::cout<<"[int] x/y/z/E:"<<interactionX.at(tt)<<"/"<<interactionY.at(tt)<<"/"<<interactionZ.at(tt)<<"/"<<interactionE.at(tt)<<std::endl;
-				} //loop over all the hits in this mc traj
+				//} //loop over all the hits in this mc traj
 
 				//use backtracker to find the associtated true info
 				geo::View_t view = geom->View(2);
@@ -1541,28 +1552,29 @@ void protoana::protonmc::analyze(art::Event const & evt){
 				double xi=0.0; double yi=0.0; double zi=0.0;
 				int cnt=0;
 				//sanity check on the start/end positions
-				if(tmp_primtrk_dqdx.size()!=0) { //make sure the dqdx vector is not empty
-					if(tmp_primtrk_hitz[0]>tmp_primtrk_hitz[tmp_primtrk_hitz.size()-1]) { //flip trk vectors if Pandora messes up the trk direction
-						std::reverse(tmp_primtrk_hitz.begin(), tmp_primtrk_hitz.end());
-						std::reverse(tmp_primtrk_hity.begin(), tmp_primtrk_hity.end());
-						std::reverse(tmp_primtrk_hitx.begin(), tmp_primtrk_hitx.end());
-						std::reverse(tmp_primtrk_pitch.begin(),tmp_primtrk_pitch.end());
-						std::reverse(tmp_primtrk_dedx.begin(), tmp_primtrk_dedx.end());
-						std::reverse(tmp_primtrk_dqdx.begin(), tmp_primtrk_dqdx.end());
-						std::reverse(tmp_primtrk_resrange.begin(), tmp_primtrk_resrange.end());
+				if(primtrk_dqdx.size()!=0) { //make sure the dqdx vector is not empty
+					if(primtrk_hitz[0]>primtrk_hitz[primtrk_hitz.size()-1]) { //flip trk vectors if Pandora messes up the trk direction
+						std::reverse(primtrk_hitz.begin(), primtrk_hitz.end());
+						std::reverse(primtrk_hity.begin(), primtrk_hity.end());
+						std::reverse(primtrk_hitx.begin(), primtrk_hitx.end());
+						std::reverse(primtrk_pitch.begin(),primtrk_pitch.end());
+						std::reverse(primtrk_dedx.begin(), primtrk_dedx.end());
+						std::reverse(primtrk_dqdx.begin(), primtrk_dqdx.end());
+						std::reverse(primtrk_resrange.begin(), primtrk_resrange.end());
 					} //flip trk vectors if Pandora messes up the trk direction
 					//p.s. simIDE can only get Edept, needs to calculate true KE by your own
 
-					for(size_t idx1=0; idx1<tmp_primtrk_dqdx.size()-1; idx1++) { //energy deposition: reco hit loop
-						ke_reco-=tmp_primtrk_pitch[idx1]*tmp_primtrk_dedx[idx1];
+					for(size_t idx1=0; idx1<primtrk_dqdx.size()-1; idx1++) { //energy deposition: reco hit loop
+						ke_reco-=primtrk_pitch[idx1]*primtrk_dedx[idx1];
 						double currentDepEng = 0.;
 						for ( auto iter= orderedSimIDE.begin(); iter!= orderedSimIDE.end(); iter++) { //simIde loop ---------------------------------------------------------------------------//
 							auto currentIde = iter->second;
 
+							//HY::Release the condition that interactions have to happen inside tpc
 							//calculation only inside TPC
-							if(currentIde.z<minZ || currentIde.z > maxZ ) continue;
-							else if (currentIde.x < minX || currentIde.x > maxX ) continue;
-							else if (currentIde.y < minY || currentIde.y > maxY ) continue;
+							//if(currentIde.z<minZ || currentIde.z > maxZ ) continue;
+							//else if (currentIde.x < minX || currentIde.x > maxX ) continue;
+							//else if (currentIde.y < minY || currentIde.y > maxY ) continue;
 
 							//if(cnt==0) { //start positions
 							if(cnt==0&&currentIde.trackID>=0) { //start positions
@@ -1570,12 +1582,12 @@ void protoana::protonmc::analyze(art::Event const & evt){
 								fprimary_truth_StartPosition[1] = currentIde.y;
 								fprimary_truth_StartPosition[2] = currentIde.z;
 
-								//tmp_primtrk_hit_processkey.push_back(currentIde.ProcessToKey);
-								tmp_primtrk_hitx_true.push_back(currentIde.x);
-								tmp_primtrk_hity_true.push_back(currentIde.y);
-								tmp_primtrk_hitz_true.push_back(currentIde.z);
-								tmp_primtrk_trkid_true.push_back(currentIde.trackID);
-								tmp_primtrk_edept_true.push_back(currentIde.energy);
+								//primtrk_hit_processkey.push_back(currentIde.ProcessToKey);
+								primtrk_hitx_true.push_back(currentIde.x);
+								primtrk_hity_true.push_back(currentIde.y);
+								primtrk_hitz_true.push_back(currentIde.z);
+								primtrk_trkid_true.push_back(currentIde.trackID);
+								primtrk_edept_true.push_back(currentIde.energy);
 							} //start positions
 
 							//run the simIde loop only one time to sum over all trk length in each segment
@@ -1592,12 +1604,12 @@ void protoana::protonmc::analyze(art::Event const & evt){
 									//fprimary_truth_EndPosition[1]=currentIde.y;
 									//fprimary_truth_EndPosition[2]=currentIde.z;
 
-									//tmp_primtrk_hit_processkey.push_back(currentIde.ProcessToKey);
-									tmp_primtrk_hitx_true.push_back(currentIde.x);
-									tmp_primtrk_hity_true.push_back(currentIde.y);
-									tmp_primtrk_hitz_true.push_back(currentIde.z);
-									tmp_primtrk_trkid_true.push_back(currentIde.trackID);
-									tmp_primtrk_edept_true.push_back(currentIde.energy);
+									//primtrk_hit_processkey.push_back(currentIde.ProcessToKey);
+									primtrk_hitx_true.push_back(currentIde.x);
+									primtrk_hity_true.push_back(currentIde.y);
+									primtrk_hitz_true.push_back(currentIde.z);
+									primtrk_trkid_true.push_back(currentIde.trackID);
+									primtrk_edept_true.push_back(currentIde.energy);
 								} //run at once
 								xi=currentIde.x; yi=currentIde.y; zi=currentIde.z;
 								cnt++;
@@ -1605,8 +1617,8 @@ void protoana::protonmc::analyze(art::Event const & evt){
 							} //discard true shower info
 
 							//true E dept within the thin slice (simIde can only get Edept, not KE)
-							if ( currentIde.z <= tmp_primtrk_hitz[idx1]) continue;
-							if ( currentIde.z > tmp_primtrk_hitz[idx1+1]) continue;
+							if ( currentIde.z <= primtrk_hitz[idx1]) continue;
+							if ( currentIde.z > primtrk_hitz[idx1+1]) continue;
 							currentDepEng += currentIde.energy; //total energy deposition in the current slice
 						} //simIde loop -------------------------------------------------------------------------------------------------------------------------------------------------------//
 						ke_true -= currentDepEng; //KE in the current slice
@@ -1628,17 +1640,18 @@ void protoana::protonmc::analyze(art::Event const & evt){
 							auto currentIde2 = iter2->second;
 
 							//calculation only inside TPC
-							if(currentIde2.z<minZ || currentIde2.z > maxZ ) continue;
-							else if (currentIde2.x < minX || currentIde2.x > maxX ) continue;
-							else if (currentIde2.y < minY || currentIde2.y > maxY ) continue;
+							//HY::Release the condition that interactions have to happen inside tpc
+							//if(currentIde2.z<minZ || currentIde2.z > maxZ ) continue;
+							//else if (currentIde2.x < minX || currentIde2.x > maxX ) continue;
+							//else if (currentIde2.y < minY || currentIde2.y > maxY ) continue;
 
 							//if(currentIde2.trackID>=0) { // no shower
-							//tmp_primtrk_hit_processkey.push_back(currentIde2.ProcessToKey);
-							tmp_primtrk_true_x.push_back(currentIde2.x);
-							tmp_primtrk_true_y.push_back(currentIde2.y);
-							tmp_primtrk_true_z.push_back(currentIde2.z);
-							tmp_primtrk_true_trkid.push_back(currentIde2.trackID);
-							tmp_primtrk_true_edept.push_back(currentIde2.energy);
+							//primtrk_hit_processkey.push_back(currentIde2.ProcessToKey);
+							primtrk_true_x.push_back(currentIde2.x);
+							primtrk_true_y.push_back(currentIde2.y);
+							primtrk_true_z.push_back(currentIde2.z);
+							primtrk_true_trkid.push_back(currentIde2.trackID);
+							primtrk_true_edept.push_back(currentIde2.energy);
 
 							double pos_true[3] = {currentIde2.x, currentIde2.y, currentIde2.z};
 							geo::TPCID tpc = geom->FindTPCAtPosition(pos_true);
@@ -1652,10 +1665,10 @@ void protoana::protonmc::analyze(art::Event const & evt){
 								catch(geo::InvalidWireError const& e) {
 									wireID = e.suggestedWireID(); // pick the closest valid wire
 								}
-								tmp_primtrk_true_wid.push_back(wireID.Wire);
+								primtrk_true_wid.push_back(wireID.Wire);
 							}
 							if(!tpc.isValid){
-								tmp_primtrk_true_wid.push_back(-9999);
+								primtrk_true_wid.push_back(-9999);
 							}
 
 
@@ -1695,67 +1708,83 @@ void protoana::protonmc::analyze(art::Event const & evt){
 					} //mcpartice      
 					//---------------------------------------------------------------------------------------------------------------//
 
+					if (!primtrk_hitz.empty()) { //prevent the zero vectors being push_back
+						if (primtrk_hitz.size()!=0) { //prevent the zero vectors being push_back
+							Iscalosize=true;
+						}
+					}
+						//primtrk_dqdx.push_back(tmp_primtrk_dqdx);
+						//primtrk_resrange.push_back(tmp_primtrk_resrange);
+						//primtrk_dedx.push_back(tmp_primtrk_dedx);
+						//primtrk_hitx.push_back(tmp_primtrk_hitx);
+						//primtrk_hity.push_back(tmp_primtrk_hity);
+						//primtrk_hitz.push_back(tmp_primtrk_hitz);
+						//primtrk_pitch.push_back(tmp_primtrk_pitch);
+						//primtrk_wid0.push_back(tmp_primtrk_wid0);
+				  		//primtrk_wid.push_back(tmp_primtrk_wid);
+						//primtrk_pt.push_back(tmp_primtrk_pt);
+						//primtrk_calo_hit_index.push_back(tmp_primtrk_TpIndices); 
+						//primtrk_ch.push_back(tmp_primtrk_ch);
+					//} //prevent the zero vectors being push_back
 
-					primtrk_dqdx.push_back(tmp_primtrk_dqdx);
-					primtrk_resrange.push_back(tmp_primtrk_resrange);
-					primtrk_dedx.push_back(tmp_primtrk_dedx);
-					primtrk_hitx.push_back(tmp_primtrk_hitx);
-					primtrk_hity.push_back(tmp_primtrk_hity);
-					primtrk_hitz.push_back(tmp_primtrk_hitz);
-					primtrk_pitch.push_back(tmp_primtrk_pitch);
-					primtrk_wid.push_back(tmp_primtrk_wid);
+
 
 					//primtrk_hit_processkey.push_back(tmp_primtrk_hit_processkey);
-					primtrk_hitx_true.push_back(tmp_primtrk_hitx_true);
-					primtrk_hity_true.push_back(tmp_primtrk_hity_true);
-					primtrk_hitz_true.push_back(tmp_primtrk_hitz_true);
-					primtrk_trkid_true.push_back(tmp_primtrk_trkid_true);
-					primtrk_edept_true.push_back(tmp_primtrk_edept_true);
+					//primtrk_hitx_true.push_back(tmp_primtrk_hitx_true);
+					//primtrk_hity_true.push_back(tmp_primtrk_hity_true);
+					//primtrk_hitz_true.push_back(tmp_primtrk_hitz_true);
+					//primtrk_trkid_true.push_back(tmp_primtrk_trkid_true);
+					//primtrk_edept_true.push_back(tmp_primtrk_edept_true);
 
-					primtrk_true_x.push_back(tmp_primtrk_true_x);
-					primtrk_true_y.push_back(tmp_primtrk_true_y);
-					primtrk_true_z.push_back(tmp_primtrk_true_z);
-					primtrk_true_trkid.push_back(tmp_primtrk_true_trkid);
-					primtrk_true_edept.push_back(tmp_primtrk_true_edept);
+					//primtrk_true_x.push_back(tmp_primtrk_true_x);
+					//primtrk_true_y.push_back(tmp_primtrk_true_y);
+					//primtrk_true_z.push_back(tmp_primtrk_true_z);
+					//primtrk_true_trkid.push_back(tmp_primtrk_true_trkid);
+					//primtrk_true_edept.push_back(tmp_primtrk_true_edept);
 
-					primtrk_true_wid.push_back(tmp_primtrk_true_wid);
+					//primtrk_true_wid.push_back(tmp_primtrk_true_wid);
 					//primtrk_true_tpc.push_back(tmp_primtrk_true_tpc);
 					//primtrk_true_plane.push_back(tmp_primtrk_true_plane);
 
-					primtrj_true_x.push_back(tmp_primtrj_true_x);
-					primtrj_true_y.push_back(tmp_primtrj_true_y);
-					primtrj_true_z.push_back(tmp_primtrj_true_z);
-					primtrj_true_edept.push_back(tmp_primtrj_true_edept);
+					//primtrj_true_x.push_back(tmp_primtrj_true_x);
+					//primtrj_true_y.push_back(tmp_primtrj_true_y);
+					//primtrj_true_z.push_back(tmp_primtrj_true_z);
+					//primtrj_true_edept.push_back(tmp_primtrj_true_edept);
 
-					tmp_primtrk_dqdx.clear();
-					tmp_primtrk_resrange.clear();
-					tmp_primtrk_dedx.clear();
-					tmp_primtrk_hitx.clear();
-					tmp_primtrk_hity.clear();
-					tmp_primtrk_hitz.clear();
-					tmp_primtrk_pitch.clear();
-					tmp_primtrk_wid.clear();
+					//tmp_primtrk_dqdx.clear();
+					//tmp_primtrk_resrange.clear();
+					//tmp_primtrk_dedx.clear();
+					//tmp_primtrk_hitx.clear();
+					//tmp_primtrk_hity.clear();
+					//tmp_primtrk_hitz.clear();
+					//tmp_primtrk_pitch.clear();
+					//tmp_primtrk_wid0.clear();
+					//tmp_primtrk_TpIndices.clear();
+					//tmp_primtrk_wid.clear();
+					//tmp_primtrk_pt.clear();
+					//tmp_primtrk_ch.clear();
+
 
 					//tmp_primtrk_hit_processkey.clear();
-					tmp_primtrk_hitx_true.clear();
-					tmp_primtrk_hity_true.clear();
-					tmp_primtrk_hitz_true.clear();
-					tmp_primtrk_trkid_true.clear();
-					tmp_primtrk_edept_true.clear();
+					//tmp_primtrk_hitx_true.clear();
+					//tmp_primtrk_hity_true.clear();
+					//tmp_primtrk_hitz_true.clear();
+					//tmp_primtrk_trkid_true.clear();
+					//tmp_primtrk_edept_true.clear();
 
-					tmp_primtrk_true_x.clear();
-					tmp_primtrk_true_y.clear();
-					tmp_primtrk_true_z.clear();
-					tmp_primtrk_true_trkid.clear();
-					tmp_primtrk_true_edept.clear();
-					tmp_primtrk_true_wid.clear();
+					//tmp_primtrk_true_x.clear();
+					//tmp_primtrk_true_y.clear();
+					//tmp_primtrk_true_z.clear();
+					//tmp_primtrk_true_trkid.clear();
+					//tmp_primtrk_true_edept.clear();
+					//tmp_primtrk_true_wid.clear();
 					//tmp_primtrk_true_tpc.clear();
 					//tmp_primtrk_true_plane.clear();
 
-					tmp_primtrj_true_x.clear();
-					tmp_primtrj_true_y.clear();
-					tmp_primtrj_true_z.clear();
-					tmp_primtrj_true_edept.clear();
+					//tmp_primtrj_true_x.clear();
+					//tmp_primtrj_true_y.clear();
+					//tmp_primtrj_true_z.clear();
+					//tmp_primtrj_true_edept.clear();
 
 					for(size_t k = 0; k < calovector.size() && k<3; k++){
 						fprimaryKineticEnergy[k] = calovector[k].KineticEnergy();
@@ -1776,7 +1805,7 @@ void protoana::protonmc::analyze(art::Event const & evt){
 						auto vmeta=fmthm.data(fprimaryID); //indices of meta data are the same as data 
 						for (size_t ii = 0; ii<vhit.size(); ++ii){ //loop over all meta data hit
 							bool fBadhit = false;
-							if (vmeta[ii]->Index() == static_cast<unsigned int>(std::numeric_limits<int>::max())){
+							if (vmeta[ii]->Index() == (unsigned int)std::numeric_limits<int>::max()){
 								fBadhit = true;
 								//cout<<"fBadHit"<<fBadhit<<endl;
 								continue;
@@ -2008,10 +2037,10 @@ void protoana::protonmc::analyze(art::Event const & evt){
 					if( (thisShower->dEdx()).size() > 0 )
 						fprimaryShowerdEdx = thisShower->dEdx()[0];
 				}
-				else{
-					std::cout << "INFO::Primary pfParticle is not track or shower. Skip!" << std::endl;
-					continue;
-				}
+				//else{
+					//std::cout << "INFO::Primary pfParticle is not track or shower. Skip!" << std::endl;
+					//continue;
+				//}
 
 				// Find the particle vertex. We need the tracker tag here because we need to do a bit of
 				// additional work if the PFParticle is track-like to find the vertex. 
@@ -2158,17 +2187,17 @@ void protoana::protonmc::analyze(art::Event const & evt){
 
 			}
 
-			void protoana::protonmc::endJob(){
+			void protoana::proton4gen::endJob(){
 
 			}
 
-			void protoana::protonmc::FillCosmicsTree(art::Event const & evt, std::string pfParticleTag){
+			void protoana::proton4gen::FillCosmicsTree(art::Event const & evt, std::string pfParticleTag){
 
 				// To fill
 
 			}
 
-			void protoana::protonmc::Initialise(){
+			void protoana::proton4gen::Initialise(){
 
 				fRun = -999;
 				fSubRun = -999;
@@ -2192,10 +2221,14 @@ void protoana::protonmc::analyze(art::Event const & evt){
 
 				}
 
+				fprimary_truth_byE_origin=-999;
+				fprimary_truth_byE_PDG=-999;	
+				fprimary_truth_byE_ID=-999;	
+
 				fbeamtrigger = -999;
-				ftof = -999.0;
-				fcerenkov1 = -999;
-				fcerenkov2 = -999;
+				//ftof = -999.0;
+				//fcerenkov1 = -999;
+				//fcerenkov2 = -999;
 				fbeamtrackMomentum = -999.0;
 				fbeamtrackEnergy = 999.0;
 				fbeamtrackPdg = -999;
@@ -2204,7 +2237,7 @@ void protoana::protonmc::analyze(art::Event const & evt){
 				for(int l=0; l < 3; l++){
 					fbeamtrackP[l] = -999.0;
 					fbeamtrackPos[l] = -999.0;
-					fbeamtrackDir[l] = -999.0;
+					//fbeamtrackDir[l] = -999.0;
 				}
 
 				//NumberBeamTrajectoryPoints=0; 
@@ -2217,22 +2250,23 @@ void protoana::protonmc::analyze(art::Event const & evt){
 				beamtrk_Eng.clear();
 
 
-  				beamMomentum_spec.clear();
-  				beamPosx_spec.clear();
-  				beamPosy_spec.clear();
-  				beamPosz_spec.clear();
-  				beamDirx_spec.clear();
-  				beamDiry_spec.clear();
-  				beamDirz_spec.clear();
+  				//beamMomentum_spec.clear();
+  				//beamPosx_spec.clear();
+  				//beamPosy_spec.clear();
+  				//beamPosz_spec.clear();
+  				//beamDirx_spec.clear();
+  				//beamDiry_spec.clear();
+  				//beamDirz_spec.clear();
 
 
 				x_c.clear();
 				y_c.clear();
 				z_c.clear();
 
-
+				Isbeam_at_ff=false;
 				ke_ff=0.;
-				pos_ff.clear();
+				Isendpoint_outsidetpc=false;
+				//pos_ff.clear();
 
 				primtrk_ke_true.clear();
 				primtrk_ke_reco.clear();
@@ -2331,6 +2365,7 @@ void protoana::protonmc::analyze(art::Event const & evt){
 					}
 				}
 
+				Iscalosize=false;
 				primtrk_dqdx.clear();
 				primtrk_resrange.clear();
 				primtrk_dedx.clear();
@@ -2339,7 +2374,11 @@ void protoana::protonmc::analyze(art::Event const & evt){
 				primtrk_hity.clear();
 				primtrk_hitz.clear();
 				primtrk_pitch.clear();
+				primtrk_wid0.clear();
 				primtrk_wid.clear();
+  				primtrk_pt.clear();
+  				primtrk_calo_hit_index.clear();	
+  				primtrk_ch.clear();	
 
 				//inelscore_c.clear();
 				//elscore_c.clear();
@@ -2363,10 +2402,10 @@ void protoana::protonmc::analyze(art::Event const & evt){
 				//primtrk_true_tpc.clear();
 				//primtrk_true_plane.clear();
 
-				primtrj_true_x.clear();
-				primtrj_true_y.clear();
-				primtrj_true_z.clear();
-				primtrj_true_edept.clear();
+				//primtrj_true_x.clear();
+				//primtrj_true_y.clear();
+				//primtrj_true_z.clear();
+				//primtrj_true_edept.clear();
 
 				interactionX.clear();
 				interactionY.clear();
@@ -2423,16 +2462,7 @@ void protoana::protonmc::analyze(art::Event const & evt){
 				wireno_u.clear();
 
 
-				g4rw_primary_singular_weight=-1;
-				g4rw_primary_weights.clear();
-				g4rw_primary_plus_sigma_weight.clear();
-				g4rw_primary_minus_sigma_weight.clear();
-				g4rw_primary_var.clear();
-				g4rw_set_weights.clear();
-				g4rw_p1.clear();
-				g4rw_p2.clear();
-
 
 			}
 
-			DEFINE_ART_MODULE(protoana::protonmc)
+			DEFINE_ART_MODULE(protoana::proton4gen)
