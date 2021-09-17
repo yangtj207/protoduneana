@@ -18,7 +18,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include <memory>
-
+using namespace std;
 namespace pdsp {
   class HadronHitsRemoval;
 }
@@ -38,6 +38,11 @@ public:
 
   // Required functions.
   void produce(art::Event& e) override;
+  
+  void beginJob() override;
+  void endJob() override;
+
+  void reset();
 
 private:
 
@@ -50,14 +55,29 @@ pdsp::HadronHitsRemoval::HadronHitsRemoval(fhicl::ParameterSet const& p)
   : EDProducer{p}  // ,
   // More initializers here.
 {
+  cout<<"$$$HadronHitsRemoval"<<endl;
   // Call appropriate produces<>() functions here.
   // Call appropriate consumes<>() for any products to be retrieved by this module.
 }
 
 void pdsp::HadronHitsRemoval::produce(art::Event& e)
 {
+  cout<<"$$$produce"<<endl;
+  reset();
   // Implementation of required member function here.
   // Add code to select beam tracks using Pandora information
+}
+
+void pdsp::HadronHitsRemoval::beginJob(){
+  cout<<"$$$beginJob"<<endl;
+}
+
+void pdsp::HadronHitsRemoval::endJob(){
+  cout<<"$$$endJob"<<endl;
+}
+
+void pdsp::HadronHitsRemoval::reset(){
+  cout<<"$$$reset"<<endl;
 }
 
 DEFINE_ART_MODULE(pdsp::HadronHitsRemoval)
