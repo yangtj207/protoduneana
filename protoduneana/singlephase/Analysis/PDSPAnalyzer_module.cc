@@ -770,7 +770,8 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   }
 
   if (fDoReweight) {
-    FracsFile =  new TFile((p.get< std::string >( "FracsFile" )).c_str(), "OPEN" );
+    //FracsFile =  new TFile((p.get< std::string >( "FracsFile" )).c_str(), "OPEN" );
+    FracsFile = OpenFile(p.get< std::string >("FracsFile"));
     ParSet = p.get<std::vector<fhicl::ParameterSet>>("ParameterSet");
     ParMaker = G4ReweightParameterMaker(ParSet);
     MultiRW = new G4MultiReweighter(211, *FracsFile, ParSet,
@@ -787,7 +788,8 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
     //    -211, *PiMinusFracsFile, PiMinusParSet,
     //    p.get<fhicl::ParameterSet>("Material"),
     //    RWManager);
-    ProtFracsFile =  new TFile((p.get< std::string >("ProtFracsFile")).c_str(), "OPEN" );
+    //ProtFracsFile =  new TFile((p.get< std::string >("ProtFracsFile")).c_str(), "OPEN" );
+    ProtFracsFile = OpenFile(p.get< std::string >("ProtFracsFile"));
     ProtParSet = p.get<std::vector<fhicl::ParameterSet>>("ProtParameterSet");
     ProtParMaker = G4ReweightParameterMaker(ProtParSet);
     ProtMultiRW = new G4MultiReweighter(
