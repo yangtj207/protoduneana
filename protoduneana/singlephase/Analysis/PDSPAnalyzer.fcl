@@ -3,6 +3,7 @@
 #include "ProtoDUNEBeamCuts.fcl"
 #include "ProtoDUNECalibration.fcl"
 #include "ProtoDUNEBeamlineUtils.fcl"
+#include "ProtoDUNEEmptyEventFinder.fcl"
 
 BEGIN_PROLOG
 
@@ -31,6 +32,7 @@ pdspanalysis:
 
   BeamPars: @local::BeamCuts_MCC11
   BeamCuts: @local::Prod2BeamCuts 
+  EmptyEventFinder: @local::standard_protoduneemptyeventfinder
 
   CalibrationParsSCE: @local::CalorimetryParameters_SPProd2_MC_SCE
   CalibrationParsSCE: @local::CalorimetryParameters_SPProd2_MC_35ms

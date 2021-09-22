@@ -38,6 +38,7 @@
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEBeamCuts.h"
+#include "protoduneana/Utilities/ProtoDUNEEmptyEventFinder.h"
 #include "protoduneana/Utilities/G4ReweightUtils.h"
 //#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 
@@ -557,6 +558,7 @@ private:
   int beam_inst_nTracks, beam_inst_nMomenta;
   ////////////////////////////////////////////////////
 
+  bool reco_reconstructable_beam_event;
 
   //Alternative Reco values
   //EDIT: track_score --> trkScore, etc.
@@ -685,6 +687,7 @@ private:
   std::string fGeneratorTag;
   std::string fBeamModuleLabel;
   protoana::ProtoDUNEBeamlineUtils fBeamlineUtils;
+  protoana::ProtoDUNEEmptyEventFinder fEmptyEventFinder;
   double fBeamPIDMomentum;
   std::string dEdX_template_name;
   TFile * dEdX_template_file;
@@ -739,6 +742,7 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   fGeneratorTag(p.get<std::string>("GeneratorTag")),
   fBeamModuleLabel(p.get<std::string>("BeamModuleLabel")),
   fBeamlineUtils(p.get< fhicl::ParameterSet >("BeamlineUtils")),
+  fEmptyEventFinder(p.get< fhicl::ParameterSet >("EmptyEventFinder")),
   fBeamPIDMomentum(p.get<double>("BeamPIDMomentum")),
   dEdX_template_name(p.get<std::string>("dEdX_template_name")),
   //dEdX_template_file( dEdX_template_name.c_str(), "OPEN" ),
@@ -837,6 +841,8 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
   if( !evt.isRealData() ) MC = 1;
   else MC = 0;
 
+  // Is this a reconstructable beam event?
+  reco_reconstructable_beam_event = !fEmptyEventFinder.IsEmptyEvent(evt);
 
   // Get various utilities
   protoana::ProtoDUNEPFParticleUtils                    pfpUtil;
@@ -1356,6 +1362,7 @@ void pduneana::PDSPAnalyzer::beginJob()
 
 
   ///Reconstructed info
+  fTree->Branch("reco_reconstructable_beam_event",&reco_reconstructable_beam_event);
   fTree->Branch("reco_beam_type", &reco_beam_type);
   fTree->Branch("reco_beam_startX", &reco_beam_startX);
   fTree->Branch("reco_beam_startY", &reco_beam_startY);
@@ -1852,6 +1859,7 @@ double pduneana::PDSPAnalyzer::lateralDist(TVector3 &n, TVector3 &x0, TVector3 &
 
 void pduneana::PDSPAnalyzer::reset()
 {
+  reco_reconstructable_beam_event = false;
   reco_beam_startX = -999;
   reco_beam_startY = -999;
   reco_beam_startZ = -999;
