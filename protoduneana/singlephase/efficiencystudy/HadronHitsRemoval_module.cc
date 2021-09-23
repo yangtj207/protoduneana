@@ -149,6 +149,8 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
       if (found_calo) {
         reco_beam_len_sce = calo[index].Range();
         auto theXYZPoints = calo[index].XYZ();
+        std::sort(theXYZPoints.begin(), theXYZPoints.end(), [](auto a, auto b)
+            {return (a.Z() < b.Z());}); // sort according to Z position
         if (theXYZPoints.size()) {
           reco_beam_calo_startX = theXYZPoints[0].X();
           reco_beam_calo_startY = theXYZPoints[0].Y();
