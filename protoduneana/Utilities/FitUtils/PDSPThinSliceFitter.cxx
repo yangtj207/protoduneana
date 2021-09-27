@@ -192,7 +192,6 @@ void protoana::PDSPThinSliceFitter::MakeMinimizer() {
 
 }
 
-//Good
 void protoana::PDSPThinSliceFitter::InitializeMCSamples() {
   for (size_t i = 0; i < fSampleSets.size(); ++i) {
     fhicl::ParameterSet sample_set = fSampleSets[i];
@@ -236,6 +235,14 @@ void protoana::PDSPThinSliceFitter::InitializeMCSamples() {
             fIncidentRecoBins, fTrueIncidentBins, j);
         fFakeSamples[sample_ID].back().push_back(fake_underflow_sample);
 
+        if (j == 1 && fFitUnderOverflow) {
+          fSignalParameters[sample_ID].push_back(1.);
+
+          std::string par_name = "par_" + sample_name + "_underflow";
+          fSignalParameterNames[sample_ID].push_back(par_name);
+          ++fTotalSignalParameters;
+        }
+
         fFluxesBySample[sample_ID].back().push_back(0.);
         fFakeFluxesBySample[sample_ID].back().push_back(0.);
 
@@ -274,6 +281,14 @@ void protoana::PDSPThinSliceFitter::InitializeMCSamples() {
         ThinSliceSample fake_overflow_sample(sample_name + "FakeOverflow",
                                flux_type, fSelectionSets,
                                fIncidentRecoBins, fTrueIncidentBins, j);
+        if (j == 1 && fFitUnderOverflow) {
+          fSignalParameters[sample_ID].push_back(1.);
+
+          std::string par_name = "par_" + sample_name + "_overflow";
+          fSignalParameterNames[sample_ID].push_back(par_name);
+          ++fTotalSignalParameters;
+        }
+
         fFakeSamples[sample_ID].back().push_back(fake_overflow_sample);
         fFluxesBySample[sample_ID].back().push_back(0.);
         fFakeFluxesBySample[sample_ID].back().push_back(0.);
@@ -950,6 +965,7 @@ void protoana::PDSPThinSliceFitter::NormalFit() {
     std::cout << "Found minimimum. Fit status: " << fMinimizer->Status() << std::endl;
     double chi2_syst = (fAddSystTerm ? CalcChi2SystTerm() : 0.);
     double chi2_stat = fThinSliceDriver->CalculateChi2(fSamples, fDataSet).first;
+    //double chi2_reg = (fAddRegTerm ? CalcRegTerm() : 0.);
     std::cout << "chi2 Syst: " << chi2_syst << std::endl;
     std::cout << "chi2 Stat: " << chi2_stat << std::endl;
 
@@ -1566,8 +1582,13 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
     truth_xsec_throw_hists[*it] = std::vector<TH1*>();
   }
 
-  //int n_signal_flux_pars = fTotalSignalParameters + fTotalFluxParameters;
+  /*   for (auto it = fCombinedMeasurements.begin();
+       it != fCombinedMeasurements.end(); ++it) {
+    truth_combined_inc_throw_hists[*it] = std::vector<TH1*>();
+    truth_combined_xsec_throw_hists[*it] = std::vector<TH1*>();
+  } */
 
+  //int n_signal_flux_pars = fTotalSignalParameters + fTotalFluxParameters;
   for (size_t i = 0; i < fNThrows; ++i) {
     if (! (i%100) ) {
       std::cout << "Throw " << i << "/" << fNThrows << std::endl;
@@ -1605,24 +1626,11 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
       ++nRethrows;
     }
 
-    //std::cout << "Setting: ";
     for (size_t j = 0; j < vals.back().size(); ++j) {
       throws_branches[j] = vals.back()[j];
       (*throws_arrays[j])[i] = vals.back()[j];
-     // std::cout << vals.back()[j] << " " << throws_branches[j] << " "; 
     }
-    //std::cout << std::endl;
     throws_tree.Fill();
-    //std::cout << "Filled: ";
-    //for (size_t j = 0; j < vals.back().size(); ++j) {
-    //  std::cout << vals.back()[j] << " " << throws_branches[j] << " "; 
-    //}
-    //std::cout << std::endl;
-    
-    //for (double v : vals.back()) {
-    //  std::cout << v << " ";
-    //}
-    //std::cout << std::endl;
 
     //Applies the variations according to the thrown parameters
     fFillIncidentInFunction = true;
@@ -1666,7 +1674,6 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
         ++xsec_bin;
       }
     }
-    
   }
 
   throws_tree.Write();
@@ -1734,10 +1741,7 @@ void protoana::PDSPThinSliceFitter::Do1DShifts(const TH1D & pars, bool prefit) {
 }
 
 void protoana::PDSPThinSliceFitter::DefineFitFunction() {
-  std::cout << "FF2" << std::endl;
-
   ///use samples
-
   fFitFunction = ROOT::Math::Functor(
       [&](double const * coeffs) {
 
@@ -1774,14 +1778,14 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
               fEvents, fSamples, fIsSignalSample,
               fBeamEnergyBins, fSignalParameters,
               fFluxParameters, fSystParameters,
-              fFillIncidentInFunction);
+              fFitUnderOverflow, fFillIncidentInFunction);
         }
         else {
           fThinSliceDriver->RefillMCSamples(
               fFakeDataEvents, fFakeSamples, fIsSignalSample,
               fBeamEnergyBins, fSignalParameters,
               fFluxParameters, fSystParameters,
-              fFillIncidentInFunction);
+              fFitUnderOverflow, fFillIncidentInFunction);
         }
 
         //Scale to Data
@@ -1827,8 +1831,9 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
           }
         }
 
-        double total_flux_factor
-            = (fMultinomial ? (total_nominal_flux/total_varied_flux) : 1.);
+        //double total_flux_factor
+        //    = (fMultinomial ? (total_nominal_flux/total_varied_flux) : 1.);
+        double total_flux_factor = (total_nominal_flux/total_varied_flux);
 
         double nominal_primary = 0., varied_primary = 0.;
         for (size_t i = 0; i < nominal_flux.size(); ++i) {
@@ -1884,7 +1889,7 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
         double syst_chi2 = (fAddSystTerm ? CalcChi2SystTerm() : 0.);
 
         //Do I need to do this in ThinSliceDriver?
-        //double reg_term  = (fAddRegTerm > CalcRegTerm(): 0.);
+        //double reg_term  = (fAddRegTerm ? CalcRegTerm() : 0.);
         //
 
         //std::cout << (chi2_points.first + syst_chi2) << std::endl;
@@ -1969,6 +1974,7 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fDo1DShifts = pset.get<bool>("Do1DShifts");
   fDoSysts = pset.get<bool>("DoSysts");
   fFixVariables = pset.get<bool>("FixVariables", false);
+  fFitUnderOverflow = pset.get<bool>("FitUnderOverflow", false);
   if (fFixVariables) {
     std::vector<std::pair<std::string, double>> temp_vec
         = pset.get<std::vector<std::pair<std::string, double>>>("SystsToFix");
@@ -2580,7 +2586,7 @@ void protoana::PDSPThinSliceFitter::PlotThrows(
 
   TVectorD nominal_chi2_out(1);
   nominal_chi2_out[0] = nominal_xsec_chi2;
-  fake_chi2_out.Write("NominalChi2");
+  nominal_chi2_out.Write("NominalChi2");
 }
 
 void protoana::PDSPThinSliceFitter::GetCurrentTruthHists(

@@ -118,7 +118,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<int, std::vector<double>> & signal_pars,
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
-      bool fill_incident = false) override;
+      bool fit_under_over, bool fill_incident = false) override;
 
   /*void BuildSystSamples(
       TTree * tree,
@@ -140,6 +140,12 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);
   void SetupSyst_BeamShiftSpline2(
+      const std::vector<ThinSliceEvent> & events,
+      std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+      const std::map<std::string, ThinSliceSystematic> & pars,
+      TFile & output_file);
+
+  void SetupSyst_BeamShiftRatio(
       const std::vector<ThinSliceEvent> & events,
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
       const std::map<std::string, ThinSliceSystematic> & pars,
@@ -266,6 +272,7 @@ class AbsCexDriver : public ThinSliceDriver {
    double fPitch;
    double fZ0;
    bool fMultinomial;
+   bool fSkipFirstLast;
    double fEndZCut;
    double fTrajZStart;
    std::string fSliceMethod;
@@ -289,6 +296,7 @@ class AbsCexDriver : public ThinSliceDriver {
   // double fEffVarSystVal;
    TGraph2D * fSystBeamShiftMap, * fSystBeam2DMeans, * fSystBeam2DStdDevs;
    TGraph * fSystBeamShiftMeans, * fSystBeamShiftWidths;
+   //double fSystBeamShiftRatioLimitUp, fSystBeamShiftRatioLimitDown;
    std::pair<double, double> fSystBeamShiftLimits;
    double fSystBeamShiftWeightCap;
 
@@ -314,6 +322,9 @@ class AbsCexDriver : public ThinSliceDriver {
    int GetBeamBin(
      const std::vector<double> & beam_energy_bins,
      const double & true_beam_startP);
+
+   TH1D fBeamShiftRatioNomHist;
+   std::vector<TSpline3*> fBeamShiftRatioSplines;
 };
 }
 #endif
