@@ -1,0 +1,14 @@
+BEGIN_PROLOG
+
+standard_protoduneemptyeventfinder:
+{
+  SpacePointLabel: "reco3d"
+  NHitsThreshold: 10
+  # Values obtained from handscanning events
+  MinCoordValuesData: [-40.0,400.0,30.0]
+  MaxCoordValuesData: [-10.0,440.0,50.0]
+  MinCoordValuesSim:  [-45.0,400.0,20.0]
+  MaxCoordValuesSim:  [-15.0,440.0,40.0]
+}
+
+END_PROLOG
