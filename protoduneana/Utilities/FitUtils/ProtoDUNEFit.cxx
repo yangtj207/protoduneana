@@ -1667,12 +1667,7 @@ bool protoana::ProtoDUNEFit::Configure(std::string configPath){
   cet::filepath_first_absolute_or_lookup_with_dot cetfilelook("FHICL_FILE_PATH");
 
   // Parse configuration file
-  fhicl::intermediate_table tbl;
-  fhicl::parse_document(configPath, cetfilelook, tbl);
-
-  // Convert to ParameterSet
-  fhicl::ParameterSet pset;
-  fhicl::make_ParameterSet(tbl, pset);
+  auto const pset = fhicl::ParameterSet::make(configPath, cetfilelook);
 
   _RecoTreeName                = pset.get<std::string>("RecoTreeName");
   _Minimizer                   = pset.get<std::string>("Minimizer");

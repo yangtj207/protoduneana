@@ -266,8 +266,7 @@ void pdune::RawWaveformDump::analyze(art::Event const& evt)
 
   // ... Create a map of track IDs to generator labels
   //Get a list of generator names.
-  std::vector< art::Handle< std::vector< simb::MCTruth > > > mcHandles;
-  evt.getManyByType(mcHandles);
+  auto mcHandles = evt.getMany<std::vector<simb::MCTruth>>();
   std::vector< std::pair<int, std::string>> track_id_to_label;
 
   for( auto const& mcHandle : mcHandles ){

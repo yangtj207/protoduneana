@@ -3,7 +3,7 @@
 # The *parent* line must the first non-commented line and defines this product and version
 # The version must be of the form vxx_yy_zz (e.g. v01_02_03).
 
-parent protoduneana v09_28_05
+parent protoduneana v09_31_00
 
 defaultqual e20
 
@@ -62,23 +62,20 @@ table_fragment_end
 # Add the dependent product and version
 
 product          version
-dunetpc          v09_28_05
-cetbuildtools	 v7_17_01	-	only_for_build
-geant4reweight   v01_06_08
+dunetpc          v09_31_00
+cetbuildtools	 v8_15_00	-	only_for_build
+geant4reweight   v01_08_03
 end_product_list
-
-
-
 
 
 # We now define allowed qualifiers and the corresponding qualifiers for the depdencies.
 # Make a table by adding columns before "notes".
 # e15  - with gcc 6.4.0 and -std=c++14
 qualifier	dunetpc         geant4reweight          notes
-c7:debug	c7:debug	c7:debug:s110            -nq-
-c7:prof		c7:prof         c7:prof:s110             -nq-
-e20:debug	e20:debug       debug:e20:s110           -nq-
-e20:prof	e20:prof        e20:prof:s110            -nq-
+c7:debug	c7:debug	c7:debug:s112            -nq-
+c7:prof		c7:prof         c7:prof:s112             -nq-
+e20:debug	e20:debug       debug:e20:s112           -nq-
+e20:prof	e20:prof        e20:prof:s112            -nq-
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:

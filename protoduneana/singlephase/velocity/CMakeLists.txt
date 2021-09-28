@@ -1,4 +1,7 @@
 find_ups_product( dunetpc )
+
+cet_find_library( PROTODUNEDATAUTILS NAMES ProtoDUNEDataUtils PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
   ${ART_FRAMEWORK_CORE}
@@ -22,8 +25,8 @@ art_make(BASENAME_ONLY
   larsim_MCCheater_BackTrackerService_service           
   larsim_MCCheater_ParticleInventoryService_service
   larreco_RecoAlg
-  ${ROOT_BASIC_LIB_LIST}
-  ProtoDUNEDataUtils
+  ROOT_BASIC_LIB_LIST
+  PROTODUNEDATAUTILS
   ProtoDUNEUtilities
   )
 
