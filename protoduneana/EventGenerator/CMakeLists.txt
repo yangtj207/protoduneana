@@ -1,7 +1,10 @@
+
+cet_find_library( EVGENPROTODUNEBEAMDATAPRODUCTS NAMES dune_EventGenerator_ProtoDUNEbeamDataProducts PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+
 include_directories( $ENV{IFDHC_FQ_DIR}/inc )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 art_make( BASENAME_ONLY
-          MODULE_LIBRARIES dune_EventGenerator_ProtoDUNEbeamDataProducts
+          MODULE_LIBRARIES EVGENPROTODUNEBEAMDATAPRODUCTS
                         larcoreobj_SummaryData
                         larcorealg_Geometry
                         larcore_Geometry_Geometry_service
@@ -26,7 +29,7 @@ art_make( BASENAME_ONLY
                         ROOT_BASIC_LIB_LIST
                         ${SQLITE3}
                         ${ROOT_EG}
-                        ${IFDH}
+                        IFDH
 			ProtoDUNEDataUtils
                         ProtoDUNEUtilities
                         ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}

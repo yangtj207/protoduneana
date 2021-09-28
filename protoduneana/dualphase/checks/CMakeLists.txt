@@ -1,3 +1,5 @@
+cet_find_library( PROTODUNEDATAUTILS NAMES ProtoDUNEDataUtils PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+
 cet_build_plugin(		HitNormCheck art::module
 			lardataobj_RecoBase
                         lardata_ArtDataHelper
@@ -30,10 +32,9 @@ cet_build_plugin(		CosmicsdQdx art::module
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
                         ${MF_MESSAGELOGGER}
-                        
                         cetlib cetlib_except
                         ROOT_BASIC_LIB_LIST
-			ProtoDUNEDataUtils
+			PROTODUNEDATAUTILS
 			ProtoDUNEUtilities
                         BASENAME_ONLY
 )
@@ -54,7 +55,7 @@ cet_build_plugin(		TrackHitInfo art::module
                         
                         cetlib cetlib_except
                         ROOT_BASIC_LIB_LIST
-			ProtoDUNEDataUtils
+			PROTODUNEDATAUTILS
 			ProtoDUNEUtilities
                         BASENAME_ONLY
 )

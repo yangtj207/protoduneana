@@ -1,10 +1,14 @@
+cet_find_library( DUNEGEOMETRY NAMES dune_Geometry PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+
+cet_find_library( RCEDAMLIB NAMES protodune-dam PATHS ENV DUNEPDSPRCE_LIB NO_DEFAULT_PATH )
+
 cet_build_plugin(PDSPmatch art::module
                         lardataobj_RawData
                         lardataobj_RecoBase
                         larcorealg_Geometry
-                        dune-raw-data_Overlays
+                        dune_raw_data::dune-raw-data_Overlays
                         artdaq_core::artdaq-core_Data
-                        dune_Geometry
+                        DUNEGEOMETRY
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -14,7 +18,7 @@ cet_build_plugin(PDSPmatch art::module
                         ${MF_MESSAGELOGGER}
                         ${CETLIB}
                         ROOT_BASIC_LIB_LIST
-                        ${RCEDAMLIB}
+                        RCEDAMLIB
                         BASENAME_ONLY
 )
 
@@ -22,9 +26,9 @@ cet_build_plugin(PDSPmatchmc art::module
                         lardataobj_RawData
                         lardataobj_RecoBase
                         larcorealg_Geometry
-                        dune-raw-data_Overlays
+                        dune_raw_data::dune-raw-data_Overlays
                         artdaq_core::artdaq-core_Data
-                        dune_Geometry
+                        DUNEGEOMETRY
                         nusimdata_SimulationBase
                         larsim_MCCheater_PhotonBackTrackerService_service
                         larsim_MCCheater_ParticleInventoryService_service
@@ -37,7 +41,7 @@ cet_build_plugin(PDSPmatchmc art::module
                         ${MF_MESSAGELOGGER}
                         ${CETLIB}
                         ROOT_BASIC_LIB_LIST
-                        ${RCEDAMLIB}
+                        RCEDAMLIB
                         BASENAME_ONLY
 )
 

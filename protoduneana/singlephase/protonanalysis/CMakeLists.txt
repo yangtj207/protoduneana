@@ -1,3 +1,5 @@
+cet_find_library( PROTODUNEDATAUTILS NAMES ProtoDUNEDataUtils PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+
 find_ups_product( dunetpc )
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
@@ -25,7 +27,7 @@ art_make(BASENAME_ONLY
   larsim_MCCheater_ParticleInventoryService_service
   larreco_RecoAlg
   ROOT_BASIC_LIB_LIST
-  ProtoDUNEDataUtils
+  PROTODUNEDATAUTILS
   ProtoDUNEUtilities
   geant4reweight::ReweightBaseLib
   )

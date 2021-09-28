@@ -1,6 +1,10 @@
+cet_find_library( DUNEARTSUPPORT NAMES dune_ArtSupport PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+cet_find_library( PROTODUNEDATAUTILS NAMES ProtoDUNEDataUtils PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+cet_find_library( DUNEOBJLD NAMES dune_DuneObj PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+
 art_make( LIBRARY_NAME ProtoDUNEUtilities
 	  LIB_LIBRARIES
-                        dune_ArtSupport
+                        DUNEARTSUPPORT
                         lardataobj_RawData
                         lardataobj_RecoBase
                         larreco_RecoAlg
@@ -13,11 +17,11 @@ art_make( LIBRARY_NAME ProtoDUNEUtilities
                         lardata_Utilities
                         larsim_Simulation 
                         lardataobj_Simulation
-                        ProtoDUNEDataUtils
+                        PROTODUNEDATAUTILS
                         geant4reweight::ReweightBaseLib
                         geant4reweight::PropBaseLib
-                        dune_DuneObj
-                        dune-raw-data_Services_ChannelMap_PdspChannelMapService_service
+                        DUNEOBJLD
+                        dune_raw_data::dune-raw-data_Services_ChannelMap_PdspChannelMapService_service
                         larsim_MCCheater_PhotonBackTrackerService_service
                         larsim_MCCheater_BackTrackerService_service
                         larsim_MCCheater_ParticleInventoryService_service
