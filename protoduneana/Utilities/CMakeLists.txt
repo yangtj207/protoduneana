@@ -14,8 +14,8 @@ art_make( LIBRARY_NAME ProtoDUNEUtilities
                         larsim_Simulation 
                         lardataobj_Simulation
                         ProtoDUNEDataUtils
-                        ReweightBaseLib
-                        PropBaseLib
+                        geant4reweight::ReweightBaseLib
+                        geant4reweight::PropBaseLib
                         dune_DuneObj
                         dune-raw-data_Services_ChannelMap_PdspChannelMapService_service
                         larsim_MCCheater_PhotonBackTrackerService_service
@@ -35,7 +35,7 @@ art_make( LIBRARY_NAME ProtoDUNEUtilities
                         ${MF_MESSAGELOGGER}
                         ${FHICLCPP}
                         cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
+                        ROOT_BASIC_LIB_LIST
 	  MODULE_LIBRARIES
           ProtoDUNEUtilities
 )

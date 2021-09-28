@@ -23,7 +23,7 @@ art_make( BASENAME_ONLY
                         ${FHICLCPP}
                         cetlib cetlib_except
                         ${CLHEP}
-                        ${ROOT_BASIC_LIB_LIST}
+                        ROOT_BASIC_LIB_LIST
                         ${SQLITE3}
                         ${ROOT_EG}
                         ${IFDH}

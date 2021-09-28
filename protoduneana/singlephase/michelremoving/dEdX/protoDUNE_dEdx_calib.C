@@ -29,7 +29,6 @@
 #include <TFitResult.h>
 #include <TFitResultPtr.h>
 
-#include "fhiclcpp/make_ParameterSet.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "cetlib/filepath_maker.h"
 #include "cetlib/search_path.h"
@@ -88,7 +87,7 @@ TFile * OpenFile(const std::string filename) {
     }
   }
   return theFile;
-};
+}
 
 ////getting the variable Efield using data driven maps
 //TFile *ef/*=new TFile("SCE_DataDriven_180kV_v4.root")*/;
@@ -400,7 +399,7 @@ void protoDUNE_dEdx_calib::Loop(int hitplane, double norm_factor, double calib_f
   outfile.open(Form("MCsceon_plane_%d.txt",hitplane),std::ios_base::app);
   ofstream myfile;
   myfile.open(Form("trkinfo_%d.txt",hitplane));
-  int nbin=40;
+  int const nbin=40;
   //int nbin=20;
   int binsize=5;
   //int  binsize=5; // cm
@@ -1187,7 +1186,6 @@ int main(int argc, char ** argv) {
   }
 
   ////Setting up fcl parameters
-  fhicl::ParameterSet pset;
   char const* fhicl_env = getenv("FHICL_FILE_PATH");
   std::string search_path;
 
@@ -1201,7 +1199,7 @@ int main(int argc, char ** argv) {
   }
 
   cet::filepath_first_absolute_or_lookup_with_dot lookupPolicy{search_path};
-  fhicl::make_ParameterSet(fcl_file, lookupPolicy, pset);
+  auto const pset = fhicl::ParameterSet::make(fcl_file, lookupPolicy);
   /////
 
   //here
@@ -1296,4 +1294,3 @@ int main(int argc, char ** argv) {
   */
 
 } // main
-

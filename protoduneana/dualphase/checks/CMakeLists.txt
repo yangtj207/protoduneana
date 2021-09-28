@@ -1,4 +1,4 @@
-simple_plugin(		HitNormCheck "module"
+cet_build_plugin(		HitNormCheck art::module
 			lardataobj_RecoBase
                         lardata_ArtDataHelper
                         lardata_Utilities
@@ -13,11 +13,11 @@ simple_plugin(		HitNormCheck "module"
                         ${MF_MESSAGELOGGER}
                         
                         cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
+                        ROOT_BASIC_LIB_LIST
                         BASENAME_ONLY
 )
 
-simple_plugin(		CosmicsdQdx "module"
+cet_build_plugin(		CosmicsdQdx art::module
 			lardataobj_RecoBase
                         lardata_ArtDataHelper
                         lardata_Utilities
@@ -32,13 +32,13 @@ simple_plugin(		CosmicsdQdx "module"
                         ${MF_MESSAGELOGGER}
                         
                         cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
+                        ROOT_BASIC_LIB_LIST
 			ProtoDUNEDataUtils
 			ProtoDUNEUtilities
                         BASENAME_ONLY
 )
 
-simple_plugin(		TrackHitInfo "module"
+cet_build_plugin(		TrackHitInfo art::module
 			lardataobj_RecoBase
                         lardata_ArtDataHelper
                         lardata_Utilities
@@ -53,7 +53,7 @@ simple_plugin(		TrackHitInfo "module"
                         ${MF_MESSAGELOGGER}
                         
                         cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
+                        ROOT_BASIC_LIB_LIST
 			ProtoDUNEDataUtils
 			ProtoDUNEUtilities
                         BASENAME_ONLY
