@@ -287,7 +287,7 @@ class AbsCexDriver : public ThinSliceDriver {
    //double fSystBeamShift2DWeight, fSystBeamShift2DBVal, fSystBeamShift2DVal,
    //       fSystBeamShift2DR;
   // double fEffVarSystVal;
-   TGraph2D * fSystBeamShiftMap, * fSystBeam2DMeans, * fSystBeam2DStdDevs;
+   TGraph2D * fSystBeamShiftMap; // , * fSystBeam2DMeans, * fSystBeam2DStdDevs;
    TGraph * fSystBeamShiftMeans, * fSystBeamShiftWidths;
    std::pair<double, double> fSystBeamShiftLimits;
    double fSystBeamShiftWeightCap;
