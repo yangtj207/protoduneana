@@ -14,10 +14,10 @@ art_make(BASENAME_ONLY
   larsim_MCCheater_BackTrackerService_service           
   larsim_MCCheater_ParticleInventoryService_service
   larreco_RecoAlg
-  ${ROOT_BASIC_LIB_LIST}
+  ROOT_BASIC_LIB_LIST
   ProtoDUNEUtilities
-  ReweightBaseLib
-  PropBaseLib
+  geant4reweight::ReweightBaseLib
+  geant4reweight::PropBaseLib
   ${ART_FRAMEWORK_CORE}
   ${ART_FRAMEWORK_PRINCIPAL}
   ${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -36,4 +36,3 @@ art_make(BASENAME_ONLY
 install_headers()
 install_fhicl()
 install_source()
-

@@ -49,6 +49,9 @@ void protoDUNE_YZ_calib::Loop(TString mn)
  
   TH2F *correction_dqdx_ZvsY_positiveX_hist_2 = new TH2F("correction_dqdx_ZvsY_positiveX_hist_2","plane_2_positiveX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
   TH2F *corrected_dqdx_positiveX_hist_2 = new TH2F("corrected_dqdx_positiveX_hist_2","plane_2_positiveX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
+
+  TH2F *dedx_ZvsY_negativeX_hist_2 = new TH2F("dedx_ZvsY_negativeX_hist_2","plane_2_negativeX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
+  TH2F *dedx_ZvsY_positiveX_hist_2 = new TH2F("dedx_ZvsY_positiveX_hist_2","plane_2_positiveX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
  
   ///////////////////////////////////////////////////////////////////////////////
   //plane_1 histograms
@@ -60,6 +63,9 @@ void protoDUNE_YZ_calib::Loop(TString mn)
  
   TH2F *correction_dqdx_ZvsY_positiveX_hist_1 = new TH2F("correction_dqdx_ZvsY_positiveX_hist_1","plane_1_positiveX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
   TH2F *corrected_dqdx_positiveX_hist_1 = new TH2F("corrected_dqdx_positiveX_hist_1","plane_1_positiveX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
+
+  TH2F *dedx_ZvsY_negativeX_hist_1 = new TH2F("dedx_ZvsY_negativeX_hist_1","plane_1_negativeX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
+  TH2F *dedx_ZvsY_positiveX_hist_1 = new TH2F("dedx_ZvsY_positiveX_hist_1","plane_1_positiveX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
  
   ///plane_0 histograms
   TH2F *dqdx_ZvsY_negativeX_hist_0 = new TH2F("dqdx_ZvsY_negativeX_hist_0","plane_0_negativeX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
@@ -70,67 +76,90 @@ void protoDUNE_YZ_calib::Loop(TString mn)
  
   TH2F *correction_dqdx_ZvsY_positiveX_hist_0 = new TH2F("correction_dqdx_ZvsY_positiveX_hist_0","plane_0_positiveX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
   TH2F *corrected_dqdx_positiveX_hist_0 = new TH2F("corrected_dqdx_positiveX_hist_0","plane_0_positiveX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
+
+  TH2F *dedx_ZvsY_negativeX_hist_0 = new TH2F("dedx_ZvsY_negativeX_hist_0","plane_0_negativeX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
+  TH2F *dedx_ZvsY_positiveX_hist_0 = new TH2F("dedx_ZvsY_positiveX_hist_0","plane_0_positiveX;Z Coordinate (cm);Y Coordinate (cm)",nbinz,0,zmax,nbiny,0,ymax);
+
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //plane_2
   vector<vector<vector<float>>> dqdx_value_negativeX_2;
+  vector<vector<vector<float>>> dedx_value_negativeX_2;
   vector<float> all_dqdx_value_negativeX_2;
   vector<vector<vector<float>>> dqdx_frac_correction_negativeX_2;
   dqdx_value_negativeX_2.resize(nbinz);
+  dedx_value_negativeX_2.resize(nbinz);
   dqdx_frac_correction_negativeX_2.resize(nbinz);
   for(size_t i = 0; i < dqdx_value_negativeX_2.size(); i++){
     dqdx_value_negativeX_2[i].resize(nbiny);
+    dedx_value_negativeX_2[i].resize(nbiny);
     dqdx_frac_correction_negativeX_2[i].resize(nbiny);
   }
 
   vector<vector<vector<float>>> dqdx_value_positiveX_2;
+  vector<vector<vector<float>>> dedx_value_positiveX_2;
   vector<float> all_dqdx_value_positiveX_2;
   vector<vector<vector<float>>> dqdx_frac_correction_positiveX_2;
   dqdx_value_positiveX_2.resize(nbinz);
+  dedx_value_positiveX_2.resize(nbinz);
   dqdx_frac_correction_positiveX_2.resize(nbinz);
   for(size_t i = 0; i < dqdx_value_positiveX_2.size(); i++){
     dqdx_value_positiveX_2[i].resize(nbiny);
+    dedx_value_positiveX_2[i].resize(nbiny);
     dqdx_frac_correction_positiveX_2[i].resize(nbiny);
   }
   ////////////////////////////////////////////////////
   //plane_1
   vector<vector<vector<float>>> dqdx_value_negativeX_1;
+  vector<vector<vector<float>>> dedx_value_negativeX_1;
   vector<float> all_dqdx_value_negativeX_1;
   vector<vector<vector<float>>> dqdx_frac_correction_negativeX_1;
   dqdx_value_negativeX_1.resize(nbinz);
+  dedx_value_negativeX_1.resize(nbinz);
   dqdx_frac_correction_negativeX_1.resize(nbinz);
   for(size_t i = 0; i < dqdx_value_negativeX_1.size(); i++){
     dqdx_value_negativeX_1[i].resize(nbiny);
+    dedx_value_negativeX_1[i].resize(nbiny);
     dqdx_frac_correction_negativeX_1[i].resize(nbiny);
   }
 
   vector<vector<vector<float>>> dqdx_value_positiveX_1;
+  vector<vector<vector<float>>> dedx_value_positiveX_1;
   vector<float> all_dqdx_value_positiveX_1;
   vector<vector<vector<float>>> dqdx_frac_correction_positiveX_1;
   dqdx_value_positiveX_1.resize(nbinz);
+  dedx_value_positiveX_1.resize(nbinz);
   dqdx_frac_correction_positiveX_1.resize(nbinz);
   for(size_t i = 0; i < dqdx_value_positiveX_1.size(); i++){
     dqdx_value_positiveX_1[i].resize(nbiny);
+    dedx_value_positiveX_1[i].resize(nbiny);
     dqdx_frac_correction_positiveX_1[i].resize(nbiny);
   }
   /////////////////////////////////////////////////////
   //plane_0
   vector<vector<vector<float>>> dqdx_value_negativeX_0;
+  vector<vector<vector<float>>> dedx_value_negativeX_0;
   vector<float> all_dqdx_value_negativeX_0;
   vector<vector<vector<float>>> dqdx_frac_correction_negativeX_0;
   dqdx_value_negativeX_0.resize(nbinz);
+  dedx_value_negativeX_0.resize(nbinz);
   dqdx_frac_correction_negativeX_0.resize(nbinz);
   for(size_t i = 0; i < dqdx_value_negativeX_0.size(); i++){
     dqdx_value_negativeX_0[i].resize(nbiny);
+    dedx_value_negativeX_0[i].resize(nbiny);
     dqdx_frac_correction_negativeX_0[i].resize(nbiny);
   }
 
   vector<vector<vector<float>>> dqdx_value_positiveX_0;
+  vector<vector<vector<float>>> dedx_value_positiveX_0;
   vector<float> all_dqdx_value_positiveX_0;
   vector<vector<vector<float>>> dqdx_frac_correction_positiveX_0;
   dqdx_value_positiveX_0.resize(nbinz);
+  dedx_value_positiveX_0.resize(nbinz);
   dqdx_frac_correction_positiveX_0.resize(nbinz);
   for(size_t i = 0; i < dqdx_value_positiveX_0.size(); i++){
     dqdx_value_positiveX_0[i].resize(nbiny);
+    dedx_value_positiveX_0[i].resize(nbiny);
     dqdx_frac_correction_positiveX_0[i].resize(nbiny);
   }
   //////////////////////////////////////////////////////////
@@ -151,7 +180,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
     nb = fChain->GetEntry(jentry);   nbytes += nb;
-    if(jentry%100==0) cout<<jentry<<"/"<<real_nentries<<endl;
+    if(jentry%10000==0) cout<<jentry<<"/"<<real_nentries<<endl;
     for(int i=0; i<cross_trks; i++){
       if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;
       filtered_tracks++;
@@ -164,6 +193,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 		int z_bin = int(trkhitz[i][2][j])/z_bin_size; 
 		int y_bin= int(trkhity[i][2][j])/y_bin_size;
 		dqdx_value_negativeX_2[z_bin][y_bin].push_back(trkdqdx[i][2][j]);
+		dedx_value_negativeX_2[z_bin][y_bin].push_back(trkdedx[i][2][j]);
 	      } // Z containment
 	    } // Y containment
 	  } // X containiment
@@ -178,6 +208,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 		int z_bin = int(trkhitz[i][2][j])/z_bin_size; 
 		int y_bin= int(trkhity[i][2][j])/y_bin_size;
 		dqdx_value_positiveX_2[z_bin][y_bin].push_back(trkdqdx[i][2][j]);
+		dedx_value_positiveX_2[z_bin][y_bin].push_back(trkdedx[i][2][j]);
 	      } // Z containment
 	    } // Y containment
 	  } // X containiment
@@ -193,6 +224,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 		int z_bin = int(trkhitz[i][1][j])/z_bin_size; 
 		int y_bin= int(trkhity[i][1][j])/y_bin_size;
 		dqdx_value_negativeX_1[z_bin][y_bin].push_back(trkdqdx[i][1][j]);
+		dedx_value_negativeX_1[z_bin][y_bin].push_back(trkdedx[i][1][j]);
 	      } // Z containment
 	    } // Y containment
 	  } // X containiment
@@ -206,6 +238,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 		int z_bin = int(trkhitz[i][1][j])/z_bin_size; 
 		int y_bin= int(trkhity[i][1][j])/y_bin_size;
 		dqdx_value_positiveX_1[z_bin][y_bin].push_back(trkdqdx[i][1][j]);
+		dedx_value_positiveX_1[z_bin][y_bin].push_back(trkdedx[i][1][j]);
 	      } // Z containment
 	    } // Y containment
 	  } // X containiment
@@ -221,6 +254,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 		  int z_bin = int(trkhitz[i][0][j])/z_bin_size; 
 		  int y_bin= int(trkhity[i][0][j])/y_bin_size;
 		  dqdx_value_negativeX_0[z_bin][y_bin].push_back(trkdqdx[i][0][j]);
+		  dedx_value_negativeX_0[z_bin][y_bin].push_back(trkdedx[i][0][j]);
 		} // Z containment
 	      } // Y containment
 	    } // X containiment
@@ -234,6 +268,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 		  int z_bin = int(trkhitz[i][0][j])/z_bin_size; 
 		  int y_bin= int(trkhity[i][0][j])/y_bin_size;
 		  dqdx_value_positiveX_0[z_bin][y_bin].push_back(trkdqdx[i][0][j]);
+		  dedx_value_positiveX_0[z_bin][y_bin].push_back(trkdedx[i][0][j]);
 		} // Z containment
 	      }// Y containment
 	    } // X containiment
@@ -254,6 +289,8 @@ void protoDUNE_YZ_calib::Loop(TString mn)
        
 	  float local_median_dqdx_negativeX_2=TMath::Median(dqdx_value_negativeX_2[i][j].size(),&dqdx_value_negativeX_2[i][j][0]);
 	  dqdx_ZvsY_negativeX_hist_2->SetBinContent(i+1,j+1,local_median_dqdx_negativeX_2);
+	  float local_median_dedx_negativeX_2=TMath::Median(dedx_value_negativeX_2[i][j].size(),&dedx_value_negativeX_2[i][j][0]);
+	  dedx_ZvsY_negativeX_hist_2->SetBinContent(i+1,j+1,local_median_dedx_negativeX_2);
 	}
       }
     }
@@ -266,6 +303,8 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 	  }
 	  float local_median_dqdx_positiveX_2=TMath::Median(dqdx_value_positiveX_2[i][j].size(),&dqdx_value_positiveX_2[i][j][0]);
 	  dqdx_ZvsY_positiveX_hist_2->SetBinContent(i+1,j+1,local_median_dqdx_positiveX_2);
+	  float local_median_dedx_positiveX_2=TMath::Median(dedx_value_positiveX_2[i][j].size(),&dedx_value_positiveX_2[i][j][0]);
+	  dedx_ZvsY_positiveX_hist_2->SetBinContent(i+1,j+1,local_median_dedx_positiveX_2);
 	}
       }
     }
@@ -328,6 +367,8 @@ void protoDUNE_YZ_calib::Loop(TString mn)
        
 	  float local_median_dqdx_negativeX_1=TMath::Median(dqdx_value_negativeX_1[i][j].size(),&dqdx_value_negativeX_1[i][j][0]);
 	  dqdx_ZvsY_negativeX_hist_1->SetBinContent(i+1,j+1,local_median_dqdx_negativeX_1);
+	  float local_median_dedx_negativeX_1=TMath::Median(dedx_value_negativeX_1[i][j].size(),&dedx_value_negativeX_1[i][j][0]);
+	  dedx_ZvsY_negativeX_hist_1->SetBinContent(i+1,j+1,local_median_dedx_negativeX_1);
 	}
       }
     }
@@ -340,6 +381,8 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 	  }
 	  float local_median_dqdx_positiveX_1=TMath::Median(dqdx_value_positiveX_1[i][j].size(),&dqdx_value_positiveX_1[i][j][0]);
 	  dqdx_ZvsY_positiveX_hist_1->SetBinContent(i+1,j+1,local_median_dqdx_positiveX_1);
+	  float local_median_dedx_positiveX_1=TMath::Median(dedx_value_positiveX_1[i][j].size(),&dedx_value_positiveX_1[i][j][0]);
+	  dedx_ZvsY_positiveX_hist_1->SetBinContent(i+1,j+1,local_median_dedx_positiveX_1);
 	}
       }
     }
@@ -400,6 +443,8 @@ void protoDUNE_YZ_calib::Loop(TString mn)
        
 	  float local_median_dqdx_negativeX_0=TMath::Median(dqdx_value_negativeX_0[i][j].size(),&dqdx_value_negativeX_0[i][j][0]);
 	  dqdx_ZvsY_negativeX_hist_0->SetBinContent(i+1,j+1,local_median_dqdx_negativeX_0);
+	  float local_median_dedx_negativeX_0=TMath::Median(dedx_value_negativeX_0[i][j].size(),&dedx_value_negativeX_0[i][j][0]);
+	  dedx_ZvsY_negativeX_hist_0->SetBinContent(i+1,j+1,local_median_dedx_negativeX_0);
 	}
       }
     }
@@ -412,6 +457,8 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 	  }
 	  float local_median_dqdx_positiveX_0=TMath::Median(dqdx_value_positiveX_0[i][j].size(),&dqdx_value_positiveX_0[i][j][0]);
 	  dqdx_ZvsY_positiveX_hist_0->SetBinContent(i+1,j+1,local_median_dqdx_positiveX_0);
+	  float local_median_dedx_positiveX_0=TMath::Median(dedx_value_positiveX_0[i][j].size(),&dedx_value_positiveX_0[i][j][0]);
+	  dedx_ZvsY_positiveX_hist_0->SetBinContent(i+1,j+1,local_median_dedx_positiveX_0);
 	}
       }
     }
@@ -465,6 +512,8 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 
     dqdx_ZvsY_negativeX_hist_2->Write();
     dqdx_ZvsY_positiveX_hist_2->Write();
+    dedx_ZvsY_negativeX_hist_2->Write();
+    dedx_ZvsY_positiveX_hist_2->Write();
     correction_dqdx_ZvsY_negativeX_hist_2->Write();
     correction_dqdx_ZvsY_positiveX_hist_2->Write();
     corrected_dqdx_negativeX_hist_2->Write();
@@ -472,6 +521,8 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 
     dqdx_ZvsY_negativeX_hist_1->Write();
     dqdx_ZvsY_positiveX_hist_1->Write();
+    dedx_ZvsY_negativeX_hist_1->Write();
+    dedx_ZvsY_positiveX_hist_1->Write();
     correction_dqdx_ZvsY_negativeX_hist_1->Write();
     correction_dqdx_ZvsY_positiveX_hist_1->Write();
     corrected_dqdx_negativeX_hist_1->Write();
@@ -479,6 +530,8 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 
     dqdx_ZvsY_negativeX_hist_0->Write();
     dqdx_ZvsY_positiveX_hist_0->Write();
+    dedx_ZvsY_negativeX_hist_0->Write();
+    dedx_ZvsY_positiveX_hist_0->Write();
     correction_dqdx_ZvsY_negativeX_hist_0->Write();
     correction_dqdx_ZvsY_positiveX_hist_0->Write();
     corrected_dqdx_negativeX_hist_0->Write();

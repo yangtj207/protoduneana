@@ -86,6 +86,20 @@ class AbsCexDriver : public ThinSliceDriver {
     std::map<int, std::vector<double>> & sample_scales,
     int split_val = 0);
 
+  void FakeDataAngleVar(
+    TTree * tree,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    const std::map<int, bool> & signal_sample_checks,
+    ThinSliceDataSet & data_set, double & flux,
+    std::map<int, std::vector<double>> & sample_scales,
+    int split_val = 0);
+  void FakeDataBeamWeight(
+    TTree * tree,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    const std::map<int, bool> & signal_sample_checks,
+    ThinSliceDataSet & data_set, double & flux,
+    std::map<int, std::vector<double>> & sample_scales,
+    int split_val = 0);
   void BuildMCSamples(
       //TTree * tree,
       const std::vector<ThinSliceEvent> & events,
@@ -121,6 +135,11 @@ class AbsCexDriver : public ThinSliceDriver {
       TFile & output_file);
 
   void SetupSyst_dEdX_Cal(
+      const std::vector<ThinSliceEvent> & events,
+      std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+      const std::map<std::string, ThinSliceSystematic> & pars,
+      TFile & output_file);
+  void SetupSyst_BeamShiftSpline2(
       const std::vector<ThinSliceEvent> & events,
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
       const std::map<std::string, ThinSliceSystematic> & pars,
@@ -182,9 +201,14 @@ class AbsCexDriver : public ThinSliceDriver {
   void SetupSyst_BeamShift(
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);
-  void SetupSyst_BeamShift2D(
+  void SetupSyst_BeamShiftSpline(
+      const std::vector<ThinSliceEvent> & events,
+      std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);
+  /*void SetupSyst_BeamShift2D(
+      const std::map<std::string, ThinSliceSystematic> & pars,
+      TFile & output_file);*/
   void SetupSyst_EffVar(
       const std::vector<ThinSliceEvent> & events,
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -196,6 +220,8 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_NoTrackWeight(
       const std::map<std::string, ThinSliceSystematic> & pars);
+  void SetupSyst_BeamEffsWeight(
+      const std::map<std::string, ThinSliceSystematic> & pars);
 
   /*double GetSystWeight_BeamRes(
       const ThinSliceEvent & event,
@@ -203,9 +229,9 @@ class AbsCexDriver : public ThinSliceDriver {
   double GetSystWeight_BeamShift(
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
-  double GetSystWeight_BeamShift2D(
+  /*double GetSystWeight_BeamShift2D(
       const ThinSliceEvent & event,
-      const std::map<std::string, ThinSliceSystematic> & pars);
+      const std::map<std::string, ThinSliceSystematic> & pars);*/
   double GetSystWeight_G4RW(
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars,
@@ -218,6 +244,9 @@ class AbsCexDriver : public ThinSliceDriver {
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_NoTrack(
+      const ThinSliceEvent & event,
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_BeamEffs(
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
   void WrapUpSysts(TFile & output_file) override;
@@ -236,6 +265,7 @@ class AbsCexDriver : public ThinSliceDriver {
 
    double fPitch;
    double fZ0;
+   bool fMultinomial;
    double fEndZCut;
    double fTrajZStart;
    std::string fSliceMethod;
@@ -247,19 +277,20 @@ class AbsCexDriver : public ThinSliceDriver {
    //bool fStaticBeamResMean = false;
    //double fBeamResMeanVal = 1.;
    //double fBeamResWidthVal = 1.;
-   TTree /** fSystBeamResTree, */* fSystBeamShiftTree, * fSystBeamShift2DTree;
+   TTree /** fSystBeamResTree, */* fSystBeamShiftTree/*, * fSystBeamShift2DTree*/;
    //double fSystBeamResWeight, fSystBeamResMeanOutput, fSystBeamResWidthOutput;
    //double fSystBeamResWeightCap, fSystBeamResOutput;
    double fSystBeamShiftWeight, fSystBeamShiftVal, fSystBeamShiftR;
    bool /*fSetupSystBeamRes = false,*/ fSetupSystBeamShift = false,
-        fSetupSystBeamShift2D = false, fSetupSystEffVar = false,
+        /*fSetupSystBeamShift2D = false, */fSetupSystEffVar = false,
         fSystBeamShiftTreeSave = false;
-   double fSystBeamShift2DWeight, fSystBeamShift2DBVal, fSystBeamShift2DVal,
-          fSystBeamShift2DR;
+   //double fSystBeamShift2DWeight, fSystBeamShift2DBVal, fSystBeamShift2DVal,
+   //       fSystBeamShift2DR;
   // double fEffVarSystVal;
-   TGraph2D * fSystBeamShiftMap, * fSystBeam2DMeans, * fSystBeam2DStdDevs;
+   TGraph2D * fSystBeamShiftMap; // , * fSystBeam2DMeans, * fSystBeam2DStdDevs;
    TGraph * fSystBeamShiftMeans, * fSystBeamShiftWidths;
    std::pair<double, double> fSystBeamShiftLimits;
+   double fSystBeamShiftWeightCap;
 
    std::map<std::string, std::map<int, std::vector<TH1D*>>> fFullSelectionVars;
    std::map<std::string, std::map<int, std::vector<TSpline3*>>> fFullSelectionSplines;
@@ -270,7 +301,7 @@ class AbsCexDriver : public ThinSliceDriver {
    TRandom3 fRNG = TRandom3(0);
 
    double fEffVarF, fEffVarCut;
-   double fEDivF, fEDivCut, fNoTrackF;
+   double fEDivF, fEDivCut, fNoTrackF, fBeamCutF;
    ProtoDUNETrackUtils fTrackUtil;
 
    std::vector<double> MakeTrueIncidentEnergies(

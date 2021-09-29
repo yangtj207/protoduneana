@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       protonmcnorw
-// File:        protonmcnorw_module.cc
+// Class:       proton4gen
+// File:        proton4gen_module.cc
 //
 // Extract protoDUNE useful information, do a firs tpre-selection and save output to a flat tree
 // 
@@ -100,7 +100,7 @@ const int NMAXDAUGTHERS = 15;
 //double prim_energy=0.0;
 
 namespace protoana {
-	class protonmcnorw;
+	class proton4gen;
 }
 
 using protoana::G4ReweightUtils::CreateRWTraj;
@@ -110,15 +110,15 @@ using protoana::G4ReweightUtils::GetNTrajPMSigmaWeights;
 using protoana::G4ReweightUtils::GetNTrajWeightFromSetPars;
 
 
-class protoana::protonmcnorw : public art::EDAnalyzer {
+class protoana::proton4gen : public art::EDAnalyzer {
 	public:
 
-		explicit protonmcnorw(fhicl::ParameterSet const & p);
+		explicit proton4gen(fhicl::ParameterSet const & p);
 
-		protonmcnorw(protonmcnorw const &) = delete;
-		protonmcnorw(protonmcnorw &&) = delete;
-		protonmcnorw & operator = (protonmcnorw const &) = delete;
-		protonmcnorw & operator = (protonmcnorw &&) = delete;
+		proton4gen(proton4gen const &) = delete;
+		proton4gen(proton4gen &&) = delete;
+		proton4gen & operator = (proton4gen const &) = delete;
+		proton4gen & operator = (proton4gen &&) = delete;
 
 		virtual void beginJob() override;
 		virtual void endJob() override;
@@ -142,7 +142,7 @@ class protoana::protonmcnorw : public art::EDAnalyzer {
 
 		// fcl parameters
 		//const art::InputTag fNNetModuleLabel; //label of the module used for CNN tagging  
-		const art::InputTag fBeamModuleLabel;
+		//const art::InputTag fBeamModuleLabel;
 		std::string fCalorimetryTag;
 		std::string fTrackerTag;
   		std::string fHitTag;
@@ -172,14 +172,14 @@ class protoana::protonmcnorw : public art::EDAnalyzer {
 
 		// Beam track
 		int fbeamtrigger;
-		double ftof;
-		int fcerenkov1;
-		int fcerenkov2;
+		//double ftof;
+		//int fcerenkov1;
+		//int fcerenkov2;
 		double fbeamtrackMomentum;
 		double fbeamtrackP[3]; //Px/Py/Pz
 		double fbeamtrackEnergy;
 		double fbeamtrackPos[3];
-		double fbeamtrackDir[3];
+		//double fbeamtrackDir[3];
 		double fbeamtrackTime;
 		int fbeamtrackPdg;
 		int fbeamtrackID;
@@ -194,14 +194,14 @@ class protoana::protonmcnorw : public art::EDAnalyzer {
 
 
 		//beam info from spectrometer
-		std::vector<double> beamMomentum_spec;
-  		std::vector<double> beamPosx_spec;
-  		std::vector<double> beamPosy_spec;
-  		std::vector<double> beamPosz_spec;
+		//std::vector<double> beamMomentum_spec;
+  		//std::vector<double> beamPosx_spec;
+  		//std::vector<double> beamPosy_spec;
+  		//std::vector<double> beamPosz_spec;
   
-  		std::vector<double> beamDirx_spec;
-  		std::vector<double> beamDiry_spec;
-  		std::vector<double> beamDirz_spec;
+  		//std::vector<double> beamDirx_spec;
+  		//std::vector<double> beamDiry_spec;
+  		//std::vector<double> beamDirz_spec;
 
 
 		//Front face KE & Positions
@@ -445,12 +445,12 @@ class protoana::protonmcnorw : public art::EDAnalyzer {
 };
 
 
-protoana::protonmcnorw::protonmcnorw(fhicl::ParameterSet const & p)
+protoana::proton4gen::proton4gen(fhicl::ParameterSet const & p)
 	:
 		EDAnalyzer(p),
 		dataUtil(p.get<fhicl::ParameterSet>("DataUtils")),
 		//fNNetModuleLabel(p.get<art::InputTag>("NNetModuleLabel")),
-		fBeamModuleLabel(p.get< art::InputTag >("BeamModuleLabel")),
+		//fBeamModuleLabel(p.get< art::InputTag >("BeamModuleLabel")),
 		fCalorimetryTag(p.get<std::string>("CalorimetryTag")),
 		fTrackerTag(p.get<std::string>("TrackerTag")),
   		fHitTag(p.get<std::string>("HitTag")),
@@ -479,7 +479,7 @@ protoana::protonmcnorw::protonmcnorw(fhicl::ParameterSet const & p)
 
 
 
-void protoana::protonmcnorw::beginJob(){
+void protoana::proton4gen::beginJob(){
 
 	art::ServiceHandle<art::TFileService> tfs;
 
@@ -491,14 +491,14 @@ void protoana::protonmcnorw::beginJob(){
 	fPandoraBeam->Branch("Nactivefembs",                  &fNactivefembs,                 "Nactivefembs[5]/I");
 
 	fPandoraBeam->Branch("beamtrigger",                   &fbeamtrigger,                  "beamtrigger/I");
-	fPandoraBeam->Branch("tof",                           &ftof,                          "tof/D");
-	fPandoraBeam->Branch("cerenkov1",                     &fcerenkov1,                    "cerenkov1/I");
-	fPandoraBeam->Branch("cerenkov2",                     &fcerenkov2,                    "cerenkov2/I");
+	//fPandoraBeam->Branch("tof",                           &ftof,                          "tof/D");
+	//fPandoraBeam->Branch("cerenkov1",                     &fcerenkov1,                    "cerenkov1/I");
+	//fPandoraBeam->Branch("cerenkov2",                     &fcerenkov2,                    "cerenkov2/I");
 	fPandoraBeam->Branch("beamtrackMomentum",             &fbeamtrackMomentum,            "beamtrackMomentum/D");
 	fPandoraBeam->Branch("beamtrackP",                    &fbeamtrackP,                   "beamtrackP[3]/D");
 	fPandoraBeam->Branch("beamtrackEnergy",               &fbeamtrackEnergy,              "beamtrackEnergy/D");
 	fPandoraBeam->Branch("beamtrackPos",                  &fbeamtrackPos,                 "beamtrackPos[3]/D");
-	fPandoraBeam->Branch("beamtrackDir",                  &fbeamtrackDir,                 "beamtrackDir[3]/D");
+	//fPandoraBeam->Branch("beamtrackDir",                  &fbeamtrackDir,                 "beamtrackDir[3]/D");
 	fPandoraBeam->Branch("beamtrackTime",                 &fbeamtrackTime,                "beamtrackTime/D");
 	fPandoraBeam->Branch("beamtrackPdg",                  &fbeamtrackPdg,                 "beamtrackPdg/I");
 	fPandoraBeam->Branch("beamtrackID",                   &fbeamtrackID,                  "beamtrackID/I");
@@ -511,13 +511,13 @@ void protoana::protonmcnorw::beginJob(){
 	fPandoraBeam->Branch("beamtrk_Pz",&beamtrk_Pz);
 	fPandoraBeam->Branch("beamtrk_Eng",&beamtrk_Eng);
 
-  	fPandoraBeam->Branch("beamMomentum_spec",&beamMomentum_spec);
-  	fPandoraBeam->Branch("beamPosx_spec",&beamPosx_spec);
-  	fPandoraBeam->Branch("beamPosy_spec",&beamPosy_spec);
-  	fPandoraBeam->Branch("beamPosz_spec",&beamPosz_spec);
-  	fPandoraBeam->Branch("beamDirx_spec",&beamDirx_spec);
-  	fPandoraBeam->Branch("beamDiry_spec",&beamDiry_spec);
-  	fPandoraBeam->Branch("beamDirz_spec",&beamDirz_spec);
+  	//fPandoraBeam->Branch("beamMomentum_spec",&beamMomentum_spec);
+  	//fPandoraBeam->Branch("beamPosx_spec",&beamPosx_spec);
+  	//fPandoraBeam->Branch("beamPosy_spec",&beamPosy_spec);
+  	//fPandoraBeam->Branch("beamPosz_spec",&beamPosz_spec);
+  	//fPandoraBeam->Branch("beamDirx_spec",&beamDirx_spec);
+  	//fPandoraBeam->Branch("beamDiry_spec",&beamDiry_spec);
+  	//fPandoraBeam->Branch("beamDirz_spec",&beamDirz_spec);
 
 
 	fPandoraBeam->Branch("Isbeam_at_ff",&Isbeam_at_ff);
@@ -743,7 +743,7 @@ void protoana::protonmcnorw::beginJob(){
 
 }
 
-void protoana::protonmcnorw::analyze(art::Event const & evt){
+void protoana::proton4gen::analyze(art::Event const & evt){
 
 	// Initialise tree parameters
 	Initialise();
@@ -802,39 +802,39 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 	auto mcTruths = evt.getValidHandle<std::vector<simb::MCTruth>>(fGeneratorTag);  
 	if(!evt.isRealData()){
 		//for prod. 3, new implementation to access the beam momentum from spectrometer //////////////////////////////
-  		auto beamHandle = evt.getValidHandle<std::vector<beam::ProtoDUNEBeamEvent>>("generator");
-  		std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
-  		if( beamHandle.isValid()){
-    			art::fill_ptr_vector(beamVec, beamHandle);
-  		}
-  		const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0)); //Should just have one
+  		//auto beamHandle = evt.getValidHandle<std::vector<beam::ProtoDUNEBeamEvent>>("generator");
+  		//std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
+  		//if( beamHandle.isValid()){
+    			//art::fill_ptr_vector(beamVec, beamHandle);
+  		//}
+  		//const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0)); //Should just have one
 
   		//Access momentum
-  		const std::vector< double > & momenta = beamEvent.GetRecoBeamMomenta();
-  		std::cout << "Number of reconstructed beam momenta from spec: " << momenta.size() << std::endl;
+  		//const std::vector< double > & momenta = beamEvent.GetRecoBeamMomenta();
+  		//std::cout << "Number of reconstructed beam momenta from spec: " << momenta.size() << std::endl;
 
-  		if( momenta.size() > 0 ) std::cout << "Measured Beam Momentum from spec: " << momenta.at(0) << std::endl;
+  		//if( momenta.size() > 0 ) std::cout << "Measured Beam Momentum from spec: " << momenta.at(0) << std::endl;
 		
 		//std::cout<<"beam mom size:"<<momenta.size()<<std::endl;
-        	for (size_t i = 0; i<momenta.size(); ++i){
-          		beamMomentum_spec.push_back(momenta[i]);
+        	//for (size_t i = 0; i<momenta.size(); ++i){
+          		//beamMomentum_spec.push_back(momenta[i]);
 	  		//std::cout<<"beam mom["<<i<<"]:"<<momenta[i]<<" [GeV]"<<std::endl;
-        	}
+        	//}
 
-		auto & btracks = beamEvent.GetBeamTracks();
-		std::cout<<"beam trk size:"<<btracks.size()<<std::endl;
-        	for (size_t i = 0; i<btracks.size(); ++i){
-	  		std::cout<<"beamPosx/beamPosy/beamPosz:"<<btracks[i].End().X()<<"/"<<btracks[i].End().Y()<<"/"<<btracks[i].End().Z()<<std::endl;
-	  		std::cout<<"beamDirx/beamDiry/beamDirz:"<<btracks[i].StartDirection().X()<<"/"<<btracks[i].StartDirection().Y()<<"/"<<btracks[i].StartDirection().Z()<<std::endl;
+		//auto & btracks = beamEvent.GetBeamTracks();
+		//std::cout<<"beam trk size:"<<btracks.size()<<std::endl;
+        	//for (size_t i = 0; i<btracks.size(); ++i){
+	  		//std::cout<<"beamPosx/beamPosy/beamPosz:"<<btracks[i].End().X()<<"/"<<btracks[i].End().Y()<<"/"<<btracks[i].End().Z()<<std::endl;
+	  		//std::cout<<"beamDirx/beamDiry/beamDirz:"<<btracks[i].StartDirection().X()<<"/"<<btracks[i].StartDirection().Y()<<"/"<<btracks[i].StartDirection().Z()<<std::endl;
 
-          		beamPosx_spec.push_back(btracks[i].End().X());
-          		beamPosy_spec.push_back(btracks[i].End().Y());
-          		beamPosz_spec.push_back(btracks[i].End().Z());
-          		beamDirx_spec.push_back(btracks[i].StartDirection().X());
-          		beamDiry_spec.push_back(btracks[i].StartDirection().Y());
-          		beamDirz_spec.push_back(btracks[i].StartDirection().Z());
+          		//beamPosx_spec.push_back(btracks[i].End().X());
+          		//beamPosy_spec.push_back(btracks[i].End().Y());
+          		//beamPosz_spec.push_back(btracks[i].End().Z());
+          		//beamDirx_spec.push_back(btracks[i].StartDirection().X());
+          		//beamDiry_spec.push_back(btracks[i].StartDirection().Y());
+          		//beamDirz_spec.push_back(btracks[i].StartDirection().Z());
 
-		}
+		//}
 
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1006,46 +1006,46 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 		// For data we can see if this event comes from a beam trigger
 		beamTriggerEvent = dataUtil.IsBeamTrigger(evt);
 
-		art::Handle< std::vector<beam::ProtoDUNEBeamEvent> > pdbeamHandle;
-		std::vector< art::Ptr<beam::ProtoDUNEBeamEvent> > beaminfo;
-		if(evt.getByLabel(fBeamModuleLabel, pdbeamHandle))
-			art::fill_ptr_vector(beaminfo, pdbeamHandle);
+		//art::Handle< std::vector<beam::ProtoDUNEBeamEvent> > pdbeamHandle;
+		//std::vector< art::Ptr<beam::ProtoDUNEBeamEvent> > beaminfo;
+		//if(evt.getByLabel(fBeamModuleLabel, pdbeamHandle))
+			//art::fill_ptr_vector(beaminfo, pdbeamHandle);
 
-		for(unsigned int i = 0; i < beaminfo.size(); ++i){
+		//for(unsigned int i = 0; i < beaminfo.size(); ++i){
 			//if(!beaminfo[i]->CheckIsMatched()) continue;
-			fbeamtrigger = beaminfo[i]->GetTimingTrigger();
-			fbeamtrackTime = (double)beaminfo[i]->GetRDTimestamp();
+			//fbeamtrigger = beaminfo[i]->GetTimingTrigger();
+			//fbeamtrackTime = (double)beaminfo[i]->GetRDTimestamp();
 
 			// If ToF is 0-3 there was a good match corresponding to the different pair-wise combinations of the upstream and downstream channels
-			if(beaminfo[i]->GetTOFChan() >= 0)
-				ftof =  beaminfo[i]->GetTOF();
+			//if(beaminfo[i]->GetTOFChan() >= 0)
+				//ftof =  beaminfo[i]->GetTOF();
 
 			// Get Cerenkov
-			if(beaminfo[i]->GetBITrigger() == 1){
-				fcerenkov1 = beaminfo[i]->GetCKov0Status();
-				fcerenkov2 = beaminfo[i]->GetCKov1Status();
-			}
+			//if(beaminfo[i]->GetBITrigger() == 1){
+				//fcerenkov1 = beaminfo[i]->GetCKov0Status();
+				//fcerenkov2 = beaminfo[i]->GetCKov1Status();
+			//}
 
 			// Beam particle could have more than one tracks - for now take the first one, need to do this properly
-			auto & tracks = beaminfo[i]->GetBeamTracks();
-			if(!tracks.empty()){
-				fbeamtrackPos[0] = tracks[0].End().X();
-				fbeamtrackPos[1] = tracks[0].End().Y();
-				fbeamtrackPos[2] = tracks[0].End().Z();
-				fbeamtrackDir[0] = tracks[0].StartDirection().X();
-				fbeamtrackDir[1] = tracks[0].StartDirection().Y();
-				fbeamtrackDir[2] = tracks[0].StartDirection().Z();
-			}
+			//auto & tracks = beaminfo[i]->GetBeamTracks();
+			//if(!tracks.empty()){
+				//fbeamtrackPos[0] = tracks[0].End().X();
+				//fbeamtrackPos[1] = tracks[0].End().Y();
+				//fbeamtrackPos[2] = tracks[0].End().Z();
+				//fbeamtrackDir[0] = tracks[0].StartDirection().X();
+				//fbeamtrackDir[1] = tracks[0].StartDirection().Y();
+				//fbeamtrackDir[2] = tracks[0].StartDirection().Z();
+			//}
 
 			// Beam momentum
-			auto & beammom = beaminfo[i]->GetRecoBeamMomenta();
-			if(!beammom.empty())
-				fbeamtrackMomentum = beammom[0];
+			//auto & beammom = beaminfo[i]->GetRecoBeamMomenta();
+			//if(!beammom.empty())
+				//fbeamtrackMomentum = beammom[0];
 
 			// For now only take the first beam particle - need to add some criteria if more than one are found
-			break;
+			//break;
 
-		}
+		//}
 	}
 
 	/*
@@ -1805,7 +1805,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 						auto vmeta=fmthm.data(fprimaryID); //indices of meta data are the same as data 
 						for (size_t ii = 0; ii<vhit.size(); ++ii){ //loop over all meta data hit
 							bool fBadhit = false;
-							if (vmeta[ii]->Index() == static_cast<unsigned int>(std::numeric_limits<int>::max())){
+							if (vmeta[ii]->Index() == (unsigned int)std::numeric_limits<int>::max()){
 								fBadhit = true;
 								//cout<<"fBadHit"<<fBadhit<<endl;
 								continue;
@@ -2187,17 +2187,17 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 
 			}
 
-			void protoana::protonmcnorw::endJob(){
+			void protoana::proton4gen::endJob(){
 
 			}
 
-			void protoana::protonmcnorw::FillCosmicsTree(art::Event const & evt, std::string pfParticleTag){
+			void protoana::proton4gen::FillCosmicsTree(art::Event const & evt, std::string pfParticleTag){
 
 				// To fill
 
 			}
 
-			void protoana::protonmcnorw::Initialise(){
+			void protoana::proton4gen::Initialise(){
 
 				fRun = -999;
 				fSubRun = -999;
@@ -2226,9 +2226,9 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 				fprimary_truth_byE_ID=-999;	
 
 				fbeamtrigger = -999;
-				ftof = -999.0;
-				fcerenkov1 = -999;
-				fcerenkov2 = -999;
+				//ftof = -999.0;
+				//fcerenkov1 = -999;
+				//fcerenkov2 = -999;
 				fbeamtrackMomentum = -999.0;
 				fbeamtrackEnergy = 999.0;
 				fbeamtrackPdg = -999;
@@ -2237,7 +2237,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 				for(int l=0; l < 3; l++){
 					fbeamtrackP[l] = -999.0;
 					fbeamtrackPos[l] = -999.0;
-					fbeamtrackDir[l] = -999.0;
+					//fbeamtrackDir[l] = -999.0;
 				}
 
 				//NumberBeamTrajectoryPoints=0; 
@@ -2250,13 +2250,13 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 				beamtrk_Eng.clear();
 
 
-  				beamMomentum_spec.clear();
-  				beamPosx_spec.clear();
-  				beamPosy_spec.clear();
-  				beamPosz_spec.clear();
-  				beamDirx_spec.clear();
-  				beamDiry_spec.clear();
-  				beamDirz_spec.clear();
+  				//beamMomentum_spec.clear();
+  				//beamPosx_spec.clear();
+  				//beamPosy_spec.clear();
+  				//beamPosz_spec.clear();
+  				//beamDirx_spec.clear();
+  				//beamDiry_spec.clear();
+  				//beamDirz_spec.clear();
 
 
 				x_c.clear();
@@ -2465,4 +2465,4 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 
 			}
 
-			DEFINE_ART_MODULE(protoana::protonmcnorw)
+			DEFINE_ART_MODULE(protoana::proton4gen)

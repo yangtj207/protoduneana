@@ -328,15 +328,17 @@ std::vector<std::vector<G4ReweightTraj *>>
       if ((d_part->PdgCode() == 2212) || (d_part->PdgCode() == 2112) ||
           (abs(d_part->PdgCode()) == 211)) {
         to_create.push_back(daughter_ID);
-        std::cout << "Adding daughter " << to_create.back() << std::endl;
+        if (verbose)
+          std::cout << "Adding daughter " << to_create.back() << std::endl;
       }
     }
   
   
     if (temp_trajs.size()) {
       auto last_traj = temp_trajs.back();
-      std::cout << "created " << last_traj->GetTrackID() << " " <<
-                   last_traj->GetPDG() << std::endl;
+      if (verbose) 
+        std::cout << "created " << last_traj->GetTrackID() << " " <<
+                     last_traj->GetPDG() << std::endl;
   
       if (temp_trajs[0]->GetPDG() == PDG) {
         full_created.push_back(temp_trajs);

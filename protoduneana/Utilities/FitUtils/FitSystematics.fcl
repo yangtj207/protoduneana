@@ -5,7 +5,10 @@ G4RWSysts: {
     Central: 1.
     LowerLimit: 0.1
     UpperLimit: 2.0
-    ThrowLimit: 0.
+    ThrowLimit: 0.1
+    ThrowLimitUp: 2.0
+    GenThrowLimit: 0.25
+    GenThrowLimitUp: 1.75
     Sigma: .2
 
     Options: {
@@ -27,7 +30,10 @@ G4RWSysts: {
     Central: 1.
     LowerLimit: 0.1
     UpperLimit: 2.0
-    ThrowLimit: 0.
+    ThrowLimit: 0.1
+    ThrowLimitUp: 2.0
+    GenThrowLimit: 0.25
+    GenThrowLimitUp: 1.75
     Sigma: .2
 
     Options: {
@@ -50,6 +56,7 @@ G4RWSysts: {
     LowerLimit: 0.1
     UpperLimit: 2.00
     ThrowLimit: 0.
+    ThrowLimitUp: 2.0
     Sigma: .75
 
     Options: {
@@ -72,6 +79,7 @@ G4RWSysts: {
     LowerLimit: 0.1
     UpperLimit: 2.00
     ThrowLimit: 0.
+    ThrowLimitUp: 2.0
     Sigma: .75
 
     Options: {
@@ -94,6 +102,7 @@ G4RWSysts: {
     LowerLimit: 0.1
     UpperLimit: 2.00
     ThrowLimit: 0.
+    ThrowLimitUp: 2.0
     Sigma: .75
 
     Options: {
@@ -116,6 +125,7 @@ G4RWSysts: {
     LowerLimit: 0.1
     UpperLimit: 2.00
     ThrowLimit: 0.
+    ThrowLimitUp: 2.0
     Sigma: .75
 
     Options: {
@@ -138,6 +148,7 @@ G4RWSysts: {
     LowerLimit: 0.1
     UpperLimit: 2.00
     ThrowLimit: 0.
+    ThrowLimitUp: 2.0
     Sigma: .75
 
     Options: {
@@ -160,6 +171,7 @@ G4RWSysts: {
     LowerLimit: 0.1
     UpperLimit: 2.00
     ThrowLimit: 0.
+    ThrowLimitUp: 2.0
     Sigma: .75
 
     Options: {
@@ -182,6 +194,7 @@ G4RWSysts: {
     LowerLimit: 0.1
     UpperLimit: 2.00
     ThrowLimit: 0.
+    ThrowLimitUp: 2.0
     Sigma: .75
 
     Options: {
@@ -203,7 +216,10 @@ G4RWSysts: {
     Central: 1.
     LowerLimit: 0.1
     UpperLimit: 2.00
-    ThrowLimit: 0.
+    ThrowLimit: 0.1
+    ThrowLimitUp: 2.00
+    GenThrowLimit: 0.25
+    GenThrowLimitUp: 1.75
     Sigma: .75
 
     Options: {
@@ -225,7 +241,10 @@ G4RWSysts: {
     Central: 1.
     LowerLimit: 0.1
     UpperLimit: 2.00
-    ThrowLimit: 0.
+    ThrowLimit: 0.1
+    ThrowLimitUp: 2.00
+    GenThrowLimit: 0.25
+    GenThrowLimitUp: 1.75
     Sigma: .75
 
     Options: {
@@ -247,7 +266,10 @@ G4RWSysts: {
     Central: 1.
     LowerLimit: 0.1
     UpperLimit: 2.00
-    ThrowLimit: 0.
+    ThrowLimit: 0.1
+    ThrowLimitUp: 2.00
+    GenThrowLimit: 0.25
+    GenThrowLimitUp: 1.75
     Sigma: .75
 
     Options: {
@@ -273,25 +295,54 @@ SystematicsList: {
     #UpperLimit: 1.2132e-3
 
     Central: 1.0
-    LowerLimit: 0.8
-    UpperLimit: 1.2
+    LowerLimit: 0.6
+    UpperLimit: 1.4
 
-    ThrowLimit: 0.
+    ThrowLimit: 0.6
+    ThrowLimitUp: 1.4
+    GenThrowLimit: 0.7
+    GenThrowLimitUp: 1.3
     Sigma: .101e-3
   
     Options: {
       Cal_set: @local::CalorimetryParameters_SPProd4_MC_SCE
-      C_cal_vars: [.8, .9, 1.1, 1.2]
+      #C_cal_vars: [.7, .8, .9, 1.1, 1.2, 1.3]
+      C_cal_vars: [.6, .65, .7, .75, .8, .85, .9, .95, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4]
       #C_cal_vars: [.809e-3, .910e-3, 1.121e-3, 1.2132e-3]
       TemplateFile: "/cvmfs/larsoft.opensciencegrid.org/products/larsoft_data/v1_02_01/ParticleIdentification/dEdxrestemplates.root"
     }
   }
+
+  beam_shift_spline_2: {
+    Name: "beam_shift_spline_2"
+    Central: 1.0
+    LowerLimit: 0.8
+    UpperLimit: 1.2
+
+    ThrowLimit: 0.8
+    ThrowLimitUp: 1.2
+    GenThrowLimit: 0.9
+    GenThrowLimitUp: 1.2
+    Sigma: .01
+
+    Options: {
+      ShiftVals:       [.80,  .81,  .82,  .83,  .84,  .85,  .86,  .87,  .88,  .89, 
+                        .90,  .91,  .92,  .93,  .94,  .95,  .96,  .97,  .98,  .99, 
+                             1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 
+                       1.10, 1.11, 1.12, 1.13, 1.14, 1.15, 1.16, 1.17, 1.18, 1.19,
+                       1.20]
+    }
+  }
+
   beam_shift: {
     Name: "beam_shift"
     Central: 0. 
-    LowerLimit: -2. 
-    UpperLimit: 2. 
-    ThrowLimit: -999.
+    LowerLimit: -3. 
+    UpperLimit: 3. 
+    ThrowLimit: -3.
+    ThrowLimitUp: 3.
+    GenThrowLimit: -2.
+    GenThrowLimitUp: 2.
     Sigma: 1. 
   
     Options: {
@@ -299,15 +350,36 @@ SystematicsList: {
       ShiftFile: "map_B_theta_2.root"
       #Limits: [-.15, .15]
       Limits: [-.2, .2]
+      #Limits: [-.075, .075]
       SaveInfo: false 
+      WeightCap: -999. 
+    }
+  }
+  beam_shift_spline: {
+    Name: "beam_shift_spline"
+    Central: 0. 
+    LowerLimit: -5. 
+    UpperLimit: 5. 
+    ThrowLimit: -5.
+    ThrowLimitUp: 5.
+    GenThrowLimit: -5.
+    GenThrowLimitUp: 5.
+    Sigma: 1. 
+  
+    Options: {
+      ShiftFile: "map_B_theta_2.root"
+      Limits: [-.2, .2]
     }
   }
   ediv_weight: {
     Name: "ediv_weight"
-    Central: 1.0
+    Central: 0.5 #1.0
     LowerLimit: 0.
-    UpperLimit: 2.0
-    ThrowLimit: 0.
+    UpperLimit: 1.6
+    ThrowLimit: 0.0
+    ThrowLimitUp: 1.6
+    GenThrowLimit: 0.15
+    GenThrowLimitUp: 1.45
     sigma: .1
 
     Options: {
@@ -317,15 +389,33 @@ SystematicsList: {
   }
   no_track_weight: {
     Name: "no_track_weight"
-    Central: 1.0
-    LowerLimit: 0.
-    UpperLimit: 2.0
-    ThrowLimit: 0.
+    Central: 1.62 #1.0
+    LowerLimit: 0.01
+    UpperLimit: 3.04
+    ThrowLimit: 0.01
+    ThrowLimitUp: 3.04
+    GenThrowLimit: 0.01
+    GenThrowLimitUp: 3.04
     sigma: .1
 
     Options: {
       #F: 0.14826903 
       F: 0.16407504 
+    }
+  }
+  beam_cut_weight: {
+    Name: "beam_cut_weight"
+    Central: 1.0
+    LowerLimit: 0.01
+    UpperLimit: 2.164
+    ThrowLimit: 0.01
+    ThrowLimitUp: 2.164
+    GenThrowLimit: 0.01
+    GenThrowLimitUp: 2.164
+    sigma: .1
+
+    Options: {
+      F: 0.2305
     }
   }
 }

@@ -85,6 +85,7 @@ class ThinSliceDataSet {
   }
 
   void MakeRebinnedHists();
+  void Refill1DRebinned();
 
   void GetCumulatives() {
     fTotal = 0;

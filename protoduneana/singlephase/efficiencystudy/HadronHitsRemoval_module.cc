@@ -30,7 +30,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "TMath.h"
 #include "TVector3.h"
-using namespace std;
+#include <memory>
 namespace pdsp {
   class HadronHitsRemoval;
 }
@@ -77,6 +77,7 @@ private:
   double reco_beam_calo_startX, reco_beam_calo_startY, reco_beam_calo_startZ;
   double reco_beam_calo_endX, reco_beam_calo_endY, reco_beam_calo_endZ;
   double beam_dx, beam_dy, beam_dz, beam_dxy, beam_costh;
+  // Declare member data here.
 };
 
 
