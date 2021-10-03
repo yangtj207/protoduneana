@@ -14,9 +14,9 @@
 
 # use cmake 2.8 or later
 #cmake_minimum_required (VERSION 2.8)
-cmake_minimum_required (VERSION 3.12...3.18 FATAL_ERROR)
+cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
-project(protoduneana VERSION 09.31.00)
+project(protoduneana VERSION 09.31.00 LANGUAGES CXX)
 
 # cetbuildtools contains our cmake modules
 SET ( CETBUILDTOOLS_VERSION $ENV{CETBUILDTOOLS_VERSION} )
