@@ -1,0 +1,6 @@
+#include "runemcnncheck_mcsceon.fcl"
+
+process_name: CheckCNN
+
+services.SpaceCharge.EnableCalEfieldSCE: false
+services.SpaceCharge.EnableCalSpatialSCE: false

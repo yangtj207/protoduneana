@@ -322,8 +322,11 @@ void pdsp::EMCNNCheck::analyze(art::Event const& e)
       vtxy = thisTrack->Vertex().Y();
       vtxz = thisTrack->Vertex().Z();
       if (!geom->FindTPCAtPosition(geo::Point_t(vtxx, vtxy, vtxz)).isValid) return;
-      auto offset = SCE->GetCalPosOffsets(geo::Point_t(vtxx, vtxy, vtxz), (geom->FindTPCAtPosition(geo::Point_t(vtxx, vtxy, vtxz))).TPC);
-      std::cout<<"track "<<offset.X()<<" "<<offset.Y()<<" "<<offset.Z()<<std::endl;
+      geo::Vector_t offset = {0., 0., 0.};
+      if (SCE->EnableCalSpatialSCE()){
+        offset = SCE->GetCalPosOffsets(geo::Point_t(vtxx, vtxy, vtxz), (geom->FindTPCAtPosition(geo::Point_t(vtxx, vtxy, vtxz))).TPC);
+      }
+      //std::cout<<"track "<<offset.X()<<" "<<offset.Y()<<" "<<offset.Z()<<std::endl;
       vtxx -= offset.X();
       vtxy += offset.Y();
       vtxz += offset.Z();
@@ -331,7 +334,10 @@ void pdsp::EMCNNCheck::analyze(art::Event const& e)
       endy = thisTrack->End().Y();
       endz = thisTrack->End().Z();
       if (!geom->FindTPCAtPosition(geo::Point_t(endx, endy, endz)).isValid) return;
-      offset = SCE->GetCalPosOffsets(geo::Point_t(endx, endy, endz), (geom->FindTPCAtPosition(geo::Point_t(endx, endy, endz))).TPC);
+      offset = {0., 0., 0.};
+      if (SCE->EnableCalSpatialSCE()){
+        offset = SCE->GetCalPosOffsets(geo::Point_t(endx, endy, endz), (geom->FindTPCAtPosition(geo::Point_t(endx, endy, endz))).TPC);
+      }
       endx -= offset.X();
       endy += offset.Y();
       endz += offset.Z();
@@ -383,13 +389,19 @@ void pdsp::EMCNNCheck::analyze(art::Event const& e)
       endy = vtxy + thisShower->Direction().Y();
       endz = vtxz + thisShower->Direction().Z();
       if (!geom->FindTPCAtPosition(geo::Point_t(vtxx, vtxy, vtxz)).isValid) return;
-      auto offset = SCE->GetCalPosOffsets(geo::Point_t(vtxx, vtxy, vtxz), (geom->FindTPCAtPosition(geo::Point_t(vtxx, vtxy, vtxz))).TPC);
+      geo::Vector_t offset = {0., 0., 0.};
+      if (SCE->EnableCalSpatialSCE()){
+        offset = SCE->GetCalPosOffsets(geo::Point_t(vtxx, vtxy, vtxz), (geom->FindTPCAtPosition(geo::Point_t(vtxx, vtxy, vtxz))).TPC);
+      }
       //std::cout<<"shower "<<offset.X()<<" "<<offset.Y()<<" "<<offset.Z()<<std::endl;
       vtxx -= offset.X();
       vtxy += offset.Y();
       vtxz += offset.Z();
       if (!geom->FindTPCAtPosition(geo::Point_t(endx, endy, endz)).isValid) return;
-      offset = SCE->GetCalPosOffsets(geo::Point_t(endx, endy, endz), (geom->FindTPCAtPosition(geo::Point_t(endx, endy, endz))).TPC);
+      offset = {0., 0., 0.};
+      if (SCE->EnableCalSpatialSCE()){
+        offset = SCE->GetCalPosOffsets(geo::Point_t(endx, endy, endz), (geom->FindTPCAtPosition(geo::Point_t(endx, endy, endz))).TPC);
+      }
       endx -= offset.X();
       endy += offset.Y();
       endz += offset.Z();
