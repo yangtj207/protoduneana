@@ -31,9 +31,34 @@
 #include "TMath.h"
 #include "TVector3.h"
 #include <memory>
+
+#include <string>
+#include <vector>
+#include <utility>
+#include <memory>
+#include <iostream>
+
+// Framework includes
+#include "canvas/Utilities/InputTag.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Core/EDProducer.h"
+#include "art_root_io/TFileService.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+
+// LArSoft Includes
+#include "larcore/Geometry/Geometry.h"
+#include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardata/ArtDataHelper/HitCreator.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+
 namespace pdsp {
   class HadronHitsRemoval;
 }
+using namespace std;
 
 
 class pdsp::HadronHitsRemoval : public art::EDProducer {
@@ -59,6 +84,7 @@ public:
 private:
   // Declare member data here.
   TTree *fTree;
+  geo::GeometryCore const* fGeom;
   double reco_beam_len_sce;
   int selected_track;
   protoana::ProtoDUNETrackUtils trackUtil;
@@ -85,8 +111,11 @@ pdsp::HadronHitsRemoval::HadronHitsRemoval(fhicl::ParameterSet const& p)
   : EDProducer{p}  // ,
   // More initializers here.
 {
-  cout<<"$$$HadronHitsRemoval"<<endl;
+  cout<<"$$$HadronHitsRemoval$$$"<<endl;
   // Call appropriate produces<>() functions here.
+  recob::HitCollectionCreator::declare_products(producesCollector(), "", true, false);
+  fGeom = &*(art::ServiceHandle<geo::Geometry>());
+  //produces<art::Assns<recob::Hit, recob::SpacePoint>>();
   // Call appropriate consumes<>() for any products to be retrieved by this module.
 }
 
@@ -105,12 +134,15 @@ void pdsp::HadronHitsRemoval::beginJob(){
 
 void pdsp::HadronHitsRemoval::produce(art::Event& evt)
 {
+  cout<<"#####EvtNo."<<evt.id().event()<<endl;
   reset();
   string fPFParticleTag = "pandora";
   string fCalorimetryTagSCE = "pandoracalo";
   string fTrackerTag = "pandoraTrack";
   // Implementation of required member function here.
   // Add code to select beam tracks using Pandora information
+  
+  recob::HitCollectionCreator hcol(evt, true, false);
   
   const std::map<unsigned int, std::vector<const recob::PFParticle*>> sliceMap
       = pfpUtil.GetPFParticleSliceMap(evt, fPFParticleTag);
@@ -184,14 +216,216 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
 
         if (reco_beam_len_sce>100 && PassBeamQualityCut()){
           selected_track = 1;
-          if (reco_beam_len_sce>230)
+          if (reco_beam_len_sce>230 && reco_beam_len_sce<500)
             selected_track = 2;
         }
       }
+      
+      string fHitModuleLabel = "hitpdune";
+      string fSpModuleLabel = "reco3d";
+      
+      double sel_len = 50.; // shorten to how long (cm)
+      
+      if (selected_track == 2) { // selected long tracks (not smaller than 5 m)
+        auto hitsHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
+        auto spHandle = evt.getValidHandle< std::vector<recob::SpacePoint> >(fSpModuleLabel);
+        art::FindOneP<recob::Wire>   channelHitWires    (hitsHandle, evt, fHitModuleLabel);
+        art::FindManyP< recob::SpacePoint > spFromHit(hitsHandle, evt, fSpModuleLabel);
+        //recob::HitCollectionCreator hcol(evt, true, true);
+        std::vector< art::Ptr<recob::Hit> > eventHits;
+        art::fill_ptr_vector(eventHits, hitsHandle);
+        std::unordered_map< size_t, geo::WireID > hitToWire;
+        hitToWire.reserve(eventHits.size());
+        
+        const std::vector< art::Ptr< recob::Hit > > beamPFP_hits = pfpUtil.GetPFParticleHits_Ptrs( *particle, evt, fPFParticleTag );
+        auto calo_dQdX = calo[index].dQdx();
+        double reco_beam_len = thisTrack->Length();
+        cout<<"$$Length"<<reco_beam_len<<endl;
+        size_t i = 0;
+        for (; thisTrack->Length(i) > reco_beam_len - sel_len; ++i ){
+          ;
+          //pos = thisTrack->LocationAtPoint<TVector3>(i);
+          //cout<<geo::GeometryCore::WireCoordinate(pos.Y(), pos.Z(), 0)<<endl;
+          //cout<<geo::GeometryCore::WireCoordinate(pos.Y(), pos.Z(), 1)<<endl;
+          //cout<<geo::GeometryCore::WireCoordinate(pos.Y(), pos.Z(), 2)<<endl;
+          //cout<<geo::GeometryCore::WireCoordinate(pos.Y(), pos.Z(), 3)<<endl;
+        }
+        TVector3 pos = thisTrack->LocationAtPoint<TVector3>(i);
+        cout<<"$$"<<"\tX"<<pos.X()<<"\tY"<<pos.Y()<<"\tZ"<<pos.Z()<<endl;
+        
+        auto TpIndices = calo[index].TpIndices();
+        
+        double wirecoord_U = fGeom->WireCoordinate(pos.Y(), pos.Z(), 0, 1, 0);
+        double wirecoord_V = fGeom->WireCoordinate(pos.Y(), pos.Z(), 1, 1, 0);
+        double wirecoord_X = fGeom->WireCoordinate(pos.Y(), pos.Z(), 2, 1, 0);
+        cout<<"$$$WireCoord: U "<<wirecoord_U<<"\tV "<<wirecoord_V<<"\tX "<<wirecoord_X<<endl;
+        //for (auto hit : beamPFP_hits){
+        for (size_t kk = 0; kk < beamPFP_hits.size(); ++kk){
+          auto hit = beamPFP_hits[kk];
+          /*for( size_t jj = 0; jj < calo_dQdX.size(); ++jj ){
+            const recob::Hit & theHit = (*hitsHandle)[ TpIndices[jj] ];
+            if (theHit == *hit) cout<<"$#$#$"<endl;
+          }*/
+          
+          geo::WireID hitid = hit->WireID();
+          //std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
+          cout<<"@@@"<<hitid.Plane<<"\t"<<hitid.Wire<<"\t"<<hitid.TPC<<"\t"<<hitid.Cryostat<<endl;
+          
+          if (hitid.TPC == 1 && hitid.Cryostat == 0) {
+            if (hitid.Plane == 0) { // plane U
+              if (hitid.Wire > wirecoord_U) {
+                cout<<"$$hitid.Plane == 0"<<endl;
+                hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+              }
+            }
+            else if (hitid.Plane == 1) { // plane V
+              if (hitid.Wire < wirecoord_V) {
+                cout<<"$$hitid.Plane == 1"<<endl;
+                hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+              }
+            }
+            else if (hitid.Plane == 2) { // plane X
+              if (hitid.Wire > wirecoord_X) {
+                cout<<"$$hitid.Plane == 2"<<endl;
+                hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+              }
+            }
+          }
+          
+          /*for (const auto & sp : spFromHit.at(hit.key()))
+          {
+            //auto search = spToTPC.find(sp.key());
+            //if (search == spToTPC.end()) { continue; }
+            //size_t spTpc = search->second;
+            cout<<"$$spXYZ\t"<<sp->XYZ()[0]<<"\t"<<sp->XYZ()[1]<<"\t"<<sp->XYZ()[2]<<endl;
+            cout<<fGeom->WireCoordinate(sp->XYZ()[1], sp->XYZ()[2], hitid.Plane, 1, hitid.Cryostat)<<endl;
+            const float max_dw = 1.; // max dist to wire [wire pitch]
+            for (size_t w = 0; w < cwids.size(); ++w)
+            {
+                if (cwids[w].TPC != spTpc) { continue; } // not that side of APA
+
+                float sp_wire = fGeom->WireCoordinate(sp->XYZ()[1], sp->XYZ()[2], plane, spTpc, cryo);
+                float dw = std::fabs(sp_wire - cwids[w].Wire);
+                if (dw < max_dw)
+                {
+                    tpcBestWire[spTpc] = cwids[w];
+                    tpcScore[spTpc]++;
+                }
+            }
+          }*/
+          
+        }
+        cout<<"$$$reco_beam_len_sce "<<reco_beam_len_sce<<endl;
+        
+        
+        /*auto TpIndices = calo[index].TpIndices();
+        auto calo_dQdX = calo[index].dQdx();
+        for( size_t i = 0; i < calo_dQdX.size(); ++i ){
+          const recob::Hit & theHit = (*hitsHandle)[ TpIndices[i] ];
+          cout<<"@@@TPC"<<theHit.WireID().TPC<<endl;
+          cout<<"@@@Wire"<<theHit.WireID().Wire<<endl;
+        }
+        */
+        
+/*
+        cout<<"@@@7"<<endl;
+        auto assns = std::make_unique<art::Assns<recob::Hit, recob::SpacePoint>>();
+        cout<<"@@@2"<<endl;
+        std::vector< art::Ptr<recob::Hit> > eventHits;
+        cout<<"@@@7"<<endl;
+        art::fill_ptr_vector(eventHits, hitsHandle);
+        cout<<"@@@2"<<endl;
+        //art::FindManyP< recob::SpacePoint > spFromHit(hitsHandle, evt, fSpModuleLabel);
+        cout<<"@@@7"<<endl;
+        art::FindManyP< recob::Hit > hitsFromSp(spHandle, evt, fSpModuleLabel);
+        cout<<"@@@2"<<endl;
+        auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
+        // map induction spacepoints to TPC by collection hits
+        std::unordered_map< size_t, size_t > spToTPC;
+        cout<<"@@@7"<<endl;
+        for (size_t i = 0; i < spHandle->size(); ++i)
+        {
+            auto hits = hitsFromSp.at(i);
+            size_t tpc = geo::WireID::InvalidID;
+            for (const auto & h : hits) // find Collection hit, assume one is enough
+            {
+                if (h->SignalType() == geo::kCollection) { tpc = h->WireID().TPC; break; }
+            }
+            if (tpc == geo::WireID::InvalidID)
+            {
+        //mf::LogWarning("DisambigFromSpacePoints") << "No collection hit for this spacepoint.";
+                continue;
+            }
+            for (const auto & h : hits) // set mapping for Induction hits
+            {
+                if (h->SignalType() == geo::kInduction) { spToTPC[i] = tpc; }
+            }
+        }
+        cout<<"@@@3"<<endl;
+        std::map< unsigned int, std::map< unsigned int, std::map< unsigned int, std::vector< size_t > > > > indHits;                        // induction hits resolved with spacepoints
+        std::vector<size_t> unassignedHits;                   // hits to resolve by neighoring assignments
+        std::unordered_map< size_t, geo::WireID > hitToWire;                 // final hit-wire assignments
+        std::unordered_map< size_t, std::vector<geo::WireID> > hitToNWires;  // final hit-many-wires assignments
+
+        hitToWire.reserve(eventHits.size());
+*/
+        /*int n = runOnSpacePoints(eventHits, spFromHit, spToTPC, hitToWire, indHits, unassignedHits);
+        mf::LogInfo("DisambigFromSpacePoints") << n << " hits undisambiguated by space points.";
+
+        if (fUseNeighbors)
+        {
+            n = resolveUnassigned(detProp, hitToWire, eventHits, indHits, unassignedHits, fNumNeighbors);
+            mf::LogInfo("DisambigFromSpacePoints") << n << " hits undisambiguated by neighborhood.";
+        }
+
+        if (fMoveLeftovers == "repeat")     { assignEveryAllowedWire(hitToNWires, eventHits, unassignedHits);      }
+        else if (fMoveLeftovers == "first") { assignFirstAllowedWire(hitToWire, eventHits, unassignedHits);        }
+        else                { mf::LogInfo("DisambigFromSpacePoints") << "Remaining undisambiguated hits dropped."; }
+        */
+/*        auto const hitPtrMaker = art::PtrMaker<recob::Hit>(evt);
+        cout<<"@@@4"<<endl;
+        for (auto const & hw : hitToWire)
+        {
+            size_t key = hw.first;
+            geo::WireID wid = hw.second;
+
+            recob::HitCreator new_hit(*(eventHits[key]), wid);
+
+            hcol.emplace_back(new_hit.move(), channelHitWires.at(key));//, channelHitRawDigits.at(key));
+
+            auto hitPtr = hitPtrMaker(hcol.size() - 1);
+            auto sps = spFromHit.at(eventHits[key].key());
+            for (auto const & spPtr : sps)
+            {
+                assns->addSingle(hitPtr, spPtr);
+            }
+        }
+        cout<<"@@@5"<<endl;
+        for (auto const & hws : hitToNWires)
+        {
+            size_t key = hws.first;
+            for (auto const & wid : hws.second)
+            {
+                recob::HitCreator new_hit(*(eventHits[key]), wid);
+
+                hcol.emplace_back(new_hit.move(), channelHitWires.at(key));//, channelHitRawDigits.at(key));
+
+                auto hitPtr = hitPtrMaker(hcol.size() - 1);
+                auto sps = spFromHit.at(eventHits[key].key());
+                for (auto const & spPtr : sps)
+                {
+                    assns->addSingle(hitPtr, spPtr);
+                }
+            }
+        }
+*/
+        cout<<"@@@1"<<endl;
+      }
     }
   }
-
-  cout<<"$$$reco_beam_len_sce "<<reco_beam_len_sce<<endl;
+  
+  
+  hcol.put_into(evt);
   fTree->Fill();
 }
 
