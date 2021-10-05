@@ -234,8 +234,8 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         //recob::HitCollectionCreator hcol(evt, true, true);
         std::vector< art::Ptr<recob::Hit> > eventHits;
         art::fill_ptr_vector(eventHits, hitsHandle);
-        std::unordered_map< size_t, geo::WireID > hitToWire;
-        hitToWire.reserve(eventHits.size());
+        //std::unordered_map< size_t, geo::WireID > hitToWire;
+        //hitToWire.reserve(eventHits.size());
         
         const std::vector< art::Ptr< recob::Hit > > beamPFP_hits = pfpUtil.GetPFParticleHits_Ptrs( *particle, evt, fPFParticleTag );
         auto calo_dQdX = calo[index].dQdx();
@@ -244,11 +244,6 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         size_t i = 0;
         for (; thisTrack->Length(i) > reco_beam_len - sel_len; ++i ){
           ;
-          //pos = thisTrack->LocationAtPoint<TVector3>(i);
-          //cout<<geo::GeometryCore::WireCoordinate(pos.Y(), pos.Z(), 0)<<endl;
-          //cout<<geo::GeometryCore::WireCoordinate(pos.Y(), pos.Z(), 1)<<endl;
-          //cout<<geo::GeometryCore::WireCoordinate(pos.Y(), pos.Z(), 2)<<endl;
-          //cout<<geo::GeometryCore::WireCoordinate(pos.Y(), pos.Z(), 3)<<endl;
         }
         TVector3 pos = thisTrack->LocationAtPoint<TVector3>(i);
         cout<<"$$"<<"\tX"<<pos.X()<<"\tY"<<pos.Y()<<"\tZ"<<pos.Z()<<endl;
@@ -259,62 +254,50 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         double wirecoord_V = fGeom->WireCoordinate(pos.Y(), pos.Z(), 1, 1, 0);
         double wirecoord_X = fGeom->WireCoordinate(pos.Y(), pos.Z(), 2, 1, 0);
         cout<<"$$$WireCoord: U "<<wirecoord_U<<"\tV "<<wirecoord_V<<"\tX "<<wirecoord_X<<endl;
+        
+        std::vector< art::Ptr< recob::Hit > > remove_hits;
         //for (auto hit : beamPFP_hits){
         for (size_t kk = 0; kk < beamPFP_hits.size(); ++kk){
           auto hit = beamPFP_hits[kk];
-          /*for( size_t jj = 0; jj < calo_dQdX.size(); ++jj ){
-            const recob::Hit & theHit = (*hitsHandle)[ TpIndices[jj] ];
-            if (theHit == *hit) cout<<"$#$#$"<endl;
-          }*/
           
           geo::WireID hitid = hit->WireID();
           //std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
-          cout<<"@@@"<<hitid.Plane<<"\t"<<hitid.Wire<<"\t"<<hitid.TPC<<"\t"<<hitid.Cryostat<<endl;
+          //cout<<"@@@"<<hitid.Plane<<"\t"<<hitid.Wire<<"\t"<<hitid.TPC<<"\t"<<hitid.Cryostat<<endl;
           
           if (hitid.TPC == 1 && hitid.Cryostat == 0) {
             if (hitid.Plane == 0) { // plane U
               if (hitid.Wire > wirecoord_U) {
                 cout<<"$$hitid.Plane == 0"<<endl;
-                hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+                //hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+                remove_hits.push_back(hit);
               }
             }
             else if (hitid.Plane == 1) { // plane V
               if (hitid.Wire < wirecoord_V) {
                 cout<<"$$hitid.Plane == 1"<<endl;
-                hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+                //hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+                remove_hits.push_back(hit);
               }
             }
             else if (hitid.Plane == 2) { // plane X
               if (hitid.Wire > wirecoord_X) {
                 cout<<"$$hitid.Plane == 2"<<endl;
-                hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+                //hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+                remove_hits.push_back(hit);
               }
             }
           }
-          
-          /*for (const auto & sp : spFromHit.at(hit.key()))
-          {
-            //auto search = spToTPC.find(sp.key());
-            //if (search == spToTPC.end()) { continue; }
-            //size_t spTpc = search->second;
-            cout<<"$$spXYZ\t"<<sp->XYZ()[0]<<"\t"<<sp->XYZ()[1]<<"\t"<<sp->XYZ()[2]<<endl;
-            cout<<fGeom->WireCoordinate(sp->XYZ()[1], sp->XYZ()[2], hitid.Plane, 1, hitid.Cryostat)<<endl;
-            const float max_dw = 1.; // max dist to wire [wire pitch]
-            for (size_t w = 0; w < cwids.size(); ++w)
-            {
-                if (cwids[w].TPC != spTpc) { continue; } // not that side of APA
-
-                float sp_wire = fGeom->WireCoordinate(sp->XYZ()[1], sp->XYZ()[2], plane, spTpc, cryo);
-                float dw = std::fabs(sp_wire - cwids[w].Wire);
-                if (dw < max_dw)
-                {
-                    tpcBestWire[spTpc] = cwids[w];
-                    tpcScore[spTpc]++;
-                }
-            }
-          }*/
-          
         }
+        // fill hits
+        for (size_t kk = 0; kk < eventHits.size(); ++kk){
+          auto hit = eventHits[kk];
+          vector<art::Ptr<recob::Hit>>::iterator itr;
+          itr = find(remove_hits.begin(), remove_hits.end(), hit);
+          if (itr == remove_hits.end()) {
+            hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+          }
+        }
+        
         cout<<"$$$reco_beam_len_sce "<<reco_beam_len_sce<<endl;
         
         
