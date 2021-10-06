@@ -1,6 +1,7 @@
 #include "services_dune.fcl"
 #include "ProtoDUNEBeamCuts.fcl"
 #include "ProtoDUNEBeamlineUtils.fcl"
+#include "protoDUNE_reco_data_prolog.fcl"
 #include "protodune_tools_dune.fcl"
 
 process_name: HadronHitsRemoval
@@ -34,7 +35,7 @@ outputs:
  out1:
  {
    module_type: RootOutput
-   fileName:    "%ifb_hhr.root"
+   fileName:    "%ifb_hitpdune.root"
    dataTier:    "full-reconstructed"
    compressionLevel: 1
    saveMemoryObjectThreshold: 0
@@ -46,8 +47,8 @@ outputs:
 physics:
 {
   producers:
-  {
-      hhr: {module_type:          "HadronHitsRemoval"
+  {   @table::protoDUNE_reco_data_stage1_producers
+      hitpdune: {module_type:          "HadronHitsRemoval"
         GeneratorTag:         "generator"
         #BeamCuts:             @local::Prod2BeamCuts
         BeamlineUtils:        @local::standard_protodunebeamlineutils
@@ -59,9 +60,45 @@ physics:
         HitTag:                  "hitpdune"
       }
   }
-  reco: [hhr]
+  reco: [hitpdune,
+        pandora,
+        pandoraWriter,
+        pandoraTrack,
+        pandoraShower,
+        pandoracalo,
+        pandoracalonosce,
+        pandorapid,
+        pandoracalinoxyzt,
+        pandoracalipidnoxyzt,
+        #pandoracali,
+        #pandoracalipid,
+        pandoraShowercalo,
+        pandoraShowercalonosce,
+        #emtrkmichelid,
+        ophitInternal,
+        ophitExternal,
+        opflashInternal,
+        opflashExternal,
+        opslicerInternal,
+        opslicerExternal,
+        #crttag,
+        #crtreco,
+        anodepiercerst0,
+        pandora2Track,
+        pandora2calo,
+        pandora2calonosce,
+        pandora2pid,
+        pandora2calinoxyzt,
+        pandora2calipidnoxyzt,
+        #pandora2cali,
+        #pandora2calipid,
+        pandora2Shower,
+        pandora2Showercalo,
+        pandora2Showercalonosce
+        ]
   stream1:  [ out1 ]
   trigger_paths: [reco]
   end_paths:     [stream1]
 }
 #add physics block and imbeded  
+outputs.out1.outputCommands: [ "keep *", "drop *_hitpdune_*_Reco1", "drop *_pandora*_*_Reco1", "drop *_anodepiercerst0_*_Reco1", "drop *_op*_*_Reco1" ]

@@ -246,14 +246,14 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
           ;
         }
         TVector3 pos = thisTrack->LocationAtPoint<TVector3>(i);
-        cout<<"$$"<<"\tX"<<pos.X()<<"\tY"<<pos.Y()<<"\tZ"<<pos.Z()<<endl;
+        cout<<"$$"<<"\tX"<<pos.X()<<"\tY"<<pos.Y()<<"\tZ"<<pos.Z()<<endl; // position of cut point
         
         auto TpIndices = calo[index].TpIndices();
         
         double wirecoord_U = fGeom->WireCoordinate(pos.Y(), pos.Z(), 0, 1, 0);
         double wirecoord_V = fGeom->WireCoordinate(pos.Y(), pos.Z(), 1, 1, 0);
         double wirecoord_X = fGeom->WireCoordinate(pos.Y(), pos.Z(), 2, 1, 0);
-        cout<<"$$$WireCoord: U "<<wirecoord_U<<"\tV "<<wirecoord_V<<"\tX "<<wirecoord_X<<endl;
+        cout<<"$$$WireCoord: U "<<wirecoord_U<<"\tV "<<wirecoord_V<<"\tX "<<wirecoord_X<<endl; // Wire ID of cut point
         
         std::vector< art::Ptr< recob::Hit > > remove_hits;
         //for (auto hit : beamPFP_hits){
@@ -267,22 +267,16 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
           if (hitid.TPC == 1 && hitid.Cryostat == 0) {
             if (hitid.Plane == 0) { // plane U
               if (hitid.Wire > wirecoord_U) {
-                cout<<"$$hitid.Plane == 0"<<endl;
-                //hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
                 remove_hits.push_back(hit);
               }
             }
             else if (hitid.Plane == 1) { // plane V
               if (hitid.Wire < wirecoord_V) {
-                cout<<"$$hitid.Plane == 1"<<endl;
-                //hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
                 remove_hits.push_back(hit);
               }
             }
             else if (hitid.Plane == 2) { // plane X
               if (hitid.Wire > wirecoord_X) {
-                cout<<"$$hitid.Plane == 2"<<endl;
-                //hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
                 remove_hits.push_back(hit);
               }
             }
@@ -299,110 +293,6 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         }
         
         cout<<"$$$reco_beam_len_sce "<<reco_beam_len_sce<<endl;
-        
-        
-        /*auto TpIndices = calo[index].TpIndices();
-        auto calo_dQdX = calo[index].dQdx();
-        for( size_t i = 0; i < calo_dQdX.size(); ++i ){
-          const recob::Hit & theHit = (*hitsHandle)[ TpIndices[i] ];
-          cout<<"@@@TPC"<<theHit.WireID().TPC<<endl;
-          cout<<"@@@Wire"<<theHit.WireID().Wire<<endl;
-        }
-        */
-        
-/*
-        cout<<"@@@7"<<endl;
-        auto assns = std::make_unique<art::Assns<recob::Hit, recob::SpacePoint>>();
-        cout<<"@@@2"<<endl;
-        std::vector< art::Ptr<recob::Hit> > eventHits;
-        cout<<"@@@7"<<endl;
-        art::fill_ptr_vector(eventHits, hitsHandle);
-        cout<<"@@@2"<<endl;
-        //art::FindManyP< recob::SpacePoint > spFromHit(hitsHandle, evt, fSpModuleLabel);
-        cout<<"@@@7"<<endl;
-        art::FindManyP< recob::Hit > hitsFromSp(spHandle, evt, fSpModuleLabel);
-        cout<<"@@@2"<<endl;
-        auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
-        // map induction spacepoints to TPC by collection hits
-        std::unordered_map< size_t, size_t > spToTPC;
-        cout<<"@@@7"<<endl;
-        for (size_t i = 0; i < spHandle->size(); ++i)
-        {
-            auto hits = hitsFromSp.at(i);
-            size_t tpc = geo::WireID::InvalidID;
-            for (const auto & h : hits) // find Collection hit, assume one is enough
-            {
-                if (h->SignalType() == geo::kCollection) { tpc = h->WireID().TPC; break; }
-            }
-            if (tpc == geo::WireID::InvalidID)
-            {
-        //mf::LogWarning("DisambigFromSpacePoints") << "No collection hit for this spacepoint.";
-                continue;
-            }
-            for (const auto & h : hits) // set mapping for Induction hits
-            {
-                if (h->SignalType() == geo::kInduction) { spToTPC[i] = tpc; }
-            }
-        }
-        cout<<"@@@3"<<endl;
-        std::map< unsigned int, std::map< unsigned int, std::map< unsigned int, std::vector< size_t > > > > indHits;                        // induction hits resolved with spacepoints
-        std::vector<size_t> unassignedHits;                   // hits to resolve by neighoring assignments
-        std::unordered_map< size_t, geo::WireID > hitToWire;                 // final hit-wire assignments
-        std::unordered_map< size_t, std::vector<geo::WireID> > hitToNWires;  // final hit-many-wires assignments
-
-        hitToWire.reserve(eventHits.size());
-*/
-        /*int n = runOnSpacePoints(eventHits, spFromHit, spToTPC, hitToWire, indHits, unassignedHits);
-        mf::LogInfo("DisambigFromSpacePoints") << n << " hits undisambiguated by space points.";
-
-        if (fUseNeighbors)
-        {
-            n = resolveUnassigned(detProp, hitToWire, eventHits, indHits, unassignedHits, fNumNeighbors);
-            mf::LogInfo("DisambigFromSpacePoints") << n << " hits undisambiguated by neighborhood.";
-        }
-
-        if (fMoveLeftovers == "repeat")     { assignEveryAllowedWire(hitToNWires, eventHits, unassignedHits);      }
-        else if (fMoveLeftovers == "first") { assignFirstAllowedWire(hitToWire, eventHits, unassignedHits);        }
-        else                { mf::LogInfo("DisambigFromSpacePoints") << "Remaining undisambiguated hits dropped."; }
-        */
-/*        auto const hitPtrMaker = art::PtrMaker<recob::Hit>(evt);
-        cout<<"@@@4"<<endl;
-        for (auto const & hw : hitToWire)
-        {
-            size_t key = hw.first;
-            geo::WireID wid = hw.second;
-
-            recob::HitCreator new_hit(*(eventHits[key]), wid);
-
-            hcol.emplace_back(new_hit.move(), channelHitWires.at(key));//, channelHitRawDigits.at(key));
-
-            auto hitPtr = hitPtrMaker(hcol.size() - 1);
-            auto sps = spFromHit.at(eventHits[key].key());
-            for (auto const & spPtr : sps)
-            {
-                assns->addSingle(hitPtr, spPtr);
-            }
-        }
-        cout<<"@@@5"<<endl;
-        for (auto const & hws : hitToNWires)
-        {
-            size_t key = hws.first;
-            for (auto const & wid : hws.second)
-            {
-                recob::HitCreator new_hit(*(eventHits[key]), wid);
-
-                hcol.emplace_back(new_hit.move(), channelHitWires.at(key));//, channelHitRawDigits.at(key));
-
-                auto hitPtr = hitPtrMaker(hcol.size() - 1);
-                auto sps = spFromHit.at(eventHits[key].key());
-                for (auto const & spPtr : sps)
-                {
-                    assns->addSingle(hitPtr, spPtr);
-                }
-            }
-        }
-*/
-        cout<<"@@@1"<<endl;
       }
     }
   }
