@@ -69,18 +69,19 @@ class ThinSliceSample {
 
   void SaveSystematics(std::string syst_name, TDirectory * dir) {
     dir->cd();
-    for (auto it = fSystematicShifts[syst_name].begin();
-         it != fSystematicShifts[syst_name].end(); ++it) {
-      for (size_t i = 0; i < it->second.size(); ++i) {
-        it->second[i]->Write();
-      }
-    } 
+    //for (auto it = fSystematicShifts[syst_name].begin();
+    //     it != fSystematicShifts[syst_name].end(); ++it) {
+    //  for (size_t i = 0; i < it->second.size(); ++i) {
+    //    it->second[i]->Write();
+    //  }
+    //} 
     for (auto it = fSystematicSplines[syst_name].begin();
          it != fSystematicSplines[syst_name].end(); ++it) {
       for (size_t i = 0; i < it->second.size(); ++i) {
         TCanvas c(it->second[i]->GetName(), "");
         it->second[i]->Draw();
-        c.Write(it->second[i]->GetName());
+        std::string name = syst_name + std::to_string(i);
+        c.Write(syst_name.c_str());
       }
     }
   };
@@ -325,6 +326,14 @@ class ThinSliceSample {
     fFactor = val;
     fVariedFlux *= val;
     ScaleHists(val);
+  };
+
+  void ExtraFactor(double val) {
+    SetFactorAndScale(val*fFactor);
+  };
+
+  double GetFactor() {
+    return fFactor;
   };
 
   void ResetFactor() {

@@ -6,6 +6,7 @@
 #include <map>
 
 #include "TTree.h"
+#include "TArrayD.h"
 #include "TFile.h"
 #include "THStack.h"
 #include "Math/Factory.h"
@@ -64,8 +65,9 @@ class PDSPThinSliceFitter {
     std::map<int, std::vector<TH1*>> & truth_xsec_hists);
   void BuildFakeDataXSecs(bool use_scales = true);
   void BuildDataFromToy();
-  double CalcChi2SystTerm();
+  double CalcChi2SystTerm(), CalcRegTerm();
   void MakeThrowsTree(TTree & tree, std::vector<double> & branches);
+  //void MakeThrowsArrays(std::vector<TVectorD *> & arrays);
 
   std::vector<double> GetBestFitParsVec();
 
@@ -118,10 +120,11 @@ class PDSPThinSliceFitter {
   //std::map<int, std::string> fSystParameterNames;
   std::map<std::string, ThinSliceSystematic> fSystParameters;
   std::vector<std::string> fSystParameterNames;
-  std::vector<double> fParLimits;
+  std::vector<double> fParLimits, fParLimitsUp;
   size_t fTotalSystParameters = 0;
   std::map<std::string, size_t> fCovarianceBins;
-  bool fAddSystTerm;
+  bool fAddSystTerm, fAddRegTerm;
+  double fRegFactor = 0.;
   TMatrixD * fCovMatrix, * fCovMatrixDisplay;
   TDecompChol * fInputChol;
 
@@ -148,7 +151,7 @@ class PDSPThinSliceFitter {
   std::vector<fhicl::ParameterSet> fSelectionSets;
   std::vector<fhicl::ParameterSet> fSampleSets;
   std::map<int, std::string> fFluxTypes;
-  int fMaxCalls;
+  int fMaxCalls, fMaxIterations;
   size_t fNFitSteps = 0;
   unsigned int fNScanSteps;
   double fTolerance, fLowerLimit, fUpperLimit;
@@ -160,7 +163,10 @@ class PDSPThinSliceFitter {
   fhicl::ParameterSet fAnalysisOptions;
   double fPitch;
   std::string fSliceMethod;
-  bool fDoFakeData, fDoThrows, fDoScans, fDo1DShifts, fDoSysts/*, f1DSystPlots*/;
+  bool fMultinomial;
+  bool fDoFakeData, fDoThrows, fDoScans, fDo1DShifts, fDoSysts, fRunHesse;
+  bool fFixVariables;
+  std::map<std::string, double> fSystsToFix;
   std::string fFakeDataRoutine;
   bool fDoFluctuateStats;
   bool fSplitMC;

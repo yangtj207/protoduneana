@@ -11,6 +11,9 @@ class ThinSliceSystematic {
       fUpperLimit(pset.get<double>("UpperLimit")),
       fLowerLimit(pset.get<double>("LowerLimit")),
       fThrowLimit(pset.get<double>("ThrowLimit")),
+      fThrowLimitUp(pset.get<double>("ThrowLimitUp")),
+      fGenThrowLimit(pset.get<double>("GenThrowLimit")),
+      fGenThrowLimitUp(pset.get<double>("GenThrowLimitUp")),
       fSigma(pset.get<double>("Sigma", 1.)),
       fOptions(pset.get<fhicl::ParameterSet>("Options")) {
     fName = "par_" + fType + "_syst";
@@ -34,6 +37,16 @@ class ThinSliceSystematic {
 
   const double GetThrowLimit() const {
     return fThrowLimit;
+  };
+  const double GetThrowLimitUp() const {
+    return fThrowLimitUp;
+  };
+
+  const double GetGenThrowLimit() const {
+    return fGenThrowLimit;
+  };
+  const double GetGenThrowLimitUp() const {
+    return fGenThrowLimitUp;
   };
 
   const double GetLowerLimit() const {
@@ -68,6 +81,9 @@ class ThinSliceSystematic {
   double fUpperLimit; 
   double fLowerLimit;
   double fThrowLimit; 
+  double fThrowLimitUp; 
+  double fGenThrowLimit; 
+  double fGenThrowLimitUp; 
   double fSigma;
 
   fhicl::ParameterSet fOptions;

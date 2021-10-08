@@ -25,7 +25,7 @@ art_make(
   ${MF_UTILITIES}
   ${FHICLCPP}
   cetlib cetlib_except
-  ${ROOT_BASIC_LIB_LIST}
+  ROOT_BASIC_LIB_LIST
   MODULE_LIBRARIES larana_OpticalDetector_OpDigiProperties_service
   larana_OpticalDetector_OpHitFinder
   larana_OpticalDetector
@@ -61,7 +61,7 @@ art_make(
   ${MF_UTILITIES}
   ${FHICLCPP}
   cetlib cetlib_except
-  ${ROOT_BASIC_LIB_LIST}
+  ROOT_BASIC_LIB_LIST
   SERVICE_LIBRARIES
   larcorealg_Geometry
   larcore_Geometry_Geometry_service
@@ -80,7 +80,7 @@ art_make(
   ${FHICLCPP}
   cetlib cetlib_except
   ${CLHEP}
-  ${ROOT_BASIC_LIB_LIST}
+  ROOT_BASIC_LIB_LIST
   )
 
 cet_remove_compiler_flags(CXX -pedantic)

@@ -177,6 +177,53 @@ auto categorize_daughters = [](
   return results;
 };
 
+auto leading_p_costheta = [](const double & Px,
+                          const double & Py, const double & Pz,
+                          const std::vector<int> & dPDGs,
+                          const std::vector<double> & dPx,
+                          const std::vector<double> & dPy,
+                          const std::vector<double> & dPz) {
+  double costheta = -999.;
+  double max_p = -999.;
+  double P = sqrt(Px*Px + Py*Py + Pz*Pz);
+  for (size_t i = 0; i < dPDGs.size(); ++i) {
+    if (dPDGs[i] != 2212) continue;
+
+    double dP = sqrt(dPx[i]*dPx[i] + dPy[i]*dPy[i] + dPz[i]*dPz[i]);
+    if (dP > max_p) {
+      costheta = (dPx[i]*Px + dPy[i]*Py + dPz[i]*Pz)/(dP*P);
+    }
+  }
+  return costheta;
+};
+
+class leading_costheta {
+ private:
+  int fPDG;
+ public:
+  leading_costheta(int pdg) : fPDG(pdg) {}
+
+  double operator()(const double & Px,
+                    const double & Py, const double & Pz,
+                    const std::vector<int> & dPDGs,
+                    const std::vector<double> & dPx,
+                    const std::vector<double> & dPy,
+                    const std::vector<double> & dPz) {
+    double costheta = -999.;
+    double max_p = -999.;
+    double P = sqrt(Px*Px + Py*Py + Pz*Pz);
+    for (size_t i = 0; i < dPDGs.size(); ++i) {
+      if (dPDGs[i] != fPDG) continue;
+
+      double dP = sqrt(dPx[i]*dPx[i] + dPy[i]*dPy[i] + dPz[i]*dPz[i]);
+      if (dP > max_p) {
+        costheta = (dPx[i]*Px + dPy[i]*Py + dPz[i]*Pz)/(dP*P);
+      }
+    }
+    return costheta;
+  }
+};
+
 auto backtrack_beam = [](const std::string process,
                          const bool matched,
                          const int origin, const int PDG) {

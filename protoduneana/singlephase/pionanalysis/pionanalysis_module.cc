@@ -44,12 +44,12 @@
 
 #include "lardata/ArtDataHelper/MVAReader.h"
 #include "dune/DuneObj/ProtoDUNEBeamEvent.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNETrackUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNEShowerUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNETruthUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
+#include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
+#include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
 #include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEBeamCuts.h"
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"

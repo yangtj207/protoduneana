@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "cetlib/filepath_maker.h"
-#include "fhiclcpp/make_ParameterSet.h"
 #include "fhiclcpp/ParameterSet.h"
 
 #include "ProtoDUNESelectionUtils.h"
@@ -283,6 +282,5 @@ fhicl::ParameterSet makeParameterSet(std::string file) {
   }
 
   cet::filepath_first_absolute_or_lookup_with_dot lookupPolicy{search_path};
-  fhicl::make_ParameterSet(file, lookupPolicy, pset);
-  return pset;
+  return fhicl::ParameterSet::make(file, lookupPolicy);
 }

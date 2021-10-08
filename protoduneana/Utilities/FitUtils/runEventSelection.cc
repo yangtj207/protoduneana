@@ -1,6 +1,5 @@
 #include <iostream>
 #include "cetlib_except/exception.h"
-#include "fhiclcpp/make_ParameterSet.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "cetlib/filepath_maker.h"
 #include <ROOT/RDataFrame.hxx>
@@ -75,6 +74,22 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                     "reco_daughter_PFP_true_byHits_parID", "reco_daughter_PFP_true_byHits_parPDG",
                     "true_beam_daughter_ID",
                     "true_beam_grand_daughter_ID"})
+           .Define("leading_p_costheta", leading_p_costheta,
+                   {"true_beam_endPx", "true_beam_endPy", "true_beam_endPz",
+                    "true_beam_daughter_PDG", "true_beam_daughter_startPx", 
+                    "true_beam_daughter_startPy", "true_beam_daughter_startPz"})
+           .Define("leading_p_costheta2", leading_costheta(2212),
+                   {"true_beam_endPx", "true_beam_endPy", "true_beam_endPz",
+                    "true_beam_daughter_PDG", "true_beam_daughter_startPx", 
+                    "true_beam_daughter_startPy", "true_beam_daughter_startPz"})
+           .Define("leading_piplus_costheta", leading_costheta(211),
+                   {"true_beam_endPx", "true_beam_endPy", "true_beam_endPz",
+                    "true_beam_daughter_PDG", "true_beam_daughter_startPx", 
+                    "true_beam_daughter_startPy", "true_beam_daughter_startPz"})
+           .Define("leading_pi0_costheta", leading_costheta(111),
+                   {"true_beam_endPx", "true_beam_endPy", "true_beam_endPz",
+                    "true_beam_daughter_PDG", "true_beam_daughter_startPx", 
+                    "true_beam_daughter_startPy", "true_beam_daughter_startPz"})
            .Define("daughter_PDGs_types", daughter_PDG_types,
                    {"reco_daughter_PFP_true_byHits_PDG"});
 
@@ -214,6 +229,7 @@ int main(int argc, char ** argv){
   std::string fcl_file;
   std::string output_file;
   std::string mc_file, data_file;
+  bool found_mc = false, found_data = false;
   // Options to run
   for (int iArg = 1; iArg < argc; iArg++) {
     if (!strcasecmp(argv[iArg],"-c")) {
@@ -221,9 +237,11 @@ int main(int argc, char ** argv){
     }
     if (!strcasecmp(argv[iArg],"-m")) {
      mc_file = argv[++iArg];
+     found_mc = true;
     }
     if (!strcasecmp(argv[iArg],"-d")) {
      data_file = argv[++iArg];
+     found_data = true;
     }
     if (!strcasecmp(argv[iArg],"-o")) {
       output_file = argv[++iArg];
@@ -246,32 +264,35 @@ int main(int argc, char ** argv){
   }
 
   cet::filepath_first_absolute_or_lookup_with_dot lookupPolicy{search_path};
-  fhicl::ParameterSet pset;
-  fhicl::make_ParameterSet(fcl_file, lookupPolicy, pset);
+  auto const pset = fhicl::ParameterSet::make(fcl_file, lookupPolicy);
   std::string tree_name = pset.get<std::string>("TreeName"); 
 
   if (pset.get<bool>("UseMT"))
     ROOT::EnableImplicitMT(4);
 
-  ROOT::RDataFrame frame(tree_name, mc_file);
-  std::cout << "Calling DefineMC" << std::endl;
-  auto mc = DefineMC(frame, pset);
-  std::cout << "Snapshotting" << std::endl;
-  auto time0 = std::chrono::high_resolution_clock::now();
-  mc.Snapshot(tree_name, "eventSelection_mc_all.root");
-  auto time1 = std::chrono::high_resolution_clock::now();
-  std::cout << "Time: " <<
-               std::chrono::duration_cast<std::chrono::seconds>(time1 - time0).count() <<
-               std::endl;
+  if (found_mc) {
+    ROOT::RDataFrame frame(tree_name, mc_file);
+    std::cout << "Calling DefineMC" << std::endl;
+    auto mc = DefineMC(frame, pset);
+    std::cout << "Snapshotting" << std::endl;
+    auto time0 = std::chrono::high_resolution_clock::now();
+    mc.Snapshot(tree_name, "eventSelection_mc_all.root");
+    auto time1 = std::chrono::high_resolution_clock::now();
+    std::cout << "Time: " <<
+                 std::chrono::duration_cast<std::chrono::seconds>(time1 - time0).count() <<
+                 std::endl;
+  
+  }
 
-  ROOT::RDataFrame data_frame(tree_name, data_file);
-  std::cout << "Calling DefineData" << std::endl;
-  auto data = DefineData(data_frame, pset);
-  std::cout << "Snapshotting" << std::endl;
-  data.Snapshot(tree_name, "eventSelection_data_all.root");
-  data = data.Filter("passBeamQuality");
-  data.Snapshot(tree_name, "eventSelection_data_BeamQuality.root");
+  if (found_data) {
+    ROOT::RDataFrame data_frame(tree_name, data_file);
+    std::cout << "Calling DefineData" << std::endl;
+    auto data = DefineData(data_frame, pset);
+    std::cout << "Snapshotting" << std::endl;
+    data.Snapshot(tree_name, "eventSelection_data_all.root");
+    data = data.Filter("passBeamQuality");
+    data.Snapshot(tree_name, "eventSelection_data_BeamQuality.root");
+  }
 
   return 0;
 }
-

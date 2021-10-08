@@ -1,4 +1,4 @@
-simple_plugin(MichelHitCounter "module"
+cet_build_plugin(MichelHitCounter art::module
               larcorealg_Geometry
               larreco_Calorimetry
               larreco_RecoAlg_PMAlg
@@ -15,11 +15,11 @@ simple_plugin(MichelHitCounter "module"
               ${ART_PERSISTENCY_PROVENANCE}
               ${MF_MESSAGELOGGER}
               ${CETLIB}
-              ${ROOT_BASIC_LIB_LIST}
+              ROOT_BASIC_LIB_LIST
               BASENAME_ONLY
 )
 
-simple_plugin(VtxScore "module"
+cet_build_plugin(VtxScore art::module
               larcorealg_Geometry
               larreco_Calorimetry
               larreco_RecoAlg_PMAlg
@@ -36,12 +36,12 @@ simple_plugin(VtxScore "module"
               ${ART_PERSISTENCY_PROVENANCE}
               ${MF_MESSAGELOGGER}
               ${CETLIB}
-              ${ROOT_BASIC_LIB_LIST}
+              ROOT_BASIC_LIB_LIST
               BASENAME_ONLY
 )
 
 
-simple_plugin(MichelEventSelection "module"
+cet_build_plugin(MichelEventSelection art::module
               larcorealg_Geometry
               larreco_Calorimetry
               larreco_RecoAlg_PMAlg
@@ -58,7 +58,7 @@ simple_plugin(MichelEventSelection "module"
               ${ART_PERSISTENCY_PROVENANCE}
               ${MF_MESSAGELOGGER}
               ${CETLIB}
-              ${ROOT_BASIC_LIB_LIST}
+              ROOT_BASIC_LIB_LIST
               BASENAME_ONLY
 )
 
