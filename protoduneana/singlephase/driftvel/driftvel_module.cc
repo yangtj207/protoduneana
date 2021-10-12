@@ -214,21 +214,18 @@ namespace protoana{
   void driftvel::analyze( const art::Event& evt){//analyze
     reset();  
    
-    art::Handle< std::vector<recob::Track> > trackListHandle;
-    art::Handle< std::vector<recob::PFParticle> > PFPListHandle; 
-   
     std::vector<art::Ptr<recob::Track> > tracklist;
     std::vector<art::Ptr<recob::PFParticle> > pfplist;
 
+    auto trackListHandle = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+    if (trackListHandle) art::fill_ptr_vector(tracklist, trackListHandle);
 
-    if(evt.getByLabel(fTrackModuleLabel,trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
-    if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
-  
+    auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> >("pandora");
+    if (PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
    
-    art::Handle< std::vector<recob::Hit> > hitListHandle; // to get information about the hits
     std::vector<art::Ptr<recob::Hit>> hitlist;
-    if(evt.getByLabel(fHitsModuleLabel, hitListHandle))
-      art::fill_ptr_vector(hitlist, hitListHandle);
+    auto hitListHandle = evt.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel); // to get information about the hits
+    if (hitListHandle) art::fill_ptr_vector(hitlist, hitListHandle);
        
     // art::FindManyP<recob::Hit> fmtht(trackListHandle, evt, fTrackModuleLabel); // to associate tracks and hits
     art::FindManyP<recob::Hit, recob::TrackHitMeta> fmthm(trackListHandle, evt, fTrackModuleLabel); // to associate tracks and hits
