@@ -54,8 +54,8 @@ class Cone {
 
     // Get all spacepoints in the event.
     std::string spsLabel = "pandora";
-    art::Handle<std::vector<recob::SpacePoint>> spHandle;
-    if (!m_evt->getByLabel(spsLabel, spHandle)) { return; }
+    auto spHandle = m_evt->getHandle<std::vector<recob::SpacePoint> >(spsLabel);
+    if (!spHandle) { return; }
     // Get associations between the spacepoints and hits.
     const art::FindManyP<recob::Hit> sphits(spHandle, *m_evt, spsLabel);
 
@@ -100,8 +100,8 @@ class Cone {
 inline double Cone::completeness(const simb::MCParticle& mcpart,
                           const std::string hitLabel) const {
   // Get all hits in the event.
-  art::Handle<std::vector<recob::Hit>> hitHandle;
-  if(!m_evt->getByLabel(hitLabel, hitHandle)) {
+  auto hitHandle = m_evt->getHandle<std::vector<recob::Hit> >(hitLabel);
+  if(!hitHandle) {
     std::cout << "pizero::Cone::completeness: could not find hits in event.\n";
     return 0;
   }

@@ -176,38 +176,38 @@ void pdsp::EMCNNCheck::analyze(art::Event const& e)
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e, clockData);
   art::ServiceHandle<geo::Geometry const> geom;
 
-  art::Handle < std::vector < recob::Slice > > sliceListHandle;
   std::vector < art::Ptr < recob::Slice > > sliceList;
-  if (e.getByLabel("pandora", sliceListHandle)) {
+  auto sliceListHandle = e.getHandle < std::vector < recob::Slice > > ("pandora");
+  if (sliceListHandle) {
     art::fill_ptr_vector(sliceList, sliceListHandle);
   }
   else return;
 
   // Get all pfparticles
-  art::Handle < std::vector < recob::PFParticle > > pfpListHandle;
   std::vector < art::Ptr < recob::PFParticle > > pfpList;
-  if (e.getByLabel("pandora", pfpListHandle)) {
+  auto pfpListHandle = e.getHandle < std::vector < recob::PFParticle > >("pandora");
+  if (pfpListHandle) {
     art::fill_ptr_vector(pfpList, pfpListHandle);
   }
 
   // Get all clusters
-  art::Handle < std::vector < recob::Cluster > > cluListHandle;
   std::vector < art::Ptr < recob::Cluster > > cluList;
-  if (e.getByLabel("pandora", cluListHandle)) {
+  auto cluListHandle = e.getHandle < std::vector < recob::Cluster > >("pandora");
+  if (cluListHandle) {
     art::fill_ptr_vector(cluList, cluListHandle);
   }
 
   // Get all tracks
-  art::Handle < std::vector < recob::Track > > trkListHandle;
   std::vector < art::Ptr < recob::Track > > trkList;
-  if (e.getByLabel("pandoraTrack", trkListHandle)) {
+  auto trkListHandle = e.getHandle < std::vector < recob::Track > >("pandoraTrack");
+  if (trkListHandle) {
     art::fill_ptr_vector(trkList, trkListHandle);
   }
 
   // Get all hits
-  art::Handle < std::vector < recob::Hit > > hitListHandle;
   std::vector < art::Ptr < recob::Hit > > hitList;
-  if (e.getByLabel("hitpdune", hitListHandle)) {
+  auto hitListHandle = e.getHandle < std::vector < recob::Hit > >("hitpdune");
+  if (hitListHandle) {
     art::fill_ptr_vector(hitList, hitListHandle);
   }
 
