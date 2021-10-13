@@ -107,9 +107,9 @@ bool protoana::ProtoDUNETruthBeamFilter::filter(art::Event& evt){
 
   bool found = false;  
   // Access truth info
-  art::Handle< std::vector<simb::MCTruth> > mctruthhandle;
   std::vector< art::Ptr<simb::MCTruth> > mclist;
-  if(evt.getByLabel("generator",mctruthhandle)){
+  auto mctruthhandle = evt.getHandle< std::vector<simb::MCTruth> >("generator");
+  if (mctruthhandle){
     art::fill_ptr_vector(mclist,mctruthhandle);
   }
   else{

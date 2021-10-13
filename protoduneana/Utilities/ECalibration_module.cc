@@ -247,8 +247,8 @@ bool proto::ECalibration::EvMCselect(art::Event const & e)
 {
 	std::vector< art::Ptr<simb::MCParticle> > simlist;
 
-	art::Handle< std::vector<simb::MCParticle> > mcparticleHandle;
-	if (e.getByLabel(fSimulationLabel, mcparticleHandle))
+	auto mcparticleHandle = e.getHandle< std::vector<simb::MCParticle> >(fSimulationLabel);
+	if (mcparticleHandle)
 		art::fill_ptr_vector(simlist, mcparticleHandle);
 
 	std::map< int, const simb::MCParticle* > particleMap;
@@ -346,9 +346,8 @@ void proto::ECalibration::analyze(art::Event const & e)
 	
 	// reco
 	// hits
-	art::Handle< std::vector<recob::Hit> > hitListHandle;
-	if (e.getByLabel(fHitsModuleLabel, hitListHandle))
-		art::fill_ptr_vector(fHitlist, hitListHandle);
+	auto hitListHandle = e.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel);
+	if (hitListHandle) art::fill_ptr_vector(fHitlist, hitListHandle);
 
         auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(e);
         auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e, clockData);
@@ -360,18 +359,17 @@ void proto::ECalibration::analyze(art::Event const & e)
 	}
 
 	// vertices
-	art::Handle< std::vector<recob::Vertex> > vtxListHandle;
-	if (e.getByLabel(fVertexModuleLabel, vtxListHandle))
-		art::fill_ptr_vector(fVertexlist, vtxListHandle);
+	auto vtxListHandle = e.getHandle< std::vector<recob::Vertex> >(fVertexModuleLabel);
+	if (vtxListHandle) art::fill_ptr_vector(fVertexlist, vtxListHandle);
 
 	// showers
-	art::Handle< std::vector<recob::Shower> > shsListHandle;
-	if (e.getByLabel(fShowerModuleLabel, shsListHandle))
-		art::fill_ptr_vector(fShslist, shsListHandle);
+	auto shsListHandle = e.getHandle< std::vector<recob::Shower> >(fShowerModuleLabel);
+	if (shsListHandle) art::fill_ptr_vector(fShslist, shsListHandle);
 
 	// tracks
 	fTrk2InfoMap.clear();
-	if (e.getByLabel(fTrackModuleLabel, fTrkListHandle))
+	fTrkListHandle = e.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+	if (fTrkListHandle)
 	{
 		art::FindManyP< recob::Hit, recob::TrackHitMeta > hitFromTrk(fTrkListHandle, e, fTrackModuleLabel);
 
@@ -508,8 +506,8 @@ double proto::ECalibration::GetEdepMC(art::Event const & e) const
 {
 	double energy = 0.0;
 
-	art::Handle< std::vector<sim::SimChannel> > simchannelHandle;
-	if (e.getByLabel(fSimulationLabel, simchannelHandle))
+	auto simchannelHandle = e.getHandle< std::vector<sim::SimChannel> >(fSimulationLabel);
+	if (simchannelHandle)
 	{
 			for ( auto const& channel : (*simchannelHandle) )
 			{
