@@ -99,6 +99,16 @@ private:
   const double beam_angleX_data = 100.454;
   const double beam_angleY_data = 103.523;
   const double beam_angleZ_data = 17.8288;
+  
+  const double beam_startX_mc = -30.8075;
+  const double beam_startY_mc = 422.41;
+  const double beam_startZ_mc = 0.11171;
+  const double beam_startX_rms_mc = 5.01719;
+  const double beam_startY_rms_mc = 4.50862;
+  const double beam_startZ_rms_mc = 0.217733;
+  const double beam_angleX_mc = 101.578;
+  const double beam_angleY_mc = 101.189;
+  const double beam_angleZ_mc = 16.5942;
 
   double reco_beam_calo_startX, reco_beam_calo_startY, reco_beam_calo_startZ;
   double reco_beam_calo_endX, reco_beam_calo_endY, reco_beam_calo_endZ;
@@ -193,16 +203,31 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
           reco_beam_calo_endZ = theXYZPoints.back().Z();
         }
         
-        // beam quality requirement (for data)
-        beam_dx = (reco_beam_calo_startX - beam_startX_data)/beam_startX_rms_data;
-        beam_dy = (reco_beam_calo_startY - beam_startY_data)/beam_startY_rms_data;
-        beam_dz = (reco_beam_calo_startZ - beam_startZ_data)/beam_startZ_rms_data;
-        beam_dxy = sqrt(pow(beam_dx,2) + pow(beam_dy,2));
-        
-        TVector3 beamdir_data(cos(beam_angleX_data*TMath::Pi()/180),
-                              cos(beam_angleY_data*TMath::Pi()/180),
-                              cos(beam_angleZ_data*TMath::Pi()/180));
-        beamdir_data = beamdir_data.Unit();
+        TVector3 beamdir;
+        if (evt.isRealData()) { // beam quality requirement (for data)
+          cout<<"@@@Is real data"<<endl;
+          beam_dx = (reco_beam_calo_startX - beam_startX_data)/beam_startX_rms_data;
+          beam_dy = (reco_beam_calo_startY - beam_startY_data)/beam_startY_rms_data;
+          beam_dz = (reco_beam_calo_startZ - beam_startZ_data)/beam_startZ_rms_data;
+          beam_dxy = sqrt(pow(beam_dx,2) + pow(beam_dy,2));
+          
+          TVector3 beamdir_data(cos(beam_angleX_data*TMath::Pi()/180),
+                           cos(beam_angleY_data*TMath::Pi()/180),
+                           cos(beam_angleZ_data*TMath::Pi()/180));
+          beamdir = beamdir_data.Unit();
+        }
+        else { // beam quality requirement (for MC)
+          cout<<"@@@Is MC"<<endl;
+          beam_dx = (reco_beam_calo_startX - beam_startX_mc)/beam_startX_rms_mc;
+          beam_dy = (reco_beam_calo_startY - beam_startY_mc)/beam_startY_rms_mc;
+          beam_dz = (reco_beam_calo_startZ - beam_startZ_mc)/beam_startZ_rms_mc;
+          beam_dxy = sqrt(pow(beam_dx,2) + pow(beam_dy,2));
+          
+          TVector3 beamdir_mc(cos(beam_angleX_mc*TMath::Pi()/180),
+                           cos(beam_angleY_mc*TMath::Pi()/180),
+                           cos(beam_angleZ_mc*TMath::Pi()/180));
+          beamdir = beamdir_mc.Unit();
+        }
         
         TVector3 pt0(reco_beam_calo_startX,
                      reco_beam_calo_startY,
@@ -212,7 +237,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
                      reco_beam_calo_endZ);
         TVector3 dir = pt1 - pt0;
         dir = dir.Unit();
-        beam_costh = dir.Dot(beamdir_data);
+        beam_costh = dir.Dot(beamdir);
 
         if (reco_beam_len_sce>100 && PassBeamQualityCut()){
           selected_track = 1;
@@ -224,7 +249,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
       string fHitModuleLabel = "hitpdune";
       string fSpModuleLabel = "reco3d";
       
-      double sel_len = 50.; // shorten to how long (cm)
+      double sel_len = 10.; // shorten to how long (cm)
       
       if (selected_track == 2) { // selected long tracks (not smaller than 5 m)
         auto hitsHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
