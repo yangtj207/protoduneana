@@ -19,8 +19,8 @@ services:
 }
 
 #services.BackTrackerService.BackTracker.SimChannelModuleLabel: "tpcrawdecoder:simpleSC"
-#services.SpaceCharge.EnableCalEfieldSCE: true
-#services.SpaceCharge.EnableCalSpatialSCE: true
+services.SpaceCharge.EnableCalEfieldSCE: true
+services.SpaceCharge.EnableCalSpatialSCE: true
 #physics.analyzers.hitana.SaveTrackInfo: true
 
 #source is now a root file
@@ -28,18 +28,6 @@ source:
 {
   module_type: RootInput
   maxEvents:  1            # Number of events to create
-}
-
-outputs:
-{
- out1:
- {
-   module_type: RootOutput
-   fileName:    "%ifb_hitpdune.root"
-   dataTier:    "full-reconstructed"
-   compressionLevel: 1
-   saveMemoryObjectThreshold: 0
- }
 }
 
 #added physics-> productors -> module types
@@ -74,7 +62,7 @@ physics:
         #pandoracalipid,
         pandoraShowercalo,
         pandoraShowercalonosce,
-        #emtrkmichelid,
+        emtrkmichelid,
         ophitInternal,
         ophitExternal,
         opflashInternal,
@@ -100,5 +88,25 @@ physics:
   trigger_paths: [reco]
   end_paths:     [stream1]
 }
+physics.producers.pandoracalo:           @local::pdune_sp_calomcsce
+physics.producers.pandoraShowercalo:     @local::pdune_sp_showercalomcsce
+physics.producers.pandora2calo:          @local::pdune_sp_alltrackcalomcsce
+physics.producers.pandora2Showercalo:    @local::pdune_sp_allshowercalomcsce
+physics.producers.pandoracalinoxyzt:     @local::protodunespmcsce_calibrationdedx
+physics.producers.pandora2calinoxyzt:    @local::protodunespmcsce_calibrationdedx
+physics.producers.pandora2calinoxyzt.CalorimetryModuleLabel:    "pandora2calo"
+physics.producers.pandora2calinoxyzt.TrackModuleLabel:          "pandora2Track"
+
+outputs:
+{
+ out1:
+ {
+   module_type: RootOutput
+   fileName:    "%ifb_hitpdune.root"
+   dataTier:    "full-reconstructed"
+   compressionLevel: 1
+   saveMemoryObjectThreshold: 0
+ }
+}
 #add physics block and imbeded  
-outputs.out1.outputCommands: [ "keep *", "drop *_hitpdune_*_Reco1", "drop *_pandora*_*_Reco1", "drop *_anodepiercerst0_*_Reco1", "drop *_op*_*_Reco1" ]
+outputs.out1.outputCommands: [ "keep *", "drop *_hitpdune_*_Reco1", "drop *_pandora*_*_Reco1", "drop *_anodepiercerst0_*_Reco1", "drop *_op*_*_Reco1", "drop *_emtrkmichelid_*_Reco2" ]
