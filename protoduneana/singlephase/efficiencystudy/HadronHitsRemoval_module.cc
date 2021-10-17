@@ -23,6 +23,7 @@
 #include "TTree.h"
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
+#include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -31,6 +32,7 @@
 #include "TMath.h"
 #include "TVector3.h"
 #include <memory>
+#include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
 #include <string>
 #include <vector>
@@ -80,6 +82,7 @@ public:
   void reset();
   
   bool PassBeamQualityCut() const;
+  void TrueBeamInfo(const art::Event & evt, const simb::MCParticle* true_beam_particle);
 
 private:
   // Declare member data here.
@@ -89,6 +92,7 @@ private:
   int selected_track;
   protoana::ProtoDUNETrackUtils trackUtil;
   protoana::ProtoDUNEPFParticleUtils pfpUtil;
+  protoana::ProtoDUNETruthUtils truthUtil;
   // for beam quality cut of data
   const double beam_startX_data = -27.911;
   const double beam_startY_data = 424.364;
@@ -113,6 +117,11 @@ private:
   double reco_beam_calo_startX, reco_beam_calo_startY, reco_beam_calo_startZ;
   double reco_beam_calo_endX, reco_beam_calo_endY, reco_beam_calo_endZ;
   double beam_dx, beam_dy, beam_dz, beam_dxy, beam_costh;
+  
+  int true_beam_PDG;
+  std::string true_beam_endProcess;
+  double true_beam_len;
+  double true_beam_len_sce;
   // Declare member data here.
 };
 
@@ -140,6 +149,10 @@ void pdsp::HadronHitsRemoval::beginJob(){
   fTree->Branch("beam_dxy", &beam_dxy);
   fTree->Branch("beam_costh", &beam_costh);
   fTree->Branch("selected_track", &selected_track);
+  fTree->Branch("true_beam_PDG", &true_beam_PDG);
+  fTree->Branch("true_beam_endProcess", &true_beam_endProcess);
+  fTree->Branch("true_beam_len", &true_beam_len);
+  fTree->Branch("true_beam_len_sce", &true_beam_len_sce);
 }
 
 void pdsp::HadronHitsRemoval::produce(art::Event& evt)
@@ -149,10 +162,27 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
   string fPFParticleTag = "pandora";
   string fCalorimetryTagSCE = "pandoracalo";
   string fTrackerTag = "pandoraTrack";
+  string fGeneratorTag = "generator";
   // Implementation of required member function here.
   // Add code to select beam tracks using Pandora information
   
   recob::HitCollectionCreator hcol(evt, true, false);
+  
+  if (!evt.isRealData()) {// MC
+    const simb::MCParticle* true_beam_particle = 0x0;
+    auto mcTruths = evt.getValidHandle<std::vector<simb::MCTruth>>(fGeneratorTag);
+    true_beam_particle = truthUtil.GetGeantGoodParticle((*mcTruths)[0],evt);
+    if( !true_beam_particle ){
+      cout << "No true beam particle" << endl;
+    }
+    else{
+      TrueBeamInfo(evt, true_beam_particle);
+      cout<<"true_beam_PDG"<<true_beam_PDG<<endl;
+      cout<<"true_beam_endProcess"<<true_beam_endProcess<<endl;
+      cout<<"true_beam_len"<<true_beam_len<<endl;
+      cout<<"true_beam_len_sce"<<true_beam_len_sce<<endl;
+    }
+  }
   
   const std::map<unsigned int, std::vector<const recob::PFParticle*>> sliceMap
       = pfpUtil.GetPFParticleSliceMap(evt, fPFParticleTag);
@@ -346,6 +376,11 @@ void pdsp::HadronHitsRemoval::reset(){
   reco_beam_calo_endY = -999;
   reco_beam_calo_endZ = -999;
   selected_track = 0;
+  
+  true_beam_PDG = -999;
+  true_beam_endProcess = "";
+  true_beam_len = -999.;
+  true_beam_len_sce = -999.;
 }
 
 bool pdsp::HadronHitsRemoval::PassBeamQualityCut() const{ // cut on beam entrance location and beam angle
@@ -360,6 +395,44 @@ bool pdsp::HadronHitsRemoval::PassBeamQualityCut() const{ // cut on beam entranc
   if (beam_costh>2) return false;
   
   return true;
+}
+
+void pdsp::HadronHitsRemoval::TrueBeamInfo( const art::Event & evt, const simb::MCParticle* true_beam_particle)
+{
+  true_beam_PDG = true_beam_particle->PdgCode();
+  true_beam_endProcess = true_beam_particle->EndProcess();
+  const simb::MCTrajectory & true_beam_trajectory = true_beam_particle->Trajectory();
+  //auto sce = lar::providerFrom<spacecharge::SpaceChargeService>();
+  
+  vector<double> true_beam_traj_X;
+  vector<double> true_beam_traj_Y;
+  vector<double> true_beam_traj_Z;
+  vector<double> true_beam_traj_X_SCE;
+  vector<double> true_beam_traj_Y_SCE;
+  vector<double> true_beam_traj_Z_SCE;
+  for (size_t i = 0; i < true_beam_trajectory.size(); ++i) {
+    double trajX = true_beam_trajectory.X(i);
+    double trajY = true_beam_trajectory.Y(i);
+    double trajZ = true_beam_trajectory.Z(i);
+    true_beam_traj_X.push_back(trajX);
+    true_beam_traj_Y.push_back(trajY);
+    true_beam_traj_Z.push_back(trajZ);
+    /*auto offset = sce->GetPosOffsets( {trajX, trajY, trajZ} );
+    cout<<"@@@ "<<i<<endl;
+    true_beam_traj_X_SCE.push_back(trajX - offset.X());
+    true_beam_traj_Y_SCE.push_back(trajY + offset.Y());
+    true_beam_traj_Z_SCE.push_back(trajZ + offset.Z());*/
+  }
+  true_beam_len = 0;
+  true_beam_len_sce = 0;
+  for (size_t i = 1; i < true_beam_trajectory.size(); ++i) {
+    true_beam_len += sqrt( pow( true_beam_traj_X.at(i)-true_beam_traj_X.at(i-1), 2)
+                       + pow( true_beam_traj_Y.at(i)-true_beam_traj_Y.at(i-1), 2)
+                       + pow( true_beam_traj_Z.at(i)-true_beam_traj_Z.at(i-1), 2));
+    /*true_beam_len_sce += sqrt( pow( true_beam_traj_X_SCE.at(i)-true_beam_traj_X_SCE.at(i-1), 2)
+                       + pow( true_beam_traj_Y_SCE.at(i)-true_beam_traj_Y_SCE.at(i-1), 2)
+                       + pow( true_beam_traj_Z_SCE.at(i)-true_beam_traj_Z_SCE.at(i-1), 2));*/
+  }
 }
 
 DEFINE_ART_MODULE(pdsp::HadronHitsRemoval)
