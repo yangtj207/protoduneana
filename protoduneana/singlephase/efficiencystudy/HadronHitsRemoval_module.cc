@@ -134,7 +134,7 @@ pdsp::HadronHitsRemoval::HadronHitsRemoval(fhicl::ParameterSet const& p)
   // Call appropriate produces<>() functions here.
   recob::HitCollectionCreator::declare_products(producesCollector(), "", true, false);
   fGeom = &*(art::ServiceHandle<geo::Geometry>());
-  //produces<art::Assns<recob::Hit, recob::SpacePoint>>();
+  produces<art::Assns<recob::Hit, recob::SpacePoint>>(); // this space point will only be used as a tag
   // Call appropriate consumes<>() for any products to be retrieved by this module.
 }
 
@@ -167,6 +167,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
   // Add code to select beam tracks using Pandora information
   
   recob::HitCollectionCreator hcol(evt, true, false);
+  auto assns = std::make_unique<art::Assns<recob::Hit, recob::SpacePoint>>();
   
   if (!evt.isRealData()) {// MC
     const simb::MCParticle* true_beam_particle = 0x0;
@@ -311,7 +312,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         cout<<"$$$WireCoord: U "<<wirecoord_U<<"\tV "<<wirecoord_V<<"\tX "<<wirecoord_X<<endl; // Wire ID of cut point
         
         std::vector< art::Ptr< recob::Hit > > remove_hits;
-        //for (auto hit : beamPFP_hits){
+        art::Ptr< recob::SpacePoint > SpPtr;
         for (size_t kk = 0; kk < beamPFP_hits.size(); ++kk){
           auto hit = beamPFP_hits[kk];
           
@@ -324,19 +325,29 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
               if (hitid.Wire > wirecoord_U) {
                 remove_hits.push_back(hit);
               }
+              else {
+                util::CreateAssn(evt, SpPtr, hit, *assns);
+              }
             }
             else if (hitid.Plane == 1) { // plane V
               if (hitid.Wire < wirecoord_V) {
                 remove_hits.push_back(hit);
+              }
+              else {
+                util::CreateAssn(evt, SpPtr, hit, *assns);
               }
             }
             else if (hitid.Plane == 2) { // plane X
               if (hitid.Wire > wirecoord_X) {
                 remove_hits.push_back(hit);
               }
+              else {
+                util::CreateAssn(evt, SpPtr, hit, *assns);
+              }
             }
           }
         }
+        
         // fill hits
         for (size_t kk = 0; kk < eventHits.size(); ++kk){
           auto hit = eventHits[kk];
@@ -354,6 +365,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
   
   
   hcol.put_into(evt);
+  evt.put(std::move(assns));
   fTree->Fill();
 }
 
