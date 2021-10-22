@@ -134,6 +134,7 @@ pdsp::HadronHitsRemoval::HadronHitsRemoval(fhicl::ParameterSet const& p)
   // Call appropriate produces<>() functions here.
   recob::HitCollectionCreator::declare_products(producesCollector(), "", true, false);
   fGeom = &*(art::ServiceHandle<geo::Geometry>());
+  produces<std::vector<recob::SpacePoint>>();
   produces<art::Assns<recob::Hit, recob::SpacePoint>>(); // this space point will only be used as a tag
   // Call appropriate consumes<>() for any products to be retrieved by this module.
 }
@@ -167,6 +168,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
   // Add code to select beam tracks using Pandora information
   
   recob::HitCollectionCreator hcol(evt, true, false);
+  std::unique_ptr<std::vector<recob::SpacePoint>> spvp(new std::vector<recob::SpacePoint>);
   auto assns = std::make_unique<art::Assns<recob::Hit, recob::SpacePoint>>();
   
   if (!evt.isRealData()) {// MC
@@ -278,15 +280,15 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
       }
       
       string fHitModuleLabel = "hitpdune";
-      string fSpModuleLabel = "reco3d";
+      //string fSpModuleLabel = "reco3d";
       
       double sel_len = 10.; // shorten to how long (cm)
       
       if (selected_track == 2) { // selected long tracks (not smaller than 5 m)
         auto hitsHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
-        auto spHandle = evt.getValidHandle< std::vector<recob::SpacePoint> >(fSpModuleLabel);
+        //auto spHandle = evt.getValidHandle< std::vector<recob::SpacePoint> >(fSpModuleLabel);
         art::FindOneP<recob::Wire>   channelHitWires    (hitsHandle, evt, fHitModuleLabel);
-        art::FindManyP< recob::SpacePoint > spFromHit(hitsHandle, evt, fSpModuleLabel);
+        //art::FindManyP< recob::SpacePoint > spFromHit(hitsHandle, evt, fSpModuleLabel);
         //recob::HitCollectionCreator hcol(evt, true, true);
         std::vector< art::Ptr<recob::Hit> > eventHits;
         art::fill_ptr_vector(eventHits, hitsHandle);
@@ -312,7 +314,12 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         cout<<"$$$WireCoord: U "<<wirecoord_U<<"\tV "<<wirecoord_V<<"\tX "<<wirecoord_X<<endl; // Wire ID of cut point
         
         std::vector< art::Ptr< recob::Hit > > remove_hits;
+        std::vector< art::Ptr< recob::Hit > > tag_hits;
         art::Ptr< recob::SpacePoint > SpPtr;
+        std::vector< recob::SpacePoint > spv;
+        recob::SpacePoint sp;
+        spv.push_back(sp);
+        spvp->insert(spvp->end(), spv.begin(), spv.end());
         for (size_t kk = 0; kk < beamPFP_hits.size(); ++kk){
           auto hit = beamPFP_hits[kk];
           
@@ -326,7 +333,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
                 remove_hits.push_back(hit);
               }
               else {
-                util::CreateAssn(evt, SpPtr, hit, *assns);
+                tag_hits.push_back(hit);
               }
             }
             else if (hitid.Plane == 1) { // plane V
@@ -334,7 +341,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
                 remove_hits.push_back(hit);
               }
               else {
-                util::CreateAssn(evt, SpPtr, hit, *assns);
+                tag_hits.push_back(hit);
               }
             }
             else if (hitid.Plane == 2) { // plane X
@@ -342,19 +349,27 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
                 remove_hits.push_back(hit);
               }
               else {
-                util::CreateAssn(evt, SpPtr, hit, *assns);
+                tag_hits.push_back(hit);
               }
             }
           }
         }
         
+        auto const hitPtrMaker = art::PtrMaker<recob::Hit>(evt);
         // fill hits
         for (size_t kk = 0; kk < eventHits.size(); ++kk){
           auto hit = eventHits[kk];
           vector<art::Ptr<recob::Hit>>::iterator itr;
           itr = find(remove_hits.begin(), remove_hits.end(), hit);
-          if (itr == remove_hits.end()) {
+          if (itr == remove_hits.end()) { // not be to removed
             hcol.emplace_back(std::move(*hit), channelHitWires.at(kk));
+            
+            vector<art::Ptr<recob::Hit>>::iterator itr_tag;
+            itr_tag = find(tag_hits.begin(), tag_hits.end(), hit);
+            if (itr_tag != tag_hits.end()) { // to be tagged (associated)
+              auto hitPtr = hitPtrMaker(hcol.size() - 1);
+              util::CreateAssn(evt, *spvp, hitPtr, *assns, 0);
+            }
           }
         }
         
@@ -365,6 +380,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
   
   
   hcol.put_into(evt);
+  evt.put(std::move(spvp));
   evt.put(std::move(assns));
   fTree->Fill();
 }
