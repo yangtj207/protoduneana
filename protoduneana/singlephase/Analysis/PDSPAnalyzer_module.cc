@@ -277,6 +277,7 @@ private:
                    anab::MVAReader<recob::Hit,4> * hitResults);
   void BeamForcedTrackInfo(const art::Event & evt,
                            const recob::PFParticle * particle);
+  void CheckEff(const art::Event & evt);
   void TrueBeamInfo(const art::Event & evt,
                     const simb::MCParticle* true_beam_particle,
                     detinfo::DetectorClocksData const& clockData,
@@ -1072,12 +1073,12 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     //To do: BeamForcedShowerInfo?
   }
 
-
+  bool check_eff = true;
+  if (check_eff) CheckEff(evt);
   //If MC, attempt to match to some MCParticle
   if( !evt.isRealData() ){
     TrueBeamInfo(evt, true_beam_particle, clockData, plist, trueToPFPs, hitResults);
   }
-
 
   //New geant4reweight stuff
   //To do: put in its own function
@@ -3020,6 +3021,22 @@ void pduneana::PDSPAnalyzer::BeamShowerInfo(const art::Event & evt, const recob:
   }
 }
 
+void pduneana::PDSPAnalyzer::CheckEff(const art::Event & evt){
+  auto hitHandler = evt.getValidHandle<std::vector<recob::Hit> >("hitpdune");
+  auto spHandler = evt.getValidHandle< std::vector<recob::SpacePoint> >("hitpdune");
+  art::FindManyP<recob::Hit> hitFromSP(spHandler, evt, "hitpdune");
+  art::FindManyP<recob::Track> trackFromHit(hitHandler, evt, "pandoraTrack");
+  if (hitFromSP.size() > 0) {
+    auto const & hits = hitFromSP.at(0);
+    for (auto const & hit: hits){
+      std::cout<<"$$$$$"<<hit.key()<<std::endl;
+      auto const & tracks = trackFromHit.at(hit.key()); // const std::vector<art::Ptr<recob::Track>, std::allocator<art::Ptr<recob::Track> > >
+      if (!tracks.empty()){
+        std::cout<<"$$hit "<<hit.key()<<" is reconstructed to track "<<tracks[0].key()<<std::endl;
+      }
+    }
+  }
+}
 
 //Info from the true beam from event only in MC
 void pduneana::PDSPAnalyzer::TrueBeamInfo(
