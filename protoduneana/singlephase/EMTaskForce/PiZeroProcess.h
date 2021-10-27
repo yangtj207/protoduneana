@@ -216,8 +216,8 @@ PiZeroProcess::PiZeroProcess(const recob::Shower& shower, const art::Event& evt,
   _evt(evt), _clockData(clockData), _detProp{detProp}, _showerLabel(showerLabel)
 {
   // Get the event's showers.
-  art::Handle<std::vector<recob::Shower>> showerHandle;
-  if (!_evt.getByLabel(_showerLabel, showerHandle)) return;
+  auto showerHandle = _evt.getHandle<std::vector<recob::Shower> >(_showerLabel);
+  if (!showerHandle) return;
   if(showerHandle->size() < 2) return;
 
   // For each shower, find the one which is closest to intersecting.
@@ -305,8 +305,8 @@ std::vector<PiZeroProcess> findPiZeros(const art::Event& evt,
   std::vector<PiZeroProcess> result;
 
   // Get the event's showers.
-  art::Handle<std::vector<recob::Shower>> showerHandle;
-  if (!evt.getByLabel(showerLabel, showerHandle) || showerHandle->size() < 2) return result;
+  auto showerHandle = evt.getHandle<std::vector<recob::Shower>>(showerLabel);
+  if (!showerHandle || showerHandle->size() < 2) return result;
 
   // Find showers close to each other.
   double showerDistThreshold = 50; // 50 cm is too far.

@@ -13,7 +13,6 @@
 #include "cetlib_except/exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "fhiclcpp/make_ParameterSet.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "cetlib/filepath_maker.h"
 
@@ -1916,7 +1915,7 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   }
 
   cet::filepath_first_absolute_or_lookup_with_dot lookupPolicy{search_path};
-  fhicl::make_ParameterSet(fcl_file, lookupPolicy, pset);
+  pset = fhicl::ParameterSet::make(fcl_file, lookupPolicy);
 
   //Getting the configurable parameters 
   fMCFileName = pset.get<std::string>("MCFileName");

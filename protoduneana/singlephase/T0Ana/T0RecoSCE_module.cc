@@ -394,26 +394,24 @@ void T0RecoSCE::analyze(art::Event const & evt){
 	if (fDebug) std::cout << "Loading flash from producer " << fFlashProducer << std::endl;
 
 	if(fAnode||fAllFlash){
-		evt.getByLabel(fFlashProducer,flash_h);
+	  flash_h = evt.getHandle<std::vector<recob::OpFlash> >(fFlashProducer);
 
 		// make sure flashes look good
-		if(!flash_h.isValid()) {
+		if(!flash_h) {
 			std::cerr<<"\033[93m[ERROR]\033[00m ... could not locate Flash!"<<std::endl;
     		throw std::exception();
   			}
   		}
 
-    if(fUseOpHits) evt.getByLabel(fOpHitProducer, op_hit_h);
+    if(fUseOpHits) op_hit_h = evt.getHandle<std::vector<recob::OpHit> >(fOpHitProducer);
 
   	
 	double trigger_time = 0;
 
   	if(!fUseMC){
-		art::Handle<std::vector<recob::OpFlash> > trigger_h;
+  	        auto trigger_h = evt.getHandle<std::vector<recob::OpFlash> >(fTriggerProducer);
 
-  		evt.getByLabel(fTriggerProducer, trigger_h);
-
-		if(trigger_h->empty()) {
+		if( !trigger_h || trigger_h->empty()) {
     		if(fDebug) std::cout << "\tTrigger not found. Skipping." << std::endl;
     		return;
 		}
@@ -440,8 +438,7 @@ void T0RecoSCE::analyze(art::Event const & evt){
 
 	// load MCParticles
 
-  	art::Handle<std::vector<simb::MCParticle> > mcpart_h;
-  	evt.getByLabel("largeant",mcpart_h);
+  	auto mcpart_h = evt.getHandle<std::vector<simb::MCParticle> >("largeant");
 
   	// if we should use MCParticle
   	if (fUseMC){

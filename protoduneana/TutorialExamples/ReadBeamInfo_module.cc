@@ -80,10 +80,10 @@ void beam::ReadBeamInfo::analyze(const art::Event& evt){
   if(evt.isRealData()) return;
 
   // ProtoDUNE beam generator information
-  art::Handle< std::vector<simb::MCTruth> > beamTruthListHandle;
-  std::vector<art::Ptr<simb::MCTruth> > beamTruth;
 
-  if(evt.getByLabel(fBeamLabel,beamTruthListHandle)){
+  std::vector<art::Ptr<simb::MCTruth> > beamTruth;
+  auto beamTruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fBeamLabel);
+  if (beamTruthListHandle){
     art::fill_ptr_vector(beamTruth,beamTruthListHandle);
   }
   else{

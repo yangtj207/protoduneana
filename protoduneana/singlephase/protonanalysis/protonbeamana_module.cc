@@ -365,24 +365,26 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 	*/
 
 	//HY::For Carlo info
-	art::Handle< std::vector<recob::Track> > trackListHandle;
 	std::vector<art::Ptr<recob::Track> > tracklist;
-	if(evt.getByLabel(fTrackModuleLabel,trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
+	auto trackListHandle = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+	if (trackListHandle) art::fill_ptr_vector(tracklist, trackListHandle);
 	else return;
 	art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, evt, fCalorimetryTag);
 	art::FindManyP<recob::PFParticle> pfp_trk_assn(trackListHandle, evt, "pandoraTrack");
 	auto allHits = evt.getValidHandle<std::vector<recob::Hit> >(fHitTag);
 
 	//HY::Cluster info
-	art::Handle< std::vector<recob::PFParticle> > PFPListHandle;
-	std::vector<art::Ptr<recob::PFParticle> > pfplist;
-	if(evt.getByLabel("pandoraTrack",trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
-	if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
+	auto trackListHandle2 = evt.getHandle< std::vector<recob::Track> >("pandoraTrack");
+	if (trackListHandle2) art::fill_ptr_vector(tracklist, trackListHandle2);
 
-	art::Handle< std::vector<recob::Cluster> > clusterListHandle; // to get information about the hits
+	std::vector<art::Ptr<recob::PFParticle> > pfplist;
+	auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> > ("pandora");
+	if (PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
+
+        // to get information about the hits
 	std::vector<art::Ptr<recob::Cluster>> clusterlist;
-	if(evt.getByLabel("pandora", clusterListHandle))
-		art::fill_ptr_vector(clusterlist, clusterListHandle);
+	auto clusterListHandle = evt.getHandle< std::vector<recob::Cluster> > ("pandora");
+	if (clusterListHandle) art::fill_ptr_vector(clusterlist, clusterListHandle);
 
 	art::FindManyP<recob::Cluster> fmcp(PFPListHandle,evt,"pandora");
 	art::FindManyP<recob::Track> pftrack(PFPListHandle,evt,"pandoraTrack");

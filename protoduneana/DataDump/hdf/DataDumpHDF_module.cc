@@ -120,9 +120,10 @@ void pdune::DataDumpHDF::analyze(art::Event const& e) noexcept
   evt_nt_t evtids(hdffile, "evtids", {{"eid",3}, "evttime"});
   evtids.insert(event_id.data(), evttime);
 
-  art::Handle < std::vector < recob::Wire > > wireListHandle;
+  art::InputTag itag("caldata","dataprep");
   std::vector < art::Ptr < recob::Wire > > wires;
-  if (e.getByLabel("caldata:dataprep", wireListHandle)) {
+  auto wireListHandle = e.getHandle < std::vector < recob::Wire > >(itag);
+  if (wireListHandle) {
     art::fill_ptr_vector(wires, wireListHandle);
   }
 

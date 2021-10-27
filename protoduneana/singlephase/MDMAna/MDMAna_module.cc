@@ -87,9 +87,9 @@ void pdsp::MDMAna::analyze(art::Event const& e)
   art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
 
    // Reconstruciton information
-  art::Handle < std::vector < recob::Track > > trackListHandle;
   std::vector < art::Ptr < recob::Track > > trackList;
-  if (e.getByLabel("pandoraTrack", trackListHandle)) {
+  auto trackListHandle = e.getHandle < std::vector < recob::Track > >("pandoraTrack");
+  if (trackListHandle) {
     art::fill_ptr_vector(trackList, trackListHandle);
   }
   else return;

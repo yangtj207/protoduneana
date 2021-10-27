@@ -191,15 +191,13 @@ void proto::SaveSpacePoints::analyze(art::Event const & evt)
     }
   }
 
-  art::Handle< std::vector<recob::SpacePoint> > spsHandle;
   std::vector< art::Ptr<recob::SpacePoint> > sps;
-  if (evt.getByLabel(fSpacePointModuleLabel, spsHandle))
-    art::fill_ptr_vector(sps, spsHandle);
+  auto spsHandle = evt.getHandle< std::vector<recob::SpacePoint> >(fSpacePointModuleLabel);
+  if (spsHandle) art::fill_ptr_vector(sps, spsHandle);
 
-  art::Handle< std::vector<recob::PointCharge> > pcsHandle;
   std::vector< art::Ptr<recob::PointCharge> > pcs;
-  if (evt.getByLabel(fSpacePointModuleLabel, pcsHandle))
-    art::fill_ptr_vector(pcs, pcsHandle);
+  auto pcsHandle = evt.getHandle< std::vector<recob::PointCharge> >(fSpacePointModuleLabel);
+  if (pcsHandle) art::fill_ptr_vector(pcs, pcsHandle);
 
   art::FindManyP<recob::Hit> fmhsp(spsHandle, evt, fSpacePointModuleLabel);
 
@@ -259,10 +257,9 @@ void proto::SaveSpacePoints::analyze(art::Event const & evt)
     vtpc.push_back(spTPC);
   }
 
-  art::Handle< std::vector<recob::Track> > trkHandle;
   std::vector< art::Ptr<recob::Track> > trks;
-  if (evt.getByLabel(fTrackModuleLabel, trkHandle))
-    art::fill_ptr_vector(trks, trkHandle);
+  auto trkHandle = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+  if (trkHandle) art::fill_ptr_vector(trks, trkHandle);
 
   for (size_t i = 0; i<trks.size(); ++i){
     auto & trk = trks[i];

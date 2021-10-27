@@ -44,12 +44,12 @@
 
 #include "lardata/ArtDataHelper/MVAReader.h"
 #include "dune/DuneObj/ProtoDUNEBeamEvent.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNETrackUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNEShowerUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNETruthUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
+#include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
+#include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
 #include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEBeamCuts.h"
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
@@ -375,17 +375,16 @@ void protoana::pionanalysis::analyze(art::Event const & evt)
   */
 
   //HY::For Calo info
-  art::Handle< std::vector<recob::Track> > trackListHandle;
   std::vector<art::Ptr<recob::Track> > tracklist;
-  if(evt.getByLabel(fTrackModuleLabel,trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
+  auto trackListHandle = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+  if (trackListHandle) art::fill_ptr_vector(tracklist, trackListHandle);
   else return;
   art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, evt, fCalorimetryTag);
   art::FindManyP<recob::PFParticle> pfp_trk_assn(trackListHandle, evt, "pandoraTrack");
   // std::vector<art::Ptr<recob::Hit>> pfpHits;//pfpHits definition
-  art::Handle< std::vector<recob::Hit> > hitListHandle; // to get information about the hits
   std::vector<art::Ptr<recob::Hit>> hitlist;
-  if(evt.getByLabel(fHitsModuleLabel, hitListHandle))
-    art::fill_ptr_vector(hitlist, hitListHandle);
+  auto hitListHandle = evt.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel); // to get information about the hits
+  if (hitListHandle) art::fill_ptr_vector(hitlist, hitListHandle);
   art::FindManyP<recob::Hit, recob::TrackHitMeta> fmthm(trackListHandle, evt, fTrackModuleLabel); // to associate tracks and hits
   // Implementation of required member function here.
   art::FindManyP<recob::Track> thass(hitListHandle, evt, fTrackModuleLabel); //to associate hit just trying
