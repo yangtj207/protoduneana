@@ -364,14 +364,12 @@ void pdsp::CheckCRT::analyze(art::Event const& e)
   }
   */
 
-  art::Handle< std::vector<recob::Track> > pandoratrkHandle;
   std::vector< art::Ptr<recob::Track> > pandoratrks;
-  if (e.getByLabel("pandoraTrack", pandoratrkHandle))
-    art::fill_ptr_vector(pandoratrks, pandoratrkHandle);
+  auto pandoratrkHandle = e.getHandle< std::vector<recob::Track> >("pandoraTrack");
+  if (pandoratrkHandle) art::fill_ptr_vector(pandoratrks, pandoratrkHandle);
   else return;
   
-  art::Handle< std::vector<recob::PFParticle> > pfpListHandle;
-  e.getByLabel("pandora", pfpListHandle);
+  auto pfpListHandle = e.getHandle< std::vector<recob::PFParticle> >("pandora");
   art::FindManyP<recob::PFParticle> fmpfp(pandoratrkHandle, e, "pandoraTrack");
   art::FindManyP<anab::T0> fmt0pandora(pfpListHandle, e, "pandora");
 
@@ -395,10 +393,9 @@ void pdsp::CheckCRT::analyze(art::Event const& e)
   }
 
   /*
-  art::Handle< std::vector<recob::Track> > pmtracktrkHandle;
   std::vector< art::Ptr<recob::Track> > pmtracktrks;
-  if (e.getByLabel("pmtrack", pmtracktrkHandle))
-    art::fill_ptr_vector(pmtracktrks, pmtracktrkHandle);
+  auto pmtracktrkHandle = e.getHandle< std::vector<recob::Track> >("pmtrack");
+  if (pmtracktrkHandle) art::fill_ptr_vector(pmtracktrks, pmtracktrkHandle);
   
   art::FindManyP<anab::T0> fmt0pmtrack(pmtracktrkHandle, e, "pmtrack");
 

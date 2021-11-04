@@ -264,13 +264,13 @@ namespace dune{
 
   
     
-    art::Handle< std::vector<recob::Track> > trackListHandle;
     std::vector<art::Ptr<recob::Track> > tracklist;
-    if(evt.getByLabel(fTrackModuleLabel,trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
-    art::Handle< std::vector<recob::Hit> > hitListHandle; // to get information about the hits
+    auto trackListHandle = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel); 
+    if (trackListHandle) art::fill_ptr_vector(tracklist, trackListHandle);
+
     std::vector<art::Ptr<recob::Hit>> hitlist;
-    if(evt.getByLabel(fHitsModuleLabel, hitListHandle))
-      art::fill_ptr_vector(hitlist, hitListHandle);
+    auto hitListHandle = evt.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel); // to get information about the hits
+    if (hitListHandle) art::fill_ptr_vector(hitlist, hitListHandle);
     art::FindManyP<recob::Hit> fmtht(trackListHandle, evt, fTrackModuleLabel); // to associate tracks and hits
     art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, evt, fCalorimetryModuleLabel);
    

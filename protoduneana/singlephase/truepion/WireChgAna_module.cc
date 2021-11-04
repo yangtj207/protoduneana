@@ -87,20 +87,21 @@ void pdsp::WireChgAna::analyze(art::Event const& e)
   }
 
   // Implementation of required member function here.
-  art::Handle< std::vector<raw::RawDigit> > rawListHandle;
   std::vector<art::Ptr<raw::RawDigit> > rawlist;
-  if (e.getByLabel("tpcrawdecoder:daq", rawListHandle))
-    art::fill_ptr_vector(rawlist, rawListHandle);
+  art::InputTag itag("tpcrawdecoder","daq");
+  auto rawListHandle = e.getHandle< std::vector<raw::RawDigit> >(itag);
+  if (rawListHandle) art::fill_ptr_vector(rawlist, rawListHandle);
 
-  art::Handle < std::vector < recob::Wire > > wireListHandle;
   std::vector < art::Ptr < recob::Wire > > wires;
-  if (e.getByLabel("wclsdatanfsp:gauss", wireListHandle)) {
+  art::InputTag itag2("wclsdatanfsp","gauss");
+  auto wireListHandle = e.getHandle< std::vector < recob::Wire > >(itag2);
+  if (wireListHandle) {
     art::fill_ptr_vector(wires, wireListHandle);
   }
 
-  art::Handle < std::vector < recob::Hit > > hitListHandle;
-  std::vector < art::Ptr < recob::Hit > > hits;
-  if (e.getByLabel("gaushit", hitListHandle)) {
+  std::vector <art::Ptr<recob::Hit> > hits;
+  auto hitListHandle = e.getHandle<std::vector<recob::Hit> >("gaushit");
+  if (hitListHandle) {
     art::fill_ptr_vector(hits, hitListHandle);
   }
 

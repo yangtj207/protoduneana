@@ -45,12 +45,12 @@
 //#include "dune/Protodune/singlephase/DataUtils/ProtoDUNETruthUtils.h"
 //#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEPFParticleUtils.h"
 //#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNETrackUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNEShowerUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNETruthUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
+#include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
+#include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
 #include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
-#include "protoduneana/protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEBeamCuts.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 
@@ -1145,24 +1145,25 @@ protoana::mcsXsection::mcsXsection(fhicl::ParameterSet const & p)
 
     auto pfParticles = pfpUtil.GetPFParticlesFromBeamSlice(evt,fPFParticleTag);
     //cluster information
-    art::Handle< std::vector<recob::Track> > trackListHandle;
-    std::vector<art::Ptr<recob::Track> > tracklist;
-    art::Handle< std::vector<recob::PFParticle> > PFPListHandle; 
-    std::vector<art::Ptr<recob::PFParticle> > pfplist;
 
-    art::Handle< std::vector<recob::Hit> > hitListHandle;
     std::vector<art::Ptr<recob::Hit> > hitlist;
-    if(evt.getByLabel("hitpdune",hitListHandle)) art::fill_ptr_vector(hitlist, hitListHandle);
+    auto hitListHandle = evt.getHandle< std::vector<recob::Hit> >("hitpdune"); 
+    if (hitListHandle) art::fill_ptr_vector(hitlist, hitListHandle);
+
     // Implementation of required member function here.
-    if(evt.getByLabel("pandoraTrack",trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
+    std::vector<art::Ptr<recob::Track> > tracklist;
+    auto trackListHandle = evt.getHandle< std::vector<recob::Track> >("pandoraTrack");
+    if (trackListHandle) art::fill_ptr_vector(tracklist, trackListHandle);
     else return;
     art::FindManyP<recob::Track> thass(hitListHandle, evt, "pandoraTrack"); //to associate hit just trying
-    if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
+
+    std::vector<art::Ptr<recob::PFParticle> > pfplist;
+    auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> >("pandora");
+    if (PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
   
-    art::Handle< std::vector<recob::Cluster> > clusterListHandle; // to get information about the hits
     std::vector<art::Ptr<recob::Cluster>> clusterlist;
-    if(evt.getByLabel("pandora", clusterListHandle))
-      art::fill_ptr_vector(clusterlist, clusterListHandle);
+    auto clusterListHandle = evt.getHandle< std::vector<recob::Cluster> >("pandora"); // to get information about the hits
+    if (clusterListHandle) art::fill_ptr_vector(clusterlist, clusterListHandle);
 
     art::FindManyP<recob::Cluster> fmcp(PFPListHandle,evt,"pandora");
     art::FindManyP<recob::Track> pftrack(PFPListHandle,evt,"pandoraTrack");

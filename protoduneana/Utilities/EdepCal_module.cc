@@ -277,8 +277,8 @@ double proto::EdepCal::GetEdepMC(art::Event const & e) const
 {
 	double energy = 0.0;
 
-	art::Handle< std::vector<sim::SimChannel> > simchannelHandle;
-	if (e.getByLabel(fSimulationLabel, simchannelHandle))
+	auto simchannelHandle = e.getHandle< std::vector<sim::SimChannel> >(fSimulationLabel);
+	if (simchannelHandle)
 	{
 			for ( auto const& channel : (*simchannelHandle) )
 			{
@@ -307,8 +307,8 @@ double proto::EdepCal::GetEdepAttenuatedMC(art::Event const & e) const
 {
 	double energy = 0.0;
 
-	art::Handle< std::vector<sim::SimChannel> > simchannelHandle;
-	if (e.getByLabel(fSimulationLabel, simchannelHandle))
+	auto simchannelHandle = e.getHandle< std::vector<sim::SimChannel> >(fSimulationLabel);
+	if (simchannelHandle)
 	{
 			for ( auto const& channel : (*simchannelHandle) )
 			{
@@ -338,8 +338,8 @@ double proto::EdepCal::GetEdepEM_MC(art::Event const & e) const
 {
 	double enEM = 0.0;
 	
-	art::Handle< std::vector<sim::SimChannel> > simchannelHandle;
-	if (e.getByLabel(fSimulationLabel, simchannelHandle))
+	auto simchannelHandle = e.getHandle< std::vector<sim::SimChannel> >(fSimulationLabel);
+	if (simchannelHandle)
 	{
 			for ( auto const& channel : (*simchannelHandle) )
 			{
@@ -394,8 +394,8 @@ double proto::EdepCal::GetEdepEMAttenuated_MC(art::Event const & e) const
 	double enEM = 0.0;
 
 
-	art::Handle< std::vector<sim::SimChannel> > simchannelHandle;
-	if (e.getByLabel(fSimulationLabel, simchannelHandle))
+	auto simchannelHandle = e.getHandle< std::vector<sim::SimChannel> >(fSimulationLabel);
+	if (simchannelHandle)
 	{
 			for ( auto const& channel : (*simchannelHandle) )
 			{

@@ -1,10 +1,24 @@
-simple_plugin(PDSPmatch "module"
+if(DEFINED ENV{DUNETPC_FQ_DIR})
+  message("DUNETPC_FQ_DIR defined. Using this to search for library dune_Geometry")
+  cet_find_library( DUNEGEOMETRY NAMES dune_Geometry PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+else()
+  message("DUNETPC_FQ_DIR undefined. Expect we are building next to dunetpc. Aliasing library dune_Geometry to DUNEGEOMETRY")
+  set(DUNEGEOMETRY dune_Geometry)
+endif()
+
+
+#cet_find_library( DUNEGEOMETRY NAMES dune_Geometry PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+cet_find_library( RCEDAMLIB NAMES protodune-dam PATHS ENV DUNEPDSPRCE_LIB NO_DEFAULT_PATH )
+
+find_ups_product(dunetpc)
+
+cet_build_plugin(PDSPmatch art::module
                         lardataobj_RawData
                         lardataobj_RecoBase
                         larcorealg_Geometry
-                        dune-raw-data_Overlays
-                        artdaq-core_Data
-                        dune_Geometry
+                        dune_raw_data::dune-raw-data_Overlays
+                        artdaq_core::artdaq-core_Data
+                        DUNEGEOMETRY
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -13,18 +27,18 @@ simple_plugin(PDSPmatch "module"
                         ${ART_PERSISTENCY_PROVENANCE}
                         ${MF_MESSAGELOGGER}
                         ${CETLIB}
-                        ${ROOT_BASIC_LIB_LIST}
-                        ${RCEDAMLIB}
+                        ROOT_BASIC_LIB_LIST
+                        RCEDAMLIB
                         BASENAME_ONLY
 )
 
-simple_plugin(PDSPmatchmc "module"
+cet_build_plugin(PDSPmatchmc art::module
                         lardataobj_RawData
                         lardataobj_RecoBase
                         larcorealg_Geometry
-                        dune-raw-data_Overlays
-                        artdaq-core_Data
-                        dune_Geometry
+                        dune_raw_data::dune-raw-data_Overlays
+                        artdaq_core::artdaq-core_Data
+                        DUNEGEOMETRY
                         nusimdata_SimulationBase
                         larsim_MCCheater_PhotonBackTrackerService_service
                         larsim_MCCheater_ParticleInventoryService_service
@@ -36,8 +50,8 @@ simple_plugin(PDSPmatchmc "module"
 			${ART_PERSISTENCY_PROVENANCE}
                         ${MF_MESSAGELOGGER}
                         ${CETLIB}
-                        ${ROOT_BASIC_LIB_LIST}
-                        ${RCEDAMLIB}
+                        ROOT_BASIC_LIB_LIST
+                        RCEDAMLIB
                         BASENAME_ONLY
 )
 

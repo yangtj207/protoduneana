@@ -56,7 +56,7 @@ class ThinSliceDriver {
       const std::map<int, std::vector<double>> & signal_pars,
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
-      bool fill_incident = false) = 0;
+      bool fit_under_over, bool fill_incident = false) = 0;
 
   /*
   virtual void BuildSystSamples(

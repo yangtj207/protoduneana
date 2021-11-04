@@ -33,9 +33,43 @@
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 
+#include "cetlib/search_path.h"
+#include "cetlib/filesystem.h"
+
 
 namespace protoana {
   class G4RWExampleAnalyzer;
+  TFile * OpenFile(const std::string filename) {
+    TFile * theFile = 0x0;
+    mf::LogInfo("pduneana::OpenFile") << "Searching for " << filename;
+    if (cet::file_exists(filename)) {
+      mf::LogInfo("pduneana::OpenFile") << "File exists. Opening " << filename;
+      theFile = new TFile(filename.c_str());
+      if (!theFile ||theFile->IsZombie() || !theFile->IsOpen()) {
+        delete theFile;
+        theFile = 0x0;
+        throw cet::exception("PDSPAnalyzer_module.cc") << "Could not open " << filename;
+      }
+    }
+    else {
+      mf::LogInfo("pduneana::OpenFile") << "File does not exist here. Searching FW_SEARCH_PATH";
+      cet::search_path sp{"FW_SEARCH_PATH"};
+      std::string found_filename;
+      auto found = sp.find_file(filename, found_filename);
+      if (!found) {
+        throw cet::exception("PDSPAnalyzer_module.cc") << "Could not find " << filename;
+      }
+
+      mf::LogInfo("pduneana::OpenFile") << "Found file " << found_filename;
+      theFile = new TFile(found_filename.c_str());
+      if (!theFile ||theFile->IsZombie() || !theFile->IsOpen()) {
+        delete theFile;
+        theFile = 0x0;
+        throw cet::exception("PDSPAnalyzer_module.cc") << "Could not open " << found_filename;
+      }
+    }
+    return theFile;
+  }
 }
 
 using protoana::G4ReweightUtils::CreateRWTraj;
@@ -101,15 +135,16 @@ private:
   std::vector<double> g4rw_set_weights;
 
   
+  TFile * FracsFile;
+  TFile ProtFracsFile;
+  G4MultiReweighter * MultiRW;
+
   std::string fGeneratorTag, fPFParticleTag, fTrackerTag;
   //Geant4Reweight stuff
   int RW_PDG;
-  TFile FracsFile;
-  TFile ProtFracsFile;
   std::vector<fhicl::ParameterSet> ParSet;
   G4ReweightParameterMaker ParMaker;
   G4ReweightManager RWManager;
-  G4MultiReweighter MultiRW;
   bool fDoFull;
   //G4MultiReweighter ProtMultiRW;
   //G4ReweighterFactory RWFactory;
@@ -125,21 +160,15 @@ protoana::G4RWExampleAnalyzer::G4RWExampleAnalyzer(
       fPFParticleTag(p.get<std::string>("PFParticleTag")),
       fTrackerTag(p.get<std::string>("TrackerTag")),
       RW_PDG(p.get<int>("RW_PDG")),
-      FracsFile( (p.get< std::string >( "FracsFile" )).c_str(), "OPEN" ),
-      //ProtFracsFile( (p.get< std::string >( "ProtFracsFile" )).c_str(), "OPEN" ),
       ParSet(p.get<std::vector<fhicl::ParameterSet>>("ParameterSet")),
       ParMaker(ParSet, false, RW_PDG),
       RWManager({p.get<fhicl::ParameterSet>("Material")}),
-      MultiRW(RW_PDG, FracsFile, ParSet,
-              p.get<fhicl::ParameterSet>("Material"),
-              &RWManager),
-      fDoFull(p.get<bool>("DoFull")) {//,
-      //ProtMultiRW(2212, ProtXSecFile, ProtFracsFile, ParSet) {
+      fDoFull(p.get<bool>("DoFull")) {
 
-  //theRW = RWFactory.BuildReweighter(RW_PDG, &XSecFile, &FracsFile,
-  //                                  ParMaker.GetFSHists(),
-  //                                  ParMaker.GetElasticHist()/*, true*/ );
-  std::cout << "done" << std::endl;
+  FracsFile = OpenFile(p.get< std::string >( "FracsFile" ));
+  MultiRW = new G4MultiReweighter(RW_PDG, *FracsFile, ParSet,
+              p.get<fhicl::ParameterSet>("Material"),
+              &RWManager);
 }
 
 void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
@@ -201,7 +230,6 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
 
   }
 
-  std::cout << "bting" << std::endl;
   art::ServiceHandle<cheat::BackTrackerService> bt_serv;
   auto view2_IDEs = bt_serv->TrackIdToSimIDEs_Ps(true_beam_ID, geo::View_t(2));
   if (view2_IDEs.size() > 1) {
@@ -220,7 +248,6 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
         true_beam_dEdX.push_back((edep/len));
     }
   }
-  std::cout << "done bt" << std::endl;
 
   try {
     protoana::ProtoDUNEPFParticleUtils pfpUtil;
@@ -258,10 +285,8 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
     std::cout << "No reco info. Moving on" << std::endl;
   }
 
-  std::cout << "mass: " << true_beam_particle->Mass() << std::endl;
   const simb::MCTrajectory & true_beam_trajectory =
       true_beam_particle->Trajectory();
-  std::cout << "E: " << true_beam_trajectory.E(0) << std::endl;
 
   auto true_beam_proc_map = true_beam_trajectory.TrajectoryProcesses();
   std::map<size_t, std::string> proc_map;
@@ -330,25 +355,24 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
   subrun = e.subRun();
 
   if (true_beam_PDG == RW_PDG) {
-  std::cout << "Doing reweight" << std::endl;
     G4ReweightTraj theTraj(true_beam_ID, true_beam_PDG, 0, event, {0,0});
     /*
     bool created = CreateRWTraj(*true_beam_particle, plist,
                                 fGeometryService, event, &theTraj);
     if (created && theTraj.GetNSteps()) {
 
-      g4rw_primary_singular_weight = MultiRW.GetWeightFromNominal(theTraj);
+      g4rw_primary_singular_weight = MultiRW->GetWeightFromNominal(theTraj);
       //the following method achieves the same result
       //g4rw_primary_singular_weight = theRW->GetWeight(&theTraj);
       
-      std::vector<double> weights_vec = MultiRW.GetWeightFromAll1DThrows(
+      std::vector<double> weights_vec = MultiRW->GetWeightFromAll1DThrows(
           theTraj);
       g4rw_primary_weights.insert(g4rw_primary_weights.end(),
                                   weights_vec.begin(), weights_vec.end());
 
       for (size_t i = 0; i < ParSet.size(); ++i) {
         std::pair<double, double> pm_weights =
-            MultiRW.GetPlusMinusSigmaParWeight(theTraj, i);
+            MultiRW->GetPlusMinusSigmaParWeight(theTraj, i);
 
         g4rw_primary_plus_sigma_weight.push_back(pm_weights.first);
         g4rw_primary_minus_sigma_weight.push_back(pm_weights.second);
@@ -360,11 +384,11 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
         for (size_t i = 0; i < 20; ++i) {
           for (size_t j = 0; j < 20; ++j) {
             std::vector<double> input_values = {(.1 + i*.1), (.1 + j*.1)};
-            bool set_values = MultiRW.SetAllParameterValues(input_values);
+            bool set_values = MultiRW->SetAllParameterValues(input_values);
             if (!set_values) continue;
 
             g4rw_set_weights.push_back(
-                MultiRW.GetWeightFromSetParameters(theTraj));
+                MultiRW->GetWeightFromSetParameters(theTraj));
           }
         }
       }
@@ -375,15 +399,14 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
 
     std::vector<G4ReweightTraj *> trajs = CreateNRWTrajs(
         *true_beam_particle, plist,
-        fGeometryService, event, "LAr", true);
-    std::cout << "Made " << trajs.size() << " trajs" << std::endl; 
+        fGeometryService, event, "LAr");
     bool added = false;
     for (size_t i = 0; i < trajs.size(); ++i) {
       if (trajs[i]->GetNSteps() > 0) {
         //std::cout << i << " " << trajs[i]->GetNSteps() << std::endl;
         for (size_t j = 0; j < ParSet.size(); ++j) {
           std::pair<double, double> pm_weights =
-              MultiRW.GetPlusMinusSigmaParWeight((*trajs[i]), j);
+              MultiRW->GetPlusMinusSigmaParWeight((*trajs[i]), j);
           //std::cout << "got weights" << std::endl;
           //std::cout << pm_weights.first << " " << pm_weights.second << std::endl;
 
@@ -401,22 +424,20 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
     }
     
     for (size_t i = 0; i < ParSet.size(); ++i) {
-      std::pair<double, double> temp_weights = GetNTrajPMSigmaWeights(trajs, MultiRW, i);
+      std::pair<double, double> temp_weights = GetNTrajPMSigmaWeights(trajs, *MultiRW, i);
       g4rw_test_primary_plus_sigma_weight.push_back(temp_weights.first);
       g4rw_test_primary_minus_sigma_weight.push_back(temp_weights.second);
     }
 
-    std::cout << "Testing setting pars" << std::endl;
     std::vector<double> input(ParSet.size(), 1.);
-    bool set_values = MultiRW.SetAllParameterValues(input);
+    bool set_values = MultiRW->SetAllParameterValues(input);
     if (set_values) {
-      std::cout << GetNTrajWeightFromSetPars(trajs, MultiRW);
     }
 
     //Heng-Ye's weights
     //for (ii reac loop)
     //for (jj elast loop)
-    //  bool set_values = MultiRW.SetAllParameterValues(input_values);
+    //  bool set_values = MultiRW->SetAllParameterValues(input_values);
     //  if (!set_values) continue;
     //  double temp_w = GetNTrajWeightFromSetPars(trajs, MultiRW);
     //  g4rw_set_weights.push_back(temp_w);
@@ -428,18 +449,14 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
         auto part = plist[to_create[0]];
         std::vector<G4ReweightTraj *> temp_trajs =
             CreateNRWTrajs(*part, plist, fGeometryService,
-                           event, "LAr", true);
-        std::cout << "size: " << temp_trajs.size() << std::endl;
+                           event, "LAr");
         if (temp_trajs.size()) {
           auto last_traj = temp_trajs.back();
-          std::cout << "created " << last_traj->GetTrackID() << " " <<
-                       last_traj->GetPDG() << std::endl;
           for (size_t i = 0; i < last_traj->GetNChilds(); ++i) {
             if ((last_traj->GetChild(i)->GetPDG() == 2212) ||
                 (last_traj->GetChild(i)->GetPDG() == 2112) ||
                 (abs(last_traj->GetChild(i)->GetPDG()) == 211) ) {
               to_create.push_back(last_traj->GetChild(i)->GetTrackID());
-              std::cout << "Adding daughter " << to_create.back() << std::endl;
             }
           }
 
@@ -450,18 +467,16 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
         to_create.erase(to_create.begin());
       }
 
-      std::cout << "Created " << created.size() << " reweightable pi+" << std::endl;
 
       bool new_added = false;
       for (size_t i = 0; i < created.size(); ++i) {
         std::vector<G4ReweightTraj *> temp_trajs = created[i];
-        std::cout << i << " n trajs: " << temp_trajs.size() << std::endl;
         for (size_t j = 0; j < temp_trajs.size(); ++j) {
           G4ReweightTraj * this_traj = temp_trajs[j];
           if (this_traj->GetNSteps() > 0) {
             for (size_t k = 0; k < ParSet.size(); ++k) {
               std::pair<double, double> pm_weights =
-                  MultiRW.GetPlusMinusSigmaParWeight((*this_traj), k);
+                  MultiRW->GetPlusMinusSigmaParWeight((*this_traj), k);
 
               if (!new_added) {
                 g4rw_full_primary_plus_sigma_weight.push_back(pm_weights.first);
@@ -604,4 +619,5 @@ void protoana::G4RWExampleAnalyzer::reset() {
   g4rw_full_primary_minus_sigma_weight.clear();
   g4rw_set_weights.clear();
 }
+
 DEFINE_ART_MODULE(protoana::G4RWExampleAnalyzer)

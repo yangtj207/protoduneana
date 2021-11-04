@@ -145,9 +145,9 @@ void pdsp::CheckT0::analyze(art::Event const& e)
   auto const* SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
   
    // Reconstruciton information
-  art::Handle < std::vector < recob::Track > > trackListHandle;
   std::vector < art::Ptr < recob::Track > > trackList;
-  if (e.getByLabel("pandoraTrack", trackListHandle)) {
+  auto trackListHandle = e.getHandle< std::vector < recob::Track > >("pandoraTrack");
+  if (trackListHandle) {
     art::fill_ptr_vector(trackList, trackListHandle);
   }
   else return;
@@ -156,8 +156,7 @@ void pdsp::CheckT0::analyze(art::Event const& e)
   art::FindManyP < recob::Hit > hitsFromTrack(trackListHandle, e, "pandoraTrack");
 
   //Get PFParticles
-  art::Handle< std::vector<recob::PFParticle> > pfpListHandle;
-  e.getByLabel("pandora", pfpListHandle);
+  auto pfpListHandle = e.getHandle< std::vector<recob::PFParticle> >("pandora");
   
   //Get Track-PFParticle association
   art::FindManyP<recob::PFParticle> fmpfp(trackListHandle, e, "pandoraTrack");
@@ -349,9 +348,10 @@ void pdsp::CheckT0::analyze(art::Event const& e)
   }
 
   //RDTimeStamps for the event
-  art::Handle < std::vector < raw::RDTimeStamp > > rdts_evt;
   std::vector < art::Ptr < raw::RDTimeStamp > > rdtsevtList;
-  if (e.getByLabel("timingrawdecoder:daq", rdts_evt)) {
+  art::InputTag itag("timingrawdecoder","daq");
+  auto rdts_evt = e.getHandle< std::vector < raw::RDTimeStamp > >(itag); 
+  if (rdts_evt) {
     art::fill_ptr_vector(rdtsevtList, rdts_evt);
   }
   
@@ -360,9 +360,10 @@ void pdsp::CheckT0::analyze(art::Event const& e)
   }
   
   //RDTimeStamps for each raw digit (channel)
-  art::Handle < std::vector < raw::RDTimeStamp > > rdts_digit;
+  art::InputTag itag2("tpcrawdecoder","daq");
   std::vector < art::Ptr < raw::RDTimeStamp > > rdtsdigitList;
-  if (e.getByLabel("tpcrawdecoder:daq", rdts_digit)) {
+  auto rdts_digit = e.getHandle < std::vector < raw::RDTimeStamp > >(itag2);
+  if (rdts_digit) {
     art::fill_ptr_vector(rdtsdigitList, rdts_digit);
   }
   

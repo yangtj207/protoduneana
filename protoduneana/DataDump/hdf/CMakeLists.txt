@@ -1,4 +1,3 @@
-
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
   ${ART_FRAMEWORK_CORE}
@@ -21,9 +20,9 @@ art_make(BASENAME_ONLY
   larsim_MCCheater_BackTrackerService_service           
   larsim_MCCheater_ParticleInventoryService_service
   larreco_RecoAlg
-  ${ROOT_BASIC_LIB_LIST}
+  ROOT_BASIC_LIB_LIST
   hep_hpc_hdf5
-  ${HDF5}
+  HDF5
   )
 
 install_headers()

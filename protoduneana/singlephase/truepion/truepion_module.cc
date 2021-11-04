@@ -671,16 +671,19 @@ void protoana::truepion::analyze(art::Event const & evt){
 
   auto pfParticles = pfpUtil.GetPFParticlesFromBeamSlice(evt,fPFParticleTag);
   //cluster information
-  art::Handle< std::vector<recob::Track> > trackListHandle;
+
   std::vector<art::Ptr<recob::Track> > tracklist;
-  art::Handle< std::vector<recob::PFParticle> > PFPListHandle; 
+  auto trackListHandle = evt.getHandle< std::vector<recob::Track> >("pandoraTrack");
+  if(trackListHandle) art::fill_ptr_vector(tracklist, trackListHandle);
+
   std::vector<art::Ptr<recob::PFParticle> > pfplist;
-  if(evt.getByLabel("pandoraTrack",trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
-  if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
+  auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> >("pandora");
+  if(PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
   
-  art::Handle< std::vector<recob::Cluster> > clusterListHandle; // to get information about the hits
+  // get information about the hits
   std::vector<art::Ptr<recob::Cluster>> clusterlist;
-  if(evt.getByLabel("pandora", clusterListHandle))
+  auto clusterListHandle = evt.getHandle< std::vector<recob::Cluster> >("pandora");
+  if(clusterListHandle)
     art::fill_ptr_vector(clusterlist, clusterListHandle);
 
   art::FindManyP<recob::Cluster> fmcp(PFPListHandle,evt,"pandora");

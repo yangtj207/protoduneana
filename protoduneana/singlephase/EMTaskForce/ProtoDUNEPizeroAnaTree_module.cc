@@ -603,8 +603,8 @@ void protoana::ProtoDUNEPizeroAnaTree::analyze(art::Event const & evt){
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(evt, clockData);
 
   //check for reco pandora stuff
-  art::Handle<std::vector<recob::PFParticle>> recoParticleHandle;
-  if( !evt.getByLabel(fPFParticleTag,recoParticleHandle) ) return;
+  auto recoParticleHandle = evt.getHandle<std::vector<recob::PFParticle>>(fPFParticleTag);
+  if( !recoParticleHandle ) return;
 
   // Get all of the PFParticles, by default from the "pandora" product
   // auto recoParticles = evt.getValidHandle<std::vector<recob::PFParticle>>(fPFParticleTag);
@@ -635,8 +635,8 @@ void protoana::ProtoDUNEPizeroAnaTree::analyze(art::Event const & evt){
     // Firstly we need to get the list of MCTruth objects from the generator. The standard protoDUNE
     auto mcTruths = evt.getValidHandle<std::vector<simb::MCTruth>>(fGeneratorTag);
     // Define and fill a handle to point to a vector of the MCParticles
-    art::Handle<std::vector<simb::MCParticle>> MCParticleHandle;
-    if (!evt.getByLabel(fSimulationTag, MCParticleHandle)) {
+    auto MCParticleHandle = evt.getHandle<std::vector<simb::MCParticle>>(fSimulationTag);
+    if (!MCParticleHandle) {
       // Handle no simb::MCParticles.
       throw cet::exception("ProtoDUNEPizeroAnaTree")
           << " No simb::MCParticle objects in this event - "
@@ -716,9 +716,9 @@ void protoana::ProtoDUNEPizeroAnaTree::analyze(art::Event const & evt){
     beamTriggerEvent = dataUtil.IsBeamTrigger(evt);
     if( !beamTriggerEvent ) return;
 
-    art::Handle< std::vector<beam::ProtoDUNEBeamEvent> > pdbeamHandle;
     std::vector< art::Ptr<beam::ProtoDUNEBeamEvent> > beaminfo;
-    if(evt.getByLabel(fBeamModuleLabel, pdbeamHandle))
+    auto pdbeamHandle = evt.getHandle< std::vector<beam::ProtoDUNEBeamEvent> >(fBeamModuleLabel);
+    if (pdbeamHandle)
       art::fill_ptr_vector(beaminfo, pdbeamHandle);
     else{
        std::cout<<"No beam information from "<<fBeamModuleLabel<<std::endl;
@@ -769,8 +769,8 @@ void protoana::ProtoDUNEPizeroAnaTree::analyze(art::Event const & evt){
 
         // Record pi0s reconstructed from showers
         // Make recob::Showers accessible
-        art::Handle<std::vector<recob::Shower>> rShowerHandle;
-        if (!evt.getByLabel(fShowerTag, rShowerHandle)) {
+        auto rShowerHandle = evt.getHandle<std::vector<recob::Shower>>(fShowerTag);
+        if (!rShowerHandle) {
           // Handle no recob::Showers.
           throw cet::exception("PiZeroExtract")
               << " No recob::Shower objects in this event - "
@@ -928,8 +928,8 @@ protoana::ProtoDUNEPizeroAnaTree::FillPrimaryPFParticle(art::Event const & evt,
   } // end is shower
 
   // Record children of primary track
-  art::Handle<std::vector<recob::PFParticle>> recoParticleHandle;
-  if( !evt.getByLabel(fPFParticleTag,recoParticleHandle) ) return;
+  auto recoParticleHandle = evt.getHandle<std::vector<recob::PFParticle>>(fPFParticleTag);
+  if( !recoParticleHandle ) return;
 
   fprimaryNDaughters = std::min(particle->NumDaughters(), NMAXDAUGHTERS);
   for(int di = 0; di < fprimaryNDaughters; ++di) {
@@ -1432,8 +1432,8 @@ void protoana::ProtoDUNEPizeroAnaTree::setPiZeroInfo(art::Event const & evt,
       // Go through all PFParticles until the right one is found.
       const recob::PFParticle* shpfp = 0x0;
       std::vector<const recob::PFParticle*> beamPFParticles = pfpUtil.GetPFParticlesFromBeamSlice(evt,fPFParticleTag);
-      art::Handle<std::vector<recob::PFParticle>> PFParticleHandle;
-      if (evt.getByLabel(fPFParticleTag, PFParticleHandle) && beamPFParticles.size() != 0) {
+      auto PFParticleHandle = evt.getHandle<std::vector<recob::PFParticle> >(fPFParticleTag);
+      if (PFParticleHandle && beamPFParticles.size() != 0) {
         const recob::PFParticle* beampfp = beamPFParticles[0];
         for(const recob::PFParticle& pfp : *PFParticleHandle) {
           const recob::Shower* thish = pfpUtil.GetPFParticleShower(pfp,evt,fPFParticleTag,fShowerTag);
@@ -1504,8 +1504,8 @@ void protoana::ProtoDUNEPizeroAnaTree::setPiZeroInfo(art::Event const & evt,
       // Go through all PFParticles until the right one is found.
       const recob::PFParticle* shpfp = 0x0;
       std::vector<const recob::PFParticle*> beamPFParticles = pfpUtil.GetPFParticlesFromBeamSlice(evt,fPFParticleTag);
-      art::Handle<std::vector<recob::PFParticle>> PFParticleHandle;
-      if (evt.getByLabel(fPFParticleTag, PFParticleHandle) && beamPFParticles.size() != 0) {
+      auto PFParticleHandle = evt.getHandle<std::vector<recob::PFParticle>>(fPFParticleTag);
+      if (PFParticleHandle && beamPFParticles.size() != 0) {
         const recob::PFParticle* beampfp = beamPFParticles[0];
         for(const recob::PFParticle& pfp : *PFParticleHandle) {
           const recob::Shower* thish = pfpUtil.GetPFParticleShower(pfp,evt,fPFParticleTag,fShowerTag);

@@ -172,6 +172,7 @@ class PDSPThinSliceFitter {
   bool fSplitMC;
   int fSplitVal = 0;
   bool fFillIncidentInFunction = false;
+  bool fFitUnderOverflow = false;
   bool fUseFakeSamples = false;
   bool fFitFlux;
   size_t fNThrows, fMaxRethrows;

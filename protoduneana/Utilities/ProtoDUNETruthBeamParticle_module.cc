@@ -117,9 +117,9 @@ void protoana::ProtoDUNETruthBeamParticle::reconfigure(fhicl::ParameterSet const
 void protoana::ProtoDUNETruthBeamParticle::analyze(const art::Event& evt){
     
   // Access truth info
-  art::Handle< std::vector<simb::MCTruth> > mctruthhandle;
   std::vector< art::Ptr<simb::MCTruth> > mclist;
-  if(evt.getByLabel("generator",mctruthhandle)){
+  auto mctruthhandle = evt.getHandle< std::vector<simb::MCTruth> >("generator");
+  if (mctruthhandle){ 
     art::fill_ptr_vector(mclist,mctruthhandle);
   }
   else{

@@ -12,27 +12,18 @@
 #  make package (builds distribution tarfile)
 # ======================================================================
 
-# use cmake 2.8 or later
-#cmake_minimum_required (VERSION 2.8)
-cmake_minimum_required (VERSION 3.12...3.18 FATAL_ERROR)
+cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
-project(protoduneana)
+project(protoduneana VERSION 09.32.00 LANGUAGES CXX)
 
 # cetbuildtools contains our cmake modules
-SET ( CETBUILDTOOLS_VERSION $ENV{CETBUILDTOOLS_VERSION} )
-IF (NOT CETBUILDTOOLS_VERSION)
-    MESSAGE (FATAL_ERROR "ERROR: setup cetbuildtools to get the cmake modules")
-ENDIF()
-
-
-set(CMAKE_MODULE_PATH $ENV{CANVAS_ROOT_IO_DIR}/Modules
-                      $ENV{CETBUILDTOOLS_DIR}/Modules
-                      ${CMAKE_MODULE_PATH})
+find_package(cetbuildtools REQUIRED)
 
 include(CetCMakeEnv)
 cet_cmake_env()
 
-set_install_root()
+# Find our own CMake modules, and tell everyone else where to find them.
+cet_cmake_module_directories(Modules BINARY)
 
 cet_set_compiler_flags(DIAGS CAUTIOUS
   WERROR
@@ -43,38 +34,44 @@ cet_set_compiler_flags(DIAGS CAUTIOUS
 cet_report_compiler_flags()
 
 # these are minimum required versions, not the actual product versions
-find_ups_product( dunetpc v08_31_01)
+find_ups_boost( ) # Needs to be first to cover for a missing transitive
+                  # dependency from artdaq_core.
+find_ups_geant4( )
+find_ups_root()
+
+find_ups_product( dunetpc )
 find_ups_product( larcoreobj )
-find_ups_product( larcore v1_00_00 )
-find_ups_product( larevt v1_00_00 )
+find_ups_product( larcore  )
+find_ups_product( larevt )
 find_ups_product( lardataobj )
 find_ups_product( lardataalg )
-find_ups_product( lardata v1_00_00 )
-find_ups_product( larpandora v1_00_00 )
+find_ups_product( lardata  )
+find_ups_product( larsim )
+find_ups_product( larpandora  )
 find_ups_product( pandora )
-find_ups_product( larreco v1_00_00 )
-find_ups_product( larana v1_00_00 )
-find_ups_product( nutools v1_00_00 )
+find_ups_product( larreco )
+find_ups_product( larana )
+find_ups_product( nutools )
 find_ups_product( nug4 )
 find_ups_product( nugen )
 find_ups_product( genie )
 find_ups_product( nurandom )
-find_ups_product( art v1_09_00 )
-find_ups_product(art_root_io)
-find_ups_product( clhep v2_1_3_0 )
-find_ups_product( messagefacility v1_10_00 )
-find_ups_product( cetbuildtools v3_10_00 )
-find_ups_product( postgresql v9_1_5 )
+find_ups_product( art )
+find_ups_product( art_root_io)
+find_ups_product( clhep )
+find_ups_product( messagefacility )
+find_ups_product( cetbuildtools )
+find_ups_product( postgresql )
 find_ups_product( dune_raw_data )
-find_ups_product( dunepdsprce v0_0_3 )
-find_ups_product( artdaq_core v01_03_6 )
+find_ups_product( dunepdsprce )
+find_ups_product( artdaq_core )
 find_ups_product( ifdh_art )
 find_ups_product( ifdhc )
-find_ups_geant4( )
-find_ups_product( systematicstools v00_01_01 )
-find_ups_product( nusystematics v00_01_01 )
+find_ups_product( systematicstools )
+find_ups_product( nusystematics )
 find_ups_product( geant4reweight )
 if(DEFINED ENV{HEP_HPC_DIR} )
+  find_ups_product( hdf5 )
   find_ups_product( hep_hpc )
 endif()
 
@@ -87,7 +84,7 @@ if(DEFINED ENV{HDF5_DIR} )
   endif()
 endif()
 
-# macros for dictionary and simple_plugin
+# macros for dictionary and cet_build_plugin
 include(ArtDictionary)
 include(ArtMake)
 include(BuildPlugins)
