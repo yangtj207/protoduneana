@@ -6,6 +6,7 @@
 #include "TRandom3.h"
 #include "TMath.h"
 #include "TProfile.h"
+#include "Math/ProbFunc.h"
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
 
 #include <iomanip>
@@ -41,6 +42,8 @@ protoana::AbsCexDriver::AbsCexDriver(
   else {
     fSliceCut = std::floor((fEndZCut - (fZ0 - fPitch/2.))/fPitch);
   }
+
+  fSkipFirstLast = extra_options.get<bool>("SkipFirstLast", false);
 }
 
 void protoana::AbsCexDriver::FillMCEvents(
@@ -440,7 +443,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
     const std::map<int, std::vector<double>> & signal_pars,
     const std::map<int, double> & flux_pars,
     const std::map<std::string, ThinSliceSystematic> & syst_pars,
-    bool fill_incident) {
+    bool fit_under_over, bool fill_incident) {
 
   //Reset all samples
   for (auto it = samples.begin(); it != samples.end(); ++it) {
@@ -509,64 +512,8 @@ void protoana::AbsCexDriver::RefillMCSamples(
       good_true_incEnergies = MakeTrueIncidentEnergies(
         true_beam_traj_Z, true_beam_traj_KE, true_beam_slices,
         true_beam_incidentEnergies);
-    //if (fSliceMethod == "Traj") {
-    //  double next_slice_z = fTrajZStart;
-    //  //slice_cut = fExtraOptions.get<int>("SliceCut");
-    //  int next_slice_num = 0;
-    //  for (size_t j = 1; j < true_beam_traj_Z.size() - 1; ++j) {
-    //    double z = (true_beam_traj_Z)[j];
-    //    double ke = (true_beam_traj_KE)[j];
-
-    //    if (z < fTrajZStart) {
-    //      continue;
-    //    }
-
-    //    if (z >= next_slice_z) {
-    //      double temp_z = (true_beam_traj_Z)[j-1];
-    //      double temp_e = (true_beam_traj_KE)[j-1];
-    //      
-    //      while (next_slice_z < z && next_slice_num < fSliceCut) {
-    //        double sub_z = next_slice_z - temp_z;
-    //        double delta_e = (true_beam_traj_KE)[j-1] - ke;
-    //        double delta_z = z - (true_beam_traj_Z)[j-1]/* - z*/;
-    //        temp_e -= (sub_z/delta_z)*delta_e;
-    //        good_true_incEnergies.push_back(temp_e);
-    //        temp_z = next_slice_z;
-    //        next_slice_z += fPitch;
-    //        ++next_slice_num;
-    //      }
-    //    }
-    //  }
-    //}
-    //else if (fSliceMethod == "Default") {
-    //  for (size_t j = 0; j < true_beam_incidentEnergies.size(); ++j) {
-    //    int slice = (true_beam_slices)[j]; 
-    //    if (slice > fSliceCut) continue;
-    //    good_true_incEnergies.push_back((true_beam_incidentEnergies)[j]);
-    //  }
-    //}
-    //else if (fSliceMethod == "Alt") {
-    //  int bin = fEndSlices->GetXaxis()->FindBin(true_beam_traj_Z.back());
-    //  for (int i = 1; i <= bin; ++i) {
-    //    good_true_incEnergies.push_back(fMeans.at(i));
-    //  }
-    //}
     }
 
-    //Look for the coinciding energy bin
-    //int bin = -1;
-    //for (size_t j = 1; j < beam_energy_bins.size(); ++j) {
-    //  if ((beam_energy_bins[j-1] <= 1.e3*true_beam_startP) &&
-    //      (1.e3*true_beam_startP < beam_energy_bins[j])) {
-    //    bin = j - 1;
-    //    break;
-    //  }
-    //}
-    //if (bin == -1) {
-    //  std::string message = "Could not find beam energy bin for " +
-    //                        std::to_string(true_beam_startP);
-    //  throw std::runtime_error(message);
-    //}
     int bin = GetBeamBin(beam_energy_bins, true_beam_startP);
 
     //Weight for the event
@@ -590,7 +537,9 @@ void protoana::AbsCexDriver::RefillMCSamples(
 
           found = true;
 
-          weight *= signal_pars.at(sample_ID)[j-1];
+          //If fitting under/overflow: Need to consider here
+          int index = j - 1 + (fit_under_over ? 1 : 0);
+          weight *= signal_pars.at(sample_ID)[index];
 
           break;
         }
@@ -599,11 +548,14 @@ void protoana::AbsCexDriver::RefillMCSamples(
         //over/underflow here
         if (end_energy <= samples_vec[1].RangeLowEnd()) {
           this_sample = &samples_vec[0];
-
+          if (fit_under_over) weight *= signal_pars.at(sample_ID)[0];
+          //If fitting under/overflow: Need to consider here
         }
         else if (end_energy >
                  samples_vec[samples_vec.size()-2].RangeHighEnd()) {
+          //If fitting under/overflow: Need to consider here
           this_sample = &samples_vec.back();
+          if (fit_under_over) weight *= signal_pars.at(sample_ID).back();
         }
         else {
           std::cout << "Warning: could not find true bin " <<
@@ -621,8 +573,8 @@ void protoana::AbsCexDriver::RefillMCSamples(
     
     int new_selection = selection_ID;
     TH1D * selected_hist
-        = (TH1D*)this_sample->GetSelectionHists().at(new_selection/*selection_ID*/);
-    if (new_selection/*selection_ID*/ == 4) {
+        = (TH1D*)this_sample->GetSelectionHists().at(new_selection);
+    if (new_selection == 4) {
       if (selected_hist->FindBin(reco_beam_endZ) == 0) {
         val[0] = selected_hist->GetBinCenter(1);
       }
@@ -634,7 +586,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
         val[0] = reco_beam_endZ;
       }
     }
-    else if (new_selection/*selection_ID*/ > 4) {
+    else if (new_selection > 4) {
       val[0] = .5;
     }
     else if (reco_beam_incidentEnergies.size()) {
@@ -676,8 +628,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
       if (selected_hist->FindBin(energy[0]) == 0) {
         val[0] = selected_hist->GetBinCenter(1);
       }
-      else if (selected_hist->FindBin(energy[0]) >
-               selected_hist->GetNbinsX()) {
+      else if (selected_hist->FindBin(energy[0]) > selected_hist->GetNbinsX()) {
         val[0] = selected_hist->GetBinCenter(selected_hist->GetNbinsX());
       }
       else {
@@ -691,7 +642,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
     if (syst_pars.find("dEdX_Cal_Spline") != syst_pars.end()) {
       int bin = selected_hist->FindBin(val[0]);
       TSpline3 * spline
-          = fFullSelectionSplines["dEdX_Cal_Spline"][new_selection/*selection_ID*/][bin-1];
+          = fFullSelectionSplines["dEdX_Cal_Spline"][new_selection][bin-1];
       weight *= spline->Eval(syst_pars.at("dEdX_Cal_Spline").GetValue());
     }
     if (weight < 0.) {
@@ -749,7 +700,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
       std::cout << "Weight went negative after beam effs" << std::endl;
     }
 
-    this_sample->FillSelectionHist(new_selection/*selection_ID*/, val, weight);
+    this_sample->FillSelectionHist(new_selection, val, weight);
 
     //Fill the total incident hist with truth info
     if (fill_incident) {
@@ -849,6 +800,7 @@ void protoana::AbsCexDriver::SetupSysts(
   SetupSyst_BeamShift(pars, output_file);
   SetupSyst_BeamShiftSpline(events, samples, pars, output_file);
   SetupSyst_BeamShiftSpline2(events, samples, pars, output_file);
+  SetupSyst_BeamShiftRatio(events, samples, pars, output_file);
   //SetupSyst_BeamShift2D(pars, output_file);
   SetupSyst_EffVar(events, samples, pars, output_file);
   SetupSyst_EffVarWeight(pars);
@@ -931,7 +883,6 @@ void protoana::AbsCexDriver::SetupSyst_BeamEffsWeight(
   }
   if (pars.find("no_track_weight") != pars.end()) {
     fNoTrackF = pars.at("no_track_weight").GetOption<double>("F");
-    std::cout << "F: " << fNoTrackF << std::endl;
   }
 }
 
@@ -1255,6 +1206,8 @@ void protoana::AbsCexDriver::SetupSyst_BeamShift(
   fSystBeamShiftLimits
       = pars.at("beam_shift").GetOption<std::pair<double, double>>("Limits");
 
+  //fSystBeamShiftRatioLimitUp = pars.at("beam_shift").GetOption<double>("RatioLimitUp");
+  //fSystBeamShiftRatioLimitDown = pars.at("beam_shift").GetOption<double>("RatioLimitDown");
   fSystBeamShiftMeans = (TGraph*)shift_file.Get("gMeans");
   //fSystBeamShiftMeans->SetDirectory(0);
   fSystBeamShiftWidths = (TGraph*)shift_file.Get("gWidths");
@@ -2023,6 +1976,10 @@ void protoana::AbsCexDriver::SetupSyst_BeamShiftSpline2(
     const std::map<std::string, ThinSliceSystematic> & pars,
     TFile & output_file) {
 
+  if (pars.find("beam_shift_spline_2") == pars.end()) {
+    return;
+  }
+
   //Get the systematic variations to the calibration constant
   //then build systematic shift hists
   std::vector<double> beam_shift_vals 
@@ -2194,6 +2151,65 @@ void protoana::AbsCexDriver::SetupSyst_BeamShiftSpline2(
   }
 }
 
+void protoana::AbsCexDriver::SetupSyst_BeamShiftRatio(
+    const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    const std::map<std::string, ThinSliceSystematic> & pars,
+    TFile & output_file) {
+  if (pars.find("beam_shift_ratio") == pars.end()) {
+    return;
+  }
+  //std::pair<double, double>> limits
+  //    = pars.at("beam_shift_ratio").GetOption<std::pair<double, double>>(
+  //        "Limits");
+  int nBins = pars.at("beam_shift_ratio").GetOption<int>("nBins");
+  std::pair<double, double> binning 
+      = pars.at("beam_shift_ratio").GetOption<std::pair<double, double>>(
+          "Binning");
+  fBeamShiftRatioNomHist = TH1D("fBeamShiftRatioNomHist", "", nBins,
+                                binning.first, binning.second);
+  std::vector<double> vals
+      = pars.at("beam_shift_ratio").GetOption<std::vector<double>>("Vals");
+
+  std::vector<TH1D*> var_hists;
+  for (size_t i = 0; i < vals.size(); ++i) {
+    std::string name = "fBeamShiftRatioVarHist" + std::to_string(i);
+    var_hists.push_back(new TH1D(name.c_str(), "", nBins,
+                        binning.first, binning.second));
+  }
+
+  for (size_t i = 0; i < events.size(); ++i) {
+    const ThinSliceEvent & event = events.at(i);
+    double beam_inst_P = event.GetBeamInstP(); 
+    fBeamShiftRatioNomHist.Fill(beam_inst_P);
+    for (size_t j = 0; j < vals.size(); ++j) {
+      var_hists[j]->Fill(vals[j]*beam_inst_P);
+    }
+  }
+
+  TDirectory * dir = output_file.mkdir("BeamShiftRatio_Syst");
+  dir->cd();
+  std::vector<TSpline3*> fBeamShiftRatioSplines;
+  for (int i = 0; i < nBins + 2; ++i) { //+2 for over/underflow
+    std::vector<double> ratios;
+    for (size_t j = 0; j < var_hists.size(); ++j) {
+      ratios.push_back(
+          fBeamShiftRatioNomHist.GetBinContent(i)/
+          var_hists[j]->GetBinContent(i));
+    }
+
+    std::string name = "fBeamShiftRatioSpline" + std::to_string(i);
+    fBeamShiftRatioSplines.push_back(
+        new TSpline3(name.c_str(), &vals[0], &ratios[0], ratios.size()));
+
+    TCanvas c(name.c_str(), "");
+    fBeamShiftRatioSplines.back()->SetMarkerStyle(20);
+    fBeamShiftRatioSplines.back()->Draw("P");
+    c.Write();
+  }
+
+}
+
 double protoana::AbsCexDriver::GetSystWeight_G4RW(
     const ThinSliceEvent & event,
     const std::map<std::string, ThinSliceSystematic> & pars,
@@ -2238,13 +2254,35 @@ double protoana::AbsCexDriver::GetSystWeight_BeamShift(
   double nominal_width = fSystBeamShiftWidths->Eval(0.);
   double varied_mean = fSystBeamShiftMeans->Eval(x_val);
   double varied_width = fSystBeamShiftWidths->Eval(x_val);
+
+  //double weight = 1.;
+
+  /*
+  if (y_val > fSystBeamShiftRatioLimitUp) {
+    if (x_val != 0.) std::cout << x_val << " Past limit: " << y_val << " ";
+    weight = ROOT::Math::normal_cdf_c(y_val, varied_width, varied_mean);
+    if (x_val != 0.) std::cout << weight << " ";
+    weight /= ROOT::Math::normal_cdf_c(y_val, nominal_width, nominal_mean);
+    if (x_val != 0.) std::cout << weight << std::endl;
+  }
+  else if (y_val < fSystBeamShiftRatioLimitDown) {
+    if (x_val != 0.) std::cout << x_val << " Past limit: " << y_val << " ";
+    weight = ROOT::Math::normal_cdf(y_val, varied_width, varied_mean);
+    if (x_val != 0.) std::cout << weight << " ";
+    weight /= ROOT::Math::normal_cdf(y_val, nominal_width, nominal_mean);
+    if (x_val != 0.) std::cout << weight << std::endl;
+  }
+  else {*/
   double weight = (nominal_width/varied_width)*
                   exp(.5*std::pow(((y_val - nominal_mean)/nominal_width), 2)
                       - .5*std::pow(((y_val - varied_mean)/varied_width), 2));
 
   if (weight > fSystBeamShiftWeightCap && fSystBeamShiftWeightCap > 0.) {
+    //std::cout << "Weight above cap: " << weight << " " << x_val <<
+    //             " event: " << event.GetEventID() << std::endl;
     weight = fSystBeamShiftWeightCap;
   }
+  //}
 
   //fSystBeamShiftWeight = fSystBeamShiftMap->Interpolate(x_val, y_val);
   if (fSystBeamShiftTreeSave) {
@@ -4606,8 +4644,13 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
                    " events" <<
                    std::endl;
     }
+
+
     data_integral += data_hist->Integral();
-    for (int i = 1; i <= data_hist->GetNbinsX(); ++i) {
+    int start = (fSkipFirstLast ? 2 : 1);
+    int end = data_hist->GetNbinsX();
+    if (fSkipFirstLast) --end;
+    for (int i = start; i <= end; ++i) {
       double data_val = data_hist->GetBinContent(i);
       //double data_err = data_hist->GetBinError(i);
 

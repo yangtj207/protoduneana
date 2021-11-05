@@ -444,9 +444,9 @@ void protoana::ProtoDUNEelectronAnaTree::analyze(art::Event const & evt){
     beamTriggerEvent = dataUtil.IsBeamTrigger(evt);
     if( !beamTriggerEvent ) return;
 
-    art::Handle< std::vector<beam::ProtoDUNEBeamEvent> > pdbeamHandle;
     std::vector< art::Ptr<beam::ProtoDUNEBeamEvent> > beaminfo;
-    if(evt.getByLabel(fBeamModuleLabel, pdbeamHandle))
+    auto pdbeamHandle = evt.getHandle< std::vector<beam::ProtoDUNEBeamEvent> >(fBeamModuleLabel);
+    if (pdbeamHandle)
       art::fill_ptr_vector(beaminfo, pdbeamHandle);
     else{
        std::cout<<"No beam information from "<<fBeamModuleLabel<<std::endl;
@@ -484,8 +484,8 @@ void protoana::ProtoDUNEelectronAnaTree::analyze(art::Event const & evt){
   }//for data
 
   //check for reco pandora stuff
-  art::Handle<std::vector<recob::PFParticle>> recoParticleHandle;
-  if( !evt.getByLabel(fPFParticleTag,recoParticleHandle) ) return;
+  auto recoParticleHandle = evt.getHandle<std::vector<recob::PFParticle>>(fPFParticleTag);
+  if( !recoParticleHandle ) return;
 
   // Get all of the PFParticles, by default from the "pandora" product
   auto recoParticles = evt.getValidHandle<std::vector<recob::PFParticle>>(fPFParticleTag);

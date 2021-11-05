@@ -313,39 +313,37 @@ namespace protoana{
     //Detector properties service
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(evt);
    
-    art::Handle< std::vector<recob::Track> > trackListHandle;
     std::vector<art::Ptr<recob::Track> > tracklist;
-    if(evt.getByLabel("pandoraTrack",trackListHandle)){
+    auto trackListHandle = evt.getHandle< std::vector<recob::Track> >("pandoraTrack");
+    if (trackListHandle){
       art::fill_ptr_vector(tracklist, trackListHandle);
     }
     else return;
 
 
-    art::Handle< std::vector<recob::PFParticle> > PFPListHandle; 
     std::vector<art::Ptr<recob::PFParticle> > pfplist;
+    auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> >("pandora");
+    if (PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
 
-    if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
-    art::Handle< std::vector<recob::Hit> > hitListHandle; // to get information about the hits
     std::vector<art::Ptr<recob::Hit>> hitlist;
-    if(evt.getByLabel(fHitsModuleLabel, hitListHandle))
-      art::fill_ptr_vector(hitlist, hitListHandle);
+    auto hitListHandle = evt.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel); // to get information about the hits
+    if (hitListHandle) art::fill_ptr_vector(hitlist, hitListHandle);
+
     art::FindManyP<recob::Hit, recob::TrackHitMeta> fmthm(trackListHandle, evt, fTrackModuleLabel); // to associate tracks and hits
     art::FindManyP<anab::T0> trk_t0_assn_v(PFPListHandle, evt ,"pandora");
     art::FindManyP<recob::PFParticle> pfp_trk_assn(trackListHandle,evt,"pandoraTrack");
     art::FindManyP<anab::T0> fmT0(trackListHandle, evt ,"pmtrack");
-    //RawDigits code
-    art::Handle< std::vector<raw::RawDigit> > rawListHandle;
-    std::vector<art::Ptr<raw::RawDigit> > rawlist;
-    if (evt.getByLabel(fRawProducerLabel, rawListHandle))
-      //if (evt.getByLabel("tpcrawdecoder:daq", rawListHandle))
-      art::fill_ptr_vector(rawlist, rawListHandle);
 
-    
-    art::Handle< std::vector<recob::Wire> > wireListHandle;
+    //RawDigits code -- old hardcoded label: tpcrawdecoder:daq
+    std::vector<art::Ptr<raw::RawDigit> > rawlist;
+    auto rawListHandle = evt.getHandle< std::vector<raw::RawDigit> >(fRawProducerLabel);
+    if (rawListHandle) art::fill_ptr_vector(rawlist, rawListHandle);
+
+    // old hardcoded label: wclsdatanfsp:gauss
     std::vector<art::Ptr<recob::Wire> > wirelist;
-    if (evt.getByLabel(fWireProducerLabel, wireListHandle))
-      //if (evt.getByLabel("wclsdatanfsp:gauss", wireListHandle))
-      art::fill_ptr_vector(wirelist, wireListHandle);
+    auto wireListHandle = evt.getHandle< std::vector<recob::Wire> >(fWireProducerLabel);
+    if (wireListHandle) art::fill_ptr_vector(wirelist, wireListHandle);
+
     ///RawDigits
     std::cout<<"rawlist size, wirelist size"<<rawlist.size()<<"  "<<wirelist.size()<<std::endl;
     std::vector<const sim::SimChannel*> fSimChannels;

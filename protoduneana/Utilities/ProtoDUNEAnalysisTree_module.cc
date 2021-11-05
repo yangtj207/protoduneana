@@ -692,10 +692,9 @@ bool protoana::ProtoDUNEAnalysisTree::FillPrimaryBeamParticle(art::Event const &
       }
 
       // If this beam particle has interacted in the detector, find its daugthers.
-      art::Handle<std::vector<simb::MCParticle> > mcbeamHandle;
       std::vector<art::Ptr<simb::MCParticle> > mcbeampartilelist;
-      if(evt.getByLabel(fSimulationTag, mcbeamHandle))
-	art::fill_ptr_vector(mcbeampartilelist, mcbeamHandle);
+      auto mcbeamHandle = evt.getHandle<std::vector<simb::MCParticle> >(fSimulationTag);
+      if (mcbeamHandle) art::fill_ptr_vector(mcbeampartilelist, mcbeamHandle);
 
       for(size_t p=0; p < mcbeampartilelist.size(); p++){
 	auto & beamprim_mcparticle =  mcbeampartilelist[p];
@@ -779,10 +778,9 @@ bool protoana::ProtoDUNEAnalysisTree::FillPrimaryBeamParticle(art::Event const &
     // For data we can see if this event comes from a beam trigger
     beamTriggerEvent = dataUtil.IsBeamTrigger(evt);
 
-    art::Handle< std::vector<beam::ProtoDUNEBeamEvent> > pdbeamHandle;
     std::vector< art::Ptr<beam::ProtoDUNEBeamEvent> > beaminfo;
-    if(evt.getByLabel(fBeamModuleLabel, pdbeamHandle))
-      art::fill_ptr_vector(beaminfo, pdbeamHandle);
+    auto pdbeamHandle = evt.getHandle< std::vector<beam::ProtoDUNEBeamEvent> >(fBeamModuleLabel);
+    if (pdbeamHandle) art::fill_ptr_vector(beaminfo, pdbeamHandle);
 
     fbeamNTracks = (int)beaminfo.size();
     // For now only consider events with one beam track only
@@ -860,10 +858,10 @@ void protoana::ProtoDUNEAnalysisTree::FillPrimaryPFParticle(art::Event const & e
   if(!pfT0vec.empty())
     fprimaryT0 = pfT0vec[0].Time();
 
-  //art::Handle<std::vector<simb::MCParticle> > mcHandle;
   //std::vector<art::Ptr<simb::MCParticle> > mcpartilelist;
   //mf::LogWarning("ProtoDUNEAnalysisTree") << " Getting MC Particle failed. Ignore if you run on data. " << std::endl;
-  //if(evt.getByLabel(fSimulationTag, mcHandle))
+  //auto mcHandle = evt.getHandle<std::vector<simb::MCParticle> >(fSimulationTag);
+  //if (mcHandle)
   //art::fill_ptr_vector(mcpartilelist, mcHandle);
 
   // "particle" is the pointer to our beam particle. The recob::Track or recob::Shower object
@@ -1028,10 +1026,9 @@ void protoana::ProtoDUNEAnalysisTree::FillPrimaryPFParticle(art::Event const & e
       fprimary_truth_Isbeammatched    = 0;
     
     // If this beam particle has interacted in the detector, find its daugthers.
-    art::Handle<std::vector<simb::MCParticle> > mcprimaryHandle;
     std::vector<art::Ptr<simb::MCParticle> > mcprimarypartilelist;
-    if(evt.getByLabel(fSimulationTag, mcprimaryHandle))
-      art::fill_ptr_vector(mcprimarypartilelist, mcprimaryHandle);
+    auto mcprimaryHandle = evt.getHandle<std::vector<simb::MCParticle> >(fSimulationTag);
+    if (mcprimaryHandle) art::fill_ptr_vector(mcprimarypartilelist, mcprimaryHandle);
     
     for(size_t p=0; p < mcprimarypartilelist.size(); p++){
       auto & primary_mcparticle =  mcprimarypartilelist[p];

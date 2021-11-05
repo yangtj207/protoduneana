@@ -134,8 +134,8 @@ void ProtoDUNEelectronWireAna::analyze(art::Event const& evt)
   fevent  = evt.id().event(); 
  
   //check for reco pandora stuff
-  art::Handle<std::vector<recob::PFParticle>> recoParticleHandle;
-  if( !evt.getByLabel(fPFParticleTag,recoParticleHandle) ) return;
+  auto recoParticleHandle = evt.getHandle<std::vector<recob::PFParticle>>(fPFParticleTag);
+  if( !recoParticleHandle ) return;
 
   //std::vector<int> hit_w;
   std::map<int,std::vector<double>> hit_w_and_t1;
@@ -233,11 +233,11 @@ void ProtoDUNEelectronWireAna::analyze(art::Event const& evt)
     if(!evt.isRealData()){ 
       auto mcTruths = evt.getValidHandle<std::vector<simb::MCTruth>>("generator");
       const simb::MCParticle* geantGoodParticle = truthUtil.GetGeantGoodParticle((*mcTruths)[0],evt);
-      art::Handle< std::vector<sim::SimChannel> > simchannelHandle;
       int trackid = mcparticle->TrackId();
       if( mcparticle->TrackId() == geantGoodParticle->TrackId() ){
         if( doAna ){   //we have a reco shower
-          if(evt.getByLabel("largeant", simchannelHandle)){
+          auto simchannelHandle = evt.getHandle< std::vector<sim::SimChannel> >("largeant");
+          if (simchannelHandle){
             for(auto const& simchannel : (*simchannelHandle)){
                if(fGeometry->View(simchannel.Channel()) != 2) continue;
                auto const& alltimeslices = simchannel.TDCIDEMap();

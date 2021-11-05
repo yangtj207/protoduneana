@@ -93,10 +93,9 @@ void pdsp::VtxScore::analyze(art::Event const& e)
 
   anab::MVAReader<recob::Hit,3> hitResults(e, fNNetModuleLabel);
   
-  art::Handle< std::vector<recob::Hit> > hitListHandle;
   std::vector<art::Ptr<recob::Hit> > hitlist;
-  if (e.getByLabel(fHitsModuleLabel,hitListHandle))
-    art::fill_ptr_vector(hitlist, hitListHandle);
+  auto hitListHandle = e.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel);
+  if (hitListHandle) art::fill_ptr_vector(hitlist, hitListHandle);
 
   // loop over hits 
   //  for (size_t h = 0; h < hitResults.size(); ++h) {

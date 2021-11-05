@@ -197,14 +197,15 @@ namespace dune{
   void XYZcalibration::analyze( const art::Event& evt){
     reset();  
      
-    art::Handle< std::vector<recob::Track> > trackListHandle;
-    art::Handle< std::vector<recob::PFParticle> > PFPListHandle; 
    
     std::vector<art::Ptr<recob::Track> > tracklist;
     std::vector<art::Ptr<recob::PFParticle> > pfplist;
   
-    if(evt.getByLabel(fTrackModuleLabel,trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
-    if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
+    auto trackListHandle = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+    if (trackListHandle) art::fill_ptr_vector(tracklist, trackListHandle);
+
+    auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> >("pandora");
+    if (PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
   
     art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, evt, fCalorimetryModuleLabel);
     art::FindManyP<anab::T0> trk_t0_assn_v(PFPListHandle, evt ,"pandora");

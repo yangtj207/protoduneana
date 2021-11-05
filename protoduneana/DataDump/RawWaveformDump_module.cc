@@ -226,10 +226,9 @@ void pdune::RawWaveformDump::analyze(art::Event const& evt)
        << " " << evt.id().event() << endl;
 
   // ... Read in the digit List object(s).
-  art::Handle< std::vector<raw::RawDigit> > digitVecHandle;
-  evt.getByLabel(fDigitModuleLabel, digitVecHandle);
+  auto digitVecHandle = evt.getHandle< std::vector<raw::RawDigit> >(fDigitModuleLabel);
 
-  if (!digitVecHandle->size())  return;
+  if (!digitVecHandle || !digitVecHandle->size())  return;
 
   // ... Use the handle to get a particular (0th) element of collection.
   art::Ptr<raw::RawDigit> digitVec0(digitVecHandle, 0);
@@ -252,8 +251,8 @@ void pdune::RawWaveformDump::analyze(art::Event const& evt)
   }
 
   // ... Read in MC particle list
-  art::Handle< std::vector<simb::MCParticle> > particleHandle;
-  if (!evt.getByLabel(fSimulationProducerLabel, particleHandle)){
+  auto particleHandle = evt.getHandle< std::vector<simb::MCParticle> >(fSimulationProducerLabel);
+  if (!particleHandle){
     throw cet::exception("AnalysisExample")
       << " No simb::MCParticle objects in this event - "
       << " Line " << __LINE__ << " in file " << __FILE__ << std::endl;

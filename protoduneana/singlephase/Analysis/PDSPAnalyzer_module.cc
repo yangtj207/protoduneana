@@ -295,6 +295,7 @@ private:
                      const simb::MCParticle * true_beam_particle,
                      detinfo::DetectorClocksData const& clockData);
   void BeamForcedTrackInfo();
+  void GetG4RWCoeffs(std::vector<double> & weights, std::vector<double> & coeffs);
   // Declare member data here.
   const art::InputTag fTrackModuleLabel;
 
@@ -477,14 +478,16 @@ private:
   std::vector<double> g4rw_full_primary_plus_sigma_weight;
   std::vector<double> g4rw_full_primary_minus_sigma_weight;
 
-  std::vector<std::vector<double>> g4rw_full_grid_weights, g4rw_full_grid_coeffs;
+  std::vector<std::vector<double>> g4rw_full_grid_weights,
+                                   g4rw_full_grid_coeffs;
   std::vector<std::vector<double>> g4rw_primary_grid_weights;
   std::vector<double> g4rw_primary_grid_pair_weights;
 
   std::vector<std::vector<double>> g4rw_full_grid_piplus_weights;
   std::vector<std::vector<double>> g4rw_full_grid_piplus_weights_fake_data;
   std::vector<std::vector<double>> g4rw_full_grid_piminus_weights;
-  std::vector<std::vector<double>> g4rw_full_grid_proton_weights;
+  std::vector<std::vector<double>> g4rw_full_grid_proton_weights,
+                                   g4rw_full_grid_proton_coeffs;
 
   //EDIT: STANDARDIZE
   //EndProcess --> endProcess ?
@@ -566,6 +569,8 @@ private:
   double beam_inst_dirX, beam_inst_dirY, beam_inst_dirZ;
   int beam_inst_nFibersP1, beam_inst_nFibersP2, beam_inst_nFibersP3;
   int beam_inst_nTracks, beam_inst_nMomenta;
+  int beam_inst_C0, beam_inst_C1;
+  double beam_inst_C0_pressure, beam_inst_C1_pressure;
   ////////////////////////////////////////////////////
 
   bool reco_reconstructable_beam_event;
@@ -753,7 +758,7 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   fBeamModuleLabel(p.get<std::string>("BeamModuleLabel")),
   fBeamlineUtils(p.get< fhicl::ParameterSet >("BeamlineUtils")),
   fEmptyEventFinder(p.get< fhicl::ParameterSet >("EmptyEventFinder")),
-  fBeamPIDMomentum(p.get<double>("BeamPIDMomentum")),
+  fBeamPIDMomentum(p.get<double>("BeamPIDMomentum", 1.)),
   dEdX_template_name(p.get<std::string>("dEdX_template_name")),
   //dEdX_template_file( dEdX_template_name.c_str(), "OPEN" ),
   fVerbose(p.get<bool>("Verbose")),
@@ -784,7 +789,8 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   }
 
   if (fDoReweight) {
-    FracsFile =  new TFile((p.get< std::string >( "FracsFile" )).c_str(), "OPEN" );
+    //FracsFile =  new TFile((p.get< std::string >( "FracsFile" )).c_str(), "OPEN" );
+    FracsFile = OpenFile(p.get< std::string >("FracsFile"));
     ParSet = p.get<std::vector<fhicl::ParameterSet>>("ParameterSet");
     ParMaker = G4ReweightParameterMaker(ParSet);
     MultiRW = new G4MultiReweighter(211, *FracsFile, ParSet,
@@ -801,7 +807,8 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
     //    -211, *PiMinusFracsFile, PiMinusParSet,
     //    p.get<fhicl::ParameterSet>("Material"),
     //    RWManager);
-    ProtFracsFile =  new TFile((p.get< std::string >("ProtFracsFile")).c_str(), "OPEN" );
+    //ProtFracsFile =  new TFile((p.get< std::string >("ProtFracsFile")).c_str(), "OPEN" );
+    ProtFracsFile = OpenFile(p.get< std::string >("ProtFracsFile"));
     ProtParSet = p.get<std::vector<fhicl::ParameterSet>>("ProtParameterSet");
     ProtParMaker = G4ReweightParameterMaker(ProtParSet);
     ProtMultiRW = new G4MultiReweighter(
@@ -1137,7 +1144,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       //Weighting according to the full heirarchy
       std::vector<std::vector<G4ReweightTraj *>> new_full_created
           = BuildHierarchy(true_beam_ID, 211, plist, fGeometryService,
-                           event, "LAr", true);
+                           event, "LAr", false);
       if (fVerbose) {
         std::cout << "Created " << new_full_created.size() << " reweightable pi+"
                   << std::endl;
@@ -1201,14 +1208,10 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
           }
         }
 
-        //Fit a polynomial to make the weighting continuous (i.e. for in fitting)
+        //Fit a polynomial to make the weighting continuous (i.e. for in fitting
+        //analysis)
         if (new_full_created.size()) {
-          TGraph gr(fGridPoints.size(), &fGridPoints[0], &g4rw_full_grid_weights.back()[0]);
-          gr.Fit("pol9", "Q");
-          TF1 * fit_func = (TF1*)gr.GetFunction("pol9");
-          for (int j = 0; j < fit_func->GetNpar(); ++j) {
-            g4rw_full_grid_coeffs.back().push_back(fit_func->GetParameter(j));
-          }
+          GetG4RWCoeffs(g4rw_full_grid_weights.back(), g4rw_full_grid_coeffs.back());
         }
 
         //Reset to 1.
@@ -1329,6 +1332,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     std::vector<double> proton_input(ProtParSet.size(), 1.);
     for (size_t i = 0; i < ProtParSet.size(); ++i) {
       g4rw_full_grid_proton_weights.push_back(std::vector<double>());
+      g4rw_full_grid_proton_coeffs.push_back(std::vector<double>());
       for (size_t j = 0; j < fGridPoints.size(); ++j) {
         proton_input[i] = fGridPoints[j];
         bool set_values = ProtMultiRW->SetAllParameterValues(proton_input);
@@ -1349,6 +1353,12 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
           throw std::runtime_error(message);
         }
       }
+
+      if (proton_hierarchy.size()) {
+        GetG4RWCoeffs(g4rw_full_grid_proton_weights.back(),
+                      g4rw_full_grid_proton_coeffs.back());
+      }
+
       proton_input[i] = 1.;
     }
   }
@@ -1755,6 +1765,10 @@ void pduneana::PDSPAnalyzer::beginJob()
   fTree->Branch("true_beam_processes", &true_beam_processes);
 
   fTree->Branch("beam_inst_P", &beam_inst_P);
+  fTree->Branch("beam_inst_C0", &beam_inst_C0);
+  fTree->Branch("beam_inst_C1", &beam_inst_C1);
+  fTree->Branch("beam_inst_C0_pressure", &beam_inst_C0_pressure);
+  fTree->Branch("beam_inst_C1_pressure", &beam_inst_C1_pressure);
   fTree->Branch("beam_inst_TOF", &beam_inst_TOF);
   fTree->Branch("beam_inst_TOF_Chan", &beam_inst_TOF_Chan);
   fTree->Branch("beam_inst_X", &beam_inst_X);
@@ -1854,6 +1868,7 @@ void pduneana::PDSPAnalyzer::beginJob()
   fTree->Branch("g4rw_full_grid_piplus_weights_fake_data",  &g4rw_full_grid_piplus_weights_fake_data);
   fTree->Branch("g4rw_full_grid_piminus_weights", &g4rw_full_grid_piminus_weights);
   fTree->Branch("g4rw_full_grid_proton_weights",  &g4rw_full_grid_proton_weights);
+  fTree->Branch("g4rw_full_grid_proton_coeffs", &g4rw_full_grid_proton_coeffs);
   fTree->Branch("g4rw_primary_grid_weights", &g4rw_primary_grid_weights);
   fTree->Branch("g4rw_primary_grid_pair_weights", &g4rw_primary_grid_pair_weights);
 
@@ -2038,6 +2053,10 @@ void pduneana::PDSPAnalyzer::reset()
 
 
   beam_inst_P = -999.;
+  beam_inst_C0 = -999;
+  beam_inst_C1 = -999;
+  beam_inst_C0_pressure = -999.;
+  beam_inst_C1_pressure = -999.;
   beam_inst_X = -999.;
   beam_inst_Y = -999.;
   beam_inst_Z = -999.;
@@ -2369,6 +2388,7 @@ void pduneana::PDSPAnalyzer::reset()
   g4rw_full_grid_piplus_weights_fake_data.clear();
   g4rw_full_grid_piminus_weights.clear();
   g4rw_full_grid_proton_weights.clear();
+  g4rw_full_grid_proton_coeffs.clear();
   g4rw_primary_grid_weights.clear();
   g4rw_primary_grid_pair_weights.clear();
 }
@@ -3622,6 +3642,9 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
   const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0)); 
   beam_inst_trigger = beamEvent.GetTimingTrigger();
   if (evt.isRealData() && !fBeamlineUtils.IsGoodBeamlineTrigger(evt)) {
+    std::cout << "Matched? " << beamEvent.CheckIsMatched() << std::endl;
+    std::vector< double > momenta = beamEvent.GetRecoBeamMomenta();
+    std::cout << momenta.size() << std::endl;
     MF_LOG_WARNING("PDSPAnalyzer") << "Failed beam quality check" << std::endl;
     beam_inst_valid = false;
     return;
@@ -3653,6 +3676,11 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
     beam_inst_TOF_Chan.push_back(the_chans[iTOF]);
   }
 
+  beam_inst_C0 = beamEvent.GetCKov0Status();
+  beam_inst_C1 = beamEvent.GetCKov1Status();
+  beam_inst_C0_pressure = beamEvent.GetCKov0Pressure();
+  beam_inst_C1_pressure = beamEvent.GetCKov1Pressure();
+
   //position from the projected track into the TPC -- just using the first
   //index
   if( nTracks > 0 ){
@@ -3670,7 +3698,7 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
 
   //beamline PID 
   if (evt.isRealData()) {
-    std::vector< int > pdg_cands = fBeamlineUtils.GetPID( beamEvent, 1. );
+    std::vector< int > pdg_cands = fBeamlineUtils.GetPID( beamEvent, fBeamPIDMomentum );
     beam_inst_PDG_candidates.insert( beam_inst_PDG_candidates.end(), pdg_cands.begin(), pdg_cands.end() );
   }
 
@@ -4761,5 +4789,14 @@ TVector3 pduneana::FitLine(const std::vector<TVector3> & input) {
   delete gr;
   delete min;
   return diff;
+}
+
+void pduneana::PDSPAnalyzer::GetG4RWCoeffs(std::vector<double> & weights, std::vector<double> & coeffs) {
+  TGraph gr(fGridPoints.size(), &fGridPoints[0], &weights[0]/*&g4rw_full_grid_weights.back()[0]*/);
+  gr.Fit("pol9", "Q");
+  TF1 * fit_func = (TF1*)gr.GetFunction("pol9");
+  for (int j = 0; j < fit_func->GetNpar(); ++j) {
+    coeffs/*g4rw_full_grid_coeffs.back()*/.push_back(fit_func->GetParameter(j));
+  }
 }
 DEFINE_ART_MODULE(pduneana::PDSPAnalyzer)

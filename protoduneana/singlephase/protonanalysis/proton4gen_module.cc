@@ -1006,9 +1006,9 @@ void protoana::proton4gen::analyze(art::Event const & evt){
 		// For data we can see if this event comes from a beam trigger
 		beamTriggerEvent = dataUtil.IsBeamTrigger(evt);
 
-		//art::Handle< std::vector<beam::ProtoDUNEBeamEvent> > pdbeamHandle;
 		//std::vector< art::Ptr<beam::ProtoDUNEBeamEvent> > beaminfo;
-		//if(evt.getByLabel(fBeamModuleLabel, pdbeamHandle))
+		//auto pdbeamHandle = evt.getHandle< std::vector<beam::ProtoDUNEBeamEvent> > (fBeamModuleLabel);
+		//if(pdbeamHandle)
 			//art::fill_ptr_vector(beaminfo, pdbeamHandle);
 
 		//for(unsigned int i = 0; i < beaminfo.size(); ++i){
@@ -1080,19 +1080,20 @@ void protoana::proton4gen::analyze(art::Event const & evt){
 	auto pfParticles = pfpUtil.GetPFParticlesFromBeamSlice(evt,fPFParticleTag);
 
 	//cluster information
-	art::Handle< std::vector<recob::Track> > trackListHandle;
 	std::vector<art::Ptr<recob::Track> > tracklist;
-	art::Handle< std::vector<recob::PFParticle> > PFPListHandle; 
 	std::vector<art::Ptr<recob::PFParticle> > pfplist;
-	if(evt.getByLabel("pandoraTrack",trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
+
+	auto trackListHandle = evt.getHandle< std::vector<recob::Track> >("pandoraTrack");
+	if (trackListHandle) art::fill_ptr_vector(tracklist, trackListHandle);
 	else return;
-	if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
+
+	auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> >("pandora");
+	if (PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
   	auto allHits = evt.getValidHandle<std::vector<recob::Hit> >(fHitTag);
 
-	art::Handle< std::vector<recob::Cluster> > clusterListHandle; // to get information about the hits
 	std::vector<art::Ptr<recob::Cluster>> clusterlist;
-	if(evt.getByLabel("pandora", clusterListHandle))
-		art::fill_ptr_vector(clusterlist, clusterListHandle);
+	auto clusterListHandle = evt.getHandle< std::vector<recob::Cluster> >("pandora"); // to get information about the hits
+	if (clusterListHandle)	art::fill_ptr_vector(clusterlist, clusterListHandle);
 
 	art::FindManyP<recob::Cluster> fmcp(PFPListHandle,evt,"pandora");
 	art::FindManyP<recob::Track> pftrack(PFPListHandle,evt,"pandoraTrack");
