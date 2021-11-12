@@ -26,7 +26,9 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-
+#include "larcore/Geometry/Geometry.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -62,6 +64,8 @@
 #include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
+
+#include "protoduneana/Utilities/ProtoDUNEEmptyEventFinder.h"
 
 #include "larsim/MCCheater/ParticleInventoryService.h"
 
@@ -143,6 +147,7 @@ class protoana::protonmcnorw : public art::EDAnalyzer {
 		// fcl parameters
 		//const art::InputTag fNNetModuleLabel; //label of the module used for CNN tagging  
 		const art::InputTag fBeamModuleLabel;
+		protoana::ProtoDUNEEmptyEventFinder fEmptyEventFinder;
 		std::string fCalorimetryTag;
 		std::string fTrackerTag;
   		std::string fHitTag;
@@ -156,7 +161,6 @@ class protoana::protonmcnorw : public art::EDAnalyzer {
 		geo::GeometryCore const * fGeometry;
   		art::ServiceHandle < geo::Geometry > fGeometryService_rw;
 
-
 		double MCTruthT0, TickT0;
 		int nT0s;   
 
@@ -169,6 +173,8 @@ class protoana::protonmcnorw : public art::EDAnalyzer {
 		int fevent;
 		double fTimeStamp;
 		int fNactivefembs[6];
+
+		bool reco_reconstructable_beam_event;
 
 		// Beam track
 		int fbeamtrigger;
@@ -451,6 +457,7 @@ protoana::protonmcnorw::protonmcnorw(fhicl::ParameterSet const & p)
 		dataUtil(p.get<fhicl::ParameterSet>("DataUtils")),
 		//fNNetModuleLabel(p.get<art::InputTag>("NNetModuleLabel")),
 		fBeamModuleLabel(p.get< art::InputTag >("BeamModuleLabel")),
+		fEmptyEventFinder(p.get< fhicl::ParameterSet >("EmptyEventFinder")),
 		fCalorimetryTag(p.get<std::string>("CalorimetryTag")),
 		fTrackerTag(p.get<std::string>("TrackerTag")),
   		fHitTag(p.get<std::string>("HitTag")),
@@ -489,7 +496,8 @@ void protoana::protonmcnorw::beginJob(){
 	fPandoraBeam->Branch("event",                         &fevent,                        "event/I");
 	fPandoraBeam->Branch("timestamp",                     &fTimeStamp,                    "timestamp/D");
 	fPandoraBeam->Branch("Nactivefembs",                  &fNactivefembs,                 "Nactivefembs[5]/I");
-
+  	fPandoraBeam->Branch("reco_reconstructable_beam_event",&reco_reconstructable_beam_event);
+	
 	fPandoraBeam->Branch("beamtrigger",                   &fbeamtrigger,                  "beamtrigger/I");
 	fPandoraBeam->Branch("tof",                           &ftof,                          "tof/D");
 	fPandoraBeam->Branch("cerenkov1",                     &fcerenkov1,                    "cerenkov1/I");
@@ -670,8 +678,6 @@ void protoana::protonmcnorw::beginJob(){
 	fPandoraBeam->Branch("a_u",&a_u);
 	fPandoraBeam->Branch("wireno_u",&wireno_u);
 
-
-
 	fPandoraBeam->Branch("NDAUGHTERS",                    &fNDAUGHTERS,                   "NDAUGHTERS/I");
 	fPandoraBeam->Branch("isdaughtertrack",               &fisdaughtertrack,              "isdaughtertrack[NDAUGHTERS]/I");
 	fPandoraBeam->Branch("isdaughtershower",              &fisdaughtershower,             "isdaughtershower[NDAUGHTERS]/I");
@@ -725,22 +731,6 @@ void protoana::protonmcnorw::beginJob(){
   	fPandoraBeam->Branch("primtrk_calo_hit_index",&primtrk_calo_hit_index);
   	fPandoraBeam->Branch("primtrk_ch",&primtrk_ch);
 
-
-	//fPandoraCosmics = tfs->make<TTree>("PandoraCosmics", "Cosmic tracks reconstructed with Pandora");
-	//fPandoraCosmics->Branch("run",                 &fRun,                "run/I");
-	//fPandoraCosmics->Branch("subrun",              &fSubRun,             "subrun/I");
-	//fPandoraCosmics->Branch("event",               &fevent,              "event/I");
-	//fPandoraCosmics->Branch("timestamp",           &fTimeStamp,          "timestamp/D");
-	//fPandoraCosmics->Branch("Nactivefembs",        &fNactivefembs,       "Nactivefembs[5]/I");
-	//fPandoraCosmics->Branch("beamtrigger",         &fbeamtrigger,        "beamtrigger/I");
-	//fPandoraCosmics->Branch("tof",                 &ftof,                "tof/D");
-	//fPandoraCosmics->Branch("cerenkov1",           &fcerenkov1,          "cerenkov1/I");
-	//fPandoraCosmics->Branch("cerenkov2",           &fcerenkov2,          "cerenkov2/I");
-	//fPandoraCosmics->Branch("beamtrackMomentum",   &fbeamtrackMomentum,  "beamtrackMomentum/D");
-	//fPandoraCosmics->Branch("beamtrackPos",        &fbeamtrackPos,       "beamtrackPos[3]/D");
-	//fPandoraCosmics->Branch("beamtrackDir",        &fbeamtrackDir,       "beamtrackDir[3]/D");
-
-
 }
 
 void protoana::protonmcnorw::analyze(art::Event const & evt){
@@ -786,6 +776,10 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 		TTimeStamp ts2(ts.timeHigh(), ts.timeLow());
 		fTimeStamp = ts2.AsDouble();
 	}
+
+  	// Is this a reconstructable beam event?
+  	reco_reconstructable_beam_event = !fEmptyEventFinder.IsEmptyEvent(evt);
+	std::cout<<"reco_reconstructable_beam_event:"<<reco_reconstructable_beam_event<<std::endl;	
 
 	// Get number of active fembs
 	if(!evt.isRealData()){
@@ -835,11 +829,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
           		beamDirz_spec.push_back(btracks[i].StartDirection().Z());
 
 		}
-
-
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 		// Firstly we need to get the list of MCTruth objects from the generator. The standard protoDUNE
 		// simulation has fGeneratorTag = "generator"
@@ -987,8 +977,6 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 			//fprimary_truth_Process          = int(geantGoodParticle->Trajectory().ProcessToKey(geantGoodParticle->Process()));
 			//fprimary_truth_Process           = geantGoodParticle->Process(); //HY::wired result
 			fprimary_truth_EndProcess           = geantGoodParticle->EndProcess();
-				
-				
 
 			std::cout<<"-----> fprimary_truth_EndProcess:"<<fprimary_truth_EndProcess.c_str()<<std::endl;
 
@@ -998,7 +986,6 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 			//true_beam_PDG = geantGoodParticle->PdgCode();
 			//true_beam_ID = geantGoodParticle->TrackId();
 			//true_beam_len = geantGoodParticle->Trajectory().TotalLength();
-
 			//g4 reweight -------------------------------------------------------------------------------------------------//
 		}
 	}
@@ -1085,7 +1072,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 	if(trackListHandle) art::fill_ptr_vector(tracklist, trackListHandle);
 	else return;
 
-        // get information about the hits
+        //get information about the hits
 	std::vector<art::Ptr<recob::PFParticle> > pfplist;
 	auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> >("pandora");
 	if (PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
@@ -1119,9 +1106,6 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 	   }
 	   }*/
 
-
-
-
 	// We can now look at these particles
 	for(const recob::PFParticle* particle : pfParticles){
 
@@ -1145,7 +1129,6 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 		trkf::TrackMomentumCalculator trkm{1.};
 		recob::MCSFitResult res;
 
-
 		//HY:Get truth info --------------------------------------------------------------------------------//
 		const simb::MCParticle* trueParticle = 0x0;
 		trueParticle = truthUtil.GetMCParticleFromPFParticle(clockData, *particle, evt, fPFParticleTag);
@@ -1153,11 +1136,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
     			fprimary_truth_byE_origin = pi_serv->TrackIdToMCTruth_P(trueParticle->TrackId())->Origin();
 			fprimary_truth_byE_PDG = trueParticle->PdgCode();
 			fprimary_truth_byE_ID = trueParticle->TrackId();
-			//std::cout<<"fprimary_truth_byE_origin:"<<fprimary_truth_byE_origin<<std::endl;
-			//std::cout<<"fprimary_truth_byE_PDG:"<<fprimary_truth_byE_PDG<<std::endl;
-			//std::cout<<"fprimary_truth_byE_ID:"<<fprimary_truth_byE_ID<<std::endl;
 		}
-
 
 		if(thisTrack != 0x0) { //this track
 			// Get the true mc particle
@@ -1171,8 +1150,6 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 				fprimary_truth_Isbeammatched=0;
 				if(beamid==truthid) fprimary_truth_Isbeammatched=1;
 				//std::cout<<"fprimary_truth_Isbeammatched:"<<fprimary_truth_Isbeammatched<<std::endl;	
-
-
 			}
 
 			fisprimarytrack               = 1;
@@ -1237,7 +1214,6 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 				}
 			}
 			//-------------------------------------------------------------------------------------------------------------------------------//
-
 
 			//reco MCS angles ---------------------------------------------------------------------------------------------------//
 			//res = fMCSFitter.fitMcs(*thisTrack);
@@ -2183,9 +2159,6 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 			// Fill trees
 			if(beamTriggerEvent)
 				fPandoraBeam->Fill();
-
-			//fPandoraCosmics->Fill();
-
 			}
 
 			void protoana::protonmcnorw::endJob(){
@@ -2204,6 +2177,8 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 				fSubRun = -999;
 				fevent = -999;
 				fTimeStamp = -999.0;
+  				reco_reconstructable_beam_event = false;
+				
 				for(int k=0; k < 5; k++)
 					fNactivefembs[k] = -999;
 

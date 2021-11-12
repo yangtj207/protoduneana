@@ -4,8 +4,10 @@
 
 #include "ProtoDUNEDataUtils.fcl"
 #include "ProtoDUNEBeamlineUtils.fcl"
+#include "ProtoDUNEEmptyEventFinder.fcl"
 #include "ProtoDUNEBeamlineReco.fcl"
 #include "ProtoDUNEBeamCuts.fcl"
+#include "ProtoDUNECalibration.fcl"
 
 #include "ProtoDUNEUnstableHVFilter.fcl"
 #include "ProtoDUNEFembFilter.fcl"
@@ -73,14 +75,16 @@ physics:
   beamevent: @local::proto_beamevent
   }
  filters:  {
-    f2: @local::pdsp_fembfilter_beamside
     f1: @local::HVfilter
+    f2: @local::pdsp_fembfilter_beamside
+    #@table::protoDUNE_reco_data_filters
     #f1: @local::standard_protodunebeamlinefilter_Proton_1GeV
-	
  }
  
- #fpath: [f1, f2, f3]
- fpath: [f1, f2] #for the mcc12 test sample v2, hv filter seemed not working
+ fpath: [f1, f2]
+ #fpath: [f1, f2] #for the mcc12 test sample v2, hv filter seemed not working
+ #HY: Testing prod4a by disabling HV filter 
+ #fpath: [f2] #for the mcc12 test sample v2, hv filter seemed not working
 
  analyzers:{
    protonbeamana:
@@ -96,7 +100,8 @@ physics:
      #CalorimetryTag:         "pandoracalo"
      #CalorimetryTag:         "pandoracaloSCE"
      #CalorimetryTag:         "pandoracalinoxyzt"
-     CalorimetryTag:         "pandoracali"
+     #CalorimetryTag:         "pandoracali"
+     CalorimetryTag:         "pandoracalonosce"
      TrackerTag:             "pandoraTrack"
      HitTag:                 "hitpdune"
      ShowerTag:              "pandoraShower"
@@ -104,8 +109,9 @@ physics:
      GeneratorTag:           "generator"
      Verbose:                true
      DataUtils: @local::standard_protodunedatautils
-     BeamCuts:             @local::Prod2BeamCuts
+     EmptyEventFinder: @local::standard_protoduneemptyeventfinder
 
+     #BeamCuts:             @local::Prod2BeamCuts
      #beamreco:          @local::beamline_reco
 
      BeamPars: {
@@ -159,7 +165,8 @@ physics.analyzers.protonbeamana.TrackModuleLabel:        "pandoraTrack"
 #physics.analyzers.protonbeamana.CalorimetryModuleLabel:  "pandoracaloSCE"
 #physics.analyzers.protonbeamana.CalorimetryModuleLabel:  "pandoracali"
 #physics.analyzers.protonbeamana.CalorimetryModuleLabel:  "pandoracalinoxyzt"
-physics.analyzers.protonbeamana.CalorimetryModuleLabel:  "pandoracali"
+#physics.analyzers.protonbeamana.CalorimetryModuleLabel:  "pandoracali"
+physics.analyzers.protonbeamana.CalorimetryModuleLabel:  "pandoracalonosce"
 #physics.analyzers.protonbeamana.HitsModuleLabel:  "linecluster"
 #physics.analyzers.protonbeamana.HitsModuleLabel:  "hitpdune"
 physics.analyzers.protonbeamana.SaveTrackInfo: true
