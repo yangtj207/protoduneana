@@ -411,6 +411,7 @@ private:
   //EDIT: STANDARDIZE
   double reco_beam_startX, reco_beam_startY, reco_beam_startZ;
   double reco_beam_endX, reco_beam_endY, reco_beam_endZ;
+  double true_beam_len;
   double reco_beam_len, reco_beam_alt_len;
   double reco_beam_alt_len_allTrack;
   double reco_beam_vertex_michel_score;
@@ -1390,6 +1391,7 @@ void pduneana::PDSPAnalyzer::beginJob()
   fTree->Branch("reco_beam_endX", &reco_beam_endX);
   fTree->Branch("reco_beam_endY", &reco_beam_endY);
   fTree->Branch("reco_beam_endZ", &reco_beam_endZ);
+  fTree->Branch("true_beam_len", &true_beam_len);
   fTree->Branch("reco_beam_len", &reco_beam_len);
   fTree->Branch("reco_beam_alt_len", &reco_beam_alt_len);
   fTree->Branch("reco_beam_alt_len_allTrack", &reco_beam_alt_len_allTrack);
@@ -1915,6 +1917,7 @@ void pduneana::PDSPAnalyzer::reset()
   reco_beam_trackDirY = -999;
   reco_beam_trackDirZ = -999;
 
+  true_beam_len = -999.;
   reco_beam_len = -999;
   reco_beam_alt_len = -999;
   reco_beam_alt_len_allTrack = -999;
@@ -3320,6 +3323,12 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
     true_beam_traj_X_SCE.push_back(true_beam_trajectory.X(i) - offset.X());
     true_beam_traj_Y_SCE.push_back(true_beam_trajectory.Y(i) + offset.Y());
     true_beam_traj_Z_SCE.push_back(true_beam_trajectory.Z(i) + offset.Z());
+  }
+  true_beam_len = 0;
+  for (size_t i = 1; i < true_beam_trajectory.size(); ++i) {
+    true_beam_len += sqrt( pow( true_beam_traj_X.at(i)-true_beam_traj_X.at(i-1), 2)
+                       + pow( true_beam_traj_Y.at(i)-true_beam_traj_Y.at(i-1), 2)
+                       + pow( true_beam_traj_Z.at(i)-true_beam_traj_Z.at(i-1), 2));
   }
 
   //Look through the daughters
