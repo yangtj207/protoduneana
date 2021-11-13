@@ -418,6 +418,8 @@ private:
   int reco_beam_vertex_nHits;
   double reco_beam_vertex_michel_score_allTrack;
   int reco_beam_vertex_nHits_allTrack;
+  double reco_beam_vertex_michel_score_weight_by_charge;
+  double reco_beam_vertex_michel_score_weight_by_charge_allTrack;
 
   //position from SCE corrected calo
   double reco_beam_calo_startX, reco_beam_calo_startY, reco_beam_calo_startZ;
@@ -1424,6 +1426,8 @@ void pduneana::PDSPAnalyzer::beginJob()
   fTree->Branch("reco_beam_vertex_michel_score", &reco_beam_vertex_michel_score);
   fTree->Branch("reco_beam_vertex_nHits_allTrack", &reco_beam_vertex_nHits_allTrack);
   fTree->Branch("reco_beam_vertex_michel_score_allTrack", &reco_beam_vertex_michel_score_allTrack);
+  fTree->Branch("reco_beam_vertex_michel_score_weight_by_charge", &reco_beam_vertex_michel_score_weight_by_charge);
+  fTree->Branch("reco_beam_vertex_michel_score_weight_by_charge_allTrack", &reco_beam_vertex_michel_score_weight_by_charge_allTrack);
   fTree->Branch("reco_beam_trackID", &reco_beam_trackID);
   fTree->Branch("n_beam_slices", &n_beam_slices);
   fTree->Branch("n_beam_particles", &n_beam_particles);
@@ -2220,6 +2224,8 @@ void pduneana::PDSPAnalyzer::reset()
   reco_beam_vertex_michel_score = -999.;
   reco_beam_vertex_nHits_allTrack = -999;
   reco_beam_vertex_michel_score_allTrack = -999.;
+  reco_beam_vertex_michel_score_weight_by_charge = -999.;
+  reco_beam_vertex_michel_score_weight_by_charge_allTrack = -999.;
 
   reco_beam_resRange_SCE.clear();
   reco_beam_TrkPitch_SCE.clear();
@@ -2450,10 +2456,13 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
                                        0., -500., 500., 0., 500., 0.*/);
     reco_beam_vertex_nHits = vertex_michel_score.second;
     reco_beam_vertex_michel_score = vertex_michel_score.first;
-  }
-  else {
-    reco_beam_vertex_nHits = -999;
-    reco_beam_vertex_michel_score = -999.;
+    
+    std::pair<double, double> vertex_michel_score_weight_by_charge =
+        trackUtil.GetVertexMichelScore_weight_by_charge(*thisTrack, evt, fTrackerTag, fHitTag);
+    if (vertex_michel_score_weight_by_charge.second != 0)
+      reco_beam_vertex_michel_score_weight_by_charge = vertex_michel_score_weight_by_charge.first/vertex_michel_score_weight_by_charge.second;
+    else
+      reco_beam_vertex_michel_score_weight_by_charge = -999.;
   }
 
   if (fVerbose) std::cout << "Beam particle is track-like " << thisTrack->ID() << std::endl;
@@ -4488,6 +4497,13 @@ void pduneana::PDSPAnalyzer::BeamForcedTrackInfo(
         std::pair<double, int> vertex_michel_score = trackUtil.GetVertexMichelScore(*pandora2Track, evt, "pandora2Track", fHitTag);
         reco_beam_vertex_nHits_allTrack = vertex_michel_score.second;
         reco_beam_vertex_michel_score_allTrack = vertex_michel_score.first;
+        
+        std::pair<double, double> vertex_michel_score_weight_by_charge =
+            trackUtil.GetVertexMichelScore_weight_by_charge(*pandora2Track, evt, "pandora2Track", fHitTag);
+        if (vertex_michel_score_weight_by_charge.second != 0)
+          reco_beam_vertex_michel_score_weight_by_charge_allTrack = vertex_michel_score_weight_by_charge.first/vertex_michel_score_weight_by_charge.second;
+        else
+          reco_beam_vertex_michel_score_weight_by_charge_allTrack = -999.;
       }
       reco_beam_allTrack_ID = pandora2Track->ID();
       reco_beam_allTrack_beam_cuts = beam_cuts.IsBeamlike( *pandora2Track, evt, "1" );
