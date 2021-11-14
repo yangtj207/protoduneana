@@ -170,6 +170,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
   if (fChain == 0) return;
 
   fChain->GetEntry(0);
+  if (run>10000) run = 0;
   std::cout<<"Process Run "<<run<<std::endl;
   TFile *file = new TFile(Form("YZcalo_mich%s_r%d.root",mn.Data(), run), "recreate");
 

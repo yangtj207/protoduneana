@@ -29,7 +29,8 @@ using namespace std;
 float LAr_density=1.39;
 float alp=0.93;
 float bet=0.212;
-float dedx=2.08;
+//float dedx=2.08;
+float dedx=1.9;
 bool userecom=true;
 float recom_factor(float totEf){
   if (!userecom) return 1;
@@ -146,6 +147,7 @@ void protoDUNE_X_calib::Loop(TString mn)
 
   ////////////////////// Importing Y-Z plane fractional corrections /////////////
   fChain->GetEntry(0);
+  if (run>10000) run = 0;
   TFile my_file(Form("YZcalo_mich%s_r%d.root",mn.Data(), run));
   TH2F *YZ_negativeX_hist_2= (TH2F*)my_file.Get("correction_dqdx_ZvsY_negativeX_hist_2");
   TH2F *YZ_positiveX_hist_2= (TH2F*)my_file.Get("correction_dqdx_ZvsY_positiveX_hist_2");
@@ -332,7 +334,7 @@ void protoDUNE_X_calib::Loop(TString mn)
       dedx_X_hist_2->SetBinContent(i+1,local_median_dedx_2);
     }
   }
- 
+  if (run>10000) run = 0;
   float global_median_dqdx_2=TMath::Median(all_dqdx_value_2.size(),&all_dqdx_value_2[0]); 
   global_med_2=global_median_dqdx_2;//Filling the Tree variable
   ofstream outfile0,outfile1,outfile2;

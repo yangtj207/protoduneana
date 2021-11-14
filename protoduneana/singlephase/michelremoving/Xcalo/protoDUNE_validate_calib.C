@@ -31,6 +31,7 @@ float alp=0.93;
 float bet=0.212;
 float dedx=2.08;
 bool userecom=true;
+bool recalib=true;
 float recom_factor(float totEf){
   if (!userecom) return 1;
   float xsi=bet*dedx/(LAr_density*totEf);
@@ -100,9 +101,16 @@ void protoDUNE_validate_calib::Loop(TString mn)
 
   if (fChain == 0) return;
   fChain->GetEntry(0);
+  if (run>10000) run = 0;
 
   double ref_dQdx[3] = {65.75, 63.5, 59.29};
-  double calib_const[3] = {1.116e-3, 1.162e-3, 1.0405e-3};
+  double calib_const[3] = {1.162e-3, 1.116e-3, 1.0405e-3};
+  //double calib_const[3] = {1.116e-3, 1.162e-3, 1.0405e-3}; //wrong
+  if (run==0){//mc
+    calib_const[0] = 1.036e-3;
+    calib_const[1] = 1.034e-3;
+    calib_const[2] = 1.0205e-3;
+  }
   double median_dQdx[3];
   
   ifstream in;
@@ -117,7 +125,7 @@ void protoDUNE_validate_calib::Loop(TString mn)
     }
     in.close();
     in.clear();
-    cout<<"median_dQdx["<<i<<"]="<<median_dQdx[i]<<endl;
+    cout<<"median_dQdx["<<i<<"]="<<median_dQdx[i]<<" calorimetry constant = "<<calib_const[i]<<endl;
   }
   //int x_bin_size=5;
   //int y_bin_size = 5; // nbiny bins in y direction
@@ -202,8 +210,13 @@ void protoDUNE_validate_calib::Loop(TString mn)
                 float X_correction_factor=X_corr[k]->GetBinContent(x_bin);
                 //float recom_correction=recom_factor(tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
                 float normcorr = ref_dQdx[k]/median_dQdx[k];
-		float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_negativeX*X_correction_factor*normcorr;
-                float corrected_dedx=dEdx(corrected_dqdx/calib_const[k], tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
+                if (run>10000) normcorr = 1;
+		float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_negativeX*X_correction_factor*normcorr/calib_const[k];
+                float corrected_dedx=dEdx(corrected_dqdx, tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
+                if (!recalib){
+                  corrected_dqdx = trkdqdx[i][k][j];
+                  corrected_dedx = trkdedx[i][k][j];
+                }
 		dqdx_value[k][x_bin-1].push_back(corrected_dqdx);
 		dedx_value[k][x_bin-1].push_back(corrected_dedx);
                 hdqdx[k]->Fill(corrected_dqdx);
@@ -218,8 +231,13 @@ void protoDUNE_validate_calib::Loop(TString mn)
                 float X_correction_factor=X_corr[k]->GetBinContent(x_bin);
                 //float recom_correction=recom_factor(tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
                 float normcorr = ref_dQdx[k]/median_dQdx[k];
-		float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_positiveX*X_correction_factor*normcorr;
-                float corrected_dedx=dEdx(corrected_dqdx/calib_const[k], tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
+                if (run>10000) normcorr = 1;
+		float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_positiveX*X_correction_factor*normcorr/calib_const[k];
+                float corrected_dedx=dEdx(corrected_dqdx, tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
+                if (!recalib){
+                  corrected_dqdx = trkdqdx[i][k][j];
+                  corrected_dedx = trkdedx[i][k][j];
+                }
                 //if (k==2) cout<<"x = "<<trkhitx[i][k][j]<<" y = "<<trkhity[i][k][j]<<" z = "<<trkhitz[i][k][j]<<" dqdx = "<<trkdqdx[i][k][j]<<" yzcorr = "<<YZ_correction_factor_positiveX<<" xcorr = "<<X_correction_factor<<" normcorr = "<<normcorr<<" corrected_dqdx = "<<corrected_dqdx<<" corrected_dedx = "<<corrected_dedx<<" "<<YZ_positiveX_corr[k]->GetXaxis()->FindBin(trkhitz[i][k][j])<<" "<<YZ_positiveX_corr[k]->GetYaxis()->FindBin(trkhity[i][k][j])<<" "<<YZ_positiveX_corr[k]->GetBinContent(YZ_positiveX_corr[k]->GetXaxis()->FindBin(trkhitz[i][k][j]),YZ_positiveX_corr[k]->GetYaxis()->FindBin(trkhity[i][k][j]))<<" "<<x_bin<<" "<<X_correction_factor<<endl;
                 //std::cout<<TrkID[i]<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<" "<<YZ_correction_factor_positiveX_2<<" "<<trkdqdx[i][k][j]<<" "<<corrected_dqdx_2<<std::endl;
 		dqdx_value[k][x_bin-1].push_back(corrected_dqdx);
@@ -261,14 +279,24 @@ int main(int argc, char *argv[]) {
   
   string infile = argv[1];
   string michelnumber = argv[2];
+  string a3 = argv[3];
+  if (a3 == "0"){
+    recalib = false;
+  }
+  else{
+    recalib = true;
+  }
+
+  cout<<"recalib="<<recalib<<endl;
 
   if (!(michelnumber == "0"||michelnumber == "1"||michelnumber == "2"||michelnumber == "3")){
     cout << "Error: Michel tree number must be 0,1, or 2" << endl;
     return 0;
     }
 
- if (michelnumber=="0") michelnumber = "";
+  if (michelnumber=="0") michelnumber = "";
   cout << Form("michelremoving%s/Event", michelnumber.c_str()) << endl;
+
 
   TChain* shtree = new TChain("Event");
 
