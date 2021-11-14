@@ -111,6 +111,9 @@ class protoDUNE_dEdx_calib {
   void LoopLite(std::vector<double> & norm_factors,
                 std::vector<double> & calib_factors,
                 TFile & outfile);
+  void LoopMIP(std::vector<double> & norm_factors,
+               std::vector<std::vector<double>> & calib_factors,
+               TFile & outfile);
   virtual Bool_t   Notify();
   virtual void     Show(Long64_t entry = -1);
 
