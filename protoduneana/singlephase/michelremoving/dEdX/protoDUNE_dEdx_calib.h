@@ -109,7 +109,7 @@ class protoDUNE_dEdx_calib {
   virtual void     Init(TTree *tree);
   virtual void     Loop(int hitplane, double norm_factor, double calib_factor);
   void LoopLite(std::vector<double> & norm_factors,
-                std::vector<double> & calib_factors,
+                std::vector<std::vector<double>> & calib_factors,
                 TFile & outfile);
   void LoopMIP(std::vector<double> & norm_factors,
                std::vector<std::vector<double>> & calib_factors,
