@@ -145,7 +145,7 @@ void protoDUNE_validate_calib::Loop(TString mn)
   for (unsigned int i = 0; i<3; ++i){
     dqdx_X_hist[i] = new TH1F(Form("dqdx_X_hist_%d",i), Form("plane_%d;X Coordinate(cm);dQ/dx(ADC/cm)",i),144,-360,360);
     dedx_X_hist[i] = new TH1F(Form("dedx_X_hist_%d",i), Form("plane_%d;X Coordinate(cm);dE/dx(MeV/cm)",i),144,-360,360);
-    hdqdx[i] = new TH1F(Form("hdqdx_%d",i), Form("plane_%d;dQ/dx (ke/cm);Entries",i), 100,0,200);
+    hdqdx[i] = new TH1F(Form("hdqdx_%d",i), Form("plane_%d;dQ/dx (e/cm);Entries",i), 100,0,2e5);
     hdedx[i] = new TH1F(Form("hdedx_%d",i), Form("plane_%d;dE/dx (MeV/cm);Entries",i), 100,0,10);
 
     dqdx_value[i].resize(144);
@@ -177,79 +177,102 @@ void protoDUNE_validate_calib::Loop(TString mn)
     
     int x_bin;
     for(int i=0; i<cross_trks; ++i){
-      bool testneg=0;
-      bool testpos=0;
-      if(trkstartx[i]*trkendx[i]>0) continue;
-      if(trkstartx[i]<-350 or trkendx[i]<-350) testneg=1;      
-      if(trkstartx[i]>350 or trkendx[i]>350) testpos=1;      
-      if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;
+      
+      //We want to select cathode crossing tracks
+      if(trkstartx[i]*trkendx[i]>=0) continue;
+
+      bool fid_xing = (TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645);
+
+      bool angle_2_xing = (abs(180/TMath::Pi()*trackthetaxz[i])<60 || 
+                           abs(180/TMath::Pi()*trackthetaxz[i])>120) &&
+        //(abs(180/TMath::Pi()*trackthetaxz[i])>10) &&
+        (abs(180/TMath::Pi()*trackthetayz[i])<80 || 
+         abs(180/TMath::Pi()*trackthetayz[i])>100);
+
+      bool angle_1_neg_xing = abs(180/TMath::Pi()*trackthetaxz[i])>140;
+      bool angle_1_pos_xing = abs(180/TMath::Pi()*trackthetaxz[i])<40;
+
+      bool angle_0_neg_xing = angle_1_pos_xing;
+      bool angle_0_pos_xing = angle_1_neg_xing;
+
+      bool testneg_xing=0;
+      bool testpos_xing=0;
+      if(trkstartx[i]<-350 or trkendx[i]<-350) testneg_xing=1;      
+      if(trkstartx[i]>350 or trkendx[i]>350) testpos_xing=1;      
+      //if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;
       
       for (int k = 0; k<3; ++k){
+
         bool negok = true;
         bool posok = true;
         if (k == 2){
-          if((abs(180/3.14*trackthetaxz[i])>60 && abs(180/3.14*trackthetaxz[i])<120)||abs(180/3.14*trackthetaxz[i])<10||(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)) continue;
+          if (!angle_2_xing){
+            negok = false;
+            posok = false;
+          }
         }
         if (k == 1){
-          if (testneg && !(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) negok = false;
-          if (testpos && !(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) posok = false;
+          if (testneg_xing && !angle_1_neg_xing) negok = false;
+          if (testpos_xing && !angle_1_pos_xing) posok = false;
         }
         if (k == 0){
-          if (testneg && !(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) negok = false;
-          if (testpos && !(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) posok = false;
+          if (testneg_xing && !angle_0_neg_xing) negok = false;
+          if (testpos_xing && !angle_0_pos_xing) posok = false;
         }
         
-	for(int j=1; j<TMath::Min(ntrkhits[i][k]-1,3000); ++j){
-	  if((trkhity[i][k][j]<600)&&(trkhity[i][k][j]>0)){
-	    if((trkhitz[i][k][j]<695)&&(trkhitz[i][k][j]>0)){
-	      if(trkhitx[i][k][j]<0 && trkhitx[i][k][j]>-360 && testneg && negok){//negative drift
-		if(trkhitx[i][k][j]<0 && trkhitx[i][k][j+1]>0) continue;
-		if(trkhitx[i][k][j]<0 && trkhitx[i][k][j-1]>0) continue;
-		x_bin=X_corr[k]->FindBin(trkhitx[i][k][j]);
-		float YZ_correction_factor_negativeX=YZ_negativeX_corr[k]->GetBinContent(YZ_negativeX_corr[k]->FindBin(trkhitz[i][k][j],trkhity[i][k][j]));
-                float X_correction_factor=X_corr[k]->GetBinContent(x_bin);
-                //float recom_correction=recom_factor(tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
-                float normcorr = ref_dQdx[k]/median_dQdx[k];
-                if (run>10000) normcorr = 1;
-		float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_negativeX*X_correction_factor*normcorr/calib_const[k];
-                float corrected_dedx=dEdx(corrected_dqdx, tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
-                if (!recalib){
-                  corrected_dqdx = trkdqdx[i][k][j];
-                  corrected_dedx = trkdedx[i][k][j];
-                }
-		dqdx_value[k][x_bin-1].push_back(corrected_dqdx);
-		dedx_value[k][x_bin-1].push_back(corrected_dedx);
-                hdqdx[k]->Fill(corrected_dqdx);
-                hdedx[k]->Fill(corrected_dedx);
-                //if (k==0)  cout<<event<<" neg "<<x_bin<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<endl;
-	      }//X containment
-	      if(trkhitx[i][k][j]>0 && trkhitx[i][k][j]<360 && testpos && posok){//positive drift
-		if(trkhitx[i][k][j]>0 && trkhitx[i][k][j+1]<0) continue;
-		if(trkhitx[i][k][j]>0 && trkhitx[i][k][j-1]<0) continue;
-		x_bin=X_corr[k]->FindBin(trkhitx[i][k][j]);
-		float YZ_correction_factor_positiveX=YZ_positiveX_corr[k]->GetBinContent(YZ_positiveX_corr[k]->FindBin(trkhitz[i][k][j],trkhity[i][k][j]));
-                float X_correction_factor=X_corr[k]->GetBinContent(x_bin);
-                //float recom_correction=recom_factor(tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
-                float normcorr = ref_dQdx[k]/median_dQdx[k];
-                if (run>10000) normcorr = 1;
-		float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_positiveX*X_correction_factor*normcorr/calib_const[k];
-                float corrected_dedx=dEdx(corrected_dqdx, tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
-                if (!recalib){
-                  corrected_dqdx = trkdqdx[i][k][j];
-                  corrected_dedx = trkdedx[i][k][j];
-                }
+        if (fid_xing && (negok || posok)){
+          for(int j=1; j<TMath::Min(ntrkhits[i][k]-1,3000); ++j){
+            if((trkhity[i][k][j]<600)&&(trkhity[i][k][j]>0)){
+              if((trkhitz[i][k][j]<695)&&(trkhitz[i][k][j]>0)){
+                if(trkhitx[i][k][j]<0 && trkhitx[i][k][j]>-360 && testneg_xing && negok){//negative drift
+                  if(trkhitx[i][k][j]<0 && trkhitx[i][k][j+1]>0) continue;
+                  if(trkhitx[i][k][j]<0 && trkhitx[i][k][j-1]>0) continue;
+                  x_bin=X_corr[k]->FindBin(trkhitx[i][k][j]);
+                  float YZ_correction_factor_negativeX=YZ_negativeX_corr[k]->GetBinContent(YZ_negativeX_corr[k]->FindBin(trkhitz[i][k][j],trkhity[i][k][j]));
+                  float X_correction_factor=X_corr[k]->GetBinContent(x_bin);
+                  //float recom_correction=recom_factor(tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
+                  float normcorr = ref_dQdx[k]/median_dQdx[k];
+                  if (run>10000) normcorr = 1;
+                  float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_negativeX*X_correction_factor*normcorr/calib_const[k];
+                  float corrected_dedx=dEdx(corrected_dqdx, tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
+                  if (!recalib){
+                    corrected_dqdx = trkdqdx[i][k][j];
+                    corrected_dedx = trkdedx[i][k][j];
+                  }
+                  dqdx_value[k][x_bin-1].push_back(corrected_dqdx);
+                  dedx_value[k][x_bin-1].push_back(corrected_dedx);
+                  hdqdx[k]->Fill(corrected_dqdx);
+                  hdedx[k]->Fill(corrected_dedx);
+                  //if (k==0)  cout<<event<<" neg "<<x_bin<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<endl;
+                }//X containment
+                if(trkhitx[i][k][j]>0 && trkhitx[i][k][j]<360 && testpos_xing && posok){//positive drift
+                  if(trkhitx[i][k][j]>0 && trkhitx[i][k][j+1]<0) continue;
+                  if(trkhitx[i][k][j]>0 && trkhitx[i][k][j-1]<0) continue;
+                  x_bin=X_corr[k]->FindBin(trkhitx[i][k][j]);
+                  float YZ_correction_factor_positiveX=YZ_positiveX_corr[k]->GetBinContent(YZ_positiveX_corr[k]->FindBin(trkhitz[i][k][j],trkhity[i][k][j]));
+                  float X_correction_factor=X_corr[k]->GetBinContent(x_bin);
+                  //float recom_correction=recom_factor(tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
+                  float normcorr = ref_dQdx[k]/median_dQdx[k];
+                  if (run>10000) normcorr = 1;
+                  float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_positiveX*X_correction_factor*normcorr/calib_const[k];
+                  float corrected_dedx=dEdx(corrected_dqdx, tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
+                  if (!recalib){
+                    corrected_dqdx = trkdqdx[i][k][j];
+                    corrected_dedx = trkdedx[i][k][j];
+                  }
                 //if (k==2) cout<<"x = "<<trkhitx[i][k][j]<<" y = "<<trkhity[i][k][j]<<" z = "<<trkhitz[i][k][j]<<" dqdx = "<<trkdqdx[i][k][j]<<" yzcorr = "<<YZ_correction_factor_positiveX<<" xcorr = "<<X_correction_factor<<" normcorr = "<<normcorr<<" corrected_dqdx = "<<corrected_dqdx<<" corrected_dedx = "<<corrected_dedx<<" "<<YZ_positiveX_corr[k]->GetXaxis()->FindBin(trkhitz[i][k][j])<<" "<<YZ_positiveX_corr[k]->GetYaxis()->FindBin(trkhity[i][k][j])<<" "<<YZ_positiveX_corr[k]->GetBinContent(YZ_positiveX_corr[k]->GetXaxis()->FindBin(trkhitz[i][k][j]),YZ_positiveX_corr[k]->GetYaxis()->FindBin(trkhity[i][k][j]))<<" "<<x_bin<<" "<<X_correction_factor<<endl;
                 //std::cout<<TrkID[i]<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<" "<<YZ_correction_factor_positiveX_2<<" "<<trkdqdx[i][k][j]<<" "<<corrected_dqdx_2<<std::endl;
-		dqdx_value[k][x_bin-1].push_back(corrected_dqdx);
-		dedx_value[k][x_bin-1].push_back(corrected_dedx);
-                hdqdx[k]->Fill(corrected_dqdx);
-                hdedx[k]->Fill(corrected_dedx);
-                //if (k==0)  cout<<event<<" pos "<<x_bin<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<endl;
-	      }//X containment
-	    } // Z containment
-	  } // Y containment
-	} // loop over hits of the track in the given plane
-      }//angular cut
+                  dqdx_value[k][x_bin-1].push_back(corrected_dqdx);
+                  dedx_value[k][x_bin-1].push_back(corrected_dedx);
+                  hdqdx[k]->Fill(corrected_dqdx);
+                  hdedx[k]->Fill(corrected_dedx);
+                  //if (k==0)  cout<<event<<" pos "<<x_bin<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<endl;
+                }//X containment
+              } // Z containment
+            } // Y containment
+          } // loop over hits of the track in the given plane
+        }// fiducial cut
+      }// loop over 3 planes
     } // loop over crossing tracks in the event
   } // loop over jentries
 
