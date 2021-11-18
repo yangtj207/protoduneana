@@ -577,7 +577,8 @@ private:
 
   //Alternative Reco values
   //EDIT: track_score --> trkScore, etc.
-  std::vector< int > reco_daughter_PFP_ID;
+  std::vector<int> reco_daughter_PFP_ID;
+  std::vector<int> reco_daughter_pandora_type;
   std::vector<int> reco_daughter_PFP_nHits,
                    reco_daughter_PFP_nHits_collection;
   std::vector< double > reco_daughter_PFP_trackScore;
@@ -1614,8 +1615,7 @@ void pduneana::PDSPAnalyzer::beginJob()
   fTree->Branch("reco_daughter_PFP_trackScore_collection", &reco_daughter_PFP_trackScore_collection);
   fTree->Branch("reco_daughter_PFP_emScore_collection", &reco_daughter_PFP_emScore_collection);
   fTree->Branch("reco_daughter_PFP_michelScore_collection", &reco_daughter_PFP_michelScore_collection);
-
-
+  fTree->Branch("reco_daughter_pandora_type", &reco_daughter_pandora_type);
 
 
   fTree->Branch("true_beam_PDG", &true_beam_PDG);
@@ -2161,6 +2161,7 @@ void pduneana::PDSPAnalyzer::reset()
   true_beam_daughter_ID.clear();
 
   reco_daughter_PFP_ID.clear();
+  reco_daughter_pandora_type.clear();
   reco_daughter_PFP_nHits.clear();
   reco_daughter_PFP_nHits_collection.clear();
   reco_daughter_PFP_trackScore.clear();
@@ -3789,6 +3790,23 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
     if( !evt.isRealData() ){
       DaughterMatchInfo(evt, daughterPFP, clockData);
     }
+
+
+    //Getting the default pandora reconstruction type (shower/track)
+    const recob::Track * pandoraTrack = pfpUtil.GetPFParticleTrack(
+        *daughterPFP, evt, fPFParticleTag, "pandoraTrack");
+    const recob::Shower * pandoraShower = pfpUtil.GetPFParticleShower(
+        *daughterPFP, evt, fPFParticleTag, "pandoraShower");
+    if (pandoraTrack != 0x0) {
+      reco_daughter_pandora_type.push_back(13);
+    }
+    else if (pandoraShower != 0x0) {
+      reco_daughter_pandora_type.push_back(11);
+    }
+    else {
+      reco_daughter_pandora_type.push_back(-1);
+    }
+
 
     //If it exists (might not need this check anymore), get the forced tracking from pandora
     try{
