@@ -35,6 +35,8 @@ int main(int argc, char *argv[]) {
     
     can[i] = new TCanvas(Form("can_%d",i), Form("can_%d",i));
     gr[i] = (TGraph*)f.Get(Form("chi2_plane_%d",i));
+    gr[i]->SetMarkerStyle(20);
+    gr[i]->SetMarkerSize(0.5);
     gr[i]->SetTitle(Form("Plane %d",i));
     gr[i]->GetXaxis()->SetTitle("Calibration constant");
     gr[i]->GetYaxis()->SetTitle("#chi^{2}");
