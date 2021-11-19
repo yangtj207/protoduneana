@@ -846,7 +846,7 @@ void protoDUNE_dEdx_calib::Loop(int hitplane, double norm_factor, double calib_f
 void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
                                     vector<vector<double>> & calib_factors,
                                     TFile & outfile) {
-  std::cout << "******************************* Calibration.C is running *******************************" << std::endl;
+  std::cout << "******************************* LoopLite is running *******************************" << std::endl;
 
   outfile.cd();
 
@@ -906,6 +906,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
   }
  
   ////////////////////////////////////////////////////////////////////////////////// 
+
  
   if (fChain == 0) return;
   Long64_t nentries = fChain->GetEntries();
@@ -925,9 +926,10 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
       if(adjacent_hits[i]!=0 || dist_min[i]>5) continue;
       for (size_t ihitplane = 0; ihitplane < 3; ++ihitplane) {
         vector<float> res, dq, first5dq, last5dq;
-        if(ihitplane==2 && ((abs(trackthetaxz[i])>1.13 &&
-           abs(trackthetaxz[i])<2.0)||(abs(trackthetayz[i])>1.22 &&
-           abs(trackthetayz[i])<1.92))) continue;
+        if(ihitplane==2 && ((abs(180/TMath::Pi()*trackthetaxz[i])>60 &&
+                             abs(abs(180/TMath::Pi()*trackthetaxz[i])<120))||
+                            (abs(180/TMath::Pi()*trackthetayz[i])>80 &&
+                             abs(180/TMath::Pi()*trackthetayz[i])<100))) continue;
  
         if(ihitplane == 2 && (lastwire[i]<=5 || lastwire[i]>=475)) continue;  //for plane 2  
 
@@ -980,14 +982,10 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
 
             if(trkhitx[i][ihitplane][j]>-360 && trkhitx[i][ihitplane][j]<0){ //negative X direction
               bool is_good = false;
-              if((ihitplane == 1 && abs(180/3.14*trackthetaxz[i])>130 &&
-                 !(abs(180/3.14*trackthetayz[i])>80 &&
-                   abs(180/3.14*trackthetayz[i])<100))) {
+              if(ihitplane == 1 && abs(180/TMath::Pi()*trackthetaxz[i])>140) {
                 is_good = true;
               } //plane 1
-              else if((ihitplane == 0 && abs(180/3.14*trackthetaxz[i])<40 &&
-                      !(abs(180/3.14*trackthetayz[i])>80 &&
-                      abs(180/3.14*trackthetayz[i])<100))){ //plane 0
+              else if(ihitplane == 0 && abs(180/TMath::Pi()*trackthetaxz[i])<40){ //plane 0
                 //std::cout << "skipping 1" << std::endl;
                 is_good = true;
               }
@@ -999,15 +997,11 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
             }
             else if(trkhitx[i][ihitplane][j]>0 && trkhitx[i][ihitplane][j]<360){ //positive X direction
               bool is_good = false;
-              if((ihitplane == 1 && abs(180/3.14*trackthetaxz[i])<40 &&
-                 !(abs(180/3.14*trackthetayz[i])>80 &&
-                   abs(180/3.14*trackthetayz[i])<100))){ //plane 1
+              if(ihitplane == 1 && abs(180/TMath::Pi()*trackthetaxz[i])<40){ //plane 1
                 is_good = true;
                 //continue;
               }
-              else if((ihitplane == 0 && abs(180/3.14*trackthetaxz[i])>130 &&
-                      !(abs(180/3.14*trackthetayz[i])>80 &&
-                        abs(180/3.14*trackthetayz[i])<100))){ //plane 0
+              else if(ihitplane == 0 && abs(180/TMath::Pi()*trackthetaxz[i])>140){ //plane 0
                 is_good = true;
                 //std:!:cout << "skipping 3" << std::endl;
                 //continue;
@@ -1058,6 +1052,9 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
   TSpline3 *sp = new TSpline3("Cubic Spline", &spline_Range[0], &spline_KE[0],13,"b2e2",0,0);
 
   outfile.cd();
+
+  TVectorD NDF(3);
+
   for (int i = 0; i < 3; ++i) {
     std::vector<double> chi2_vals;
     for (size_t j = 0; j < calib_factors[i].size(); ++j) {
@@ -1128,10 +1125,12 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
       //std::cout << "$$$$$$$ Chi squared : " << sum << " $$$$$$$$$$$$" << std::endl;
       //outfile<<calib_factor<<"\t"<<sum<<std::endl;
       //std::cout << "$$$$$$$ Chi squared/NDF : " << double(sum)/dof << " $$$$$$$$$" << std::endl;
+      if (!NDF[i] && dof) NDF[i] = dof;
     }
     TGraph chi2_graph(calib_factors[i].size(), &calib_factors[i][0], &chi2_vals[0]);
     chi2_graph.Write(Form("chi2_plane_%d", i));
   }
+  NDF.Write("NDF");
   outfile.Write();
 }
 
@@ -1261,14 +1260,10 @@ void protoDUNE_dEdx_calib::LoopMIP(vector<double> & norm_factors,
 
             if(trkhitx[i][ihitplane][j]>-360 && trkhitx[i][ihitplane][j]<0){ //negative X direction
               bool is_good = false;
-              if((ihitplane == 1 && abs(180/3.14*trackthetaxz[i])>130 &&
-                 !(abs(180/3.14*trackthetayz[i])>80 &&
-                   abs(180/3.14*trackthetayz[i])<100))) {
+              if(ihitplane == 1 && abs(180/TMath::Pi()*trackthetaxz[i])>140) {
                 is_good = true;
               } //plane 1
-              else if((ihitplane == 0 && abs(180/3.14*trackthetaxz[i])<40 &&
-                      !(abs(180/3.14*trackthetayz[i])>80 &&
-                      abs(180/3.14*trackthetayz[i])<100))){ //plane 0
+              else if(ihitplane == 0 && abs(180/TMath::Pi()*trackthetaxz[i])<40){ //plane 0
                 //std::cout << "skipping 1" << std::endl;
                 is_good = true;
               }
@@ -1280,15 +1275,11 @@ void protoDUNE_dEdx_calib::LoopMIP(vector<double> & norm_factors,
             }
             else if(trkhitx[i][ihitplane][j]>0 && trkhitx[i][ihitplane][j]<360){ //positive X direction
               bool is_good = false;
-              if((ihitplane == 1 && abs(180/3.14*trackthetaxz[i])<40 &&
-                 !(abs(180/3.14*trackthetayz[i])>80 &&
-                   abs(180/3.14*trackthetayz[i])<100))){ //plane 1
+              if(ihitplane == 1 && abs(180/TMath::Pi()*trackthetaxz[i])<40){ //plane 1
                 is_good = true;
                 //continue;
               }
-              else if((ihitplane == 0 && abs(180/3.14*trackthetaxz[i])>130 &&
-                      !(abs(180/3.14*trackthetayz[i])>80 &&
-                        abs(180/3.14*trackthetayz[i])<100))){ //plane 0
+              else if(ihitplane == 0 && abs(180/TMath::Pi()*trackthetaxz[i])>140){ //plane 0
                 is_good = true;
                 //std:!:cout << "skipping 3" << std::endl;
                 //continue;
@@ -1549,13 +1540,13 @@ int main(int argc, char ** argv) {
     calibs[2].push_back(calib_factor);
   }
 
-//  t->LoopLite(norm_factors,
+  t->LoopLite(norm_factors,
+              calibs,
+              output_file);
+
+//  t->LoopMIP(norm_factors,
 //             calibs,
 //             output_file);
-
-  t->LoopMIP(norm_factors,
-             calibs,
-             output_file);
   delete t;
   std::cout << "************************* Start of hitplane 1 ***************************" << std::endl;
   output_file.Close();

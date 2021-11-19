@@ -186,7 +186,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
       if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;
       filtered_tracks++;
       ///filling histograms for plane_2
-      if(!((abs(180/3.14*trackthetaxz[i])>60 && abs(180/3.14*trackthetaxz[i])<120)||abs(180/3.14*trackthetaxz[i])<10||(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))){
+      if(!((abs(180/TMath::Pi()*trackthetaxz[i])>60 && abs(180/TMath::Pi()*trackthetaxz[i])<120)||(abs(180/TMath::Pi()*trackthetayz[i])>80 && abs(180/TMath::Pi()*trackthetayz[i])<100))){
 	for(int j=0; j<TMath::Min(ntrkhits[i][2],3000); ++j){
 	  if((trkhitx[i][2][j]<0)&&(trkhitx[i][2][j]>-360)){
 	    if((trkhity[i][2][j]<ymax)&&(trkhity[i][2][j]>0)){
@@ -201,7 +201,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 	} // loop over hits of the track in the given plane
       } // theta xz and yz angle cut
       
-      if(!((abs(180/3.14*trackthetaxz[i])>60 && abs(180/3.14*trackthetaxz[i])<120)||abs(180/3.14*trackthetaxz[i])<10||(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))){
+      if(!((abs(180/TMath::Pi()*trackthetaxz[i])>60 && abs(180/TMath::Pi()*trackthetaxz[i])<120)||(abs(180/TMath::Pi()*trackthetayz[i])>80 && abs(180/TMath::Pi()*trackthetayz[i])<100))){
 	for(int j=0; j<TMath::Min(ntrkhits[i][2],3000); ++j){
 	  if((trkhitx[i][2][j]>0)&&(trkhitx[i][2][j]<360)){
 	    if((trkhity[i][2][j]<ymax)&&(trkhity[i][2][j]>0)){
@@ -217,7 +217,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
       } // theta xz and yz angle cut
 
       ////for plane_1
-      if(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){   
+      if(abs(180/TMath::Pi()*trackthetaxz[i])>140){   
 	for(int j=0; j<TMath::Min(ntrkhits[i][1],3000); ++j){
 	  if((trkhitx[i][1][j]<0)&&(trkhitx[i][1][j]>-360)){
 	    if((trkhity[i][1][j]<ymax)&&(trkhity[i][1][j]>0)){
@@ -231,7 +231,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 	  } // X containiment
 	} // loop over hits of the track in the given plane
       } // theta xz and yz angle cut
-      if(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){ 
+      if(abs(180/TMath::Pi()*trackthetaxz[i])<40){ 
 	for(int j=0; j<TMath::Min(ntrkhits[i][1],3000); ++j){
 	  if((trkhitx[i][1][j]>0)&&(trkhitx[i][1][j]<360)){
 	    if((trkhity[i][1][j]<ymax)&&(trkhity[i][1][j]>0)){
@@ -247,7 +247,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
       } // theta xz and yz angle cut
     
       ///filling histograms for plane_0
-      if(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){
+      if(abs(180/TMath::Pi()*trackthetaxz[i])<40){
 	  for(int j=0; j<TMath::Min(ntrkhits[i][0],3000); ++j){
 	    if((trkhitx[i][0][j]<0)&&(trkhitx[i][0][j]>-360)){
 	      if((trkhity[i][0][j]<ymax)&&(trkhity[i][0][j]>0)){
@@ -261,7 +261,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 	    } // X containiment
 	  } // loop over hits of the track in the given plane
 	} // theta xz and yz angle cut
-      if(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){
+      if(abs(180/TMath::Pi()*trackthetaxz[i])>140){
 	  for(int j=0; j<TMath::Min(ntrkhits[i][0],3000); ++j){
 	    if((trkhitx[i][0][j]>0)&&(trkhitx[i][0][j]<360)){
 	      if((trkhity[i][0][j]<ymax)&&(trkhity[i][0][j]>0)){
