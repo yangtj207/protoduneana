@@ -569,13 +569,16 @@ private:
   double beam_inst_dirX, beam_inst_dirY, beam_inst_dirZ;
   int beam_inst_nFibersP1, beam_inst_nFibersP2, beam_inst_nFibersP3;
   int beam_inst_nTracks, beam_inst_nMomenta;
+  int beam_inst_C0, beam_inst_C1;
+  double beam_inst_C0_pressure, beam_inst_C1_pressure;
   ////////////////////////////////////////////////////
 
   bool reco_reconstructable_beam_event;
 
   //Alternative Reco values
   //EDIT: track_score --> trkScore, etc.
-  std::vector< int > reco_daughter_PFP_ID;
+  std::vector<int> reco_daughter_PFP_ID;
+  std::vector<int> reco_daughter_pandora_type;
   std::vector<int> reco_daughter_PFP_nHits,
                    reco_daughter_PFP_nHits_collection;
   std::vector< double > reco_daughter_PFP_trackScore;
@@ -756,7 +759,7 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   fBeamModuleLabel(p.get<std::string>("BeamModuleLabel")),
   fBeamlineUtils(p.get< fhicl::ParameterSet >("BeamlineUtils")),
   fEmptyEventFinder(p.get< fhicl::ParameterSet >("EmptyEventFinder")),
-  fBeamPIDMomentum(p.get<double>("BeamPIDMomentum")),
+  fBeamPIDMomentum(p.get<double>("BeamPIDMomentum", 1.)),
   dEdX_template_name(p.get<std::string>("dEdX_template_name")),
   //dEdX_template_file( dEdX_template_name.c_str(), "OPEN" ),
   fVerbose(p.get<bool>("Verbose")),
@@ -1612,8 +1615,7 @@ void pduneana::PDSPAnalyzer::beginJob()
   fTree->Branch("reco_daughter_PFP_trackScore_collection", &reco_daughter_PFP_trackScore_collection);
   fTree->Branch("reco_daughter_PFP_emScore_collection", &reco_daughter_PFP_emScore_collection);
   fTree->Branch("reco_daughter_PFP_michelScore_collection", &reco_daughter_PFP_michelScore_collection);
-
-
+  fTree->Branch("reco_daughter_pandora_type", &reco_daughter_pandora_type);
 
 
   fTree->Branch("true_beam_PDG", &true_beam_PDG);
@@ -1763,6 +1765,10 @@ void pduneana::PDSPAnalyzer::beginJob()
   fTree->Branch("true_beam_processes", &true_beam_processes);
 
   fTree->Branch("beam_inst_P", &beam_inst_P);
+  fTree->Branch("beam_inst_C0", &beam_inst_C0);
+  fTree->Branch("beam_inst_C1", &beam_inst_C1);
+  fTree->Branch("beam_inst_C0_pressure", &beam_inst_C0_pressure);
+  fTree->Branch("beam_inst_C1_pressure", &beam_inst_C1_pressure);
   fTree->Branch("beam_inst_TOF", &beam_inst_TOF);
   fTree->Branch("beam_inst_TOF_Chan", &beam_inst_TOF_Chan);
   fTree->Branch("beam_inst_X", &beam_inst_X);
@@ -2047,6 +2053,10 @@ void pduneana::PDSPAnalyzer::reset()
 
 
   beam_inst_P = -999.;
+  beam_inst_C0 = -999;
+  beam_inst_C1 = -999;
+  beam_inst_C0_pressure = -999.;
+  beam_inst_C1_pressure = -999.;
   beam_inst_X = -999.;
   beam_inst_Y = -999.;
   beam_inst_Z = -999.;
@@ -2151,6 +2161,7 @@ void pduneana::PDSPAnalyzer::reset()
   true_beam_daughter_ID.clear();
 
   reco_daughter_PFP_ID.clear();
+  reco_daughter_pandora_type.clear();
   reco_daughter_PFP_nHits.clear();
   reco_daughter_PFP_nHits_collection.clear();
   reco_daughter_PFP_trackScore.clear();
@@ -3632,6 +3643,9 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
   const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0)); 
   beam_inst_trigger = beamEvent.GetTimingTrigger();
   if (evt.isRealData() && !fBeamlineUtils.IsGoodBeamlineTrigger(evt)) {
+    std::cout << "Matched? " << beamEvent.CheckIsMatched() << std::endl;
+    std::vector< double > momenta = beamEvent.GetRecoBeamMomenta();
+    std::cout << momenta.size() << std::endl;
     MF_LOG_WARNING("PDSPAnalyzer") << "Failed beam quality check" << std::endl;
     beam_inst_valid = false;
     return;
@@ -3663,6 +3677,11 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
     beam_inst_TOF_Chan.push_back(the_chans[iTOF]);
   }
 
+  beam_inst_C0 = beamEvent.GetCKov0Status();
+  beam_inst_C1 = beamEvent.GetCKov1Status();
+  beam_inst_C0_pressure = beamEvent.GetCKov0Pressure();
+  beam_inst_C1_pressure = beamEvent.GetCKov1Pressure();
+
   //position from the projected track into the TPC -- just using the first
   //index
   if( nTracks > 0 ){
@@ -3680,7 +3699,7 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
 
   //beamline PID 
   if (evt.isRealData()) {
-    std::vector< int > pdg_cands = fBeamlineUtils.GetPID( beamEvent, 1. );
+    std::vector< int > pdg_cands = fBeamlineUtils.GetPID( beamEvent, fBeamPIDMomentum );
     beam_inst_PDG_candidates.insert( beam_inst_PDG_candidates.end(), pdg_cands.begin(), pdg_cands.end() );
   }
 
@@ -3771,6 +3790,23 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
     if( !evt.isRealData() ){
       DaughterMatchInfo(evt, daughterPFP, clockData);
     }
+
+
+    //Getting the default pandora reconstruction type (shower/track)
+    const recob::Track * pandoraTrack = pfpUtil.GetPFParticleTrack(
+        *daughterPFP, evt, fPFParticleTag, "pandoraTrack");
+    const recob::Shower * pandoraShower = pfpUtil.GetPFParticleShower(
+        *daughterPFP, evt, fPFParticleTag, "pandoraShower");
+    if (pandoraTrack != 0x0) {
+      reco_daughter_pandora_type.push_back(13);
+    }
+    else if (pandoraShower != 0x0) {
+      reco_daughter_pandora_type.push_back(11);
+    }
+    else {
+      reco_daughter_pandora_type.push_back(-1);
+    }
+
 
     //If it exists (might not need this check anymore), get the forced tracking from pandora
     try{
