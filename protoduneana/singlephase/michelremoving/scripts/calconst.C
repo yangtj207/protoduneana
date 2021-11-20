@@ -8,6 +8,7 @@
 #include <TLine.h>
 #include <TStyle.h>
 #include <TAxis.h>
+#include <fstream> 
 
 using namespace std;
 
@@ -83,6 +84,10 @@ int main(int argc, char *argv[]) {
     cout<<"Calibration constant "<<C0<<"+-"<<C0-C1<<endl;
     can[i]->Print(Form("calconst_%d.png",i));
     can[i]->Print(Form("calconst_%d.pdf",i));
+    ofstream outfile;
+    outfile.open(Form("calconst_%d.txt",i));
+    outfile<<C0<<" "<<C0-C1<<endl;
+    outfile.close();
   }
 
 }
