@@ -12,9 +12,11 @@
 #include <TGraphErrors.h>
 #include <TLegend.h>
 #include <TMath.h>
+#include <TSpline.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TChain.h>
+#include <TVectorD.h>
 #include <fstream>
 #include <vector>
 #include <cmath>
@@ -93,9 +95,6 @@ float zoffsetbd(float xval,float yval,float zval){
   }
 }
 
-
-
-
 void protoDUNE_validate_calib::Loop(TString mn)
 {
 
@@ -162,32 +161,47 @@ void protoDUNE_validate_calib::Loop(TString mn)
   }    
 
   ////////////////////////dEdx info//////////////////////////
-  size_t nbins = 40;
-  int binsize = 5;
+  const size_t nbins = 50;
+  double binsize = 10;
+
+  TVectorD meanKE0(nbins);
+  TVectorD meanKE1(nbins);
+  TVectorD meanKE2(nbins);
+  
+  TVectorD meanPitch0(nbins);
+  TVectorD meanPitch1(nbins);
+  TVectorD meanPitch2(nbins);
+
+  double avgKE[3][nbins] = {0};
+  double avgPitch[3][nbins] = {0};
+  int nhits[3][nbins] = {0};
 
   std::vector<std::vector<TH1D*>> dedx(3);
-  TH2D *dedxrs[3];
+  TH2D *dedxke[3];
+  TH1D *dedxmip[3];
 
   for (size_t i = 0; i < 3; ++i) {
-    dedxrs[i] = new TH2D(Form("dedxrs_%zu", i),
-                         Form("Plane:%zu", i),
-                         200,0,200,50,0,5);
-
+    dedxke[i] = new TH2D(Form("dedxke_%zu", i),
+                         Form("Plane:%zu;KE (MeV);dE/dx (MeV/cm)", i),
+                         250,0,500,80,0,8);
+    dedxmip[i] = new TH1D(Form("dedxmip_%zu", i),
+                          Form("Plane:%zu;dE/dx (MeV/cm)", i),
+                          200, 0.0, 10);
+    dedxmip[i]->Sumw2();
     for (size_t j = 0; j < nbins; ++j) {
-      if(j == 0) {
+      if(j < 2) {
         dedx[i].push_back(new TH1D(Form("dedx_%zu_%zu", i, j), 
-                                   Form("Plane:%zu j:%zu", i, j),
+                                   Form("Plane:%zu, %d<KE<%d MeV;dE/dx (MeV/cm)", i, int(j*binsize), int((j+1)*binsize)),
                                    300, 0.0, 15));
       }
       else {
         dedx[i].push_back(new TH1D(Form("dedx_%zu_%zu", i, j),
-                                   Form("Plane:%zu j:%zu", i, j),
+                                   Form("Plane:%zu, %d<KE<%d MeV;dE/dx (MeV/cm)", i, int(j*binsize), int((j+1)*binsize)),
                                    200, 0.0, 10));
       }
+      dedx[i].back()->Sumw2();
     }
   }
-
-  
 
   ////////////////////// Importing Y-Z plane fractional corrections /////////////
   TFile my_file(Form("YZcalo_mich%s_r%d.root",mn.Data(), run));
@@ -201,7 +215,13 @@ void protoDUNE_validate_calib::Loop(TString mn)
     YZ_positiveX_corr[i] = (TH2F*)my_file.Get(Form("correction_dqdx_ZvsY_positiveX_hist_%d",i));
     X_corr[i] = (TH1F*)my_file2.Get(Form("dqdx_X_correction_hist_%d",i));
   }
-  
+
+  const int np = 13;
+  double spline_KE[np] = {10, 14, 20, 30, 40, 80, 100, 140, 200, 300, 400, 800, 1000};
+  double spline_Range[np] = {0.70437, 1.27937, 2.37894, 4.72636, 7.5788, 22.0917, 30.4441, 48.2235, 76.1461, 123.567, 170.845, 353.438, 441.476};
+
+  TSpline3 *sp = new TSpline3("Cubic Spline", spline_Range, spline_KE,13,"b2e2",0,0);
+
   Long64_t nentries = fChain->GetEntriesFast();
   Long64_t real_nentries = fChain->GetEntries();
   Long64_t nbytes = 0, nb = 0;
@@ -310,6 +330,7 @@ void protoDUNE_validate_calib::Loop(TString mn)
           for(int k=1; k<TMath::Min(ntrkhits[i][j]-1,3000); ++k){
             if((trkhity[i][j][k]<600)&&(trkhity[i][j][k]>0)){
               if((trkhitz[i][j][k]<695)&&(trkhitz[i][j][k]>0)){
+                double ke = sp->Eval(trkresrange[i][j][k]);
                 if(trkhitx[i][j][k]<0 && trkhitx[i][j][k]>-360 && negok){//negative drift
                   if(trkhitx[i][j][k]<0 && trkhitx[i][j][k+1]>0) continue;
                   if(trkhitx[i][j][k]<0 && trkhitx[i][j][k-1]>0) continue;
@@ -333,12 +354,16 @@ void protoDUNE_validate_calib::Loop(TString mn)
                     //if (k==0)  cout<<event<<" neg "<<x_bin<<" "<<trkhitx[i][j][k]<<" "<<trkhity[i][j][k]<<" "<<trkhitz[i][j][k]<<endl;
                   }
                   if (stpok && trkpitch[i][j][k]>=0.5 && trkpitch[i][j][k]<=0.8){
-                    size_t bin = size_t(trkresrange[i][j][k])/binsize;
+                    size_t bin = size_t(ke/binsize);
                     //std::cout << "Bin: " << bin << std::endl;
                     if(bin < nbins){
                       dedx[j][bin]->Fill(corrected_dedx);
+                      avgKE[j][bin] += ke;
+                      avgPitch[j][bin] += trkpitch[i][j][k];
+                      ++nhits[j][bin];
                     }
-                    dedxrs[j]->Fill(trkresrange[i][j][k], corrected_dedx);
+                    //dedxke[j]->Fill(trkresrange[i][j][k], corrected_dedx);
+                    dedxke[j]->Fill(ke, corrected_dedx);
                   }
                 }//X containment
                 if(trkhitx[i][j][k]>0 && trkhitx[i][j][k]<360 && posok){//positive drift
@@ -366,12 +391,16 @@ void protoDUNE_validate_calib::Loop(TString mn)
                     //if (k==0)  cout<<event<<" pos "<<x_bin<<" "<<trkhitx[i][j][k]<<" "<<trkhity[i][j][k]<<" "<<trkhitz[i][j][k]<<endl;
                   }
                   if (stpok && trkpitch[i][j][k]>=0.5 && trkpitch[i][j][k]<=0.8){
-                    size_t bin = size_t(trkresrange[i][j][k])/binsize;
+                    size_t bin = size_t(ke/binsize);
                     //std::cout << "Bin: " << bin << std::endl;
                     if(bin < nbins){
                       dedx[j][bin]->Fill(corrected_dedx);
+                      avgKE[j][bin] += ke;
+                      avgPitch[j][bin] += trkpitch[i][j][k];
+                      ++nhits[j][bin];
                     }
-                    dedxrs[j]->Fill(trkresrange[i][j][k], corrected_dedx);
+                    //dedxke[j]->Fill(trkresrange[i][j][k], corrected_dedx);
+                    dedxke[j]->Fill(ke, corrected_dedx);
                   }
                 }//X containment
               } // Z containment
@@ -392,7 +421,31 @@ void protoDUNE_validate_calib::Loop(TString mn)
       float local_median_dedx=TMath::Median(dedx_value[i][j].size(),&dedx_value[i][j][0]);
       dedx_X_hist[i]->SetBinContent(j+1,local_median_dedx);
     }
+    for(size_t j = 0; j<nbins; ++j){
+      avgKE[i][j]/=nhits[i][j];
+      avgPitch[i][j]/=nhits[i][j];
+      if (i==0){
+        meanKE0[j] = avgKE[i][j];
+        meanPitch0[j] = avgPitch[i][j];
+      }
+      if (i==1){
+        meanKE1[j] = avgKE[i][j];
+        meanPitch1[j] = avgPitch[i][j];
+      }
+      if (i==2){
+        meanKE2[j] = avgKE[i][j];
+        meanPitch2[j] = avgPitch[i][j];
+      }
+    }
   }
+  file->cd();
+  meanKE0.Write("meanKE0");
+  meanKE1.Write("meanKE1");
+  meanKE2.Write("meanKE2");
+  meanPitch0.Write("meanPitch0");
+  meanPitch1.Write("meanPitch1");
+  meanPitch2.Write("meanPitch2");
+  
   file->Write();
 }
 
