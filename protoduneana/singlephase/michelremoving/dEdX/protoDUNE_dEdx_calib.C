@@ -26,6 +26,7 @@
 #include <TText.h>
 #include <TFrame.h>
 #include <TMinuit.h>
+#include <TVectorD.h>
 #include <TFitResult.h>
 #include <TFitResultPtr.h>
 
@@ -843,9 +844,11 @@ void protoDUNE_dEdx_calib::Loop(int hitplane, double norm_factor, double calib_f
 }
 
 void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
-                                    std::vector<double> & calib_factors,
+                                    vector<vector<double>> & calib_factors,
                                     TFile & outfile) {
-  std::cout << "******************************* Calibration.C is running *******************************" << std::endl;
+  std::cout << "******************************* LoopLite is running *******************************" << std::endl;
+
+  outfile.cd();
 
   size_t nbin=40;
   int binsize=5;
@@ -855,17 +858,17 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
 
   for (size_t i = 0; i < 3; ++i) {
     dedx[i] = std::vector<std::vector<TH1D*>>();
-    for (size_t j = 0; j < calib_factors.size(); ++j) {
+    for (size_t j = 0; j < calib_factors[i].size(); ++j) {
       dedx[i].push_back(std::vector<TH1D*>());
       for (size_t k = 0; k < nbin; ++k) {
         if(k == 0) {
           dedx[i][j].push_back(new TH1D(Form("dedx_%zu_%zu_%zu", i, j, k), 
-                                        Form("dedx_%zu_%zu_%zu", i, j, k),
+                                        Form("Plane:%zu calib_factor:%.3f k:%zu", i, calib_factors[i][j], k),
                                         300, 0.0, 15));
         }
         else {
           dedx[i][j].push_back(new TH1D(Form("dedx_%zu_%zu_%zu", i, j, k),
-                                        Form("dedx_%zu_%zu_%zu", i, j, k),
+                                        Form("Plane:%zu calib_factor:%.3f k:%zu", i, calib_factors[i][j], k),
                                         200, 0.0, 10));
         }
       }
@@ -903,6 +906,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
   }
  
   ////////////////////////////////////////////////////////////////////////////////// 
+
  
   if (fChain == 0) return;
   Long64_t nentries = fChain->GetEntries();
@@ -910,8 +914,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
     fChain->GetEntry(jentry);
-    if(!(jentry%1000)) cout<<jentry<<"/"<<nentries<< endl;
-    vector<float> res, dq, first5dq, last5dq;
+    if(!(jentry%10000)) cout<<jentry<<"/"<<nentries<< endl;
     for(int i=0; i<cross_trks; ++i){
       if (trkstartx[i]*trkendx[i]>0) continue;
       //if(peakT_min[i]<100 || peakT_max[i]>5900 ||
@@ -920,14 +923,18 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
       //   (trkendz[i]>456 && trkendz[i]<472)||
       //   (trkstartz[i]>456 && trkstartz[i]<472)) continue;//filter for plane 2
       if(peakT_min[i]<100||peakT_max[i]>5900||trklen[i]<100||trklen[i]>700||(trkendz[i]>226 && trkendz[i]<236)||(trkstartz[i]>226 && trkstartz[i]<236)||(trkendz[i]>456 && trkendz[i]<472)||(trkstartz[i]>456 && trkstartz[i]<472)) continue;//filter for plane 2
+      if(adjacent_hits[i]!=0 || dist_min[i]>5) continue;
       for (size_t ihitplane = 0; ihitplane < 3; ++ihitplane) {
-        if(ihitplane==2 && ((abs(trackthetaxz[i])>1.13 &&
-           abs(trackthetaxz[i])<2.0)||(abs(trackthetayz[i])>1.22 &&
-           abs(trackthetayz[i])<1.92))) continue;
-
-        if(adjacent_hits[i]!=0 || dist_min[i]>5) continue;
-        if(lastwire[i]<=5 || lastwire[i]>=475) continue;  //for plane 2  
+        vector<float> res, dq, first5dq, last5dq;
+        if(ihitplane==2 && ((abs(180/TMath::Pi()*trackthetaxz[i])>60 &&
+                             abs(abs(180/TMath::Pi()*trackthetaxz[i])<120))||
+                            (abs(180/TMath::Pi()*trackthetayz[i])>80 &&
+                             abs(180/TMath::Pi()*trackthetayz[i])<100))) continue;
  
+        if(ihitplane == 2 && (lastwire[i]<=5 || lastwire[i]>=475)) continue;  //for plane 2  
+
+        //TY: not sure if induction plane wires boundary is [0,800]
+        if(ihitplane != 2 && (lastwire[i]<=5 || lastwire[i]>=795)) continue; 
 
         for(int j=0;j<ntrkhits[i][ihitplane];j++){
           res.push_back(trkresrange[i][ihitplane][j]);
@@ -958,19 +965,11 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
         }
        
         if(first5dq.size()<5){
-          res.erase(res.begin(),res.end());
-          dq.erase(dq.begin(),dq.end());
-          first5dq.clear();
-          last5dq.clear();
           continue;
         }
 
         float med1 = TMath::Median(first5dq.size(), &first5dq[0]);
         float med2= TMath::Median(last5dq.size(), &last5dq[0]);
-        res.erase(res.begin(),res.end());
-        first5dq.erase(first5dq.begin(),first5dq.end());
-        last5dq.erase(last5dq.begin(),last5dq.end());
-        dq.erase(dq.begin(),dq.end());
         if(!((med1/med2)>1.4)) continue;
         if(!test) continue;
 
@@ -983,14 +982,10 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
 
             if(trkhitx[i][ihitplane][j]>-360 && trkhitx[i][ihitplane][j]<0){ //negative X direction
               bool is_good = false;
-              if((ihitplane == 1 && abs(180/3.14*trackthetaxz[i])>130 &&
-                 !(abs(180/3.14*trackthetayz[i])>80 &&
-                   abs(180/3.14*trackthetayz[i])<100))) {
+              if(ihitplane == 1 && abs(180/TMath::Pi()*trackthetaxz[i])>140) {
                 is_good = true;
               } //plane 1
-              else if((ihitplane == 0 && abs(180/3.14*trackthetaxz[i])<40 &&
-                      !(abs(180/3.14*trackthetayz[i])>80 &&
-                      abs(180/3.14*trackthetayz[i])<100))){ //plane 0
+              else if(ihitplane == 0 && abs(180/TMath::Pi()*trackthetaxz[i])<40){ //plane 0
                 //std::cout << "skipping 1" << std::endl;
                 is_good = true;
               }
@@ -1002,15 +997,11 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
             }
             else if(trkhitx[i][ihitplane][j]>0 && trkhitx[i][ihitplane][j]<360){ //positive X direction
               bool is_good = false;
-              if((ihitplane == 1 && abs(180/3.14*trackthetaxz[i])<40 &&
-                 !(abs(180/3.14*trackthetayz[i])>80 &&
-                   abs(180/3.14*trackthetayz[i])<100))){ //plane 1
+              if(ihitplane == 1 && abs(180/TMath::Pi()*trackthetaxz[i])<40){ //plane 1
                 is_good = true;
                 //continue;
               }
-              else if((ihitplane == 0 && abs(180/3.14*trackthetaxz[i])>130 &&
-                      !(abs(180/3.14*trackthetayz[i])>80 &&
-                        abs(180/3.14*trackthetayz[i])<100))){ //plane 0
+              else if(ihitplane == 0 && abs(180/TMath::Pi()*trackthetaxz[i])>140){ //plane 0
                 is_good = true;
                 //std:!:cout << "skipping 3" << std::endl;
                 //continue;
@@ -1034,8 +1025,8 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
                                                 trkhity[i][ihitplane][j]));
 
             float corrected_dq_dx = trkdqdx[i][ihitplane][j]*Cx*norm_factors[ihitplane]*Cyz;
-            for (size_t i_cal = 0; i_cal < calib_factors.size(); ++i_cal) {
-              float scaled_corrected_dq_dx = corrected_dq_dx/calib_factors[i_cal]; //// replace with vector index
+            for (size_t i_cal = 0; i_cal < calib_factors[ihitplane].size(); ++i_cal) {
+              float scaled_corrected_dq_dx = corrected_dq_dx/calib_factors[ihitplane][i_cal]; //// replace with vector index
               float cal_de_dx = Dedx(
                   scaled_corrected_dq_dx,
                   tot_Ef(trkhitx[i][ihitplane][j],
@@ -1055,32 +1046,31 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
     } // loop over crossing trks.......
   } // loop over jentries...........
 
-
-
-
   std::cout << "************************** Fitting Landau + Gaussian function to the histograms *****************************" << std::endl;
 
   ////////////////////////////////////// Fitting Landau+Gaussian function to the histogram ////////////////////////////////
   TSpline3 *sp = new TSpline3("Cubic Spline", &spline_Range[0], &spline_KE[0],13,"b2e2",0,0);
 
-  vector<double> chi_denominator;
-  vector<double> chi_numerator;
-  int dof=0;
-
   outfile.cd();
+
+  TVectorD NDF(3);
+
   for (int i = 0; i < 3; ++i) {
     std::vector<double> chi2_vals;
-    for (size_t j = 0; j < calib_factors.size(); ++j) {
+    for (size_t j = 0; j < calib_factors[i].size(); ++j) {
+      vector<double> chi_denominator;
+      vector<double> chi_numerator;
+      int dof=0;
       for (size_t k = 0; k < nbin; k++){
         std::cout << "Fitting ************** " << k << std::endl;
         Double_t fr[2];
         Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
         fr[0]=1.1;//this was originally 0.
         fr[1]=10.;
-        if(i==0){
-          fr[0]=2.2;
-          fr[1]=15;
-        }
+//        if(i==0){
+//          fr[0]=2.2;
+//          fr[1]=15;
+//        }
         if (dedx[i][j][k]->GetMean()<10){
           sv[0]=0.1; sv[1]=1.66; sv[2]=dedx[i][j][k]->GetEntries()*0.05; sv[3]=0.05;
           if(k==0){ sv[0]=0.2; sv[1]=4.7; sv[2]=20; sv[3]=.01;}
@@ -1126,7 +1116,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
 
       for(size_t j=0; j<chi_numerator.size(); j++){
         double ratio=double(chi_numerator[j])/chi_denominator[j];
-        cout<<"chi 2 num and den "<<chi_numerator[j]<<"  "<<chi_denominator[j]<<endl;
+        //cout<<"chi 2 num and den "<<chi_numerator[j]<<"  "<<chi_denominator[j]<<endl;
         sum=sum+ratio;
       }
 
@@ -1135,13 +1125,284 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
       //std::cout << "$$$$$$$ Chi squared : " << sum << " $$$$$$$$$$$$" << std::endl;
       //outfile<<calib_factor<<"\t"<<sum<<std::endl;
       //std::cout << "$$$$$$$ Chi squared/NDF : " << double(sum)/dof << " $$$$$$$$$" << std::endl;
+      if (!NDF[i] && dof) NDF[i] = dof;
     }
-    TGraph chi2_graph(calib_factors.size(), &calib_factors[0], &chi2_vals[0]);
+    TGraph chi2_graph(calib_factors[i].size(), &calib_factors[i][0], &chi2_vals[0]);
     chi2_graph.Write(Form("chi2_plane_%d", i));
   }
+  NDF.Write("NDF");
+  outfile.Write();
+}
+
+void protoDUNE_dEdx_calib::LoopMIP(vector<double> & norm_factors,
+                                   vector<vector<double>> & calib_factors,
+                                   TFile & outfile) {
+  std::cout << "******************************* Calibration.C is running *******************************" << std::endl;
+
+  outfile.cd();
+  std::map<int, std::vector<TH1D*>> dedx;
+
+  for (size_t i = 0; i < 3; ++i) {
+    dedx[i] = std::vector<TH1D*>();
+    for (size_t j = 0; j < calib_factors[i].size(); ++j) {
+      dedx[i].push_back(new TH1D(Form("dedx_%zu_%zu",i,j),
+                                 Form("%.3f",1000*calib_factors[i][j]),
+                                 200, 0, 10));
+    }
+  }
+ 
+  gStyle->SetOptStat(1111);
+  gStyle->SetOptFit(111);
+  gStyle->SetLabelSize(0.03,"x");
+  gStyle->SetLabelSize(0.03,"y");
+ 
+  ///////////////// Make any changes to the Y and Z bin sizes here ///////////////
+
+  //int x_bin_size = 5; // 148 bins in x direction
+  fChain->GetEntry(0); 
+
+  /////////////////////Importing X fractional corrections//////////////////////
+
+  std::vector<TH1F*> X_correction_hists;
+  std::vector<TH2F*> YZ_correction_neg_hists, YZ_correction_pos_hists;
+  for (int i = 0; i < 3; ++i) {
+    //TH1F *X_correction_hist = (TH1F*)fXFile->Get(Form("dqdx_X_correction_hist_%d",hitplane));
+    //TH2F *YZ_correction_neg_hist=(TH2F*)fYZFile->Get(Form("correction_dqdx_ZvsY_negativeX_hist_%d",hitplane));
+    //TH2F *YZ_correction_pos_hist=(TH2F*)fYZFile->Get(Form("correction_dqdx_ZvsY_positiveX_hist_%d",hitplane));
+    X_correction_hists.push_back((TH1F*)fXFile->Get(Form("dqdx_X_correction_hist_%d",i)));
+    YZ_correction_neg_hists.push_back((TH2F*)fYZFile->Get(Form("correction_dqdx_ZvsY_negativeX_hist_%d",i)));
+    YZ_correction_pos_hists.push_back((TH2F*)fYZFile->Get(Form("correction_dqdx_ZvsY_positiveX_hist_%d",i)));
+  }
+
+  TSpline3 *sp = new TSpline3("Cubic Spline", &spline_Range[0], &spline_KE[0],13,"b2e2",0,0);
+ 
+  ////////////////////////////////////////////////////////////////////////////////// 
+ 
+  if (fChain == 0) return;
+
+  double avgke[3] = {0};
+  double avgdx[3] = {0};
+  int nhits[3] = {0};
+
+
+  Long64_t nentries = fChain->GetEntries();
+  for (Long64_t jentry=0; jentry<nentries;jentry++) {
+    //for (Long64_t jentry=0; jentry<20000;jentry++) {
+    Long64_t ientry = LoadTree(jentry);
+    if (ientry < 0) break;
+    fChain->GetEntry(jentry);
+    if(!(jentry%10000)) cout<<jentry<<"/"<<nentries<< endl;
+    for(int i=0; i<cross_trks; ++i){
+      if (trkstartx[i]*trkendx[i]>0) continue;
+      //if(peakT_min[i]<100 || peakT_max[i]>5900 ||
+      //   trklen[i]<100 || trklen[i]>700 || (trkendz[i]>226 && trkendz[i]<236) ||
+      //   (trkstartz[i]>226 && trkstartz[i]<236) ||
+      //   (trkendz[i]>456 && trkendz[i]<472)||
+      //   (trkstartz[i]>456 && trkstartz[i]<472)) continue;//filter for plane 2
+      if(peakT_min[i]<100||peakT_max[i]>5900||trklen[i]<100||trklen[i]>700||(trkendz[i]>226 && trkendz[i]<236)||(trkstartz[i]>226 && trkstartz[i]<236)||(trkendz[i]>456 && trkendz[i]<472)||(trkstartz[i]>456 && trkstartz[i]<472)) continue;//filter for plane 2
+      if(adjacent_hits[i]!=0 || dist_min[i]>5) continue;
+      for (size_t ihitplane = 0; ihitplane < 3; ++ihitplane) {
+        vector<float> res, dq, first5dq, last5dq;
+        if(ihitplane==2 && ((abs(trackthetaxz[i])>1.13 &&
+           abs(trackthetaxz[i])<2.0)||(abs(trackthetayz[i])>1.22 &&
+           abs(trackthetayz[i])<1.92))) continue;
+
+        if(ihitplane == 2 && (lastwire[i]<=5 || lastwire[i]>=475)) continue;  //for plane 2  
+
+        //TY: not sure if induction plane wires boundary is [0,800]
+        if(ihitplane != 2 && (lastwire[i]<=5 || lastwire[i]>=795)) continue; 
+ 
+        for(int j=0;j<ntrkhits[i][ihitplane];j++){
+          res.push_back(trkresrange[i][ihitplane][j]);
+          dq.push_back(trkdqdx[i][ihitplane][j]);
+        }
+        /**********************end of buffer filling*****************************/
+
+        if(res.size()==0) continue;
+        /***********************removed empty tracks to avoid segmentation fault******************/
+
+        int siz1=ntrkhits[i][ihitplane];
+        float max=*max_element(res.begin(),res.end());
+       
+        /************************flipping wrongly ordered residual range values****************************/
+        bool test=true;
+        if((trkhity[i][ihitplane][siz1-1]<trkhity[i][ihitplane][0] && trkresrange[i][ihitplane][siz1-1]>trkresrange[i][ihitplane][0])||(trkhity[i][ihitplane][0]<trkhity[i][ihitplane][siz1-1] && trkresrange[i][ihitplane][0]>trkresrange[i][ihitplane][siz1-1])){
+          test=false;
+          for(int i1=0;i1<ntrkhits[i][ihitplane];i1++){
+            trkresrange[i][ihitplane][i1]=res[siz1-i1-1];
+          }
+          cout<<"This is a flipped track"<<endl;
+        }
+       
+        /***************calculating the ratio of dQdx for first 5cm and last 5 cm of a track********************/ 
+        for(size_t k=0;k<res.size();k++){
+          if(trkresrange[i][ihitplane][k]<5) first5dq.push_back(dq[k]);
+          if(trkresrange[i][ihitplane][k]>max-5) last5dq.push_back(dq[k]);
+        }
+       
+        if(first5dq.size()<5){
+           continue;
+        }
+
+        float med1 = TMath::Median(first5dq.size(), &first5dq[0]);
+        float med2= TMath::Median(last5dq.size(), &last5dq[0]);
+         if(!((med1/med2)>1.4)) continue;
+        if(!test) continue;
+
+        for(int j=0; j<TMath::Min(ntrkhits[i][ihitplane],3000); ++j){
+          float ke = sp->Eval(trkresrange[i][ihitplane][j]);
+          if (ke<250 || ke>450) continue;
+          if (trkpitch[i][ihitplane][j]>=0.5 && trkpitch[i][ihitplane][j]<=0.8 &&
+              trkhity[i][ihitplane][j]>0 && trkhity[i][ihitplane][j]<600 &&
+              trkhitz[i][ihitplane][j]>0 && trkhitz[i][ihitplane][j]<695) {
+
+            TH2F * YZ_hist = 0x0;           
+
+            if(trkhitx[i][ihitplane][j]>-360 && trkhitx[i][ihitplane][j]<0){ //negative X direction
+              bool is_good = false;
+              if(ihitplane == 1 && abs(180/TMath::Pi()*trackthetaxz[i])>140) {
+                is_good = true;
+              } //plane 1
+              else if(ihitplane == 0 && abs(180/TMath::Pi()*trackthetaxz[i])<40){ //plane 0
+                //std::cout << "skipping 1" << std::endl;
+                is_good = true;
+              }
+              else if (ihitplane == 2) {
+                is_good = true;
+              }
+              if (!is_good) continue;
+              YZ_hist = YZ_correction_neg_hists[ihitplane];
+            }
+            else if(trkhitx[i][ihitplane][j]>0 && trkhitx[i][ihitplane][j]<360){ //positive X direction
+              bool is_good = false;
+              if(ihitplane == 1 && abs(180/TMath::Pi()*trackthetaxz[i])<40){ //plane 1
+                is_good = true;
+                //continue;
+              }
+              else if(ihitplane == 0 && abs(180/TMath::Pi()*trackthetaxz[i])>140){ //plane 0
+                is_good = true;
+                //std:!:cout << "skipping 3" << std::endl;
+                //continue;
+              }
+              else if (ihitplane == 2) {
+                is_good = true;
+              }
+              if (!is_good) continue;
+
+              YZ_hist = YZ_correction_pos_hists[ihitplane];
+            }
+            else {
+              continue;
+            }
+
+            int x_bin = X_correction_hists[ihitplane]->FindBin(trkhitx[i][ihitplane][j]);
+            float Cx = X_correction_hists[ihitplane]->GetBinContent(x_bin);
+
+            float Cyz = YZ_hist->GetBinContent(
+                YZ_hist->FindBin(trkhitz[i][ihitplane][j],
+                                                trkhity[i][ihitplane][j]));
+
+            float corrected_dq_dx = trkdqdx[i][ihitplane][j]*Cx*norm_factors[ihitplane]*Cyz;
+            //cout<<trkdqdx[i][ihitplane][j]<<" "<<Cx<<" "<<norm_factors[ihitplane]<<" "<<Cyz<<" "<<corrected_dq_dx<<endl;;
+            for (size_t i_cal = 0; i_cal < calib_factors[ihitplane].size(); ++i_cal) {
+              float scaled_corrected_dq_dx = corrected_dq_dx/calib_factors[ihitplane][i_cal]; //// replace with vector index
+              float cal_de_dx = Dedx(
+                  scaled_corrected_dq_dx,
+                  tot_Ef(trkhitx[i][ihitplane][j],
+                         trkhity[i][ihitplane][j],
+                         trkhitz[i][ihitplane][j]));
+              //std::cout<<i_cal<<" "<<cal_de_dx<<std::endl;
+              dedx[ihitplane][i_cal]->Fill(cal_de_dx);
+              avgke[ihitplane]+=ke;
+              avgdx[ihitplane]+=trkpitch[i][ihitplane][j];
+              ++nhits[ihitplane];
+            }
+          } // y containment.....
+        } // loop over hits....
+      }
+    } // loop over crossing trks.......
+  } // loop over jentries...........
+
+  std::cout << "************************** Fitting Landau + Gaussian function to the histograms *****************************" << std::endl;
+
+  ////////////////////////////////////// Fitting Landau+Gaussian function to the histogram ////////////////////////////////
+
+  //vector<double> chi_denominator;
+  //vector<double> chi_numerator;
+  //int dof=0;
+
+  outfile.cd();
+
+  TVectorD meanKE(3);
+  TVectorD meanPitch(3);
+
+  for (int i = 0; i < 3; ++i) {
+    meanKE[i] = avgke[i]/nhits[i];
+    meanPitch[i] = avgdx[i]/nhits[i];
+    std::vector<double> chi2_vals;
+    for (size_t j = 0; j < calib_factors[i].size(); ++j) {
+      Double_t fr[2];
+      Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
+      fr[0]=1.1;//this was originally 0.
+      fr[1]=10.;
+      if (dedx[i][j]->GetMean()<10){
+        sv[1]=0.84*dedx[i][j]->GetMean(); 
+        sv[2]=dedx[i][j]->GetEntries()*0.05; 
+        if (i==0){
+          sv[0] = 0.08;
+          sv[3] = 0.14;
+        }
+        else if (i==1){
+          sv[0] = 0.08;
+          sv[3] = 0.15;
+        }
+        else if (i==2){
+          sv[0] = 0.09;
+          sv[3] = 0.07;
+        }
+      }
+      else{
+        sv[0]=0.16*dedx[i][j]->GetRMS(); sv[1]=0.9*dedx[i][j]->GetMean(); sv[2]=dedx[i][j]->GetEntries()*100; sv[3]=dedx[i][j]->GetRMS()/5.;
+      }
+      for(int j=0; j<4; ++j){
+        pllo[j] = 0.01*sv[j];
+        plhi[j] = 100*sv[j];
+      }
+      Double_t chisqr;
+      Int_t    ndf;
+      Int_t    status;
+      double chi2 = 0;
+      TF1 *fitsnr = langaufit(dedx[i][j],fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
+      cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
+      fitsnr->SetLineColor(kRed);
+      std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
+      std::cout << "************** Chi^2/NDF : " << fitsnr->GetChisquare()/fitsnr->GetNDF() << std::endl;
+      std::cout << "MPV : " << fitsnr->GetParameter(1) << " $$$$$$$$$$$$" << std::endl;
+      std::cout << "Average KE : "<<avgke[i]/nhits[i]<<" average pitch : "<<avgdx[i]/nhits[i]<<std::endl;
+      if((dedx[i][j]->GetEntries()>100) && fitsnr->GetNDF() != 0 && status > 2 && (fitsnr->GetParError(1)<1000) && (fitsnr->GetChisquare()/fitsnr->GetNDF()<10)){
+          //cout<<" i "<<i<<" res range "<<i*binsize+double(binsize)/2<<"  KE "<<sp->Eval(i*binsize+double(binsize)/2)<<endl;
+
+          ////////////////////////////////////////////// Chi 2 calculation ////////////////////////////
+        chi2 = pow(dpdx(sp->Eval(avgke[i]/nhits[i]), avgdx[i]/nhits[i], Mmu)-fitsnr->GetParameter(1),2)/pow(fitsnr->GetParError(1),2);
+      }
+
+      chi2_vals.push_back(chi2);
+      //JC: replace this with a graph..
+      //std::cout << "$$$$$$$ Chi squared : " << sum << " $$$$$$$$$$$$" << std::endl;
+      //outfile<<calib_factor<<"\t"<<sum<<std::endl;
+      //std::cout << "$$$$$$$ Chi squared/NDF : " << double(sum)/dof << " $$$$$$$$$" << std::endl;
+    }
+    TGraph chi2_graph(calib_factors[i].size(), &calib_factors[i][0], &chi2_vals[0]);
+    chi2_graph.Write(Form("chi2_plane_%d", i));
+  }
+
+  meanKE.Write("meanKE");
+  meanPitch.Write("meanPitch");
+  outfile.Write();
 }
 
 int main(int argc, char ** argv) {
+
 
   bool found_input = false,
        found_fcl = false,
@@ -1149,6 +1410,8 @@ int main(int argc, char ** argv) {
   //string infile = argv[1];
   string infile;
   std::string fcl_file;
+
+  double ref_dQdx[3] = {65.75, 63.5, 59.29};
 
   for (int iArg = 1; iArg < argc; iArg++) {
     if (!strcasecmp(argv[iArg],"-c")) {
@@ -1208,7 +1471,10 @@ int main(int argc, char ** argv) {
   //TFile * ef = OpenFile(field_file);
 
   std::vector<double> norm_factors = pset.get<std::vector<double>>("NormFactors");
-
+  for (size_t i = 0; i<norm_factors.size(); ++i){
+    norm_factors[i] = ref_dQdx[i]/norm_factors[i];
+    cout<<"Normalization factor["<<i<<"] = "<<norm_factors[i]<<endl;
+  }
   std::vector<std::pair<int, double>> KE_Range
       = pset.get<std::vector<std::pair<int, double>>>("KE_Range");
   //std::vector<int> spline_KE;
@@ -1256,20 +1522,31 @@ int main(int argc, char ** argv) {
   double plane_0_low = pset.get<double>("Plane0Start");
   double plane_0_high = pset.get<double>("Plane0End");
   double plane_0_diff = pset.get<double>("Plane0Diff");
-  //double plane_1_low = pset.get<double>("Plane1Start");
-  //double plane_1_high = pset.get<double>("Plane1End");
-  //double plane_1_diff = pset.get<double>("Plane1Diff");
-  //double plane_2_low = pset.get<double>("Plane2Start");
-  //double plane_2_high = pset.get<double>("Plane2End");
-  //double plane_2_diff = pset.get<double>("Plane2Diff");
+  double plane_1_low = pset.get<double>("Plane1Start");
+  double plane_1_high = pset.get<double>("Plane1End");
+  double plane_1_diff = pset.get<double>("Plane1Diff");
+  double plane_2_low = pset.get<double>("Plane2Start");
+  double plane_2_high = pset.get<double>("Plane2End");
+  double plane_2_diff = pset.get<double>("Plane2Diff");
   //for(calib_factor = 1.028e-3; calib_factor<1.029e-3; calib_factor+=.001e-3) t->Loop();
-  std::vector<double> plane_0_calibs;
+  std::vector<std::vector<double>> calibs(3);
   for(double calib_factor = plane_0_low; calib_factor<plane_0_high; calib_factor+=plane_0_diff) {
-    plane_0_calibs.push_back(calib_factor);
+    calibs[0].push_back(calib_factor);
   }
+  for(double calib_factor = plane_1_low; calib_factor<plane_1_high; calib_factor+=plane_1_diff) {
+    calibs[1].push_back(calib_factor);
+  }
+  for(double calib_factor = plane_2_low; calib_factor<plane_2_high; calib_factor+=plane_2_diff) {
+    calibs[2].push_back(calib_factor);
+  }
+
   t->LoopLite(norm_factors,
-              plane_0_calibs,
+              calibs,
               output_file);
+
+//  t->LoopMIP(norm_factors,
+//             calibs,
+//             output_file);
   delete t;
   std::cout << "************************* Start of hitplane 1 ***************************" << std::endl;
   output_file.Close();

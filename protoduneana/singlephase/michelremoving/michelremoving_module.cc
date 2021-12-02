@@ -240,8 +240,12 @@ namespace dune{
     // art::FindManyP<recob::Track, recob::TrackHitMeta> thass(hitListHandle, evt, fTrackModuleLabel); //to associate hit 
     art::FindManyP<recob::Track> thass(hitListHandle, evt, fTrackModuleLabel); //to associate hit just trying
     
-
     art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, evt, fCalorimetryModuleLabel);
+    if (!fmcal.isValid()){
+      std::cout<<"art::Assns<recob::Track,anab::Calorimetry,void> with module label: "<<fCalorimetryModuleLabel<<" not found."<<std::endl;
+      return;
+    }
+
     art::FindManyP<anab::T0> trk_t0_assn_v(PFPListHandle, evt ,"pandora");
    
   
