@@ -8,11 +8,14 @@
 #include <TLine.h>
 #include <TStyle.h>
 #include <TAxis.h>
+#include <TROOT.h>
 #include <fstream> 
 
 using namespace std;
 
 int main(int argc, char *argv[]) {
+
+  gROOT->ProcessLine(".x /nashome/t/tjyang/.protoDUNEStyle.C");
 
   if (!argv[1]){
     cout<<"Error: no input file"<<endl;
