@@ -29,8 +29,15 @@ using namespace std;
 
 ////defining recombination function
 float LAr_density=1.39;
-float alp=0.93;
-float bet=0.212;
+//ArgoNeuT parameters
+//float alp=0.93;
+//float bet=0.212;
+//Abbey's parameters https://indico.fnal.gov/event/46502/contributions/206721/attachments/139268/174710/recombination_20210126.pdf
+//float alp=0.854;
+//float bet=0.208;
+//Abbey's parameters https://indico.fnal.gov/event/46503/contributions/215375/attachments/143230/181102/recombination_20210519.pdf
+float alp=0.912;
+float bet=0.195;
 float dedx=2.08;
 bool userecom=true;
 bool recalib=true;
@@ -171,6 +178,11 @@ void protoDUNE_validate_calib::Loop(TString mn)
   TVectorD meanPitch0(nbins);
   TVectorD meanPitch1(nbins);
   TVectorD meanPitch2(nbins);
+
+  TVectorD params(3);
+  params[0] = alp;
+  params[1] = bet;
+  params[2] = dedx;
 
   double avgKE[3][nbins] = {0};
   double avgPitch[3][nbins] = {0};
@@ -445,7 +457,8 @@ void protoDUNE_validate_calib::Loop(TString mn)
   meanPitch0.Write("meanPitch0");
   meanPitch1.Write("meanPitch1");
   meanPitch2.Write("meanPitch2");
-  
+  params.Write("params");
+
   file->Write();
 }
 

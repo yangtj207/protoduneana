@@ -368,9 +368,17 @@ Int_t langaupro(Double_t *params, Double_t &maxx, Double_t &FWHM) {
 
 Float_t Dedx(float dqdx, float Ef){
   double Rho = 1.383;//g/cm^3 (liquid argon density at a pressure 18.0 psia) 
-  double betap = 0.212;//(kV/cm)(g/cm^2)/MeV
   double Wion = 23.6e-6;//parameter from ArgoNeuT experiment at 0.481kV/cm
-  double alpha = 0.93;//parameter from ArgoNeuT experiment at 0.481kV/cm 
+  //ArgoNeuT parameters
+//  double alpha = 0.93;//parameter from ArgoNeuT experiment at 0.481kV/cm 
+//  double betap = 0.212;//(kV/cm)(g/cm^2)/MeV
+  //Abbey's parameters https://indico.fnal.gov/event/46502/contributions/206721/attachments/139268/174710/recombination_20210126.pdf
+  //double alpha = 0.854;//parameter from ArgoNeuT experiment at 0.481kV/cm 
+  //double betap = 0.208;//(kV/cm)(g/cm^2)/MeV
+  //Abbey's parameters https://indico.fnal.gov/event/46503/contributions/215375/attachments/143230/181102/recombination_20210519.pdf
+  double alpha = 0.912;//parameter from ArgoNeuT experiment at 0.481kV/cm 
+  double betap = 0.195;//(kV/cm)(g/cm^2)/MeV
+
   return (exp(dqdx*(betap/(Rho*Ef)*Wion))-alpha)/(betap/(Rho*Ef));
 }
 
@@ -1067,17 +1075,30 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
         Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
         fr[0]=1.1;//this was originally 0.
         fr[1]=10.;
-//        if(i==0){
-//          fr[0]=2.2;
-//          fr[1]=15;
-//        }
+        if(i==0){
+          fr[0]=2.2;
+          fr[1]=15;
+        }
         if (dedx[i][j][k]->GetMean()<10){
-          sv[0]=0.1; sv[1]=1.66; sv[2]=dedx[i][j][k]->GetEntries()*0.05; sv[3]=0.05;
-          if(k==0){ sv[0]=0.2; sv[1]=4.7; sv[2]=20; sv[3]=.01;}
-          if(k==1){ sv[0]=0.2; sv[1]=3.0; sv[2]=10; sv[3]=.01;}
-          if(k==2){ sv[1]=2.5;}
-          if(k==3){ sv[1]=2.0;}
-          if(k==4){ sv[1]=2.0;}
+	  sv[0]=0.1; sv[1]=0.8*dedx[i][j][k]->GetMean(); sv[2]=dedx[i][j][k]->GetEntries()*0.05; sv[3]=0.05;
+	  if (i==0){
+	    sv[0] = 0.08;
+	    sv[3] = 0.14;
+	  }
+	  else if (i==1){
+	    sv[0] = 0.08;
+	    sv[3] = 0.15;
+	  }
+	  else if (i==2){
+	    sv[0] = 0.09;
+	    sv[3] = 0.07;
+	  }
+//          sv[0]=0.1; sv[1]=1.66; sv[2]=dedx[i][j][k]->GetEntries()*0.05; sv[3]=0.05;
+//          if(k==0){ sv[0]=0.2; sv[1]=4.7; sv[2]=20; sv[3]=.01;}
+//          if(k==1){ sv[0]=0.2; sv[1]=3.0; sv[2]=10; sv[3]=.01;}
+//          if(k==2){ sv[1]=2.5;}
+//          if(k==3){ sv[1]=2.0;}
+//          if(k==4){ sv[1]=2.0;}
 
         }
         else{
