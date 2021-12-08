@@ -1,0 +1,184 @@
+#include "BeamEvent.fcl"
+#include "services_dune.fcl"
+#include "RawDecoder.fcl"
+
+#include "protoDUNE_reco_data_prolog.fcl"
+
+#include "ProtoDUNEDataUtils.fcl"
+#include "ProtoDUNEBeamlineUtils.fcl"
+#include "ProtoDUNEEmptyEventFinder.fcl"
+#include "ProtoDUNEBeamlineReco.fcl"
+#include "ProtoDUNEBeamCuts.fcl"
+#include "ProtoDUNECalibration.fcl"
+
+#include "ProtoDUNEUnstableHVFilter.fcl"
+#include "ProtoDUNEFembFilter.fcl"
+#
+#include "hitfindermodules_dune.fcl"
+#include "filters.fcl"
+#include "signalservices_dune.fcl"
+#include "caldata_dune.fcl"
+#include "trackfindermodules_dune.fcl"
+#include "ecalibration.fcl"
+#include "triggeralgo_service.fcl"
+#include "photpropservices_dune.fcl"
+#include "protodune_tools_dune.fcl"
+
+process_name: protonbeamana
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "Beam.root" }
+  TimeTracker:       {}
+  MemoryTracker:     {}
+  RandomNumberGenerator: {} #ART native random number generator
+  IFDH :{}
+
+  @table::protodune_data_reco_services
+  message:      @local::standard_info
+  message:                      @local::dune_message_services_prod
+  FileCatalogMetadata:          @local::art_file_catalog_mc
+                                @table::protodune_reco_services
+  PdspChannelMapService:        @local::pdspchannelmap
+  ChannelStatusService:         @local::pdsp_channel_status
+  BackTrackerService: {
+    BackTracker: {
+      SimChannelModuleLabel: "tpcrawdecoder:simpleSC"
+      G4ModuleLabel: "largeant"
+      MinimumHitEnergyFraction: 1e-1
+    }
+  }
+}
+#services.message.destinations.LogStandardOut.threshold: "INFO"
+#services.Geometry: @local::protodunev6_geo
+
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+  #fileNames: ["input_file.root"]
+}
+
+outputs:
+{
+ out1:
+ {
+   module_type: RootOutput
+   fileName:    "Beam.root"    #default file name, can override from command line with -o or --output
+   dataTier: "reconstructed"
+   fastCloning: false
+ } 
+}
+
+
+physics:
+{
+
+ producers:{
+   @table::protoDUNE_reco_data_stage2_producers
+   #beamevent: @local::proto_beamevent
+
+ }
+
+ #Create path to run module
+ reco: [ @sequence::protoDUNE_reco_data_stage2 ]
+
+ filters: { 
+   f1: @local::HVfilter
+   f2: @local::pdsp_fembfilter_beamside
+   #f3: @local::standard_missingproductfilter
+   #@table::protoDUNE_reco_data_filters
+ }
+
+ fpath: [f1, f2]
+
+ analyzers:
+ {
+  #pduneana:          @local::pdspanalysis
+  protonbeamana:
+  {
+   module_type: "protonbeamana"
+
+     SpacePointModuleLabel:  "reco3d"
+     BeamlineUtils:        @local::standard_protodunebeamlineutils
+     BeamModuleLabel:        "beamevent"
+     TrackModuleLabel:       "pandoraTrack"
+     TimeDecoderModuleLabel: "timingrawdecoder:daq"
+
+     #CalorimetryTag:         "pandoracalo"
+     #CalorimetryTag:         "pandoracaloSCE"
+     #CalorimetryTag:         "pandoracalinoxyzt"
+     #CalorimetryTag:         "pandoracalonosce"
+     CalorimetryTag:         "pandoracali"
+     TrackerTag:             "pandoraTrack"
+     HitTag:                 "hitpdune"
+     ShowerTag:              "pandoraShower"
+     PFParticleTag:          "pandora"
+     GeneratorTag:           "generator"
+     Verbose:                true
+     DataUtils: @local::standard_protodunedatautils
+     EmptyEventFinder: @local::standard_protoduneemptyeventfinder
+
+     #BeamCuts:             @local::Prod2BeamCuts
+     #beamreco:          @local::beamline_reco
+
+     BeamPars: {
+       Momentum: 1.0
+     } 
+
+     SelectEvents: [fpath]
+
+  }
+ }
+
+   #reco: [beamevent]
+   #trigger_paths: [reco,fpath]
+ 
+ ana:  [ protonbeamana ]
+
+ stream1: [ out1 ]
+ 
+ end_paths:     [ ana ]
+
+}
+
+#outputs: {}
+physics.analyzers.ana.SelectEvents: ["fpath"]
+services.IFBeam:  {}
+physics.analyzers.protonbeamana.BeamlineUtils.UseCERNCalibSelection: true
+
+physics.analyzers.protonbeamana.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.protonbeamana.CalorimetryModuleLabel:  "pandoracali"
+physics.analyzers.protonbeamana.SaveTrackInfo: true
+
+
+
+#physics.analyzers.pduneana.CalorimetryTagSCE: "pandoracali"
+#physics.analyzers.pduneana.CalorimetryTagNoSCE: "pandoracalonosce" ##For no-SCE sample
+#physics.analyzers.pduneana.Pandora2CaloSCE: "pandora2cali"
+#physics.analyzers.pduneana.Verbose: false
+#physics.analyzers.pduneana.DoReweight: false 
+#physics.analyzers.pduneana.DoProtReweight: false 
+#physics.analyzers.pduneana.GetTrackMichel: false 
+#physics.analyzers.pduneana.CalibrationParsSCE: @local::CalorimetryParameters_SPProd4_Data_r5387 #_eLT
+#physics.analyzers.pduneana.CalibrationParsNoSCE: @local::CalorimetryParameters_SPProd4_Data_r5387 #_eLT
+#physics.analyzers.pduneana.Recalibrate: false
+#physics.analyzers.pduneana.SCE: true
+
+#services.ParticleInventoryService.ParticleInventory.EveIdCalculator: "EmEveIdCalculator"
+
+#services.DetectorPropertiesService.Electronlifetime: 35000
+
+#services.SpaceCharge.EnableCalEfieldSCE: true
+#services.SpaceCharge.EnableCalSpatialSCE: true
+#services.SpaceCharge.EnableSimEfieldSCE: true
+#services.SpaceCharge.EnableSimSpatialSCE: true
+#services.SpaceCharge.EnableSimulationSCE: true
+
+# xyzt database
+#services.XYZCalibService.IsMC: false
+#services.XYZCalibService.UseCondbXYZCorr: true
+#services.XYZCalibService.YZCorrDBTag: "v5.0"
+#services.XYZCalibService.XCorrDBTag: "v5.0"
+#services.XYZCalibService.NormCorrDBTag: "v5.0"
