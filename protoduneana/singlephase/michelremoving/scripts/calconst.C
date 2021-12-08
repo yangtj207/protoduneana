@@ -9,6 +9,7 @@
 #include <TStyle.h>
 #include <TAxis.h>
 #include <TROOT.h>
+#include "TVectorD.h"
 #include <fstream> 
 
 using namespace std;
@@ -29,6 +30,10 @@ int main(int argc, char *argv[]) {
   TCanvas *can[3];
   
   TFile f(filename.c_str());
+
+  TVectorD *NDF = (TVectorD*)f.Get("NDF");
+  TVectorD *meanPitch = (TVectorD*)f.Get("meanPitch");
+
   TGraph *gr[3];
 
   TLatex tt;
@@ -79,8 +84,14 @@ int main(int argc, char *argv[]) {
     TLine *l3 = new TLine(C2,miny-1,C2,fun->Eval(C2));
     l3->SetLineStyle(2);
     l3->Draw();
-    tt.DrawLatex(0.3, 0.8, Form("#chi^{2}_{min}:%.2f", chisq0));
-    tt.DrawLatex(0.3, 0.7, Form("Calib_const = (%.3f#pm%.3f)#times10^{-3}", C0*1e3, (C0-C1)*1e3));
+    tt.DrawLatex(0.3, 0.8, Form("#chi^{2}_{min}:%.2f, nbins:%d", chisq0, int((*NDF)[i])));
+    if (i!=2){
+      tt.DrawLatex(0.3, 0.72, Form("Calib_const = (%.3f#pm%.3f)#times10^{-3}", C0*1e3, (C0-C1)*1e3));
+    }
+    else{
+      tt.DrawLatex(0.3, 0.72, Form("Calib_const = (%.4f#pm%.4f)#times10^{-3}", C0*1e3, (C0-C1)*1e3));
+    }
+    tt.DrawLatex(0.3, 0.64, Form("Mean pitch: %.3f", (*meanPitch)[i]));
     //cout<<a<<" "<<b<<" "<<c<<" "<<chisq0<<" "<<C0<<"-"<<C0-C1<<"+"<<C2-C0<<endl;
     cout<<"Plane "<<i<<endl;
     cout<<"Minimal chi2 "<<chisq0<<endl;
