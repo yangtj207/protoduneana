@@ -30,14 +30,14 @@ using namespace std;
 ////defining recombination function
 float LAr_density=1.39;
 //ArgoNeuT parameters
-//float alp=0.93;
-//float bet=0.212;
+float alp=0.93;
+float bet=0.212;
 //Abbey's parameters https://indico.fnal.gov/event/46502/contributions/206721/attachments/139268/174710/recombination_20210126.pdf
 //float alp=0.854;
 //float bet=0.208;
 //Abbey's parameters https://indico.fnal.gov/event/46503/contributions/215375/attachments/143230/181102/recombination_20210519.pdf
-float alp=0.912;
-float bet=0.195;
+//float alp=0.912;
+//float bet=0.195;
 float dedx=2.08;
 bool userecom=true;
 bool recalib=true;
@@ -236,6 +236,12 @@ void protoDUNE_validate_calib::Loop(TString mn)
 
   Long64_t nentries = fChain->GetEntriesFast();
   Long64_t real_nentries = fChain->GetEntries();
+  if (real_nentries >200000){
+    cout<<"Total entries = "<<real_nentries<<endl;
+    cout<<"Only use 200000 events."<<endl;
+    nentries = 200000;
+    real_nentries = nentries;
+  }
   Long64_t nbytes = 0, nb = 0;
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
     // for (Long64_t jentry=0; jentry<10000;jentry++) {
@@ -295,8 +301,8 @@ void protoDUNE_validate_calib::Loop(TString mn)
           stpok = stpok && lastwire[i]>5 && lastwire[i]<795;
         }
         if (j == 0){
-          if (testneg_xing && !angle_0_neg_xing) negok = false;
-          if (testpos_xing && !angle_0_pos_xing) posok = false;
+          if (!angle_0_neg_xing) negok = false;
+          if (!angle_0_pos_xing) posok = false;
           stpok = stpok && lastwire[i]>5 && lastwire[i]<795;
         }
 

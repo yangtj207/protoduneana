@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
   }
 
   const size_t nbins = 50;
-  //int binsize = 10;
+  int binsize = 10;
 
   TH1D *dedx[3][nbins];
   TH2D *dedxke[3];
@@ -290,6 +290,7 @@ int main(int argc, char *argv[]) {
     TVectorD *meanKE = (TVectorD*)f.Get(Form("meanKE%zu",i));
     TVectorD *meanPitch = (TVectorD*)f.Get(Form("meanPitch%zu",i));
     double totalchi2 = 0;
+    double chi2_250_450 = 0;
     for (size_t j = 1; j<nbins; ++j){
       dedx[i][j] = (TH1D*)f.Get(Form("dedx_%zu_%zu", i, j));
       dedx[i][j]->Draw();
@@ -338,6 +339,9 @@ int main(int argc, char *argv[]) {
       ratio.push_back(vdedx.back()/vdedxth.back());
       eratio.push_back(ededx.back()/vdedxth.back());
       totalchi2 += pow((vdedx.back()-vdedxth.back())/ededx.back(),2);
+      if ((j+0.5)*binsize > 250 && (j+0.5)*binsize < 450){
+        chi2_250_450 += pow((vdedx.back()-vdedxth.back())/ededx.back(),2);
+      }
     }
     can->Print(Form("dedx_%zu.ps]", i));
     pad1->cd();
@@ -353,10 +357,11 @@ int main(int argc, char *argv[]) {
     grth->SetLineWidth(2);
     grth->SetLineColor(2);
     grth->Draw("c");
-    TPaveText *pt = new TPaveText(0.25,0.75,0.85,0.9,"NB NDC");
+    TPaveText *pt = new TPaveText(0.25,0.7,0.85,0.9,"NB NDC");
     pt->AddText(Form("Calibration constant = %.3f#times10^{-3}", calib_const[i]*1000));
     pt->AddText(Form("#alpha = %.3f, #beta' = %.3f", (*params)[0], (*params)[1]));
     pt->AddText(Form("For 50<KE<500 MeV, #chi^{2} = %.1f, nbins = %zu", totalchi2, nbins-1));
+    pt->AddText(Form("For 250<KE<450 MeV, #chi^{2} = %.1f, nbins = %d", chi2_250_450, 200/binsize));
     pt->Draw();
     pad2->cd();
     fr->Draw();

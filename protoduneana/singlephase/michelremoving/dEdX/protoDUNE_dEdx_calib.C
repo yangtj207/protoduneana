@@ -267,7 +267,7 @@ Double_t langaufun(Double_t *x, Double_t *par) {
   }
 
 //  his->Fit(FunName,"RB0");   // fit within specified range, use ParLimits, do not plot
-  TFitResultPtr fitres = his->Fit(FunName,"RBOS"); // fit within specified range, use ParLimits, do not plot /////////////////// Initial code use the mode "RBO" (commented by VARUNA) ///////////
+  TFitResultPtr fitres = his->Fit(FunName,"RBOSQ"); // fit within specified range, use ParLimits, do not plot /////////////////// Initial code use the mode "RBO" (commented by VARUNA) ///////////
 
   ffit->GetParameters(fitparams);    // obtain fit parameters
   for (i=0; i<4; i++) {
@@ -858,8 +858,8 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
 
   outfile.cd();
 
-  size_t nbin=40;
-  int binsize=5;
+  size_t nbin=50;
+  int binsize=10;
   //TH1D *dedx[nbin];
   //{hitplane, {calib_index, {detector bins}}}
   std::map<int, std::vector<std::vector<TH1D*>>> dedx;
@@ -1059,7 +1059,8 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
               avgdx[ihitplane]+=trkpitch[i][ihitplane][j];
               ++nhits[ihitplane];
 
-              size_t bin = size_t(trkresrange[i][ihitplane][j])/binsize;
+              //size_t bin = size_t(trkresrange[i][ihitplane][j])/binsize;
+              size_t bin = size_t(ke/binsize);
               //std::cout << "Bin: " << bin << std::endl;
               if(bin < nbin){
                 dedx[ihitplane][i_cal][bin]->Fill(cal_de_dx);
@@ -1124,20 +1125,23 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
         std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
         std::cout << "************** Chi^2/NDF : " << fitsnr->GetChisquare()/fitsnr->GetNDF() << std::endl;
         std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$  KE : " << sp->Eval((k*binsize+double(binsize)/2)) << "   MPV : " << fitsnr->GetParameter(1) << " $$$$$$$$$$$$" << std::endl;
-        if((dedx[i][j][k]->GetEntries()>100) && fitsnr->GetNDF() != 0 && status > 2 && (fitsnr->GetParError(1)<1000) && (fitsnr->GetChisquare()/fitsnr->GetNDF()<10)){
+        if((k*binsize+double(binsize)/2)<=450 && (k*binsize+double(binsize)/2)>=250){
+          dof++;
+          if((dedx[i][j][k]->GetEntries()>100) && fitsnr->GetNDF() != 0 && status > 2 && (fitsnr->GetParError(1)<1000) && (fitsnr->GetChisquare()/fitsnr->GetNDF()<10)){
           //cout<<" i "<<i<<" res range "<<i*binsize+double(binsize)/2<<"  KE "<<sp->Eval(i*binsize+double(binsize)/2)<<endl;
 
           ////////////////////////////////////////////// Chi 2 calculation ////////////////////////////
               
-          if(sp->Eval((k*binsize+double(binsize)/2))<=450 && sp->Eval((k*binsize+double(binsize)/2))>=250){
             double mpv_err = TMath::Power(fitsnr->GetParError(1),2);
             double tot_err = mpv_err;
             chi_denominator.push_back(tot_err);
             //double num=dpdx(sp->Eval(k*binsize+double(binsize)/2),pitchvalue,Mmu)-fitsnr->GetParameter(1);
-            double num=dpdx(sp->Eval(k*binsize+double(binsize)/2), avgdx[i]/nhits[i], Mmu)-fitsnr->GetParameter(1);
+            double num=dpdx(k*binsize+double(binsize)/2, avgdx[i]/nhits[i], Mmu)-fitsnr->GetParameter(1);
             num=TMath::Power(num,2);
             chi_numerator.push_back(num);
-            dof++;
+          }
+          else{
+            cout<<dedx[i][j][k]->GetEntries()<<" "<<fitsnr->GetNDF()<<" "<<status<<" "<<fitsnr->GetParError(1)<<" "<<fitsnr->GetChisquare()<<" "<<fitsnr->GetNDF()<<endl;
           }
         }
       }
