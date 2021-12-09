@@ -174,8 +174,14 @@ void protoDUNE_X_calib::Loop(TString mn)
   Double_t time1=0;
   //Filling the TTree
 
- Long64_t nentries = fChain->GetEntriesFast();
- Long64_t real_nentries = fChain->GetEntries();
+  Long64_t nentries = fChain->GetEntriesFast();
+  Long64_t real_nentries = fChain->GetEntries();
+  if (real_nentries >200000){
+    cout<<"Total entries = "<<real_nentries<<endl;
+    cout<<"Only use 200000 events."<<endl;
+    nentries = 200000;
+    real_nentries = nentries;
+  }
   Long64_t nbytes = 0, nb = 0;
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
   // for (Long64_t jentry=0; jentry<10000;jentry++) {
