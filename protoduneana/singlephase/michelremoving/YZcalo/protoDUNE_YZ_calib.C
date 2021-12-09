@@ -170,11 +170,18 @@ void protoDUNE_YZ_calib::Loop(TString mn)
   if (fChain == 0) return;
 
   fChain->GetEntry(0);
+  if (run>10000) run = 0;
   std::cout<<"Process Run "<<run<<std::endl;
   TFile *file = new TFile(Form("YZcalo_mich%s_r%d.root",mn.Data(), run), "recreate");
 
   Long64_t nentries = fChain->GetEntriesFast();
   Long64_t real_nentries = fChain->GetEntries();
+  if (real_nentries >200000){
+    cout<<"Total entries = "<<real_nentries<<endl;
+    cout<<"Only use 200000 events."<<endl;
+    nentries = 200000;
+    real_nentries = nentries;
+  }
   Long64_t nbytes = 0, nb = 0;
   for (Long64_t jentry=0; jentry<nentries;jentry++){
     Long64_t ientry = LoadTree(jentry);
@@ -185,7 +192,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
       if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;
       filtered_tracks++;
       ///filling histograms for plane_2
-      if(!((abs(180/3.14*trackthetaxz[i])>60 && abs(180/3.14*trackthetaxz[i])<120)||abs(180/3.14*trackthetaxz[i])<10||(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))){
+      if(!((abs(180/TMath::Pi()*trackthetaxz[i])>60 && abs(180/TMath::Pi()*trackthetaxz[i])<120)||(abs(180/TMath::Pi()*trackthetayz[i])>80 && abs(180/TMath::Pi()*trackthetayz[i])<100))){
 	for(int j=0; j<TMath::Min(ntrkhits[i][2],3000); ++j){
 	  if((trkhitx[i][2][j]<0)&&(trkhitx[i][2][j]>-360)){
 	    if((trkhity[i][2][j]<ymax)&&(trkhity[i][2][j]>0)){
@@ -200,7 +207,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 	} // loop over hits of the track in the given plane
       } // theta xz and yz angle cut
       
-      if(!((abs(180/3.14*trackthetaxz[i])>60 && abs(180/3.14*trackthetaxz[i])<120)||abs(180/3.14*trackthetaxz[i])<10||(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))){
+      if(!((abs(180/TMath::Pi()*trackthetaxz[i])>60 && abs(180/TMath::Pi()*trackthetaxz[i])<120)||(abs(180/TMath::Pi()*trackthetayz[i])>80 && abs(180/TMath::Pi()*trackthetayz[i])<100))){
 	for(int j=0; j<TMath::Min(ntrkhits[i][2],3000); ++j){
 	  if((trkhitx[i][2][j]>0)&&(trkhitx[i][2][j]<360)){
 	    if((trkhity[i][2][j]<ymax)&&(trkhity[i][2][j]>0)){
@@ -216,7 +223,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
       } // theta xz and yz angle cut
 
       ////for plane_1
-      if(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){   
+      if(abs(180/TMath::Pi()*trackthetaxz[i])>140){   
 	for(int j=0; j<TMath::Min(ntrkhits[i][1],3000); ++j){
 	  if((trkhitx[i][1][j]<0)&&(trkhitx[i][1][j]>-360)){
 	    if((trkhity[i][1][j]<ymax)&&(trkhity[i][1][j]>0)){
@@ -230,7 +237,7 @@ void protoDUNE_YZ_calib::Loop(TString mn)
 	  } // X containiment
 	} // loop over hits of the track in the given plane
       } // theta xz and yz angle cut
-      if(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){ 
+      if(abs(180/TMath::Pi()*trackthetaxz[i])<40){ 
 	for(int j=0; j<TMath::Min(ntrkhits[i][1],3000); ++j){
 	  if((trkhitx[i][1][j]>0)&&(trkhitx[i][1][j]<360)){
 	    if((trkhity[i][1][j]<ymax)&&(trkhity[i][1][j]>0)){
@@ -246,301 +253,301 @@ void protoDUNE_YZ_calib::Loop(TString mn)
       } // theta xz and yz angle cut
     
       ///filling histograms for plane_0
-      if(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){
-	  for(int j=0; j<TMath::Min(ntrkhits[i][0],3000); ++j){
-	    if((trkhitx[i][0][j]<0)&&(trkhitx[i][0][j]>-360)){
-	      if((trkhity[i][0][j]<ymax)&&(trkhity[i][0][j]>0)){
-		if((trkhitz[i][0][j]<zmax)&&(trkhitz[i][0][j]>0)){
-		  int z_bin = int(trkhitz[i][0][j])/z_bin_size; 
-		  int y_bin= int(trkhity[i][0][j])/y_bin_size;
-		  dqdx_value_negativeX_0[z_bin][y_bin].push_back(trkdqdx[i][0][j]);
-		  dedx_value_negativeX_0[z_bin][y_bin].push_back(trkdedx[i][0][j]);
-		} // Z containment
-	      } // Y containment
-	    } // X containiment
-	  } // loop over hits of the track in the given plane
-	} // theta xz and yz angle cut
-      if(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){
-	  for(int j=0; j<TMath::Min(ntrkhits[i][0],3000); ++j){
-	    if((trkhitx[i][0][j]>0)&&(trkhitx[i][0][j]<360)){
-	      if((trkhity[i][0][j]<ymax)&&(trkhity[i][0][j]>0)){
-		if((trkhitz[i][0][j]<zmax)&&(trkhitz[i][0][j]>0)){
-		  int z_bin = int(trkhitz[i][0][j])/z_bin_size; 
-		  int y_bin= int(trkhity[i][0][j])/y_bin_size;
-		  dqdx_value_positiveX_0[z_bin][y_bin].push_back(trkdqdx[i][0][j]);
-		  dedx_value_positiveX_0[z_bin][y_bin].push_back(trkdedx[i][0][j]);
-		} // Z containment
-	      }// Y containment
-	    } // X containiment
-	  } // loop over hits of the track in the given plane
+      if(abs(180/TMath::Pi()*trackthetaxz[i])<40){
+        for(int j=0; j<TMath::Min(ntrkhits[i][0],3000); ++j){
+          if((trkhitx[i][0][j]<0)&&(trkhitx[i][0][j]>-360)){
+            if((trkhity[i][0][j]<ymax)&&(trkhity[i][0][j]>0)){
+              if((trkhitz[i][0][j]<zmax)&&(trkhitz[i][0][j]>0)){
+                int z_bin = int(trkhitz[i][0][j])/z_bin_size; 
+                int y_bin= int(trkhity[i][0][j])/y_bin_size;
+                dqdx_value_negativeX_0[z_bin][y_bin].push_back(trkdqdx[i][0][j]);
+                dedx_value_negativeX_0[z_bin][y_bin].push_back(trkdedx[i][0][j]);
+              } // Z containment
+            } // Y containment
+          } // X containiment
+        } // loop over hits of the track in the given plane
+      } // theta xz and yz angle cut
+      if(abs(180/TMath::Pi()*trackthetaxz[i])>140){
+        for(int j=0; j<TMath::Min(ntrkhits[i][0],3000); ++j){
+          if((trkhitx[i][0][j]>0)&&(trkhitx[i][0][j]<360)){
+            if((trkhity[i][0][j]<ymax)&&(trkhity[i][0][j]>0)){
+              if((trkhitz[i][0][j]<zmax)&&(trkhitz[i][0][j]>0)){
+                int z_bin = int(trkhitz[i][0][j])/z_bin_size; 
+                int y_bin= int(trkhity[i][0][j])/y_bin_size;
+                dqdx_value_positiveX_0[z_bin][y_bin].push_back(trkdqdx[i][0][j]);
+                dedx_value_positiveX_0[z_bin][y_bin].push_back(trkdedx[i][0][j]);
+              } // Z containment
+            }// Y containment
+          } // X containiment
+        } // loop over hits of the track in the given plane
       }// theta xz and yz angle cut
 
     }// loop over crossing tracks in the event
-    } // loop over jentries
+  } // loop over jentries
 
-    std::cout << "*************** Calculating the local median dQ/dx values for each Y-Z cell ******************" << std::endl;
+  std::cout << "*************** Calculating the local median dQ/dx values for each Y-Z cell ******************" << std::endl;
  
-    for(size_t i=0; i<dqdx_value_negativeX_2.size(); i++){
-      for(size_t j=0; j<dqdx_value_negativeX_2[i].size(); j++){
-	if(dqdx_value_negativeX_2[i][j].size()>5){
-	  for(size_t k=0; k<dqdx_value_negativeX_2[i][j].size(); k++){
-	    all_dqdx_value_negativeX_2.push_back(dqdx_value_negativeX_2[i][j][k]); 
-	  }
+  for(size_t i=0; i<dqdx_value_negativeX_2.size(); i++){
+    for(size_t j=0; j<dqdx_value_negativeX_2[i].size(); j++){
+      if(dqdx_value_negativeX_2[i][j].size()>5){
+        for(size_t k=0; k<dqdx_value_negativeX_2[i][j].size(); k++){
+          all_dqdx_value_negativeX_2.push_back(dqdx_value_negativeX_2[i][j][k]); 
+        }
        
-	  float local_median_dqdx_negativeX_2=TMath::Median(dqdx_value_negativeX_2[i][j].size(),&dqdx_value_negativeX_2[i][j][0]);
-	  dqdx_ZvsY_negativeX_hist_2->SetBinContent(i+1,j+1,local_median_dqdx_negativeX_2);
-	  float local_median_dedx_negativeX_2=TMath::Median(dedx_value_negativeX_2[i][j].size(),&dedx_value_negativeX_2[i][j][0]);
-	  dedx_ZvsY_negativeX_hist_2->SetBinContent(i+1,j+1,local_median_dedx_negativeX_2);
-	}
+        float local_median_dqdx_negativeX_2=TMath::Median(dqdx_value_negativeX_2[i][j].size(),&dqdx_value_negativeX_2[i][j][0]);
+        dqdx_ZvsY_negativeX_hist_2->SetBinContent(i+1,j+1,local_median_dqdx_negativeX_2);
+        float local_median_dedx_negativeX_2=TMath::Median(dedx_value_negativeX_2[i][j].size(),&dedx_value_negativeX_2[i][j][0]);
+        dedx_ZvsY_negativeX_hist_2->SetBinContent(i+1,j+1,local_median_dedx_negativeX_2);
       }
     }
-    float global_median_dqdx_negativeX_2=TMath::Median(all_dqdx_value_negativeX_2.size(),&all_dqdx_value_negativeX_2[0]);
-    for(size_t i=0; i<dqdx_value_positiveX_2.size(); i++){
-      for(size_t j=0; j<dqdx_value_positiveX_2[i].size(); j++){
-	if(dqdx_value_positiveX_2[i][j].size()>5){
-	  for(size_t k=0; k<dqdx_value_positiveX_2[i][j].size(); k++){
-	    all_dqdx_value_positiveX_2.push_back(dqdx_value_positiveX_2[i][j][k]); 
-	  }
-	  float local_median_dqdx_positiveX_2=TMath::Median(dqdx_value_positiveX_2[i][j].size(),&dqdx_value_positiveX_2[i][j][0]);
-	  dqdx_ZvsY_positiveX_hist_2->SetBinContent(i+1,j+1,local_median_dqdx_positiveX_2);
-	  float local_median_dedx_positiveX_2=TMath::Median(dedx_value_positiveX_2[i][j].size(),&dedx_value_positiveX_2[i][j][0]);
-	  dedx_ZvsY_positiveX_hist_2->SetBinContent(i+1,j+1,local_median_dedx_positiveX_2);
-	}
-      }
-    }
-    float global_median_dqdx_positiveX_2=TMath::Median(all_dqdx_value_positiveX_2.size(),&all_dqdx_value_positiveX_2[0]);
-
-    /////////////////////////////////////////////////////////////////////////////////////
-    std::cout << "********************** Calculating fractional dQ/dx corrections for each Y-Z cell ********************" << std::endl;
-    //////////////////// Calculating the fractional corrections in each YZ cell /////////////
-    for(size_t i=0; i<dqdx_value_negativeX_2.size(); i++){
-      for(size_t j=0; j<dqdx_value_negativeX_2[i].size(); j++){
-	if(dqdx_value_negativeX_2[i][j].size()>5){
-	  float local_median_dqdx_negativeX_2=TMath::Median(dqdx_value_negativeX_2[i][j].size(),&dqdx_value_negativeX_2[i][j][0]);
-	  float fractional_dqdx_negativeX_2=float(global_median_dqdx_negativeX_2)/local_median_dqdx_negativeX_2; 
-	  correction_dqdx_ZvsY_negativeX_hist_2->SetBinContent(i+1,j+1,fractional_dqdx_negativeX_2);
-	  dqdx_frac_correction_negativeX_2[i][j].push_back(fractional_dqdx_negativeX_2);
-	}
-      }
-    }
-    for(size_t i=0; i<dqdx_value_positiveX_2.size(); i++){
-      for(size_t j=0; j<dqdx_value_positiveX_2[i].size(); j++){
-	if(dqdx_value_positiveX_2[i][j].size()>5){
-	  float local_median_dqdx_positiveX_2=TMath::Median(dqdx_value_positiveX_2[i][j].size(),&dqdx_value_positiveX_2[i][j][0]);
-	  float fractional_dqdx_positiveX_2=float(global_median_dqdx_positiveX_2)/local_median_dqdx_positiveX_2; 
-	  correction_dqdx_ZvsY_positiveX_hist_2->SetBinContent(i+1,j+1,fractional_dqdx_positiveX_2);
-	  dqdx_frac_correction_positiveX_2[i][j].push_back(fractional_dqdx_positiveX_2);
-	}
-      }
-    }
-    ///////////////////////////////////////////////////////////////////////////////////
-    std::cout << "******************** Calculating corrected dQ/dx value for each Y-Z cell **********************" << std::endl;
-    //////////////// How corrected YZ dqdx distribution looks like ///////////////////
-    for(size_t i=0; i<dqdx_value_negativeX_2.size(); i++){
-      for(size_t j=0; j<dqdx_value_negativeX_2[i].size(); j++){
-	if(dqdx_value_negativeX_2[i][j].size()>5){
-	  float local_median_dqdx_negativeX_2=TMath::Median(dqdx_value_negativeX_2[i][j].size(),&dqdx_value_negativeX_2[i][j][0]);
-	  float corrected_dqdx_negativeX_2=local_median_dqdx_negativeX_2*dqdx_frac_correction_negativeX_2[i][j][0];
-	  corrected_dqdx_negativeX_hist_2->SetBinContent(i+1,j+1,corrected_dqdx_negativeX_2);
-	} 
-      }
-    }
-    for(size_t i=0; i<dqdx_value_positiveX_2.size(); i++){
-      for(size_t j=0; j<dqdx_value_positiveX_2[i].size(); j++){
-	if(dqdx_value_positiveX_2[i][j].size()>5){
-	  float local_median_dqdx_positiveX_2=TMath::Median(dqdx_value_positiveX_2[i][j].size(),&dqdx_value_positiveX_2[i][j][0]);
-	  float corrected_dqdx_positiveX_2=local_median_dqdx_positiveX_2*dqdx_frac_correction_positiveX_2[i][j][0];
-	  corrected_dqdx_positiveX_hist_2->SetBinContent(i+1,j+1,corrected_dqdx_positiveX_2);
-	} 
-      }
-    }
-    /////////////////////////////////////////////////////////////////////////////////
-
-
-    ////similar calculation for plane_1
-    for(size_t i=0; i<dqdx_value_negativeX_1.size(); i++){
-      for(size_t j=0; j<dqdx_value_negativeX_1[i].size(); j++){
-	if(dqdx_value_negativeX_1[i][j].size()>5){
-	  for(size_t k=0; k<dqdx_value_negativeX_1[i][j].size(); k++){
-	    all_dqdx_value_negativeX_1.push_back(dqdx_value_negativeX_1[i][j][k]); 
-	  }
-       
-	  float local_median_dqdx_negativeX_1=TMath::Median(dqdx_value_negativeX_1[i][j].size(),&dqdx_value_negativeX_1[i][j][0]);
-	  dqdx_ZvsY_negativeX_hist_1->SetBinContent(i+1,j+1,local_median_dqdx_negativeX_1);
-	  float local_median_dedx_negativeX_1=TMath::Median(dedx_value_negativeX_1[i][j].size(),&dedx_value_negativeX_1[i][j][0]);
-	  dedx_ZvsY_negativeX_hist_1->SetBinContent(i+1,j+1,local_median_dedx_negativeX_1);
-	}
-      }
-    }
-    float global_median_dqdx_negativeX_1=TMath::Median(all_dqdx_value_negativeX_1.size(),&all_dqdx_value_negativeX_1[0]);
-    for(size_t i=0; i<dqdx_value_positiveX_1.size(); i++){
-      for(size_t j=0; j<dqdx_value_positiveX_1[i].size(); j++){
-	if(dqdx_value_positiveX_1[i][j].size()>5){
-	  for(size_t k=0; k<dqdx_value_positiveX_1[i][j].size(); k++){
-	    all_dqdx_value_positiveX_1.push_back(dqdx_value_positiveX_1[i][j][k]); 
-	  }
-	  float local_median_dqdx_positiveX_1=TMath::Median(dqdx_value_positiveX_1[i][j].size(),&dqdx_value_positiveX_1[i][j][0]);
-	  dqdx_ZvsY_positiveX_hist_1->SetBinContent(i+1,j+1,local_median_dqdx_positiveX_1);
-	  float local_median_dedx_positiveX_1=TMath::Median(dedx_value_positiveX_1[i][j].size(),&dedx_value_positiveX_1[i][j][0]);
-	  dedx_ZvsY_positiveX_hist_1->SetBinContent(i+1,j+1,local_median_dedx_positiveX_1);
-	}
-      }
-    }
-    float global_median_dqdx_positiveX_1=TMath::Median(all_dqdx_value_positiveX_1.size(),&all_dqdx_value_positiveX_1[0]);
-
-    /////////////////////////////////////////////////////////////////////////////////////
-    std::cout << "********************** Calculating fractional dQ/dx corrections for each Y-Z cell ********************" << std::endl;
-    //////////////////// Calculating the fractional corrections in each YZ cell /////////////
-    for(size_t i=0; i<dqdx_value_negativeX_1.size(); i++){
-      for(size_t j=0; j<dqdx_value_negativeX_1[i].size(); j++){
-	if(dqdx_value_negativeX_1[i][j].size()>5){
-	  float local_median_dqdx_negativeX_1=TMath::Median(dqdx_value_negativeX_1[i][j].size(),&dqdx_value_negativeX_1[i][j][0]);
-	  float fractional_dqdx_negativeX_1=float(global_median_dqdx_negativeX_1)/local_median_dqdx_negativeX_1; 
-	  correction_dqdx_ZvsY_negativeX_hist_1->SetBinContent(i+1,j+1,fractional_dqdx_negativeX_1);
-	  dqdx_frac_correction_negativeX_1[i][j].push_back(fractional_dqdx_negativeX_1);
-	}
-      }
-    }
-    for(size_t i=0; i<dqdx_value_positiveX_1.size(); i++){
-      for(size_t j=0; j<dqdx_value_positiveX_1[i].size(); j++){
-	if(dqdx_value_positiveX_1[i][j].size()>5){
-	  float local_median_dqdx_positiveX_1=TMath::Median(dqdx_value_positiveX_1[i][j].size(),&dqdx_value_positiveX_1[i][j][0]);
-	  float fractional_dqdx_positiveX_1=float(global_median_dqdx_positiveX_1)/local_median_dqdx_positiveX_1; 
-	  correction_dqdx_ZvsY_positiveX_hist_1->SetBinContent(i+1,j+1,fractional_dqdx_positiveX_1);
-	  dqdx_frac_correction_positiveX_1[i][j].push_back(fractional_dqdx_positiveX_1);
-	}
-      }
-    }
-    ///////////////////////////////////////////////////////////////////////////////////
-    std::cout << "******************** Calculating corrected dQ/dx value for each Y-Z cell **********************" << std::endl;
-    //////////////// How corrected YZ dqdx distribution looks like ///////////////////
-    for(size_t i=0; i<dqdx_value_negativeX_1.size(); i++){
-      for(size_t j=0; j<dqdx_value_negativeX_1[i].size(); j++){
-	if(dqdx_value_negativeX_1[i][j].size()>5){
-	  float local_median_dqdx_negativeX_1=TMath::Median(dqdx_value_negativeX_1[i][j].size(),&dqdx_value_negativeX_1[i][j][0]);
-	  float corrected_dqdx_negativeX_1=local_median_dqdx_negativeX_1*dqdx_frac_correction_negativeX_1[i][j][0];
-	  corrected_dqdx_negativeX_hist_1->SetBinContent(i+1,j+1,corrected_dqdx_negativeX_1);
-	} 
-      }
-    }
-    for(size_t i=0; i<dqdx_value_positiveX_1.size(); i++){
-      for(size_t j=0; j<dqdx_value_positiveX_1[i].size(); j++){
-	if(dqdx_value_positiveX_1[i][j].size()>5){
-	  float local_median_dqdx_positiveX_1=TMath::Median(dqdx_value_positiveX_1[i][j].size(),&dqdx_value_positiveX_1[i][j][0]);
-	  float corrected_dqdx_positiveX_1=local_median_dqdx_positiveX_1*dqdx_frac_correction_positiveX_1[i][j][0];
-	  corrected_dqdx_positiveX_hist_1->SetBinContent(i+1,j+1,corrected_dqdx_positiveX_1);
-	} 
-      }
-    }
-    ///////////////////////////////////////////////////////////////////////////////
-    ////similar calculations for plane 0
-    for(size_t i=0; i<dqdx_value_negativeX_0.size(); i++){
-      for(size_t j=0; j<dqdx_value_negativeX_0[i].size(); j++){
-	if(dqdx_value_negativeX_0[i][j].size()>5){
-	  for(size_t k=0; k<dqdx_value_negativeX_0[i][j].size(); k++){
-	    all_dqdx_value_negativeX_0.push_back(dqdx_value_negativeX_0[i][j][k]); 
-	  }
-       
-	  float local_median_dqdx_negativeX_0=TMath::Median(dqdx_value_negativeX_0[i][j].size(),&dqdx_value_negativeX_0[i][j][0]);
-	  dqdx_ZvsY_negativeX_hist_0->SetBinContent(i+1,j+1,local_median_dqdx_negativeX_0);
-	  float local_median_dedx_negativeX_0=TMath::Median(dedx_value_negativeX_0[i][j].size(),&dedx_value_negativeX_0[i][j][0]);
-	  dedx_ZvsY_negativeX_hist_0->SetBinContent(i+1,j+1,local_median_dedx_negativeX_0);
-	}
-      }
-    }
-    float global_median_dqdx_negativeX_0=TMath::Median(all_dqdx_value_negativeX_0.size(),&all_dqdx_value_negativeX_0[0]);
-    for(size_t i=0; i<dqdx_value_positiveX_0.size(); i++){
-      for(size_t j=0; j<dqdx_value_positiveX_0[i].size(); j++){
-	if(dqdx_value_positiveX_0[i][j].size()>5){
-	  for(size_t k=0; k<dqdx_value_positiveX_0[i][j].size(); k++){
-	    all_dqdx_value_positiveX_0.push_back(dqdx_value_positiveX_0[i][j][k]); 
-	  }
-	  float local_median_dqdx_positiveX_0=TMath::Median(dqdx_value_positiveX_0[i][j].size(),&dqdx_value_positiveX_0[i][j][0]);
-	  dqdx_ZvsY_positiveX_hist_0->SetBinContent(i+1,j+1,local_median_dqdx_positiveX_0);
-	  float local_median_dedx_positiveX_0=TMath::Median(dedx_value_positiveX_0[i][j].size(),&dedx_value_positiveX_0[i][j][0]);
-	  dedx_ZvsY_positiveX_hist_0->SetBinContent(i+1,j+1,local_median_dedx_positiveX_0);
-	}
-      }
-    }
-    float global_median_dqdx_positiveX_0=TMath::Median(all_dqdx_value_positiveX_0.size(),&all_dqdx_value_positiveX_0[0]);
-
-    /////////////////////////////////////////////////////////////////////////////////////
-    std::cout << "********************** Calculating fractional dQ/dx corrections for each Y-Z cell ********************" << std::endl;
-    //////////////////// Calculating the fractional corrections in each YZ cell /////////////
-    for(size_t i=0; i<dqdx_value_negativeX_0.size(); i++){
-      for(size_t j=0; j<dqdx_value_negativeX_0[i].size(); j++){
-	if(dqdx_value_negativeX_0[i][j].size()>5){
-	  float local_median_dqdx_negativeX_0=TMath::Median(dqdx_value_negativeX_0[i][j].size(),&dqdx_value_negativeX_0[i][j][0]);
-	  float fractional_dqdx_negativeX_0=float(global_median_dqdx_negativeX_0)/local_median_dqdx_negativeX_0; 
-	  correction_dqdx_ZvsY_negativeX_hist_0->SetBinContent(i+1,j+1,fractional_dqdx_negativeX_0);
-	  dqdx_frac_correction_negativeX_0[i][j].push_back(fractional_dqdx_negativeX_0);
-	}
-      }
-    }
-    for(size_t i=0; i<dqdx_value_positiveX_0.size(); i++){
-      for(size_t j=0; j<dqdx_value_positiveX_0[i].size(); j++){
-	if(dqdx_value_positiveX_0[i][j].size()>5){
-	  float local_median_dqdx_positiveX_0=TMath::Median(dqdx_value_positiveX_0[i][j].size(),&dqdx_value_positiveX_0[i][j][0]);
-	  float fractional_dqdx_positiveX_0=float(global_median_dqdx_positiveX_0)/local_median_dqdx_positiveX_0; 
-	  correction_dqdx_ZvsY_positiveX_hist_0->SetBinContent(i+1,j+1,fractional_dqdx_positiveX_0);
-	  dqdx_frac_correction_positiveX_0[i][j].push_back(fractional_dqdx_positiveX_0);
-	}
-      }
-    }
-    ///////////////////////////////////////////////////////////////////////////////////
-    std::cout << "******************** Calculating corrected dQ/dx value for each Y-Z cell **********************" << std::endl;
-    //////////////// How corrected YZ dqdx distribution looks like ///////////////////
-    for(size_t i=0; i<dqdx_value_negativeX_0.size(); i++){
-      for(size_t j=0; j<dqdx_value_negativeX_0[i].size(); j++){
-	if(dqdx_value_negativeX_0[i][j].size()>05){
-	  float local_median_dqdx_negativeX_0=TMath::Median(dqdx_value_negativeX_0[i][j].size(),&dqdx_value_negativeX_0[i][j][0]);
-	  float corrected_dqdx_negativeX_0=local_median_dqdx_negativeX_0*dqdx_frac_correction_negativeX_0[i][j][0];
-	  corrected_dqdx_negativeX_hist_0->SetBinContent(i+1,j+1,corrected_dqdx_negativeX_0);
-	} 
-      }
-    }
-    for(size_t i=0; i<dqdx_value_positiveX_0.size(); i++){
-      for(size_t j=0; j<dqdx_value_positiveX_0[i].size(); j++){
-	if(dqdx_value_positiveX_0[i][j].size()>5){
-	  float local_median_dqdx_positiveX_0=TMath::Median(dqdx_value_positiveX_0[i][j].size(),&dqdx_value_positiveX_0[i][j][0]);
-	  float corrected_dqdx_positiveX_0=local_median_dqdx_positiveX_0*dqdx_frac_correction_positiveX_0[i][j][0];
-	  corrected_dqdx_positiveX_hist_0->SetBinContent(i+1,j+1,corrected_dqdx_positiveX_0);
-	} 
-      }
-    }
-    /////plane_0 done
-
-    dqdx_ZvsY_negativeX_hist_2->Write();
-    dqdx_ZvsY_positiveX_hist_2->Write();
-    dedx_ZvsY_negativeX_hist_2->Write();
-    dedx_ZvsY_positiveX_hist_2->Write();
-    correction_dqdx_ZvsY_negativeX_hist_2->Write();
-    correction_dqdx_ZvsY_positiveX_hist_2->Write();
-    corrected_dqdx_negativeX_hist_2->Write();
-    corrected_dqdx_positiveX_hist_2->Write();
-
-    dqdx_ZvsY_negativeX_hist_1->Write();
-    dqdx_ZvsY_positiveX_hist_1->Write();
-    dedx_ZvsY_negativeX_hist_1->Write();
-    dedx_ZvsY_positiveX_hist_1->Write();
-    correction_dqdx_ZvsY_negativeX_hist_1->Write();
-    correction_dqdx_ZvsY_positiveX_hist_1->Write();
-    corrected_dqdx_negativeX_hist_1->Write();
-    corrected_dqdx_positiveX_hist_1->Write();
-
-    dqdx_ZvsY_negativeX_hist_0->Write();
-    dqdx_ZvsY_positiveX_hist_0->Write();
-    dedx_ZvsY_negativeX_hist_0->Write();
-    dedx_ZvsY_positiveX_hist_0->Write();
-    correction_dqdx_ZvsY_negativeX_hist_0->Write();
-    correction_dqdx_ZvsY_positiveX_hist_0->Write();
-    corrected_dqdx_negativeX_hist_0->Write();
-    corrected_dqdx_positiveX_hist_0->Write();
-    dqdx_ZvsY_negativeX_hist_2->Draw("colz");
-    std::cout<<"crossing tracks "<<filtered_tracks<<std::endl;
-    file->Close();
-    std::cout << "*************** Y_Z_Correction_make_class.C macro has ended ******************" << std::endl;  
   }
+  float global_median_dqdx_negativeX_2=TMath::Median(all_dqdx_value_negativeX_2.size(),&all_dqdx_value_negativeX_2[0]);
+  for(size_t i=0; i<dqdx_value_positiveX_2.size(); i++){
+    for(size_t j=0; j<dqdx_value_positiveX_2[i].size(); j++){
+      if(dqdx_value_positiveX_2[i][j].size()>5){
+        for(size_t k=0; k<dqdx_value_positiveX_2[i][j].size(); k++){
+          all_dqdx_value_positiveX_2.push_back(dqdx_value_positiveX_2[i][j][k]); 
+        }
+        float local_median_dqdx_positiveX_2=TMath::Median(dqdx_value_positiveX_2[i][j].size(),&dqdx_value_positiveX_2[i][j][0]);
+        dqdx_ZvsY_positiveX_hist_2->SetBinContent(i+1,j+1,local_median_dqdx_positiveX_2);
+        float local_median_dedx_positiveX_2=TMath::Median(dedx_value_positiveX_2[i][j].size(),&dedx_value_positiveX_2[i][j][0]);
+        dedx_ZvsY_positiveX_hist_2->SetBinContent(i+1,j+1,local_median_dedx_positiveX_2);
+      }
+    }
+  }
+  float global_median_dqdx_positiveX_2=TMath::Median(all_dqdx_value_positiveX_2.size(),&all_dqdx_value_positiveX_2[0]);
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  std::cout << "********************** Calculating fractional dQ/dx corrections for each Y-Z cell ********************" << std::endl;
+  //////////////////// Calculating the fractional corrections in each YZ cell /////////////
+  for(size_t i=0; i<dqdx_value_negativeX_2.size(); i++){
+    for(size_t j=0; j<dqdx_value_negativeX_2[i].size(); j++){
+      if(dqdx_value_negativeX_2[i][j].size()>5){
+        float local_median_dqdx_negativeX_2=TMath::Median(dqdx_value_negativeX_2[i][j].size(),&dqdx_value_negativeX_2[i][j][0]);
+        float fractional_dqdx_negativeX_2=float(global_median_dqdx_negativeX_2)/local_median_dqdx_negativeX_2; 
+        correction_dqdx_ZvsY_negativeX_hist_2->SetBinContent(i+1,j+1,fractional_dqdx_negativeX_2);
+        dqdx_frac_correction_negativeX_2[i][j].push_back(fractional_dqdx_negativeX_2);
+      }
+    }
+  }
+  for(size_t i=0; i<dqdx_value_positiveX_2.size(); i++){
+    for(size_t j=0; j<dqdx_value_positiveX_2[i].size(); j++){
+      if(dqdx_value_positiveX_2[i][j].size()>5){
+        float local_median_dqdx_positiveX_2=TMath::Median(dqdx_value_positiveX_2[i][j].size(),&dqdx_value_positiveX_2[i][j][0]);
+        float fractional_dqdx_positiveX_2=float(global_median_dqdx_positiveX_2)/local_median_dqdx_positiveX_2; 
+        correction_dqdx_ZvsY_positiveX_hist_2->SetBinContent(i+1,j+1,fractional_dqdx_positiveX_2);
+        dqdx_frac_correction_positiveX_2[i][j].push_back(fractional_dqdx_positiveX_2);
+      }
+    }
+  }
+  ///////////////////////////////////////////////////////////////////////////////////
+  std::cout << "******************** Calculating corrected dQ/dx value for each Y-Z cell **********************" << std::endl;
+  //////////////// How corrected YZ dqdx distribution looks like ///////////////////
+  for(size_t i=0; i<dqdx_value_negativeX_2.size(); i++){
+    for(size_t j=0; j<dqdx_value_negativeX_2[i].size(); j++){
+      if(dqdx_value_negativeX_2[i][j].size()>5){
+        float local_median_dqdx_negativeX_2=TMath::Median(dqdx_value_negativeX_2[i][j].size(),&dqdx_value_negativeX_2[i][j][0]);
+        float corrected_dqdx_negativeX_2=local_median_dqdx_negativeX_2*dqdx_frac_correction_negativeX_2[i][j][0];
+        corrected_dqdx_negativeX_hist_2->SetBinContent(i+1,j+1,corrected_dqdx_negativeX_2);
+      } 
+    }
+  }
+  for(size_t i=0; i<dqdx_value_positiveX_2.size(); i++){
+    for(size_t j=0; j<dqdx_value_positiveX_2[i].size(); j++){
+      if(dqdx_value_positiveX_2[i][j].size()>5){
+        float local_median_dqdx_positiveX_2=TMath::Median(dqdx_value_positiveX_2[i][j].size(),&dqdx_value_positiveX_2[i][j][0]);
+        float corrected_dqdx_positiveX_2=local_median_dqdx_positiveX_2*dqdx_frac_correction_positiveX_2[i][j][0];
+        corrected_dqdx_positiveX_hist_2->SetBinContent(i+1,j+1,corrected_dqdx_positiveX_2);
+      } 
+    }
+  }
+  /////////////////////////////////////////////////////////////////////////////////
+
+
+  ////similar calculation for plane_1
+  for(size_t i=0; i<dqdx_value_negativeX_1.size(); i++){
+    for(size_t j=0; j<dqdx_value_negativeX_1[i].size(); j++){
+      if(dqdx_value_negativeX_1[i][j].size()>5){
+        for(size_t k=0; k<dqdx_value_negativeX_1[i][j].size(); k++){
+          all_dqdx_value_negativeX_1.push_back(dqdx_value_negativeX_1[i][j][k]); 
+        }
+       
+        float local_median_dqdx_negativeX_1=TMath::Median(dqdx_value_negativeX_1[i][j].size(),&dqdx_value_negativeX_1[i][j][0]);
+        dqdx_ZvsY_negativeX_hist_1->SetBinContent(i+1,j+1,local_median_dqdx_negativeX_1);
+        float local_median_dedx_negativeX_1=TMath::Median(dedx_value_negativeX_1[i][j].size(),&dedx_value_negativeX_1[i][j][0]);
+        dedx_ZvsY_negativeX_hist_1->SetBinContent(i+1,j+1,local_median_dedx_negativeX_1);
+      }
+    }
+  }
+  float global_median_dqdx_negativeX_1=TMath::Median(all_dqdx_value_negativeX_1.size(),&all_dqdx_value_negativeX_1[0]);
+  for(size_t i=0; i<dqdx_value_positiveX_1.size(); i++){
+    for(size_t j=0; j<dqdx_value_positiveX_1[i].size(); j++){
+      if(dqdx_value_positiveX_1[i][j].size()>5){
+        for(size_t k=0; k<dqdx_value_positiveX_1[i][j].size(); k++){
+          all_dqdx_value_positiveX_1.push_back(dqdx_value_positiveX_1[i][j][k]); 
+        }
+        float local_median_dqdx_positiveX_1=TMath::Median(dqdx_value_positiveX_1[i][j].size(),&dqdx_value_positiveX_1[i][j][0]);
+        dqdx_ZvsY_positiveX_hist_1->SetBinContent(i+1,j+1,local_median_dqdx_positiveX_1);
+        float local_median_dedx_positiveX_1=TMath::Median(dedx_value_positiveX_1[i][j].size(),&dedx_value_positiveX_1[i][j][0]);
+        dedx_ZvsY_positiveX_hist_1->SetBinContent(i+1,j+1,local_median_dedx_positiveX_1);
+      }
+    }
+  }
+  float global_median_dqdx_positiveX_1=TMath::Median(all_dqdx_value_positiveX_1.size(),&all_dqdx_value_positiveX_1[0]);
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  std::cout << "********************** Calculating fractional dQ/dx corrections for each Y-Z cell ********************" << std::endl;
+  //////////////////// Calculating the fractional corrections in each YZ cell /////////////
+  for(size_t i=0; i<dqdx_value_negativeX_1.size(); i++){
+    for(size_t j=0; j<dqdx_value_negativeX_1[i].size(); j++){
+      if(dqdx_value_negativeX_1[i][j].size()>5){
+        float local_median_dqdx_negativeX_1=TMath::Median(dqdx_value_negativeX_1[i][j].size(),&dqdx_value_negativeX_1[i][j][0]);
+        float fractional_dqdx_negativeX_1=float(global_median_dqdx_negativeX_1)/local_median_dqdx_negativeX_1; 
+        correction_dqdx_ZvsY_negativeX_hist_1->SetBinContent(i+1,j+1,fractional_dqdx_negativeX_1);
+        dqdx_frac_correction_negativeX_1[i][j].push_back(fractional_dqdx_negativeX_1);
+      }
+    }
+  }
+  for(size_t i=0; i<dqdx_value_positiveX_1.size(); i++){
+    for(size_t j=0; j<dqdx_value_positiveX_1[i].size(); j++){
+      if(dqdx_value_positiveX_1[i][j].size()>5){
+        float local_median_dqdx_positiveX_1=TMath::Median(dqdx_value_positiveX_1[i][j].size(),&dqdx_value_positiveX_1[i][j][0]);
+        float fractional_dqdx_positiveX_1=float(global_median_dqdx_positiveX_1)/local_median_dqdx_positiveX_1; 
+        correction_dqdx_ZvsY_positiveX_hist_1->SetBinContent(i+1,j+1,fractional_dqdx_positiveX_1);
+        dqdx_frac_correction_positiveX_1[i][j].push_back(fractional_dqdx_positiveX_1);
+      }
+    }
+  }
+  ///////////////////////////////////////////////////////////////////////////////////
+  std::cout << "******************** Calculating corrected dQ/dx value for each Y-Z cell **********************" << std::endl;
+  //////////////// How corrected YZ dqdx distribution looks like ///////////////////
+  for(size_t i=0; i<dqdx_value_negativeX_1.size(); i++){
+    for(size_t j=0; j<dqdx_value_negativeX_1[i].size(); j++){
+      if(dqdx_value_negativeX_1[i][j].size()>5){
+        float local_median_dqdx_negativeX_1=TMath::Median(dqdx_value_negativeX_1[i][j].size(),&dqdx_value_negativeX_1[i][j][0]);
+        float corrected_dqdx_negativeX_1=local_median_dqdx_negativeX_1*dqdx_frac_correction_negativeX_1[i][j][0];
+        corrected_dqdx_negativeX_hist_1->SetBinContent(i+1,j+1,corrected_dqdx_negativeX_1);
+      } 
+    }
+  }
+  for(size_t i=0; i<dqdx_value_positiveX_1.size(); i++){
+    for(size_t j=0; j<dqdx_value_positiveX_1[i].size(); j++){
+      if(dqdx_value_positiveX_1[i][j].size()>5){
+        float local_median_dqdx_positiveX_1=TMath::Median(dqdx_value_positiveX_1[i][j].size(),&dqdx_value_positiveX_1[i][j][0]);
+        float corrected_dqdx_positiveX_1=local_median_dqdx_positiveX_1*dqdx_frac_correction_positiveX_1[i][j][0];
+        corrected_dqdx_positiveX_hist_1->SetBinContent(i+1,j+1,corrected_dqdx_positiveX_1);
+      } 
+    }
+  }
+  ///////////////////////////////////////////////////////////////////////////////
+  ////similar calculations for plane 0
+  for(size_t i=0; i<dqdx_value_negativeX_0.size(); i++){
+    for(size_t j=0; j<dqdx_value_negativeX_0[i].size(); j++){
+      if(dqdx_value_negativeX_0[i][j].size()>5){
+        for(size_t k=0; k<dqdx_value_negativeX_0[i][j].size(); k++){
+          all_dqdx_value_negativeX_0.push_back(dqdx_value_negativeX_0[i][j][k]); 
+        }
+       
+        float local_median_dqdx_negativeX_0=TMath::Median(dqdx_value_negativeX_0[i][j].size(),&dqdx_value_negativeX_0[i][j][0]);
+        dqdx_ZvsY_negativeX_hist_0->SetBinContent(i+1,j+1,local_median_dqdx_negativeX_0);
+        float local_median_dedx_negativeX_0=TMath::Median(dedx_value_negativeX_0[i][j].size(),&dedx_value_negativeX_0[i][j][0]);
+        dedx_ZvsY_negativeX_hist_0->SetBinContent(i+1,j+1,local_median_dedx_negativeX_0);
+      }
+    }
+  }
+  float global_median_dqdx_negativeX_0=TMath::Median(all_dqdx_value_negativeX_0.size(),&all_dqdx_value_negativeX_0[0]);
+  for(size_t i=0; i<dqdx_value_positiveX_0.size(); i++){
+    for(size_t j=0; j<dqdx_value_positiveX_0[i].size(); j++){
+      if(dqdx_value_positiveX_0[i][j].size()>5){
+        for(size_t k=0; k<dqdx_value_positiveX_0[i][j].size(); k++){
+          all_dqdx_value_positiveX_0.push_back(dqdx_value_positiveX_0[i][j][k]); 
+        }
+        float local_median_dqdx_positiveX_0=TMath::Median(dqdx_value_positiveX_0[i][j].size(),&dqdx_value_positiveX_0[i][j][0]);
+        dqdx_ZvsY_positiveX_hist_0->SetBinContent(i+1,j+1,local_median_dqdx_positiveX_0);
+        float local_median_dedx_positiveX_0=TMath::Median(dedx_value_positiveX_0[i][j].size(),&dedx_value_positiveX_0[i][j][0]);
+        dedx_ZvsY_positiveX_hist_0->SetBinContent(i+1,j+1,local_median_dedx_positiveX_0);
+      }
+    }
+  }
+  float global_median_dqdx_positiveX_0=TMath::Median(all_dqdx_value_positiveX_0.size(),&all_dqdx_value_positiveX_0[0]);
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  std::cout << "********************** Calculating fractional dQ/dx corrections for each Y-Z cell ********************" << std::endl;
+  //////////////////// Calculating the fractional corrections in each YZ cell /////////////
+  for(size_t i=0; i<dqdx_value_negativeX_0.size(); i++){
+    for(size_t j=0; j<dqdx_value_negativeX_0[i].size(); j++){
+      if(dqdx_value_negativeX_0[i][j].size()>5){
+        float local_median_dqdx_negativeX_0=TMath::Median(dqdx_value_negativeX_0[i][j].size(),&dqdx_value_negativeX_0[i][j][0]);
+        float fractional_dqdx_negativeX_0=float(global_median_dqdx_negativeX_0)/local_median_dqdx_negativeX_0; 
+        correction_dqdx_ZvsY_negativeX_hist_0->SetBinContent(i+1,j+1,fractional_dqdx_negativeX_0);
+        dqdx_frac_correction_negativeX_0[i][j].push_back(fractional_dqdx_negativeX_0);
+      }
+    }
+  }
+  for(size_t i=0; i<dqdx_value_positiveX_0.size(); i++){
+    for(size_t j=0; j<dqdx_value_positiveX_0[i].size(); j++){
+      if(dqdx_value_positiveX_0[i][j].size()>5){
+        float local_median_dqdx_positiveX_0=TMath::Median(dqdx_value_positiveX_0[i][j].size(),&dqdx_value_positiveX_0[i][j][0]);
+        float fractional_dqdx_positiveX_0=float(global_median_dqdx_positiveX_0)/local_median_dqdx_positiveX_0; 
+        correction_dqdx_ZvsY_positiveX_hist_0->SetBinContent(i+1,j+1,fractional_dqdx_positiveX_0);
+        dqdx_frac_correction_positiveX_0[i][j].push_back(fractional_dqdx_positiveX_0);
+      }
+    }
+  }
+  ///////////////////////////////////////////////////////////////////////////////////
+  std::cout << "******************** Calculating corrected dQ/dx value for each Y-Z cell **********************" << std::endl;
+  //////////////// How corrected YZ dqdx distribution looks like ///////////////////
+  for(size_t i=0; i<dqdx_value_negativeX_0.size(); i++){
+    for(size_t j=0; j<dqdx_value_negativeX_0[i].size(); j++){
+      if(dqdx_value_negativeX_0[i][j].size()>05){
+        float local_median_dqdx_negativeX_0=TMath::Median(dqdx_value_negativeX_0[i][j].size(),&dqdx_value_negativeX_0[i][j][0]);
+        float corrected_dqdx_negativeX_0=local_median_dqdx_negativeX_0*dqdx_frac_correction_negativeX_0[i][j][0];
+        corrected_dqdx_negativeX_hist_0->SetBinContent(i+1,j+1,corrected_dqdx_negativeX_0);
+      } 
+    }
+  }
+  for(size_t i=0; i<dqdx_value_positiveX_0.size(); i++){
+    for(size_t j=0; j<dqdx_value_positiveX_0[i].size(); j++){
+      if(dqdx_value_positiveX_0[i][j].size()>5){
+        float local_median_dqdx_positiveX_0=TMath::Median(dqdx_value_positiveX_0[i][j].size(),&dqdx_value_positiveX_0[i][j][0]);
+        float corrected_dqdx_positiveX_0=local_median_dqdx_positiveX_0*dqdx_frac_correction_positiveX_0[i][j][0];
+        corrected_dqdx_positiveX_hist_0->SetBinContent(i+1,j+1,corrected_dqdx_positiveX_0);
+      } 
+    }
+  }
+  /////plane_0 done
+
+  dqdx_ZvsY_negativeX_hist_2->Write();
+  dqdx_ZvsY_positiveX_hist_2->Write();
+  dedx_ZvsY_negativeX_hist_2->Write();
+  dedx_ZvsY_positiveX_hist_2->Write();
+  correction_dqdx_ZvsY_negativeX_hist_2->Write();
+  correction_dqdx_ZvsY_positiveX_hist_2->Write();
+  corrected_dqdx_negativeX_hist_2->Write();
+  corrected_dqdx_positiveX_hist_2->Write();
+
+  dqdx_ZvsY_negativeX_hist_1->Write();
+  dqdx_ZvsY_positiveX_hist_1->Write();
+  dedx_ZvsY_negativeX_hist_1->Write();
+  dedx_ZvsY_positiveX_hist_1->Write();
+  correction_dqdx_ZvsY_negativeX_hist_1->Write();
+  correction_dqdx_ZvsY_positiveX_hist_1->Write();
+  corrected_dqdx_negativeX_hist_1->Write();
+  corrected_dqdx_positiveX_hist_1->Write();
+
+  dqdx_ZvsY_negativeX_hist_0->Write();
+  dqdx_ZvsY_positiveX_hist_0->Write();
+  dedx_ZvsY_negativeX_hist_0->Write();
+  dedx_ZvsY_positiveX_hist_0->Write();
+  correction_dqdx_ZvsY_negativeX_hist_0->Write();
+  correction_dqdx_ZvsY_positiveX_hist_0->Write();
+  corrected_dqdx_negativeX_hist_0->Write();
+  corrected_dqdx_positiveX_hist_0->Write();
+  dqdx_ZvsY_negativeX_hist_2->Draw("colz");
+  std::cout<<"crossing tracks "<<filtered_tracks<<std::endl;
+  file->Close();
+  std::cout << "*************** Y_Z_Correction_make_class.C macro has ended ******************" << std::endl;  
+}
 
 int main(int argc, char *argv[]) {
   
@@ -558,12 +565,12 @@ int main(int argc, char *argv[]) {
   if (!(michelnumber == "0"||michelnumber == "1"||michelnumber == "2"||michelnumber == "3")){
     cout << "Error: Michel tree number must be 0,1, or 2" << endl;
     return 0;
-    }
+  }
 
   if (michelnumber=="0") michelnumber = "";
   cout << Form("michelremoving%s/Event", michelnumber.c_str()) << endl;
 
- // string runident = argv[3];
+  // string runident = argv[3];
   TChain* shtree = new TChain("Event");
 
   if (infile.substr(infile.find_last_of(".") + 1) == "root"){

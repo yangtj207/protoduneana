@@ -422,7 +422,7 @@ pdspanalysis:
     { 
       Cut:    "reac"
       Name: "fReac"
-      Range: [000., 1200.]
+      Range: [000., 9000.]
       Nominal: 1.0 
       Sigma: .2
     }
