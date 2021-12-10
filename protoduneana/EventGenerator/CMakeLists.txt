@@ -40,7 +40,7 @@ art_make( BASENAME_ONLY
                         ROOT_BASIC_LIB_LIST
                         ${SQLITE3}
                         ${ROOT_EG}
-                        IFDH
+                        ifdh::ifdh 
 			ProtoDUNEDataUtils
                         ProtoDUNEUtilities
                         ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
