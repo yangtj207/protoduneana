@@ -11,7 +11,7 @@ samweb = samweb_cli.SAMWebClient(experiment='dune')
 files = samweb.listFiles("defname: %s " % (sys.argv[1]))
 
 run = -1
-totalevts = 0
+totalevts = -1
 #print files
 for file in files:
     #print (file)
@@ -20,9 +20,11 @@ for file in files:
         metadata = samweb.getMetadata(file)
         #print (metadata)
         if metadata['file_type'] != 'mc':
+            totalevts = 0
             run = metadata['runs'][0][0]
             #print (run)
         else:
+            totalevts = 0
             run = 0
         f = open("input_run%s.txt" % run, "w")
     pnfs = loc[0]['full_path'][8:]
@@ -36,6 +38,6 @@ for file in files:
     #print (xroot)
     f.write(xroot)
     #print("File name: %s, total events: %s" % (file, totalevts))
-f.close()
+#f.close()
 
 print(totalevts)
