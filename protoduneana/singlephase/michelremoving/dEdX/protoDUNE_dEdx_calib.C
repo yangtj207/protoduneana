@@ -947,7 +947,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
       for (size_t ihitplane = 0; ihitplane < 3; ++ihitplane) {
         vector<float> res, dq, first5dq, last5dq;
         if(ihitplane==2 && ((abs(180/TMath::Pi()*trackthetaxz[i])>60 &&
-                             abs(abs(180/TMath::Pi()*trackthetaxz[i])<120))||
+                             abs(180/TMath::Pi()*trackthetaxz[i])<120)||
                             (abs(180/TMath::Pi()*trackthetayz[i])>80 &&
                              abs(180/TMath::Pi()*trackthetayz[i])<100))) continue;
  

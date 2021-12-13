@@ -203,14 +203,13 @@ void protoDUNE_validate_calib::Loop(TString mn)
   TVectorD meanPitch1(nbins);
   TVectorD meanPitch2(nbins);
 
+  double avgKE[3][nbins] = {{0}};
+  double avgPitch[3][nbins] = {{0}};
+  int nhits[3][nbins] = {{0}};
   TVectorD params(3);
   params[0] = alp;
   params[1] = bet;
   params[2] = dedx;
-
-  double avgKE[3][nbins] = {0};
-  double avgPitch[3][nbins] = {0};
-  int nhits[3][nbins] = {0};
 
   std::vector<std::vector<TH1D*>> dedx(3);
   TH2D *dedxke[3];
