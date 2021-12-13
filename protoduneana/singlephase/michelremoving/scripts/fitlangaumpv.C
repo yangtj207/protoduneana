@@ -11,6 +11,7 @@
 #include "TBox.h"
 #include "TLatex.h"
 #include "TPaveText.h"
+#include "TStyle.h"
 #include <string> 
 #include <fstream>
 
@@ -104,7 +105,7 @@ Double_t langaufun(Double_t *x, Double_t *par) {
   return (par[2] * step * sum * invsq2pi / par[3]);
 }
 
- TF1 *langaufit(TH1D *his, Double_t *fitrange, Double_t *startvalues, Double_t *parlimitslo, Double_t *parlimitshi, Double_t *fitparams, Double_t *fiterrors, Double_t *ChiSqr, Int_t *NDF, Int_t *Status)
+ TF1 *langaufit(TH1 *his, Double_t *fitrange, Double_t *startvalues, Double_t *parlimitslo, Double_t *parlimitshi, Double_t *fitparams, Double_t *fiterrors, Double_t *ChiSqr, Int_t *NDF, Int_t *Status)
 // TF1 *langaufit(TH1D *his, Double_t *fitrange, Double_t *startvalues, Double_t *parlimitslo, Double_t *parlimitshi, Double_t *fitparams, Double_t *fiterrors, Double_t *ChiSqr, Int_t *NDF)
 {
   Int_t i;
@@ -124,7 +125,8 @@ Double_t langaufun(Double_t *x, Double_t *par) {
   }
 
 //  his->Fit(FunName,"RB0");   // fit within specified range, use ParLimits, do not plot
-  TFitResultPtr fitres = his->Fit(FunName,"RBOS"); // fit within specified range, use ParLimits, do not plot /////////////////// Initial code use the mode "RBO" (commented by VARUNA) ///////////
+  //his->SetStats(0);
+  TFitResultPtr fitres = his->Fit(FunName,"RBOSQ"); // fit within specified range, use ParLimits, do not plot /////////////////// Initial code use the mode "RBO" (commented by VARUNA) ///////////
 
   ffit->GetParameters(fitparams);    // obtain fit parameters
   for (i=0; i<4; i++) {
@@ -226,7 +228,7 @@ int main(int argc, char *argv[]) {
   if (!argv[1]){
     cout<<"Error: no input file"<<endl;
   }
-  
+  gStyle->SetOptStat(0);
   //string filename = "Validate_mich2_r5387.root";
   string filename = argv[1];
 
@@ -252,6 +254,8 @@ int main(int argc, char *argv[]) {
 
   TH1D *dedx[3][nbins];
   TH2D *dedxke[3];
+  //TH1F *hdqdx_mip[3];
+  TH1F *hdedx_mip[3];
 
   TCanvas *can = new TCanvas("can","can");
   TCanvas *can2 = new TCanvas("can2","can2",800,800);
@@ -268,8 +272,8 @@ int main(int argc, char *argv[]) {
   pad2->SetGridy();
   pad2->Draw();
 
-  TH2D *fr = new TH2D("fr",";KE (MeV);Data/MC",1000,0,500,1000,0.85,1.05);
-  fr->SetStats(0);
+  TH2D *frame = new TH2D("frame",";KE (MeV);Data/MC",1000,0,500,1000,0.85,1.05);
+  frame->SetStats(0);
 
 //  TLatex latex;
 //  latex.SetTextSize(0.04);
@@ -281,6 +285,8 @@ int main(int argc, char *argv[]) {
     can->cd();
     can->Print(Form("dedx_%zu.ps[", i));
     dedxke[i] = (TH2D*)f.Get(Form("dedxke_%zu",i));
+    //hdqdx_mip[i] = (TH1F*)f.Get(Form("hdqdx_mip_%zu",i));
+    hdedx_mip[i] = (TH1F*)f.Get(Form("hdedx_mip_%zu",i));
     vector<double> vke;
     vector<double> vdedx;
     vector<double> ededx;
@@ -344,6 +350,29 @@ int main(int argc, char *argv[]) {
       }
     }
     can->Print(Form("dedx_%zu.ps]", i));
+
+    //Fit MIP dE/dx distributions
+    Double_t fr[2];
+    Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
+    fr[0]=1.1;//this was originally 0.
+    fr[1]=10.;
+    sv[0]=0.1; sv[1]=0.8*hdedx_mip[i]->GetMean(); sv[2]=hdedx_mip[i]->GetEntries()*0.05; sv[3]=0.05;
+    for(int k=0; k<4; ++k){
+      pllo[k] = 0.01*sv[k];
+      plhi[k] = 100*sv[k];
+    }
+    Double_t chisqr;
+    Int_t    ndf;
+    Int_t    status;
+    TF1 *fitsnr = langaufit(hdedx_mip[i],fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
+    cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
+    fitsnr->SetLineColor(kRed);
+    std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
+    std::cout << "************** Chi^2/NDF : " << fitsnr->GetChisquare()/fitsnr->GetNDF() << std::endl;
+    std::cout << "   MPV : " << fitsnr->GetParameter(1) << " $$$$$$$$$$$$" << std::endl;
+    can->Print(Form("dedx_mip_%zu.pdf",i));
+    can->Print(Form("dedx_mip_%zu.png",i));
+
     pad1->cd();
     TGraphErrors *gr = new TGraphErrors(vke.size(), &vke[0], &vdedx[0], 0, &ededx[0]);
     TGraph *grth = new TGraph(vke.size(), &vke[0], &vdedxth[0]);
@@ -364,13 +393,13 @@ int main(int argc, char *argv[]) {
     pt->AddText(Form("For 250<KE<450 MeV, #chi^{2} = %.1f, nbins = %d", chi2_250_450, 200/binsize));
     pt->Draw();
     pad2->cd();
-    fr->Draw();
-    fr->GetXaxis()->SetLabelSize(0.15);
-    fr->GetXaxis()->SetTitleSize(0.15);
-    fr->GetXaxis()->SetTitleOffset(1);
-    fr->GetYaxis()->SetLabelSize(0.1);
-    fr->GetYaxis()->SetTitleSize(0.15);
-    fr->GetYaxis()->SetTitleOffset(.3);
+    frame->Draw();
+    frame->GetXaxis()->SetLabelSize(0.15);
+    frame->GetXaxis()->SetTitleSize(0.15);
+    frame->GetXaxis()->SetTitleOffset(1);
+    frame->GetYaxis()->SetLabelSize(0.1);
+    frame->GetYaxis()->SetTitleSize(0.15);
+    frame->GetYaxis()->SetTitleOffset(.3);
     TBox *box = new TBox(250,0.85,450,1.05);
     box->SetFillColorAlpha(kRed,0.2);
     box->SetLineColor(kRed);
