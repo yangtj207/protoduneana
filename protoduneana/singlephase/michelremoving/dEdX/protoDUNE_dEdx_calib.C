@@ -267,7 +267,7 @@ Double_t langaufun(Double_t *x, Double_t *par) {
   }
 
 //  his->Fit(FunName,"RB0");   // fit within specified range, use ParLimits, do not plot
-  TFitResultPtr fitres = his->Fit(FunName,"RBOS"); // fit within specified range, use ParLimits, do not plot /////////////////// Initial code use the mode "RBO" (commented by VARUNA) ///////////
+  TFitResultPtr fitres = his->Fit(FunName,"RBOSQ"); // fit within specified range, use ParLimits, do not plot /////////////////// Initial code use the mode "RBO" (commented by VARUNA) ///////////
 
   ffit->GetParameters(fitparams);    // obtain fit parameters
   for (i=0; i<4; i++) {
@@ -368,9 +368,17 @@ Int_t langaupro(Double_t *params, Double_t &maxx, Double_t &FWHM) {
 
 Float_t Dedx(float dqdx, float Ef){
   double Rho = 1.383;//g/cm^3 (liquid argon density at a pressure 18.0 psia) 
-  double betap = 0.212;//(kV/cm)(g/cm^2)/MeV
   double Wion = 23.6e-6;//parameter from ArgoNeuT experiment at 0.481kV/cm
+  //ArgoNeuT parameters
   double alpha = 0.93;//parameter from ArgoNeuT experiment at 0.481kV/cm 
+  double betap = 0.212;//(kV/cm)(g/cm^2)/MeV
+  //Abbey's parameters https://indico.fnal.gov/event/46502/contributions/206721/attachments/139268/174710/recombination_20210126.pdf
+  //double alpha = 0.854;//parameter from ArgoNeuT experiment at 0.481kV/cm 
+  //double betap = 0.208;//(kV/cm)(g/cm^2)/MeV
+  //Abbey's parameters https://indico.fnal.gov/event/46503/contributions/215375/attachments/143230/181102/recombination_20210519.pdf
+//  double alpha = 0.912;//parameter from ArgoNeuT experiment at 0.481kV/cm 
+//  double betap = 0.195;//(kV/cm)(g/cm^2)/MeV
+
   return (exp(dqdx*(betap/(Rho*Ef)*Wion))-alpha)/(betap/(Rho*Ef));
 }
 
@@ -850,8 +858,8 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
 
   outfile.cd();
 
-  size_t nbin=40;
-  int binsize=5;
+  size_t nbin=50;
+  int binsize=10;
   //TH1D *dedx[nbin];
   //{hitplane, {calib_index, {detector bins}}}
   std::map<int, std::vector<std::vector<TH1D*>>> dedx;
@@ -905,11 +913,23 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
     YZ_correction_pos_hists.push_back((TH2F*)fYZFile->Get(Form("correction_dqdx_ZvsY_positiveX_hist_%d",i)));
   }
  
+  TSpline3 *sp = new TSpline3("Cubic Spline", &spline_Range[0], &spline_KE[0],13,"b2e2",0,0);
+
   ////////////////////////////////////////////////////////////////////////////////// 
 
  
   if (fChain == 0) return;
+
+  double avgke[3] = {0};
+  double avgdx[3] = {0};
+  int nhits[3] = {0};
+
   Long64_t nentries = fChain->GetEntries();
+  if (nentries > 200000){
+    cout<<"Total entries = "<<nentries<<endl;
+    cout<<"Only use 200000 events."<<endl;
+    nentries = 200000;
+  }
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
@@ -927,7 +947,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
       for (size_t ihitplane = 0; ihitplane < 3; ++ihitplane) {
         vector<float> res, dq, first5dq, last5dq;
         if(ihitplane==2 && ((abs(180/TMath::Pi()*trackthetaxz[i])>60 &&
-                             abs(abs(180/TMath::Pi()*trackthetaxz[i])<120))||
+                             abs(180/TMath::Pi()*trackthetaxz[i])<120)||
                             (abs(180/TMath::Pi()*trackthetayz[i])>80 &&
                              abs(180/TMath::Pi()*trackthetayz[i])<100))) continue;
  
@@ -974,6 +994,8 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
         if(!test) continue;
 
         for(int j=0; j<TMath::Min(ntrkhits[i][ihitplane],3000); ++j){
+          float ke = sp->Eval(trkresrange[i][ihitplane][j]);
+          if (ke<250 || ke>450) continue;
           if (trkpitch[i][ihitplane][j]>=0.5 && trkpitch[i][ihitplane][j]<=0.8 &&
               trkhity[i][ihitplane][j]>0 && trkhity[i][ihitplane][j]<600 &&
               trkhitz[i][ihitplane][j]>0 && trkhitz[i][ihitplane][j]<695) {
@@ -1033,7 +1055,12 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
                          trkhity[i][ihitplane][j],
                          trkhitz[i][ihitplane][j]));
 
-              size_t bin = size_t(trkresrange[i][ihitplane][j])/binsize;
+              avgke[ihitplane]+=ke;
+              avgdx[ihitplane]+=trkpitch[i][ihitplane][j];
+              ++nhits[ihitplane];
+
+              //size_t bin = size_t(trkresrange[i][ihitplane][j])/binsize;
+              size_t bin = size_t(ke/binsize);
               //std::cout << "Bin: " << bin << std::endl;
               if(bin < nbin){
                 dedx[ihitplane][i_cal][bin]->Fill(cal_de_dx);
@@ -1049,35 +1076,37 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
   std::cout << "************************** Fitting Landau + Gaussian function to the histograms *****************************" << std::endl;
 
   ////////////////////////////////////// Fitting Landau+Gaussian function to the histogram ////////////////////////////////
-  TSpline3 *sp = new TSpline3("Cubic Spline", &spline_Range[0], &spline_KE[0],13,"b2e2",0,0);
+  //TSpline3 *sp = new TSpline3("Cubic Spline", &spline_Range[0], &spline_KE[0],13,"b2e2",0,0);
 
   outfile.cd();
 
   TVectorD NDF(3);
+  TVectorD meanKE(3);
+  TVectorD meanPitch(3);
 
   for (int i = 0; i < 3; ++i) {
+    meanKE[i] = avgke[i]/nhits[i];
+    meanPitch[i] = avgdx[i]/nhits[i];
     std::vector<double> chi2_vals;
     for (size_t j = 0; j < calib_factors[i].size(); ++j) {
       vector<double> chi_denominator;
       vector<double> chi_numerator;
       int dof=0;
       for (size_t k = 0; k < nbin; k++){
+        if (!dedx[i][j][k]->GetEntries()) continue;
         std::cout << "Fitting ************** " << k << std::endl;
         Double_t fr[2];
         Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
         fr[0]=1.1;//this was originally 0.
         fr[1]=10.;
-//        if(i==0){
-//          fr[0]=2.2;
-//          fr[1]=15;
-//        }
         if (dedx[i][j][k]->GetMean()<10){
-          sv[0]=0.1; sv[1]=1.66; sv[2]=dedx[i][j][k]->GetEntries()*0.05; sv[3]=0.05;
-          if(k==0){ sv[0]=0.2; sv[1]=4.7; sv[2]=20; sv[3]=.01;}
-          if(k==1){ sv[0]=0.2; sv[1]=3.0; sv[2]=10; sv[3]=.01;}
-          if(k==2){ sv[1]=2.5;}
-          if(k==3){ sv[1]=2.0;}
-          if(k==4){ sv[1]=2.0;}
+	  sv[0]=0.1; sv[1]=0.8*dedx[i][j][k]->GetMean(); sv[2]=dedx[i][j][k]->GetEntries()*0.05; sv[3]=0.05;
+//          sv[0]=0.1; sv[1]=1.66; sv[2]=dedx[i][j][k]->GetEntries()*0.05; sv[3]=0.05;
+//          if(k==0){ sv[0]=0.2; sv[1]=4.7; sv[2]=20; sv[3]=.01;}
+//          if(k==1){ sv[0]=0.2; sv[1]=3.0; sv[2]=10; sv[3]=.01;}
+//          if(k==2){ sv[1]=2.5;}
+//          if(k==3){ sv[1]=2.0;}
+//          if(k==4){ sv[1]=2.0;}
 
         }
         else{
@@ -1096,19 +1125,23 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
         std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
         std::cout << "************** Chi^2/NDF : " << fitsnr->GetChisquare()/fitsnr->GetNDF() << std::endl;
         std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$  KE : " << sp->Eval((k*binsize+double(binsize)/2)) << "   MPV : " << fitsnr->GetParameter(1) << " $$$$$$$$$$$$" << std::endl;
-        if((dedx[i][j][k]->GetEntries()>100) && fitsnr->GetNDF() != 0 && status > 2 && (fitsnr->GetParError(1)<1000) && (fitsnr->GetChisquare()/fitsnr->GetNDF()<10)){
+        if((k*binsize+double(binsize)/2)<=450 && (k*binsize+double(binsize)/2)>=250){
+          dof++;
+          if((dedx[i][j][k]->GetEntries()>100) && fitsnr->GetNDF() != 0 && status > 2 && (fitsnr->GetParError(1)<1000) && (fitsnr->GetChisquare()/fitsnr->GetNDF()<10)){
           //cout<<" i "<<i<<" res range "<<i*binsize+double(binsize)/2<<"  KE "<<sp->Eval(i*binsize+double(binsize)/2)<<endl;
 
           ////////////////////////////////////////////// Chi 2 calculation ////////////////////////////
               
-          if(sp->Eval((k*binsize+double(binsize)/2))<=450 && sp->Eval((k*binsize+double(binsize)/2))>=250){
             double mpv_err = TMath::Power(fitsnr->GetParError(1),2);
             double tot_err = mpv_err;
             chi_denominator.push_back(tot_err);
-            double num=dpdx(sp->Eval(k*binsize+double(binsize)/2),pitchvalue,Mmu)-fitsnr->GetParameter(1);
+            //double num=dpdx(sp->Eval(k*binsize+double(binsize)/2),pitchvalue,Mmu)-fitsnr->GetParameter(1);
+            double num=dpdx(k*binsize+double(binsize)/2, avgdx[i]/nhits[i], Mmu)-fitsnr->GetParameter(1);
             num=TMath::Power(num,2);
             chi_numerator.push_back(num);
-            dof++;
+          }
+          else{
+            cout<<dedx[i][j][k]->GetEntries()<<" "<<fitsnr->GetNDF()<<" "<<status<<" "<<fitsnr->GetParError(1)<<" "<<fitsnr->GetChisquare()<<" "<<fitsnr->GetNDF()<<endl;
           }
         }
       }
@@ -1131,6 +1164,8 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
     chi2_graph.Write(Form("chi2_plane_%d", i));
   }
   NDF.Write("NDF");
+  meanKE.Write("meanKE");
+  meanPitch.Write("meanPitch");
   outfile.Write();
 }
 
@@ -1160,6 +1195,7 @@ void protoDUNE_dEdx_calib::LoopMIP(vector<double> & norm_factors,
 
   //int x_bin_size = 5; // 148 bins in x direction
   fChain->GetEntry(0); 
+  if (run>10000) run = 0;
 
   /////////////////////Importing X fractional corrections//////////////////////
 
@@ -1184,8 +1220,12 @@ void protoDUNE_dEdx_calib::LoopMIP(vector<double> & norm_factors,
   double avgdx[3] = {0};
   int nhits[3] = {0};
 
-
   Long64_t nentries = fChain->GetEntries();
+  if (nentries > 200000){
+    cout<<"Total entries = "<<nentries<<endl;
+    cout<<"Only use 200000 events."<<endl;
+    nentries = 200000;
+  }
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
     //for (Long64_t jentry=0; jentry<20000;jentry++) {
     Long64_t ientry = LoadTree(jentry);
@@ -1333,6 +1373,8 @@ void protoDUNE_dEdx_calib::LoopMIP(vector<double> & norm_factors,
 
   outfile.cd();
 
+  TVectorD NDF(3);
+  for (int i = 0; i<3; ++i) NDF[i] = 1;
   TVectorD meanKE(3);
   TVectorD meanPitch(3);
 
@@ -1395,7 +1437,7 @@ void protoDUNE_dEdx_calib::LoopMIP(vector<double> & norm_factors,
     TGraph chi2_graph(calib_factors[i].size(), &calib_factors[i][0], &chi2_vals[0]);
     chi2_graph.Write(Form("chi2_plane_%d", i));
   }
-
+  NDF.Write("NDF");
   meanKE.Write("meanKE");
   meanPitch.Write("meanPitch");
   outfile.Write();
@@ -1472,7 +1514,12 @@ int main(int argc, char ** argv) {
 
   std::vector<double> norm_factors = pset.get<std::vector<double>>("NormFactors");
   for (size_t i = 0; i<norm_factors.size(); ++i){
-    norm_factors[i] = ref_dQdx[i]/norm_factors[i];
+    if (norm_factors[i]>0){
+      norm_factors[i] = ref_dQdx[i]/norm_factors[i];
+    }
+    else{
+      norm_factors[i] = 1;
+    }
     cout<<"Normalization factor["<<i<<"] = "<<norm_factors[i]<<endl;
   }
   std::vector<std::pair<int, double>> KE_Range
