@@ -1,3 +1,4 @@
+#include "LanGausFit.h"
 #include "TF1.h"
 #include "TSystem.h"
 #include "TFile.h"
@@ -73,7 +74,7 @@ double dpdx(double KE,double x,double mass){
   double value=(1.0/x)*epsilon*((TMath::Log(A0)) + TMath::Log(A1) + 0.2 - b*b - density(b*g));
   return value;
 }
-
+/*
 Double_t langaufun(Double_t *x, Double_t *par) {
   Double_t invsq2pi = 0.398942280401;// Control constants
   //Double_t mpshift = -0.22278298;
@@ -220,6 +221,7 @@ Int_t langaupro(Double_t *params, Double_t &maxx, Double_t &FWHM) {
   FWHM = fxr - fxl;
   return (0);
 }
+*/
 
 //void fit(){
 int main(int argc, char *argv[]) {
