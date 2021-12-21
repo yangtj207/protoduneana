@@ -416,6 +416,7 @@ private:
   //EDIT: STANDARDIZE
   double reco_beam_startX, reco_beam_startY, reco_beam_startZ;
   double reco_beam_endX, reco_beam_endY, reco_beam_endZ;
+  int test_branch;
   double reco_beam_len, reco_beam_alt_len;
   double reco_beam_alt_len_allTrack;
   double reco_beam_vertex_michel_score;
@@ -1272,6 +1273,7 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_endY", &reco_beam_endY);
   fTree->Branch("reco_beam_endZ", &reco_beam_endZ);
   fTree->Branch("reco_beam_len", &reco_beam_len);
+  fTree->Branch("test_branch", &test_branch);
   fTree->Branch("reco_beam_alt_len", &reco_beam_alt_len);
   fTree->Branch("reco_beam_alt_len_allTrack", &reco_beam_alt_len_allTrack);
   fTree->Branch("reco_beam_calo_startX", &reco_beam_calo_startX);
@@ -1801,6 +1803,7 @@ void pduneana::PDSPAnalyzer::reset()
   reco_beam_trackDirZ = -999;
 
   reco_beam_len = -999;
+  test_branch = -1;
   reco_beam_alt_len = -999;
   reco_beam_alt_len_allTrack = -999;
   reco_beam_calo_startX = -999;
@@ -3753,23 +3756,6 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
             reco_daughter_allTrack_calo_Z.back().push_back(theXYZPoints[j].Z());
           }
 
-/*
-<<<<<<< HEAD
-          if (fCalibrateByHand) {
-            std::vector<float> cali_dEdX_SCE = calibration_SCE.GetCalibratedCalorimetry(*pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 2);
-            for( size_t j = 0; j < cali_dEdX_SCE.size(); ++j ){
-              reco_daughter_allTrack_calibrated_dEdX_SCE.back().push_back( cali_dEdX_SCE[j] );
-            }
-          }
-          else {
-            for (auto dedx : reco_daughter_allTrack_dEdX_SCE.back()) {
-              reco_daughter_allTrack_calibrated_dEdX_SCE.back().push_back(dedx);
-            }
-          }
-
-
-          if (fCalibrateByHand) {
-=======*/
           if (fRecalibrate) {
             std::vector<float> cali_dEdX_SCE
                 = calibration_SCE.GetCalibratedCalorimetry(
@@ -3779,7 +3765,6 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
               reco_daughter_allTrack_calibrated_dEdX_SCE.back().push_back(
                   cali_dEdX_SCE[j]);
             }
-//>>>>>>> 32b542a302943d59e3a1152ef8dcb75d7045bcf0
             std::vector<double> new_dQdX = calibration_SCE.CalibratedQdX(
                 *pandora2Track, evt, "pandora2Track",
                 fPandora2CaloSCE, 2, -10.);
@@ -4634,7 +4619,7 @@ void pduneana::PDSPAnalyzer::G4RWGridWeights(
           for (size_t k = 1; k < hierarchy.size(); ++k) {
             std::vector<G4ReweightTraj *> & temp_trajs = hierarchy[k];
             weights.back().back()
-                *= GetNTrajWeightFromSetPars(temp_trajs, *MultiRW);
+                *= GetNTrajWeightFromSetPars(temp_trajs, *multi_rw);
           }
         }
       }
