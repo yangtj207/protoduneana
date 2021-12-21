@@ -2,10 +2,11 @@
 #include "ProtoDUNECalibration.fcl"
 #include "FitSystematics.fcl"
 
-#MCFileName:   "/dune/app/users/calcuttj/PionStudies/rDataFrame/Prod4a_5_18_21_with_data/eventSelection_mc_all.root"
-#DataFileName: "/dune/app/users/calcuttj/PionStudies/rDataFrame/Prod4a_5_18_21_with_data/eventSelection_mc_all.root"
-MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
-DataFileName: "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
+#MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
+#DataFileName: "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
+MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_31_21/eventSelection_mc_all.root"
+DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_31_21/eventSelection_mc_all.root"
+
 TreeName: "pduneana/beamana"
 
 DriverName: "protoana::AbsCexDriver"
@@ -119,22 +120,26 @@ AnalysisOptions: {
 }
 
 Systematics: [
-  #@local::SystematicsList.beam_shift_spline_2,
-  @local::SystematicsList.beam_shift_ratio,
-  @local::SystematicsList.dEdX_Cal_Spline,
-  ##@local::G4RWSysts.g4rw_QE1,
-  ##@local::G4RWSysts.g4rw_QE2,
-  ##@local::G4RWSysts.g4rw_Prod,
-  ##@local::G4RWSysts.g4rw_DCex,
-  ##@local::G4RWSysts.g4rw_proton,
-  ##@local::SystematicsList.beam_shift,
-  @local::SystematicsList.ediv_weight,
-  @local::SystematicsList.no_track_weight,
-  @local::SystematicsList.beam_cut_weight
+  @local::g4rw_proton_coeff
 ]
 
-Systematics[2].Central: 1.0 
-Systematics[3].Central: 1.0 
+#Systematics: [
+#  #@local::SystematicsList.beam_shift_spline_2,
+#  @local::SystematicsList.beam_shift_ratio,
+#  @local::SystematicsList.dEdX_Cal_Spline,
+#  ##@local::G4RWSysts.g4rw_QE1,
+#  ##@local::G4RWSysts.g4rw_QE2,
+#  ##@local::G4RWSysts.g4rw_Prod,
+#  ##@local::G4RWSysts.g4rw_DCex,
+#  ##@local::G4RWSysts.g4rw_proton,
+#  ##@local::SystematicsList.beam_shift,
+#  @local::SystematicsList.ediv_weight,
+#  @local::SystematicsList.no_track_weight,
+#  @local::SystematicsList.beam_cut_weight
+#]
+#
+#Systematics[2].Central: 1.0 
+#Systematics[3].Central: 1.0 
 
 #Systematics[6].Options.LowerLimit: -5.
 #Systematics[6].Options.UpperLimit: 5.
@@ -144,7 +149,7 @@ Systematics[3].Central: 1.0
 #Systematics[6].Options.Limits: [-.075, .075] 
 #Systematics[6].Options.WeightCap: -999.
 
-AddSystTerm: true 
+AddSystTerm: false 
 CovarianceBins: [
   ["dEdX_Cal_Spline", 0],
   #["g4rw_QE1", 1],
@@ -337,8 +342,8 @@ DoSysts: true
 MaxRethrows: 1000
 #####################
 
-#FitType: "Normal"
-FitType: "None"
+FitType: "Normal"
+#FitType: "None"
 #FitType: "Pulls"
 #FitType: "Toy"
 
