@@ -2251,7 +2251,7 @@ double protoana::AbsCexDriver::GetSystWeight_G4RWCoeff(
        ++it) {
     weight *= event.GetG4RWCoeffWeight(
         it->second, pars.at(it->first).GetValue());
-    std::cout << pars.at(it->first).GetValue() << " " << weight << std::endl;
+    //std::cout << pars.at(it->first).GetValue() << " " << weight << std::endl;
   }
   return weight;
 }

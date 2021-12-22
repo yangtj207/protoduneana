@@ -4,8 +4,8 @@
 
 #MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
 #DataFileName: "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
-MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_31_21/eventSelection_mc_all.root"
-DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_31_21/eventSelection_mc_all.root"
+MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_22_21/eventSelection_mc_all.root"
+DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_22_21/eventSelection_mc_all.root"
 
 TreeName: "pduneana/beamana"
 
@@ -335,7 +335,7 @@ DoFakeData: true
 FluctuateStats: false 
 DoThrows: false 
 NThrows: 1000
-DoScans: false 
+DoScans: true
 RunHesse: false 
 Do1DShifts: false
 DoSysts: true
