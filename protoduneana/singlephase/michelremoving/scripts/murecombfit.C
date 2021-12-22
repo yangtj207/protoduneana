@@ -11,6 +11,40 @@
 
 using namespace std;
 
+float GetdEdx(float dQdx, float E_field, float calconst, float alp, float bet){
+  float LAr_density=1.39;
+  float Beta = bet/(LAr_density*E_field);
+  double Wion = 23.6e-6;
+  return (exp(Beta * Wion *dQdx/calconst) - alp) / Beta;
+}
+
+vector<vector<float>> dqdx_data(3);
+vector<vector<float>> E_data(3);
+vector<vector<float>> ke_data(3);
+
+const int nbins = 50;
+int binsize = 10;
+
+void fcn(int& /*npar*/, double* /*gin*/, double &f, double *par, int /*iflag*/){
+
+  TH1F *dedx_data[3][nbins];
+  for (int i = 0; i<3; ++i){
+    for (int j = 0; j<nbins; ++j){
+      dedx_data[i][j] = new TH1F(Form("dedx_data_%d_%d",i,j),
+                                 Form("dedx_data_%d_%d",i,j),
+                                 300, 0, 15);
+    }
+    for (size_t j = 0; j<dqdx_data[i].size(); ++j){
+      int k = int(ke_data[i][j]/binsize);
+      if (k>=0 && k<nbins){
+        double dedx = GetdEdx(dqdx_data[i][j], E_data[i][j], par[i], par[2], par[3]);
+        dedx_data[i][k]->Fill(dedx);
+      }
+    }
+  }
+}
+  
+
 int main(int argc, char ** argv) {
 
 
@@ -82,9 +116,6 @@ int main(int argc, char ** argv) {
                               Form("MC, plane:%d;KE (MeV);dE/dx (MeV/cm)", i),
                               250,0,500,80,0,8);
   }
-
-  const int nbins = 50;
-  int binsize = 10;
 
   //TH1F *dedx_data[3][nbins];
   TH1F *dedx_mc[3][nbins];
