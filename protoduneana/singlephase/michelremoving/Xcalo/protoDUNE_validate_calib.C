@@ -385,7 +385,7 @@ void protoDUNE_validate_calib::Loop(TString mn)
                     corrected_dqdx = trkdqdx[i][j][k];
                     corrected_dedx = trkdedx[i][j][k];
                   }
-                  dQdx = corrected_dqdx;
+                  dQdx = corrected_dqdx*calib_const[j];
                   dEdx = corrected_dedx;
                   E = tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]);
                   if (fid_xing && testneg_xing){
@@ -428,7 +428,7 @@ void protoDUNE_validate_calib::Loop(TString mn)
                     corrected_dqdx = trkdqdx[i][j][k];
                     corrected_dedx = trkdedx[i][j][k];
                   }
-                  dQdx = corrected_dqdx;
+                  dQdx = corrected_dqdx*calib_const[j];
                   dEdx = corrected_dedx;
                   E = tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]);
                   //if (k==2) cout<<"x = "<<trkhitx[i][j][k]<<" y = "<<trkhity[i][j][k]<<" z = "<<trkhitz[i][j][k]<<" dqdx = "<<trkdqdx[i][j][k]<<" yzcorr = "<<YZ_correction_factor_positiveX<<" xcorr = "<<X_correction_factor<<" normcorr = "<<normcorr<<" corrected_dqdx = "<<corrected_dqdx<<" corrected_dedx = "<<corrected_dedx<<" "<<YZ_positiveX_corr[j]->GetXaxis()->FindBin(trkhitz[i][j][k])<<" "<<YZ_positiveX_corr[j]->GetYaxis()->FindBin(trkhity[i][j][k])<<" "<<YZ_positiveX_corr[j]->GetBinContent(YZ_positiveX_corr[j]->GetXaxis()->FindBin(trkhitz[i][j][k]),YZ_positiveX_corr[j]->GetYaxis()->FindBin(trkhity[i][j][k]))<<" "<<x_bin<<" "<<X_correction_factor<<endl;

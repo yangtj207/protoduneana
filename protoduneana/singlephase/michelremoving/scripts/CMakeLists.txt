@@ -22,6 +22,7 @@ cet_make_exec( murecombfit
                SOURCE murecombfit.C
                LIBRARIES
                ROOT_BASIC_LIB_LIST
+               ROOT_LIBRARIES
 	       cetlib cetlib_except
 	       FHICLCPP
                MF_MESSAGELOGGER
