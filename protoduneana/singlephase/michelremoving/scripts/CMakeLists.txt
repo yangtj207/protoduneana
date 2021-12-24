@@ -29,5 +29,17 @@ cet_make_exec( murecombfit
                CaloTools
                )
 
+cet_make_exec( ConvertXCorrection
+               SOURCE ConvertXCorrection.C
+               LIBRARIES
+               ROOT_BASIC_LIB_LIST
+               )
+
+cet_make_exec( ConvertYZCorrection
+               SOURCE ConvertYZCorrection.C
+               LIBRARIES
+               ROOT_BASIC_LIB_LIST
+               )
+
 install_scripts()
 install_headers()
