@@ -63,6 +63,11 @@
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
 //#include "protoduneana/Utilities/ProtoDUNEDataUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEBeamCuts.h"
+#include "protoduneana/Utilities/ProtoDUNEEmptyEventFinder.h"
+
+#include "protoduneana/Utilities/ProtoDUNECalibration.h"
+
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
@@ -129,6 +134,12 @@ class protoana::protonbeamana : public art::EDAnalyzer {
 		int fNactivefembs[6];
 
 		// beam information
+  		bool beam_inst_valid;
+  		int beam_inst_trigger;
+		int beam_inst_nTracks, beam_inst_nMomenta;
+  		std::vector<double> beam_inst_TOF;
+  		std::vector< int > beam_inst_PDG_candidates, beam_inst_TOF_Chan;
+
 		std::vector<double> beamPosx;
 		std::vector<double> beamPosy;
 		std::vector<double> beamPosz;
@@ -149,7 +160,9 @@ class protoana::protonbeamana : public art::EDAnalyzer {
 
 		//Beamline utils    
 		protoana::ProtoDUNEBeamlineUtils fBeamlineUtils;
+  		protoana::ProtoDUNEEmptyEventFinder fEmptyEventFinder;
 		protoana::ProtoDUNEDataUtils dataUtil;
+  		bool reco_reconstructable_beam_event;
 
 		// fcl parameters for PFP particles
 		std::string fCalorimetryTag;
@@ -191,7 +204,7 @@ class protoana::protonbeamana : public art::EDAnalyzer {
 		//carlo info
 		std::vector<double> primtrk_dqdx;
 		std::vector<double> primtrk_resrange;
-		std::vector<double> primtrk_deadwireresrange;
+		//std::vector<double> primtrk_deadwireresrange; //segfault, do NOT use to access this par
 		std::vector<double> primtrk_dedx;
 		std::vector<double> primtrk_range;
 		std::vector<double> primtrk_ke;
@@ -231,6 +244,8 @@ protoana::protonbeamana::protonbeamana(fhicl::ParameterSet const & p)
 		fTrackModuleLabel(p.get< art::InputTag >("TrackModuleLabel")),
 		fBeamModuleLabel(p.get< art::InputTag >("BeamModuleLabel")),
 		fBeamlineUtils(p.get<fhicl::ParameterSet>("BeamlineUtils")),
+		fEmptyEventFinder(p.get< fhicl::ParameterSet >("EmptyEventFinder")),
+
 		//fBeamModuleLabel(p.get<std::string>("BeamModuleLabel")),
 
 		//fTimeDecoderModuleLabel(p.get< art::InputTag >("TimeDecoderModuleLabel")),
@@ -263,6 +278,7 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 		art::fill_ptr_vector(beamVec, beamHandle);
 	}
 	const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0)); //Should just have one
+	beam_inst_trigger = beamEvent.GetTimingTrigger();
 	/////////////////////////////////////////////////////////////
 
 	//Check the quality of the event
@@ -270,19 +286,32 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 	std::cout << "Is Matched: "     << beamEvent.CheckIsMatched() << std::endl;
 
 	if( !fBeamlineUtils.IsGoodBeamlineTrigger( evt ) ){
-		std::cout << "Failed quality check!\n" << std::endl;
+		std::cout << "Failed beam quality check!\n" << std::endl;
+    		beam_inst_valid = false;
 		return; //returns, does nothing when !=IsGoodBeamlineTrigger
 	}
 
 	std::cout << "Passed quality check!" << std::endl << std::endl;
+
+	int nTracks = beamEvent.GetBeamTracks().size();
 	/////////////////////////////////////////////////////////////
+
+  	if (evt.isRealData()) {
+    		std::vector< int > pdg_cands = fBeamlineUtils.GetPID( beamEvent, 1. );
+    		beam_inst_PDG_candidates.insert( beam_inst_PDG_candidates.end(), pdg_cands.begin(), pdg_cands.end() ); //save info of incoming particle candidates
+  	}
+
 
 	//Access momentum
 	const std::vector< double > & momenta = beamEvent.GetRecoBeamMomenta();
-	std::cout << "Number of reconstructed momenta: " << momenta.size() << std::endl;
+  	int nMomenta = momenta.size();
+	std::cout << "Number of reconstructed momenta: " << nMomenta << std::endl;
 
-	if( momenta.size() > 0 ) 
-		std::cout << "Measured Momentum: " << momenta.at(0) << std::endl;
+	beam_inst_nTracks = nTracks;
+	beam_inst_nMomenta = nMomenta;
+
+	//if( momenta.size() > 0 ) 
+		//std::cout << "Measured Momentum: " << momenta.at(0) << std::endl;
 	///////////////////////////////////////////////////////////// 
 
 	//Access time of flight
@@ -297,6 +326,8 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 	std::cout << "All (TOF, Channels): " << std::endl;
 	for( size_t i = 0; i < the_tofs.size(); ++i ){
 		std::cout << "\t(" << the_tofs[i] << ", " << the_chans[i] << ")" << std::endl;
+    		beam_inst_TOF.push_back(the_tofs[i]);
+		beam_inst_TOF_Chan.push_back(the_chans[i]);
 	}
 	std::cout << std::endl;
 	/////////////////////////////////////////////////////////////
@@ -365,24 +396,36 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 	*/
 
 	//HY::For Carlo info
-	art::Handle< std::vector<recob::Track> > trackListHandle;
 	std::vector<art::Ptr<recob::Track> > tracklist;
-	if(evt.getByLabel(fTrackModuleLabel,trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
+	auto trackListHandle = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+        if (trackListHandle) art::fill_ptr_vector(tracklist, trackListHandle);
 	else return;
 	art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, evt, fCalorimetryTag);
 	art::FindManyP<recob::PFParticle> pfp_trk_assn(trackListHandle, evt, "pandoraTrack");
 	auto allHits = evt.getValidHandle<std::vector<recob::Hit> >(fHitTag);
 
 	//HY::Cluster info
-	art::Handle< std::vector<recob::PFParticle> > PFPListHandle;
-	std::vector<art::Ptr<recob::PFParticle> > pfplist;
-	if(evt.getByLabel("pandoraTrack",trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
-	if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
+	//art::Handle< std::vector<recob::PFParticle> > PFPListHandle;
+	//std::vector<art::Ptr<recob::PFParticle> > pfplist;
+	//if(evt.getByLabel("pandoraTrack",trackListHandle)) art::fill_ptr_vector(tracklist, trackListHandle);
+	//if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
+	
+	auto trackListHandle2 = evt.getHandle< std::vector<recob::Track> >("pandoraTrack");
+	if (trackListHandle2) art::fill_ptr_vector(tracklist, trackListHandle2);
 
-	art::Handle< std::vector<recob::Cluster> > clusterListHandle; // to get information about the hits
+	std::vector<art::Ptr<recob::PFParticle> > pfplist;
+	auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> > ("pandora");
+	if (PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
+
+	// to get information about the hits
+	//art::Handle< std::vector<recob::Cluster> > clusterListHandle; // to get information about the hits
+	//std::vector<art::Ptr<recob::Cluster>> clusterlist;
+	//if(evt.getByLabel("pandora", clusterListHandle))
+		//art::fill_ptr_vector(clusterlist, clusterListHandle);
+
 	std::vector<art::Ptr<recob::Cluster>> clusterlist;
-	if(evt.getByLabel("pandora", clusterListHandle))
-		art::fill_ptr_vector(clusterlist, clusterListHandle);
+	auto clusterListHandle = evt.getHandle< std::vector<recob::Cluster> > ("pandora");
+	if (clusterListHandle) art::fill_ptr_vector(clusterlist, clusterListHandle);
 
 	art::FindManyP<recob::Cluster> fmcp(PFPListHandle,evt,"pandora");
 	art::FindManyP<recob::Track> pftrack(PFPListHandle,evt,"pandoraTrack");
@@ -399,6 +442,11 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 	subrun = evt.subRun();
 	event = evt.id().event();
 	art::Timestamp ts = evt.time();
+
+	 // Is this a reconstructable beam event?
+  	reco_reconstructable_beam_event = !fEmptyEventFinder.IsEmptyEvent(evt);
+	std::cout<<"reco_reconstructable_beam_event:"<<reco_reconstructable_beam_event<<std::endl;
+
 	//std::cout<<ts.timeHigh()<<" "<<ts.timeLow()<<std::endl;
 	if (ts.timeHigh() == 0){
 		//TTimeStamp tts(ts.timeLow());
@@ -508,8 +556,8 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 				auto beamParticles = pfpUtil.GetPFParticlesFromBeamSlice(evt,fPFParticleTag);
 				//HY:: From the new version, prepend recob::PFParticle* with "const"
 				if(beamParticles.size() == 0){
-					std::cerr << "We found no beam particles for this event... moving on" << std::endl;
-					return;
+					std::cout << "We found no beam particles for this event... moving on" << std::endl;
+					//return;
 				}
 
 				//unsigned int nPrimPFPartices=pfpUtil.GetNumberPrimaryPFParticle(evt,fPFParticleTag); //count all the particles
@@ -538,25 +586,38 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 						std::vector<anab::Calorimetry> calovector = trackUtil.GetRecoTrackCalorimetry(*thisTrack, evt, fTrackerTag, fCalorimetryTag);
 						for (auto & calo : calovector){
 							if (calo.PlaneID().Plane == 2){ //only collection plane
+								//std::cout<<"ck0"<<std::endl;
 								primtrk_range.push_back(calo.Range());
+								//std::cout<<"ck1"<<std::endl;
 								primtrk_ke.push_back(calo.KineticEnergy());
+								//std::cout<<"ck2"<<std::endl;
+								//std::cout<<"calo.Range():"<<calo.Range()<<std::endl;
+								//std::cout<<"calo.KineticEnergy():"<<calo.KineticEnergy()<<std::endl;
+								//std::cout<<"calo.dQdx().size():"<<calo.dQdx().size()<<std::endl;
 								for (size_t ihit = 0; ihit < calo.dQdx().size(); ++ihit){ //loop over hits
+									//std::cout<<"ck3--0"<<std::endl;
+									//std::cout<<"calo.dQdx["<<ihit<<"]:"<<calo.dQdx()[ihit]<<std::endl;
+									//std::cout<<"calo.dEdx["<<ihit<<"]:"<<calo.dEdx()[ihit]<<std::endl;
+									//std::cout<<"calo.DeadWireResRC["<<ihit<<"]:"<<calo.DeadWireResRC()[ihit]<<std::endl;
 									primtrk_dqdx.push_back(calo.dQdx()[ihit]);
 									primtrk_resrange.push_back(calo.ResidualRange()[ihit]);
-									primtrk_deadwireresrange.push_back(calo.DeadWireResRC()[ihit]);
+									//primtrk_deadwireresrange.push_back(calo.DeadWireResRC()[ihit]);
 									primtrk_dedx.push_back(calo.dEdx()[ihit]);
 									primtrk_pitch.push_back(calo.TrkPitchVec()[ihit]);
+									//std::cout<<"ck3--1"<<std::endl;
 
 									const auto &primtrk_pos=(calo.XYZ())[ihit];
 									primtrk_hitx.push_back(primtrk_pos.X());
 									primtrk_hity.push_back(primtrk_pos.Y());
 									primtrk_hitz.push_back(primtrk_pos.Z());
+									//std::cout<<"ck3--2"<<std::endl;
 
 									primtrk_calo_hit_index.push_back(calo.TpIndices()[ihit]);
 									const recob::Hit & theHit = (*allHits)[ calo.TpIndices()[ihit] ];
 									primtrk_wid.push_back(theHit.WireID().Wire);
 									primtrk_pt.push_back(theHit.PeakTime());
 									primtrk_ch.push_back(theHit.Channel());	
+									//std::cout<<"ck3--3"<<std::endl;
 									//std::cout<<theHit.WireID().Wire<<std::endl;
 
 									//double dedx_range=17.*pow(calo.ResidualRange()[ihit],-0.42);
@@ -570,6 +631,7 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 									//std::cout<<"(X,Y,Z)="<<"("<<primtrk_pos.X()<<","<<primtrk_pos.Y()<<","<<primtrk_pos.Z()<<")"<<std::endl;
 									//std::cout<<"(X,Y,Z)="<<"("<<tmp_primtrk_hitx[ihit]<<","<<tmp_primtrk_hity[ihit]<<","<<tmp_primtrk_hitz[ihit]<<")"<<std::endl;
 								} //loop over hits
+								//std::cout<<"ck3"<<std::endl;
 								} //only collection plane
 							}
 
@@ -762,7 +824,19 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 		fTree->Branch("event",&event,"event/I");
 		//fTree->Branch("trigger",&trigger,"trigger/I");
 		fTree->Branch("evttime",&evttime,"evttime/D");
+		fTree->Branch("reco_reconstructable_beam_event",&reco_reconstructable_beam_event);
+
 		fTree->Branch("Nactivefembs",&fNactivefembs,"Nactivefembs[5]/I");
+
+  		fTree->Branch("beam_inst_valid", &beam_inst_valid);
+  		fTree->Branch("beam_inst_trigger", &beam_inst_trigger);
+  		fTree->Branch("beam_inst_nTracks", &beam_inst_nTracks);
+  		fTree->Branch("beam_inst_nMomenta", &beam_inst_nMomenta);
+
+  		fTree->Branch("beam_inst_PDG_candidates", &beam_inst_PDG_candidates);
+
+  		fTree->Branch("beam_inst_TOF", &beam_inst_TOF);
+  		fTree->Branch("beam_inst_TOF_Chan", &beam_inst_TOF_Chan);
 
 		fTree->Branch("isprimarytrack", &fisprimarytrack, "isprimarytrack/I");
 		fTree->Branch("isprimaryshower", &fisprimaryshower, "isprimaryshower/I");
@@ -800,7 +874,7 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 		fTree->Branch("primtrk_dqdx",&primtrk_dqdx);
 		fTree->Branch("primtrk_dedx",&primtrk_dedx);
 		fTree->Branch("primtrk_resrange",&primtrk_resrange);
-		fTree->Branch("primtrk_deadwireresrange",&primtrk_deadwireresrange);
+		//fTree->Branch("primtrk_deadwireresrange",&primtrk_deadwireresrange);
 		fTree->Branch("primtrk_range",&primtrk_range);
 		fTree->Branch("primtrk_hitx",&primtrk_hitx);
 		fTree->Branch("primtrk_hity",&primtrk_hity);
@@ -837,6 +911,17 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 	{
 		for(int k=0; k < 5; k++)
 			fNactivefembs[k] = -999;
+
+
+  		beam_inst_valid = true;
+  		beam_inst_trigger = -999;
+  		beam_inst_nTracks = -999;
+  		beam_inst_nMomenta = -999;
+  		reco_reconstructable_beam_event = false;
+
+  		beam_inst_PDG_candidates.clear();
+  		beam_inst_TOF.clear();
+  		beam_inst_TOF_Chan.clear();
 
 		tof = -1;
 		tofs.clear();
@@ -878,7 +963,7 @@ void protoana::protonbeamana::analyze(art::Event const & evt)
 		//primtrk_dedx->clear();
 		primtrk_dqdx.clear();
 		primtrk_resrange.clear();
-		primtrk_deadwireresrange.clear();
+		//primtrk_deadwireresrange.clear();
 		primtrk_dedx.clear();
 		primtrk_range.clear();
 		primtrk_hitx.clear();

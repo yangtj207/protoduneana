@@ -139,9 +139,9 @@ namespace protoana {
 //    isMC = false;
 
     // Get flashes from event
-    art::Handle< std::vector< recob::OpFlash > > FlashHandle;
     std::vector<art::Ptr<recob::OpFlash> > flashlist;
-    if (evt.getByLabel(fOpFlashModuleLabel, FlashHandle)) {
+    auto FlashHandle = evt.getHandle< std::vector< recob::OpFlash > >(fOpFlashModuleLabel);
+    if (FlashHandle) {
       art::fill_ptr_vector(flashlist, FlashHandle);
       std::sort(flashlist.begin(), flashlist.end(), recob::OpFlashPtrSortByPE);
     }

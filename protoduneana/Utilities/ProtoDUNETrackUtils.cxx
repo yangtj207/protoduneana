@@ -782,16 +782,16 @@ std::pair<double, int> protoana::ProtoDUNETrackUtils::GetVertexMichelScoreAlt(
     double check_x, double check_y, double check_z) {
 
   // Get all tracks
-  art::Handle < std::vector < recob::Track > > trkListHandle;
   std::vector < art::Ptr < recob::Track > > trkList;
-  if (evt.getByLabel(trackModule, trkListHandle)) {
+  auto trkListHandle = evt.getHandle < std::vector < recob::Track > >(trackModule);
+  if (trkListHandle) {
     art::fill_ptr_vector(trkList, trkListHandle);
   }
 
   // Get all hits
-  art::Handle < std::vector < recob::Hit > > hitListHandle;
   std::vector < art::Ptr < recob::Hit > > hitList;
-  if (evt.getByLabel(hitModule, hitListHandle)) {
+  auto hitListHandle = evt.getHandle < std::vector < recob::Hit > >(hitModule);
+  if (hitListHandle) {
     art::fill_ptr_vector(hitList, hitListHandle);
   }
 

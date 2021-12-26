@@ -218,24 +218,21 @@ namespace dune{
 
   void michelremoving::analyze( const art::Event& evt){
     reset();  
-    art::Handle< std::vector<recob::Track> > trackListHandle;
     std::vector<art::Ptr<recob::Track> > tracklist;
-    if(evt.getByLabel("pandoraTrack",trackListHandle)){
+    auto trackListHandle = evt.getHandle< std::vector<recob::Track> >("pandoraTrack");
+    if (trackListHandle){
       art::fill_ptr_vector(tracklist, trackListHandle);
     }
     else return;
-    art::Handle< std::vector<recob::PFParticle> > PFPListHandle; 
-    std::vector<art::Ptr<recob::PFParticle> > pfplist;
 
-
-    
-    if(evt.getByLabel("pandora",PFPListHandle)) art::fill_ptr_vector(pfplist, PFPListHandle);
+    std::vector<art::Ptr<recob::PFParticle> > pfplist;    
+    auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> >("pandora"); 
+    if (PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
   
     /******new lines*************************/
-    art::Handle< std::vector<recob::Hit> > hitListHandle; // to get information about the hits
     std::vector<art::Ptr<recob::Hit>> hitlist;
-    if(evt.getByLabel(fHitsModuleLabel, hitListHandle))
-      art::fill_ptr_vector(hitlist, hitListHandle);
+    auto hitListHandle = evt.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel) ; // to get information about the hits
+    if (hitListHandle) art::fill_ptr_vector(hitlist, hitListHandle);
        
     art::FindManyP<recob::Hit, recob::TrackHitMeta> fmthm(trackListHandle, evt, fTrackModuleLabel); // to associate tracks and hits
 
@@ -243,8 +240,12 @@ namespace dune{
     // art::FindManyP<recob::Track, recob::TrackHitMeta> thass(hitListHandle, evt, fTrackModuleLabel); //to associate hit 
     art::FindManyP<recob::Track> thass(hitListHandle, evt, fTrackModuleLabel); //to associate hit just trying
     
-
     art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, evt, fCalorimetryModuleLabel);
+    if (!fmcal.isValid()){
+      std::cout<<"art::Assns<recob::Track,anab::Calorimetry,void> with module label: "<<fCalorimetryModuleLabel<<" not found."<<std::endl;
+      return;
+    }
+
     art::FindManyP<anab::T0> trk_t0_assn_v(PFPListHandle, evt ,"pandora");
    
   

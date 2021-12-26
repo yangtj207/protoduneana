@@ -12,9 +12,11 @@
 #include <TGraphErrors.h>
 #include <TLegend.h>
 #include <TMath.h>
+#include <TSpline.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TChain.h>
+#include <TVectorD.h>
 #include <fstream>
 #include <vector>
 #include <cmath>
@@ -27,10 +29,18 @@ using namespace std;
 
 ////defining recombination function
 float LAr_density=1.39;
+//ArgoNeuT parameters
 float alp=0.93;
 float bet=0.212;
+//Abbey's parameters https://indico.fnal.gov/event/46502/contributions/206721/attachments/139268/174710/recombination_20210126.pdf
+//float alp=0.854;
+//float bet=0.208;
+//Abbey's parameters https://indico.fnal.gov/event/46503/contributions/215375/attachments/143230/181102/recombination_20210519.pdf
+//float alp=0.912;
+//float bet=0.195;
 float dedx=2.08;
 bool userecom=true;
+bool recalib=true;
 float recom_factor(float totEf){
   if (!userecom) return 1;
   float xsi=bet*dedx/(LAr_density*totEf);
@@ -80,7 +90,7 @@ float zoffset(float xval,float yval,float zval){
     return zpos_fd->GetBinContent(zpos_fd->FindBin(xval,yval,zval));
   }
   else{
-  return zneg_fd->GetBinContent(zneg_fd->FindBin(xval,yval,zval));
+    return zneg_fd->GetBinContent(zneg_fd->FindBin(xval,yval,zval));
   }
 }
 float zoffsetbd(float xval,float yval,float zval){
@@ -88,21 +98,25 @@ float zoffsetbd(float xval,float yval,float zval){
     return zpos_bd->GetBinContent(zpos_bd->FindBin(xval,yval,zval));
   }
   else{
-  return zneg_bd->GetBinContent(zneg_bd->FindBin(xval,yval,zval));
+    return zneg_bd->GetBinContent(zneg_bd->FindBin(xval,yval,zval));
   }
 }
-
-
-
 
 void protoDUNE_validate_calib::Loop(TString mn)
 {
 
   if (fChain == 0) return;
   fChain->GetEntry(0);
+  if (run>10000) run = 0;
 
   double ref_dQdx[3] = {65.75, 63.5, 59.29};
-  double calib_const[3] = {1.116e-3, 1.162e-3, 1.0405e-3};
+  double calib_const[3]; // = {1.162e-3, 1.116e-3, 1.0405e-3};
+  //double calib_const[3] = {1.116e-3, 1.162e-3, 1.0405e-3}; //wrong
+  //  if (run==0){//mc
+  //    calib_const[0] = 1.036e-3;
+  //    calib_const[1] = 1.034e-3;
+  //    calib_const[2] = 1.0205e-3;
+  //  }
   double median_dQdx[3];
   
   ifstream in;
@@ -117,7 +131,16 @@ void protoDUNE_validate_calib::Loop(TString mn)
     }
     in.close();
     in.clear();
-    cout<<"median_dQdx["<<i<<"]="<<median_dQdx[i]<<endl;
+    in.open(Form("calconst_%d.txt", i));
+    while(1){
+      in.getline(line,1024);
+      if(!in.good()) break;
+      double error;
+      sscanf(line, "%lf %lf", &calib_const[i], &error);
+    }
+    in.close();
+    in.clear();
+    cout<<"median_dQdx["<<i<<"]="<<median_dQdx[i]<<" calorimetry constant = "<<calib_const[i]<<endl;
   }
   //int x_bin_size=5;
   //int y_bin_size = 5; // nbiny bins in y direction
@@ -137,12 +160,59 @@ void protoDUNE_validate_calib::Loop(TString mn)
   for (unsigned int i = 0; i<3; ++i){
     dqdx_X_hist[i] = new TH1F(Form("dqdx_X_hist_%d",i), Form("plane_%d;X Coordinate(cm);dQ/dx(ADC/cm)",i),144,-360,360);
     dedx_X_hist[i] = new TH1F(Form("dedx_X_hist_%d",i), Form("plane_%d;X Coordinate(cm);dE/dx(MeV/cm)",i),144,-360,360);
-    hdqdx[i] = new TH1F(Form("hdqdx_%d",i), Form("plane_%d;dQ/dx (ke/cm);Entries",i), 100,0,200);
+    hdqdx[i] = new TH1F(Form("hdqdx_%d",i), Form("plane_%d;dQ/dx (e/cm);Entries",i), 100,0,2e5);
     hdedx[i] = new TH1F(Form("hdedx_%d",i), Form("plane_%d;dE/dx (MeV/cm);Entries",i), 100,0,10);
 
     dqdx_value[i].resize(144);
     dedx_value[i].resize(144);
   }    
+
+  ////////////////////////dEdx info//////////////////////////
+  const size_t nbins = 50;
+  double binsize = 10;
+
+  TVectorD meanKE0(nbins);
+  TVectorD meanKE1(nbins);
+  TVectorD meanKE2(nbins);
+  
+  TVectorD meanPitch0(nbins);
+  TVectorD meanPitch1(nbins);
+  TVectorD meanPitch2(nbins);
+
+  double avgKE[3][nbins] = {{0}};
+  double avgPitch[3][nbins] = {{0}};
+  int nhits[3][nbins] = {{0}};
+  TVectorD params(3);
+  params[0] = alp;
+  params[1] = bet;
+  params[2] = dedx;
+
+  std::vector<std::vector<TH1D*>> dedx(3);
+  TH2D *dedxke[3];
+  TH1D *dedxmip[3];
+
+  for (size_t i = 0; i < 3; ++i) {
+    dedxke[i] = new TH2D(Form("dedxke_%zu", i),
+                         Form("Plane:%zu;KE (MeV);dE/dx (MeV/cm)", i),
+                         250,0,500,80,0,8);
+    dedxmip[i] = new TH1D(Form("dedxmip_%zu", i),
+                          Form("Plane:%zu;dE/dx (MeV/cm)", i),
+                          200, 0.0, 10);
+    dedxmip[i]->Sumw2();
+    for (size_t j = 0; j < nbins; ++j) {
+      if(j < 2) {
+        dedx[i].push_back(new TH1D(Form("dedx_%zu_%zu", i, j), 
+                                   Form("Plane:%zu, %d<KE<%d MeV;dE/dx (MeV/cm)", i, int(j*binsize), int((j+1)*binsize)),
+                                   300, 0.0, 15));
+      }
+      else {
+        dedx[i].push_back(new TH1D(Form("dedx_%zu_%zu", i, j),
+                                   Form("Plane:%zu, %d<KE<%d MeV;dE/dx (MeV/cm)", i, int(j*binsize), int((j+1)*binsize)),
+                                   200, 0.0, 10));
+      }
+      dedx[i].back()->Sumw2();
+    }
+  }
 
   ////////////////////// Importing Y-Z plane fractional corrections /////////////
   TFile my_file(Form("YZcalo_mich%s_r%d.root",mn.Data(), run));
@@ -156,9 +226,21 @@ void protoDUNE_validate_calib::Loop(TString mn)
     YZ_positiveX_corr[i] = (TH2F*)my_file.Get(Form("correction_dqdx_ZvsY_positiveX_hist_%d",i));
     X_corr[i] = (TH1F*)my_file2.Get(Form("dqdx_X_correction_hist_%d",i));
   }
-  
+
+  const int np = 13;
+  double spline_KE[np] = {10, 14, 20, 30, 40, 80, 100, 140, 200, 300, 400, 800, 1000};
+  double spline_Range[np] = {0.70437, 1.27937, 2.37894, 4.72636, 7.5788, 22.0917, 30.4441, 48.2235, 76.1461, 123.567, 170.845, 353.438, 441.476};
+
+  TSpline3 *sp = new TSpline3("Cubic Spline", spline_Range, spline_KE,13,"b2e2",0,0);
+
   Long64_t nentries = fChain->GetEntriesFast();
   Long64_t real_nentries = fChain->GetEntries();
+  if (real_nentries >200000){
+    cout<<"Total entries = "<<real_nentries<<endl;
+    cout<<"Only use 200000 events."<<endl;
+    nentries = 200000;
+    real_nentries = nentries;
+  }
   Long64_t nbytes = 0, nb = 0;
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
     // for (Long64_t jentry=0; jentry<10000;jentry++) {
@@ -169,69 +251,180 @@ void protoDUNE_validate_calib::Loop(TString mn)
     
     int x_bin;
     for(int i=0; i<cross_trks; ++i){
-      bool testneg=0;
-      bool testpos=0;
-      if(trkstartx[i]*trkendx[i]>0) continue;
-      if(trkstartx[i]<-350 or trkendx[i]<-350) testneg=1;      
-      if(trkstartx[i]>350 or trkendx[i]>350) testpos=1;      
-      if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;
       
-      for (int k = 0; k<3; ++k){
+      //We want to select cathode crossing tracks
+      if(trkstartx[i]*trkendx[i]>=0) continue;
+
+      bool fid_xing = (TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645);
+
+      bool angle_2_xing = (abs(180/TMath::Pi()*trackthetaxz[i])<60 || 
+                           abs(180/TMath::Pi()*trackthetaxz[i])>120) &&
+        //(abs(180/TMath::Pi()*trackthetaxz[i])>10) &&
+        (abs(180/TMath::Pi()*trackthetayz[i])<80 || 
+         abs(180/TMath::Pi()*trackthetayz[i])>100);
+
+      bool angle_1_neg_xing = abs(180/TMath::Pi()*trackthetaxz[i])>140;
+      bool angle_1_pos_xing = abs(180/TMath::Pi()*trackthetaxz[i])<40;
+
+      bool angle_0_neg_xing = angle_1_pos_xing;
+      bool angle_0_pos_xing = angle_1_neg_xing;
+
+      bool fid_stp = peakT_min[i]>100 && peakT_max[i]<5900 && trklen[i]>100 && trklen[i]<700 && (trkendz[i]<226 || trkendz[i]>236) && (trkstartz[i]<226 || trkstartz[i]>236) && (trkendz[i]<456 || trkendz[i]>472) && (trkstartz[i]<456 || trkstartz[i]>472);
+
+      bool sel_stp = fid_stp && adjacent_hits[i]==0 && dist_min[i]<5;
+
+      bool testneg_xing=0;
+      bool testpos_xing=0;
+      if(trkstartx[i]<-350 or trkendx[i]<-350) testneg_xing=1;      
+      if(trkstartx[i]>350 or trkendx[i]>350) testpos_xing=1;      
+      //if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;
+      
+      // Loop over 3 planes
+      for (int j = 0; j<3; ++j){
+
         bool negok = true;
         bool posok = true;
-        if (k == 2){
-          if((abs(180/3.14*trackthetaxz[i])>60 && abs(180/3.14*trackthetaxz[i])<120)||abs(180/3.14*trackthetaxz[i])<10||(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)) continue;
-        }
-        if (k == 1){
-          if (testneg && !(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) negok = false;
-          if (testpos && !(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) posok = false;
-        }
-        if (k == 0){
-          if (testneg && !(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) negok = false;
-          if (testpos && !(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))) posok = false;
-        }
+
+        bool stpok = sel_stp;
         
-	for(int j=1; j<TMath::Min(ntrkhits[i][k]-1,3000); ++j){
-	  if((trkhity[i][k][j]<600)&&(trkhity[i][k][j]>0)){
-	    if((trkhitz[i][k][j]<695)&&(trkhitz[i][k][j]>0)){
-	      if(trkhitx[i][k][j]<0 && trkhitx[i][k][j]>-360 && testneg && negok){//negative drift
-		if(trkhitx[i][k][j]<0 && trkhitx[i][k][j+1]>0) continue;
-		if(trkhitx[i][k][j]<0 && trkhitx[i][k][j-1]>0) continue;
-		x_bin=X_corr[k]->FindBin(trkhitx[i][k][j]);
-		float YZ_correction_factor_negativeX=YZ_negativeX_corr[k]->GetBinContent(YZ_negativeX_corr[k]->FindBin(trkhitz[i][k][j],trkhity[i][k][j]));
-                float X_correction_factor=X_corr[k]->GetBinContent(x_bin);
-                //float recom_correction=recom_factor(tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
-                float normcorr = ref_dQdx[k]/median_dQdx[k];
-		float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_negativeX*X_correction_factor*normcorr;
-                float corrected_dedx=dEdx(corrected_dqdx/calib_const[k], tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
-		dqdx_value[k][x_bin-1].push_back(corrected_dqdx);
-		dedx_value[k][x_bin-1].push_back(corrected_dedx);
-                hdqdx[k]->Fill(corrected_dqdx);
-                hdedx[k]->Fill(corrected_dedx);
-                //if (k==0)  cout<<event<<" neg "<<x_bin<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<endl;
-	      }//X containment
-	      if(trkhitx[i][k][j]>0 && trkhitx[i][k][j]<360 && testpos && posok){//positive drift
-		if(trkhitx[i][k][j]>0 && trkhitx[i][k][j+1]<0) continue;
-		if(trkhitx[i][k][j]>0 && trkhitx[i][k][j-1]<0) continue;
-		x_bin=X_corr[k]->FindBin(trkhitx[i][k][j]);
-		float YZ_correction_factor_positiveX=YZ_positiveX_corr[k]->GetBinContent(YZ_positiveX_corr[k]->FindBin(trkhitz[i][k][j],trkhity[i][k][j]));
-                float X_correction_factor=X_corr[k]->GetBinContent(x_bin);
-                //float recom_correction=recom_factor(tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
-                float normcorr = ref_dQdx[k]/median_dQdx[k];
-		float corrected_dqdx=trkdqdx[i][k][j]*YZ_correction_factor_positiveX*X_correction_factor*normcorr;
-                float corrected_dedx=dEdx(corrected_dqdx/calib_const[k], tot_Ef(trkhitx[i][k][j],trkhity[i][k][j],trkhitz[i][k][j]));
-                //if (k==2) cout<<"x = "<<trkhitx[i][k][j]<<" y = "<<trkhity[i][k][j]<<" z = "<<trkhitz[i][k][j]<<" dqdx = "<<trkdqdx[i][k][j]<<" yzcorr = "<<YZ_correction_factor_positiveX<<" xcorr = "<<X_correction_factor<<" normcorr = "<<normcorr<<" corrected_dqdx = "<<corrected_dqdx<<" corrected_dedx = "<<corrected_dedx<<" "<<YZ_positiveX_corr[k]->GetXaxis()->FindBin(trkhitz[i][k][j])<<" "<<YZ_positiveX_corr[k]->GetYaxis()->FindBin(trkhity[i][k][j])<<" "<<YZ_positiveX_corr[k]->GetBinContent(YZ_positiveX_corr[k]->GetXaxis()->FindBin(trkhitz[i][k][j]),YZ_positiveX_corr[k]->GetYaxis()->FindBin(trkhity[i][k][j]))<<" "<<x_bin<<" "<<X_correction_factor<<endl;
-                //std::cout<<TrkID[i]<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<" "<<YZ_correction_factor_positiveX_2<<" "<<trkdqdx[i][k][j]<<" "<<corrected_dqdx_2<<std::endl;
-		dqdx_value[k][x_bin-1].push_back(corrected_dqdx);
-		dedx_value[k][x_bin-1].push_back(corrected_dedx);
-                hdqdx[k]->Fill(corrected_dqdx);
-                hdedx[k]->Fill(corrected_dedx);
-                //if (k==0)  cout<<event<<" pos "<<x_bin<<" "<<trkhitx[i][k][j]<<" "<<trkhity[i][k][j]<<" "<<trkhitz[i][k][j]<<endl;
-	      }//X containment
-	    } // Z containment
-	  } // Y containment
-	} // loop over hits of the track in the given plane
-      }//angular cut
+        if (j == 2){
+          if (!angle_2_xing){
+            negok = false;
+            posok = false;
+          }
+          stpok = stpok && lastwire[i]>5 && lastwire[i]<475;
+        }
+        if (j == 1){
+          if (!angle_1_neg_xing) negok = false;
+          if (!angle_1_pos_xing) posok = false;
+          stpok = stpok && lastwire[i]>5 && lastwire[i]<795;
+        }
+        if (j == 0){
+          if (!angle_0_neg_xing) negok = false;
+          if (!angle_0_pos_xing) posok = false;
+          stpok = stpok && lastwire[i]>5 && lastwire[i]<795;
+        }
+
+        vector<float> res, dq, first5dq, last5dq;
+
+        for(int k=0;k<ntrkhits[i][j];++k){
+          res.push_back(trkresrange[i][j][k]);
+          dq.push_back(trkdqdx[i][j][k]);
+        }
+
+        if(res.size()==0) continue;
+
+        int siz1=ntrkhits[i][j];
+        float max=*max_element(res.begin(),res.end());
+       
+        /************************flipping wrongly ordered residual range values****************************/
+        bool test=true;
+        if((trkhity[i][j][siz1-1]<trkhity[i][j][0] && trkresrange[i][j][siz1-1]>trkresrange[i][j][0])||(trkhity[i][j][0]<trkhity[i][j][siz1-1] && trkresrange[i][j][0]>trkresrange[i][j][siz1-1])){
+          test=false;
+          for(int i1=0;i1<ntrkhits[i][j];i1++){
+            trkresrange[i][j][i1]=res[siz1-i1-1];
+          }
+          //cout<<"This is a flipped track"<<endl;
+        }
+
+        /***************calculating the ratio of dQdx for first 5cm and last 5 cm of a track********************/ 
+        for(size_t k=0;k<res.size();k++){
+          if(trkresrange[i][j][k]<5) first5dq.push_back(dq[k]);
+          if(trkresrange[i][j][k]>max-5) last5dq.push_back(dq[k]);
+        }
+       
+        if(first5dq.size()<5){
+          stpok = false;
+        }
+        else{
+          float med1 = TMath::Median(first5dq.size(), &first5dq[0]);
+          float med2= TMath::Median(last5dq.size(), &last5dq[0]);
+          if(!((med1/med2)>1.4)) stpok = false;
+        }
+        if (!test) stpok = false;
+
+        if ((fid_xing || stpok) && (negok || posok)){
+          for(int k=1; k<TMath::Min(ntrkhits[i][j]-1,3000); ++k){
+            if((trkhity[i][j][k]<600)&&(trkhity[i][j][k]>0)){
+              if((trkhitz[i][j][k]<695)&&(trkhitz[i][j][k]>0)){
+                double ke = sp->Eval(trkresrange[i][j][k]);
+                if(trkhitx[i][j][k]<0 && trkhitx[i][j][k]>-360 && negok){//negative drift
+                  if(trkhitx[i][j][k]<0 && trkhitx[i][j][k+1]>0) continue;
+                  if(trkhitx[i][j][k]<0 && trkhitx[i][j][k-1]>0) continue;
+                  x_bin=X_corr[j]->FindBin(trkhitx[i][j][k]);
+                  float YZ_correction_factor_negativeX=YZ_negativeX_corr[j]->GetBinContent(YZ_negativeX_corr[j]->FindBin(trkhitz[i][j][k],trkhity[i][j][k]));
+                  float X_correction_factor=X_corr[j]->GetBinContent(x_bin);
+                  //float recom_correction=recom_factor(tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
+                  float normcorr = ref_dQdx[j]/median_dQdx[j];
+                  if (run>10000) normcorr = 1;
+                  float corrected_dqdx=trkdqdx[i][j][k]*YZ_correction_factor_negativeX*X_correction_factor*normcorr/calib_const[j];
+                  float corrected_dedx=dEdx(corrected_dqdx, tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
+                  if (!recalib){
+                    corrected_dqdx = trkdqdx[i][j][k];
+                    corrected_dedx = trkdedx[i][j][k];
+                  }
+                  if (fid_xing && testneg_xing){
+                    dqdx_value[j][x_bin-1].push_back(corrected_dqdx);
+                    dedx_value[j][x_bin-1].push_back(corrected_dedx);
+                    hdqdx[j]->Fill(corrected_dqdx);
+                    hdedx[j]->Fill(corrected_dedx);
+                    //if (k==0)  cout<<event<<" neg "<<x_bin<<" "<<trkhitx[i][j][k]<<" "<<trkhity[i][j][k]<<" "<<trkhitz[i][j][k]<<endl;
+                  }
+                  if (stpok && trkpitch[i][j][k]>=0.5 && trkpitch[i][j][k]<=0.8){
+                    size_t bin = size_t(ke/binsize);
+                    //std::cout << "Bin: " << bin << std::endl;
+                    if(bin < nbins){
+                      dedx[j][bin]->Fill(corrected_dedx);
+                      avgKE[j][bin] += ke;
+                      avgPitch[j][bin] += trkpitch[i][j][k];
+                      ++nhits[j][bin];
+                    }
+                    //dedxke[j]->Fill(trkresrange[i][j][k], corrected_dedx);
+                    dedxke[j]->Fill(ke, corrected_dedx);
+                  }
+                }//X containment
+                if(trkhitx[i][j][k]>0 && trkhitx[i][j][k]<360 && posok){//positive drift
+                  if(trkhitx[i][j][k]>0 && trkhitx[i][j][k+1]<0) continue;
+                  if(trkhitx[i][j][k]>0 && trkhitx[i][j][k-1]<0) continue;
+                  x_bin=X_corr[j]->FindBin(trkhitx[i][j][k]);
+                  float YZ_correction_factor_positiveX=YZ_positiveX_corr[j]->GetBinContent(YZ_positiveX_corr[j]->FindBin(trkhitz[i][j][k],trkhity[i][j][k]));
+                  float X_correction_factor=X_corr[j]->GetBinContent(x_bin);
+                  //float recom_correction=recom_factor(tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
+                  float normcorr = ref_dQdx[j]/median_dQdx[j];
+                  if (run>10000) normcorr = 1;
+                  float corrected_dqdx=trkdqdx[i][j][k]*YZ_correction_factor_positiveX*X_correction_factor*normcorr/calib_const[j];
+                  float corrected_dedx=dEdx(corrected_dqdx, tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
+                  if (!recalib){
+                    corrected_dqdx = trkdqdx[i][j][k];
+                    corrected_dedx = trkdedx[i][j][k];
+                  }
+                  //if (k==2) cout<<"x = "<<trkhitx[i][j][k]<<" y = "<<trkhity[i][j][k]<<" z = "<<trkhitz[i][j][k]<<" dqdx = "<<trkdqdx[i][j][k]<<" yzcorr = "<<YZ_correction_factor_positiveX<<" xcorr = "<<X_correction_factor<<" normcorr = "<<normcorr<<" corrected_dqdx = "<<corrected_dqdx<<" corrected_dedx = "<<corrected_dedx<<" "<<YZ_positiveX_corr[j]->GetXaxis()->FindBin(trkhitz[i][j][k])<<" "<<YZ_positiveX_corr[j]->GetYaxis()->FindBin(trkhity[i][j][k])<<" "<<YZ_positiveX_corr[j]->GetBinContent(YZ_positiveX_corr[j]->GetXaxis()->FindBin(trkhitz[i][j][k]),YZ_positiveX_corr[j]->GetYaxis()->FindBin(trkhity[i][j][k]))<<" "<<x_bin<<" "<<X_correction_factor<<endl;
+                  //std::cout<<TrkID[i]<<" "<<trkhitx[i][j][k]<<" "<<trkhity[i][j][k]<<" "<<trkhitz[i][j][k]<<" "<<YZ_correction_factor_positiveX_2<<" "<<trkdqdx[i][j][k]<<" "<<corrected_dqdx_2<<std::endl;
+                  if (fid_xing && testpos_xing){
+                    dqdx_value[j][x_bin-1].push_back(corrected_dqdx);
+                    dedx_value[j][x_bin-1].push_back(corrected_dedx);
+                    hdqdx[j]->Fill(corrected_dqdx);
+                    hdedx[j]->Fill(corrected_dedx);
+                    //if (k==0)  cout<<event<<" pos "<<x_bin<<" "<<trkhitx[i][j][k]<<" "<<trkhity[i][j][k]<<" "<<trkhitz[i][j][k]<<endl;
+                  }
+                  if (stpok && trkpitch[i][j][k]>=0.5 && trkpitch[i][j][k]<=0.8){
+                    size_t bin = size_t(ke/binsize);
+                    //std::cout << "Bin: " << bin << std::endl;
+                    if(bin < nbins){
+                      dedx[j][bin]->Fill(corrected_dedx);
+                      avgKE[j][bin] += ke;
+                      avgPitch[j][bin] += trkpitch[i][j][k];
+                      ++nhits[j][bin];
+                    }
+                    //dedxke[j]->Fill(trkresrange[i][j][k], corrected_dedx);
+                    dedxke[j]->Fill(ke, corrected_dedx);
+                  }
+                }//X containment
+              } // Z containment
+            } // Y containment
+          } // loop over hits of the track in the given plane
+        }// fiducial cut
+      }// loop over 3 planes
     } // loop over crossing tracks in the event
   } // loop over jentries
 
@@ -239,13 +432,38 @@ void protoDUNE_validate_calib::Loop(TString mn)
   ////////////////////// Getting inforamtion from dqdx_value vector ////////////////////
   for (int i = 0; i<3; ++i){
     for(size_t j=0; j<dqdx_value[i].size(); j++){
-      //std::cout<<i<<" "<<j<<" "<<dqdx_value[i][j].size()<<std::endl;
+      //std::cout<<i<<" "<<j<<" "<<dqdx_value[i][k].size()<<std::endl;
       float local_median_dqdx=TMath::Median(dqdx_value[i][j].size(),&dqdx_value[i][j][0]);
       dqdx_X_hist[i]->SetBinContent(j+1,local_median_dqdx);
       float local_median_dedx=TMath::Median(dedx_value[i][j].size(),&dedx_value[i][j][0]);
       dedx_X_hist[i]->SetBinContent(j+1,local_median_dedx);
     }
+    for(size_t j = 0; j<nbins; ++j){
+      avgKE[i][j]/=nhits[i][j];
+      avgPitch[i][j]/=nhits[i][j];
+      if (i==0){
+        meanKE0[j] = avgKE[i][j];
+        meanPitch0[j] = avgPitch[i][j];
+      }
+      if (i==1){
+        meanKE1[j] = avgKE[i][j];
+        meanPitch1[j] = avgPitch[i][j];
+      }
+      if (i==2){
+        meanKE2[j] = avgKE[i][j];
+        meanPitch2[j] = avgPitch[i][j];
+      }
+    }
   }
+  file->cd();
+  meanKE0.Write("meanKE0");
+  meanKE1.Write("meanKE1");
+  meanKE2.Write("meanKE2");
+  meanPitch0.Write("meanPitch0");
+  meanPitch1.Write("meanPitch1");
+  meanPitch2.Write("meanPitch2");
+  params.Write("params");
+
   file->Write();
 }
 
@@ -261,14 +479,24 @@ int main(int argc, char *argv[]) {
   
   string infile = argv[1];
   string michelnumber = argv[2];
+  string a3 = argv[3];
+  if (a3 == "0"){
+    recalib = false;
+  }
+  else{
+    recalib = true;
+  }
+
+  cout<<"recalib="<<recalib<<endl;
 
   if (!(michelnumber == "0"||michelnumber == "1"||michelnumber == "2"||michelnumber == "3")){
     cout << "Error: Michel tree number must be 0,1, or 2" << endl;
     return 0;
-    }
+  }
 
- if (michelnumber=="0") michelnumber = "";
+  if (michelnumber=="0") michelnumber = "";
   cout << Form("michelremoving%s/Event", michelnumber.c_str()) << endl;
+
 
   TChain* shtree = new TChain("Event");
 

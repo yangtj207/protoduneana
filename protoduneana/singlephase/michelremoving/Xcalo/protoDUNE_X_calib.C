@@ -29,7 +29,8 @@ using namespace std;
 float LAr_density=1.39;
 float alp=0.93;
 float bet=0.212;
-float dedx=2.08;
+//float dedx=2.08;
+float dedx=1.9;
 bool userecom=true;
 float recom_factor(float totEf){
   if (!userecom) return 1;
@@ -146,6 +147,7 @@ void protoDUNE_X_calib::Loop(TString mn)
 
   ////////////////////// Importing Y-Z plane fractional corrections /////////////
   fChain->GetEntry(0);
+  if (run>10000) run = 0;
   TFile my_file(Form("YZcalo_mich%s_r%d.root",mn.Data(), run));
   TH2F *YZ_negativeX_hist_2= (TH2F*)my_file.Get("correction_dqdx_ZvsY_negativeX_hist_2");
   TH2F *YZ_positiveX_hist_2= (TH2F*)my_file.Get("correction_dqdx_ZvsY_positiveX_hist_2");
@@ -172,8 +174,14 @@ void protoDUNE_X_calib::Loop(TString mn)
   Double_t time1=0;
   //Filling the TTree
 
- Long64_t nentries = fChain->GetEntriesFast();
- Long64_t real_nentries = fChain->GetEntries();
+  Long64_t nentries = fChain->GetEntriesFast();
+  Long64_t real_nentries = fChain->GetEntries();
+  if (real_nentries >200000){
+    cout<<"Total entries = "<<real_nentries<<endl;
+    cout<<"Only use 200000 events."<<endl;
+    nentries = 200000;
+    real_nentries = nentries;
+  }
   Long64_t nbytes = 0, nb = 0;
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
   // for (Long64_t jentry=0; jentry<10000;jentry++) {
@@ -186,7 +194,6 @@ void protoDUNE_X_calib::Loop(TString mn)
       runvalue=run;
     }
 
-
     int x_bin;
     for(int i=0; i<cross_trks; ++i){
       bool testneg=0;
@@ -197,7 +204,7 @@ void protoDUNE_X_calib::Loop(TString mn)
       //plane 2
       if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;
       //  if(!(((TMath::Abs(trackthetaxz[i])>1.13) && (TMath::Abs(trackthetaxz[i])<2.0))||(TMath::Abs(trackthetayz[i])>1.22 && TMath::Abs(trackthetayz[i])<1.92))){
-      if(!((abs(180/3.14*trackthetaxz[i])>60 && abs(180/3.14*trackthetaxz[i])<120)||abs(180/3.14*trackthetaxz[i])<10||(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100))){
+      if(!((abs(180/TMath::Pi()*trackthetaxz[i])>60 && abs(180/TMath::Pi()*trackthetaxz[i])<120)||(abs(180/TMath::Pi()*trackthetayz[i])>80 && abs(180/TMath::Pi()*trackthetayz[i])<100))){
 	for(int j=1; j<TMath::Min(ntrkhits[i][2]-1,3000); ++j){
 	  if((trkhity[i][2][j]<600)&&(trkhity[i][2][j]>0)){
 	    if((trkhitz[i][2][j]<695)&&(trkhitz[i][2][j]>0)){
@@ -241,7 +248,7 @@ void protoDUNE_X_calib::Loop(TString mn)
 	if((trkhity[i][1][j]<600)&&(trkhity[i][1][j]>0)){
 	  if((trkhitz[i][1][j]<695)&&(trkhitz[i][1][j]>0)){
 	    if(trkhitx[i][1][j]<0 && trkhitx[i][1][j]>-360 && testneg){
-	      if(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){
+	      if(abs(180/TMath::Pi()*trackthetaxz[i])>140){
 	    	if(trkhitx[i][1][j]<0 && trkhitx[i][1][j+1]>0) continue;
 		if(trkhitx[i][1][j]<0 && trkhitx[i][1][j-1]>0) continue;
 		x_bin=dqdx_X_hist_1->FindBin(trkhitx[i][1][j]);
@@ -258,7 +265,7 @@ void protoDUNE_X_calib::Loop(TString mn)
 	    if(trkhitx[i][1][j]>0 && trkhitx[i][1][j]<360 && testpos){
 	      if(trkhitx[i][1][j]>0 && trkhitx[i][1][j+1]<0) continue;
 	      if(trkhitx[i][1][j]>0 && trkhitx[i][1][j-1]<0) continue;
-	      if(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){
+	      if(abs(180/TMath::Pi()*trackthetaxz[i])<40){
 		x_bin=dqdx_X_hist_1->FindBin(trkhitx[i][1][j]);
 		float recom_correction=recom_factor(tot_Ef(trkhitx[i][1][j],trkhity[i][1][j],trkhitz[i][1][j]));
 		float YZ_correction_factor_positiveX_1=YZ_positiveX_hist_1->GetBinContent(YZ_positiveX_hist_1->FindBin(trkhitz[i][1][j],trkhity[i][1][j]));
@@ -279,7 +286,7 @@ void protoDUNE_X_calib::Loop(TString mn)
 	if((trkhity[i][0][j]<600)&&(trkhity[i][0][j]>0)){
 	  if((trkhitz[i][0][j]<695)&&(trkhitz[i][0][j]>0)){
 	    if(trkhitx[i][0][j]<0 && trkhitx[i][0][j]>-360 && testneg){
-	      if(abs(180/3.14*trackthetaxz[i])<40 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){
+	      if(abs(180/TMath::Pi()*trackthetaxz[i])<40){
 		if(trkhitx[i][0][j]<0 && trkhitx[i][0][j+1]>0) continue;
 		if(trkhitx[i][0][j]<0 && trkhitx[i][0][j-1]>0) continue;
 		x_bin=dqdx_X_hist_0->FindBin(trkhitx[i][0][j]);
@@ -295,7 +302,7 @@ void protoDUNE_X_calib::Loop(TString mn)
 	      }
 	    }
 	    if(trkhitx[i][0][j]>0 && trkhitx[i][0][j]<360 && testpos){
-	      if(abs(180/3.14*trackthetaxz[i])>130 && !(abs(180/3.14*trackthetayz[i])>80 && abs(180/3.14*trackthetayz[i])<100)){
+	      if(abs(180/TMath::Pi()*trackthetaxz[i])>140){
 		if(trkhitx[i][0][j]>0 && trkhitx[i][0][j+1]<0) continue;
 		if(trkhitx[i][0][j]>0 && trkhitx[i][0][j-1]<0) continue;
 		x_bin=dqdx_X_hist_0->FindBin(trkhitx[i][0][j]);
@@ -332,7 +339,7 @@ void protoDUNE_X_calib::Loop(TString mn)
       dedx_X_hist_2->SetBinContent(i+1,local_median_dedx_2);
     }
   }
- 
+  if (run>10000) run = 0;
   float global_median_dqdx_2=TMath::Median(all_dqdx_value_2.size(),&all_dqdx_value_2[0]); 
   global_med_2=global_median_dqdx_2;//Filling the Tree variable
   ofstream outfile0,outfile1,outfile2;

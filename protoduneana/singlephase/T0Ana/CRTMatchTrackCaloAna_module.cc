@@ -134,9 +134,9 @@ void pdsp::CRTMatchTrackCaloAna::analyze(art::Event const& e)
   auto const* SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
   
    // Reconstruciton information
-  art::Handle < std::vector < recob::Track > > trackListHandle;
   std::vector < art::Ptr < recob::Track > > trackList;
-  if (e.getByLabel("pandoraTrack", trackListHandle)) {
+  auto trackListHandle = e.getHandle < std::vector < recob::Track > >("pandoraTrack");
+  if (trackListHandle) {
     art::fill_ptr_vector(trackList, trackListHandle);
   }
   else return;
@@ -145,8 +145,7 @@ void pdsp::CRTMatchTrackCaloAna::analyze(art::Event const& e)
   art::FindManyP < recob::Hit > hitsFromTrack(trackListHandle, e, "pandoraTrack");
 
   //Get PFParticles
-  art::Handle< std::vector<recob::PFParticle> > pfpListHandle;
-  e.getByLabel("pandora", pfpListHandle);
+  auto pfpListHandle = e.getHandle< std::vector<recob::PFParticle> >("pandora");
   
   //Get Track-PFParticle association
   art::FindManyP<recob::PFParticle> fmpfp(trackListHandle, e, "pandoraTrack");
@@ -163,11 +162,9 @@ void pdsp::CRTMatchTrackCaloAna::analyze(art::Event const& e)
     art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, e, "pandoracalo");
 
 
-    art::Handle< std::vector<recob::Hit> > hitListHandle; // to get information about the hits
     std::vector<art::Ptr<recob::Hit>> hitlist;
-    if(e.getByLabel("hitpdune", hitListHandle))
-      art::fill_ptr_vector(hitlist, hitListHandle);
-
+    auto hitListHandle = e.getHandle< std::vector<recob::Hit> >("hitpdune"); // to get information about the hits
+    if (hitListHandle) art::fill_ptr_vector(hitlist, hitListHandle);
 
   auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(e);
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e, clockData);

@@ -108,8 +108,8 @@ std::vector<const recob::Hit*> protoana::ProtoDUNETruthUtils::GetMCParticleHits(
     bool use_eve) const {
   std::vector<const recob::Hit*> outVec;
   
-  art::Handle<std::vector<recob::Hit>> hitHandle;
-  if(!evt.getByLabel(hitModule, hitHandle)) {
+  auto hitHandle = evt.getHandle<std::vector<recob::Hit> >(hitModule);
+  if (!hitHandle) {
     std::cout << "protoana::ProtoDUNETruthUtils::GetMCParticleHits: could not find hits in event.\n";
     return outVec;
   }
@@ -965,8 +965,8 @@ double protoana::ProtoDUNETruthUtils::GetDepEnergyMC(const art::Event &evt, geo:
 
   double edep = 0.0;
 
-  art::Handle< std::vector<sim::SimChannel> > simchannelHandle;
-  if(evt.getByLabel("largeant", simchannelHandle)){
+  auto simchannelHandle = evt.getHandle< std::vector<sim::SimChannel> >("largeant");
+  if (simchannelHandle) {
     // Loop over sim channels
     for(auto const& simchannel : (*simchannelHandle)){
       // Only keep channels in the selected view

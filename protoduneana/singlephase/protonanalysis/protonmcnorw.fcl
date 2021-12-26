@@ -11,7 +11,10 @@
 #include "ProtoDUNEDataUtils.fcl"
 #include "ProtoDUNEBeamlineFilter.fcl"
 #include "ProtoDUNEBeamCuts.fcl"
+#include "ProtoDUNEEmptyEventFinder.fcl"
 
+#include "ProtoDUNECalibration.fcl"
+##include "ProtoDUNEBeamlineUtils.fcl"
 #include "protodune_tools_dune.fcl"
 
 
@@ -68,13 +71,22 @@ physics:
    {
      module_type:             "protonmcnorw"
      BeamModuleLabel:         "beamevent"
+
+     BeamlineUtils: @local::standard_protodunebeamlineutils
+     EmptyEventFinder: @local::standard_protoduneemptyeventfinder
+     
+
+     #TimeDecoderModuleLabel: "timingrawdecoder:daq"
+
      #Warning!! The code will use CalorimetryTag to do sce correction
      #CalorimetryTag:          "pandoracalo"	
      #CalorimetryTag:         "pandoracaloSCE"
      #CalorimetryTag:         "pandoracalo"
      #pandoracalo + electron lifetime correction (recommended)
      #CalorimetryTag:         "pandoracali"
-     CalorimetryTag:         "pandoracalinoxyzt"
+     #CalorimetryTag:         "pandoracalinoxyzt"
+     CalorimetryTag:         "pandoracalonosce"
+     #CalorimetryTag:         "pandoracalinoxyzt"
 
      TrackerTag:              "pandoraTrack"
      HitTag:                  "hitpdune"
@@ -99,6 +111,7 @@ physics:
 
 #disable the following line for the prod 2
 services.BackTrackerService.BackTracker.SimChannelModuleLabel: "tpcrawdecoder:simpleSC"
+
 #add to prod4a
 services.BackTrackerService.BackTracker.G4ModuleLabel: "largeant"
 services.BackTrackerService.BackTracker.MinimumHitEnergyFraction: 1e-1
@@ -107,8 +120,10 @@ services.BackTrackerService.BackTracker.MinimumHitEnergyFraction: 1e-1
 #physics.analyzers.protonmcnorw.CalorimetryModuleLabel:  "pandoracalo"
 #physics.analyzers.protonmcnorw.CalorimetryModuleLabel:  "pandoracaloSCE"
 #physics.analyzers.protonmcnorw.CalorimetryModuleLabel:  "pandoracalo"
+#physics.analyzers.protonmcnorw.CalorimetryModuleLabel:  "pandoracalinoxyzt"
 #physics.analyzers.protonmcnorw.CalorimetryModuleLabel:  "pandoracali"
-physics.analyzers.protonmcnorw.CalorimetryModuleLabel:  "pandoracalinoxyzt"
+#physics.analyzers.protonmcnorw.CalorimetryModuleLabel:  "pandoracalinoxyzt"
+physics.analyzers.protonmcnorw.CalorimetryModuleLabel:  "pandoracalonosce"
 #physics.analyzers.protonmcnorw.HitsModuleLabel:  "linecluster"
 #physics.analyzers.protonmcnorw.HitsModuleLabel:  "hitpdune"
 physics.analyzers.protonmcnorw.SaveTrackInfo: true

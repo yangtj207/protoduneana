@@ -1,5 +1,16 @@
 
-cet_find_library( EVGENPROTODUNEBEAMDATAPRODUCTS NAMES dune_EventGenerator_ProtoDUNEbeamDataProducts PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+if(DEFINED ENV{DUNETPC_FQ_DIR})
+  message("DUNETPC_FQ_DIR defined. Using this to search for library dune_EventGenerator_ProtoDUNEbeamDataProducts")
+  cet_find_library( EVGENPROTODUNEBEAMDATAPRODUCTS NAMES dune_EventGenerator_ProtoDUNEbeamDataProducts PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+  message("Result: ${EVGENPROTODUNEBEAMDATAPRODUCTS}")
+else()
+  message("DUNETPC_FQ_DIR undefined. Expect we are building next to dunetpc. Aliasing library dune_EventGenerator_ProtoDUNEbeamDataProducts to EVGENPROTODUNEBEAMDATAPRODUCTS")
+  if(NOT EVGENPROTODUNEBEAMDATAPRODUCTS)
+    #add_library(EVGENPROTODUNEBEAMDATAPRODUCTS ALIAS dune_EventGenerator_ProtoDUNEbeamDataProducts)
+    set(EVGENPROTODUNEBEAMDATAPRODUCTS dune_EventGenerator_ProtoDUNEbeamDataProducts)
+  endif()
+endif()
+#cet_find_library( EVGENPROTODUNEBEAMDATAPRODUCTS NAMES dune_EventGenerator_ProtoDUNEbeamDataProducts PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
 
 include_directories( $ENV{IFDHC_FQ_DIR}/inc )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -29,7 +40,7 @@ art_make( BASENAME_ONLY
                         ROOT_BASIC_LIB_LIST
                         ${SQLITE3}
                         ${ROOT_EG}
-                        IFDH
+                        ifdh::ifdh 
 			ProtoDUNEDataUtils
                         ProtoDUNEUtilities
                         ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}

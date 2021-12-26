@@ -479,10 +479,9 @@ void protoana::pionanalysismc::analyze(art::Event const & evt){
     // For data we can see if this event comes from a beam trigger
     beamTriggerEvent = dataUtil.IsBeamTrigger(evt);
 
-    art::Handle< std::vector<beam::ProtoDUNEBeamEvent> > pdbeamHandle;
     std::vector< art::Ptr<beam::ProtoDUNEBeamEvent> > beaminfo;
-    if(evt.getByLabel(fBeamModuleLabel, pdbeamHandle))
-      art::fill_ptr_vector(beaminfo, pdbeamHandle);
+    auto pdbeamHandle = evt.getHandle< std::vector<beam::ProtoDUNEBeamEvent> >(fBeamModuleLabel);
+    if (pdbeamHandle) art::fill_ptr_vector(beaminfo, pdbeamHandle);
   
     for(unsigned int i = 0; i < beaminfo.size(); ++i){
       //if(!beaminfo[i]->CheckIsMatched()) continue;
