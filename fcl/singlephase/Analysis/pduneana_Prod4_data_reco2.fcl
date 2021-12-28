@@ -71,6 +71,8 @@ physics:
 }
 
 outputs: {}
+physics.producers.pandoracali.CaloAlg.CalAreaConstants: [1.166e-3, 1.122e-3, 1.038e-3]
+physics.producers.pandora2cali.CaloAlg.CalAreaConstants: [1.166e-3, 1.122e-3, 1.038e-3]
 physics.analyzers.pduneana.SelectEvents: ["fpath"]
 physics.analyzers.pduneana.CalorimetryTagSCE: "pandoracali"
 physics.analyzers.pduneana.CalorimetryTagNoSCE: "pandoracalonosce" ##For no-SCE sample
