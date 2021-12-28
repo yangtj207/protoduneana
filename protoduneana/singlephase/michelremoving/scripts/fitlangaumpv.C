@@ -312,7 +312,13 @@ int main(int argc, char *argv[]) {
       }
       if (dedx[i][j]->GetMean()<10){
         //sv[0]=0.13*dedx[i]->GetRMS(); sv[1]=0.8*dedx[i]->GetMean(); sv[2]=dedx[i]->GetEntries()*0.1; sv[3]=.3;
-        sv[0]=0.1; sv[1]=0.8*dedx[i][j]->GetMean(); sv[2]=dedx[i][j]->GetEntries()*0.05; sv[3]=0.05;
+        if (i==2){
+          sv[0]=0.08; sv[1]=0.8*dedx[i][j]->GetMean(); sv[2]=dedx[i][j]->GetEntries()*0.05; sv[3]=0.13;
+        }
+        else{
+          sv[0]=0.08; sv[1]=0.8*dedx[i][j]->GetMean(); sv[2]=dedx[i][j]->GetEntries()*0.05; sv[3]=0.15;
+        }
+
         //if(j==0){ sv[0]=0.2; sv[1]=4.7; sv[2]=20; sv[3]=.01;}
         //if(j==1){ sv[0]=0.2; sv[1]=3.0; sv[2]=10; sv[3]=.01;}
         //if(j==2){ sv[1]=2.5;}
