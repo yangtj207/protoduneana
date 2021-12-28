@@ -12,7 +12,7 @@ args = parser.parse_args()
 
 #print(ls(args.p))
 
-all_files = [i.split("/")[-1] for i in ls(args.p + "*")]
+all_files = [i.split("/")[-1] for i in sorted(ls(args.p + "*"))]
 
 for p in all_files:
     if '.csv' in p:
