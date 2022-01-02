@@ -57,6 +57,8 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
+#include "protoduneana/singlephase/michelremoving/dEdX/protoDUNE_dEdx_calib.C"
+
 namespace pdsp {
   class HadronHitsRemoval;
 }
@@ -154,6 +156,14 @@ void pdsp::HadronHitsRemoval::beginJob(){
   fTree->Branch("true_beam_endProcess", &true_beam_endProcess);
   fTree->Branch("true_beam_len", &true_beam_len);
   fTree->Branch("true_beam_len_sce", &true_beam_len_sce);
+  
+  cout<<"$$$$$$$$$$dEdx"<<endl;
+  for (double ke=1150; ke>300; ke-=1)
+    cout<<dEdx(ke, 105.658)/1.396<<","; // 1 GeV muon in LAr
+  cout<<"\n$$$$$$$$$$Momentum"<<endl;
+  for (double ke=1150; ke>300; ke-=1)
+    cout<<sqrt(ke*ke+2*105.658*ke)/1000<<","; // in GeV
+  cout<<endl;
 }
 
 void pdsp::HadronHitsRemoval::produce(art::Event& evt)
