@@ -41,6 +41,7 @@ float bet=0.212;
 float dedx=2.08;
 bool userecom=true;
 bool recalib=true;
+bool sceon=true;
 float recom_factor(float totEf){
   if (!userecom) return 1;
   float xsi=bet*dedx/(LAr_density*totEf);
@@ -64,19 +65,24 @@ TH3F *ypos=(TH3F*)ef->Get("Reco_ElecField_Y_Pos");
 TH3F *zpos=(TH3F*)ef->Get("Reco_ElecField_Z_Pos");
 float tot_Ef(float xval,float yval,float zval){
   float E0value=0.4867;
-  if(xval>=0){
-    float ex=E0value+E0value*xpos->GetBinContent(xpos->FindBin(xval,yval,zval));
-    float ey=0.0+E0value*ypos->GetBinContent(ypos->FindBin(xval,yval,zval));
-    float ez=0.0+E0value*zpos->GetBinContent(zpos->FindBin(xval,yval,zval));
-    return sqrt(ex*ex+ey*ey+ez*ez);
-    // return ex;
+  if (!sceon){
+    return E0value;
   }
   else{
-    float ex=E0value+E0value*xneg->GetBinContent(xneg->FindBin(xval,yval,zval));
-    float ey=0.0+E0value*yneg->GetBinContent(yneg->FindBin(xval,yval,zval));
-    float ez=0.0+E0value*zneg->GetBinContent(zneg->FindBin(xval,yval,zval));
-    return sqrt(ex*ex+ey*ey+ez*ez);
-    // return ex;
+    if(xval>=0){
+      float ex=E0value+E0value*xpos->GetBinContent(xpos->FindBin(xval,yval,zval));
+      float ey=0.0+E0value*ypos->GetBinContent(ypos->FindBin(xval,yval,zval));
+      float ez=0.0+E0value*zpos->GetBinContent(zpos->FindBin(xval,yval,zval));
+      return sqrt(ex*ex+ey*ey+ez*ez);
+      // return ex;
+    }
+    else{
+      float ex=E0value+E0value*xneg->GetBinContent(xneg->FindBin(xval,yval,zval));
+      float ey=0.0+E0value*yneg->GetBinContent(yneg->FindBin(xval,yval,zval));
+      float ez=0.0+E0value*zneg->GetBinContent(zneg->FindBin(xval,yval,zval));
+      return sqrt(ex*ex+ey*ey+ez*ez);
+      // return ex;
+    }
   }
 }
 
@@ -520,6 +526,7 @@ int main(int argc, char *argv[]) {
   string infile = argv[1];
   string michelnumber = argv[2];
   string a3 = argv[3];
+  string sce = argv[4];
   if (a3 == "0"){
     recalib = false;
   }
@@ -558,7 +565,14 @@ int main(int argc, char *argv[]) {
     in.clear();
   }
 
-  userecom = true;
+  if (sce=="0"){
+    cout<<"SCE off"<<endl;
+    sceon = false;
+  }
+  else{
+    cout<<"SCE on"<<endl;
+    sceon = true;
+  }
   protoDUNE_validate_calib t(shtree);
   
   t.Loop(michelnumber.c_str());
