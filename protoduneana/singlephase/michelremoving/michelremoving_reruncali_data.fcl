@@ -1,0 +1,108 @@
+#include "services_dune.fcl"
+#include "hitfindermodules_dune.fcl"
+#include "filters.fcl"
+#include "ProtoDUNEUnstableHVFilter.fcl"
+#include "signalservices_dune.fcl"
+#include "caldata_dune.fcl"
+#include "trackfindermodules_dune.fcl"
+#include "ecalibration.fcl"
+#include "triggeralgo_service.fcl"
+#include "photpropservices_dune.fcl"
+#include "ProtoDUNEDataUtils.fcl"
+#include "ProtoDUNEFembFilter.fcl"
+#include "protoDUNE_reco_data_prolog.fcl"
+#include "missingproductfilter.fcl"
+#include "protodune_tools_dune.fcl"
+
+process_name: michelremoving
+
+services:
+{
+  #Load the service that manages root files for histograms.
+  TFileService: { fileName: "michelremoving.root" }
+  RandomNumberGenerator: {}                     #ART native random number generator
+  @table::protodune_reco_services
+  message:      @local::standard_info
+  FileCatalogMetadata: @local::art_file_catalog_mc
+}
+services.PdspChannelMapService:      @local::pdspchannelmap
+#source is now a root file
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1            # Number of events to create
+}
+physics:
+      {
+          producers:{
+             @table::protoDUNE_reco_data_stage2_producers 
+          }
+          reco: [ @sequence::protoDUNE_reco_data_stage2 ]
+          filters:	
+          {
+              f1: @local::HVfilter
+              f2: @local::pdsp_fembfilter_all
+              f3: @local::standard_missingproductfilter
+          } 
+          fpath: [f1, f2, f3]
+          
+          analyzers:{
+            michelremoving:
+              {
+                  module_type: "michelremoving"
+                  SelectEvents: [fpath]
+              }
+              michelremoving1:
+              {
+                  module_type: "michelremoving"
+                  SelectEvents: [fpath]
+              }
+              michelremoving2:
+              {
+                  module_type: "michelremoving"
+                  SelectEvents: [fpath]
+              }
+              michelremoving3:
+              {
+                  module_type: "michelremoving"
+                  SelectEvents: [fpath]
+              }
+          }
+ 
+          
+          ana:  [ michelremoving, michelremoving1, michelremoving2, michelremoving3 ]
+          end_paths:     [  ana ] 
+}
+
+# define the list of LArSoft modules to run through the simulate path
+physics.filters.f2.DataUtils.RawDigitTimeStampTag:        "caldata:dataprep"
+physics.producers.pandoracali.CaloAlg.CalAreaConstants: [1.166e-3, 1.122e-3, 1.038e-3]
+physics.analyzers.michelremoving.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.michelremoving.CalorimetryModuleLabel:  "pandoracalonosce"
+physics.analyzers.michelremoving.HitsModuleLabel:  "hitpdune"
+physics.analyzers.michelremoving.SaveTrackInfo: true
+
+physics.analyzers.michelremoving1.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.michelremoving1.CalorimetryModuleLabel:  "pandoracalo"
+physics.analyzers.michelremoving1.HitsModuleLabel:  "hitpdune"
+physics.analyzers.michelremoving1.SaveTrackInfo: true
+
+physics.analyzers.michelremoving2.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.michelremoving2.CalorimetryModuleLabel:  "pandoracalinoxyzt"
+physics.analyzers.michelremoving2.HitsModuleLabel:  "hitpdune"
+physics.analyzers.michelremoving2.SaveTrackInfo: true
+
+physics.analyzers.michelremoving3.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.michelremoving3.CalorimetryModuleLabel:  "pandoracali"
+physics.analyzers.michelremoving3.HitsModuleLabel:  "hitpdune"
+physics.analyzers.michelremoving3.SaveTrackInfo: true
+
+services.SpaceCharge.EnableCalEfieldSCE: true
+services.SpaceCharge.EnableCalSpatialSCE: true
+
+# xyzt database
+services.XYZCalibService.IsMC: false
+services.XYZCalibService.UseCondbXYZCorr: true
+services.XYZCalibService.YZCorrDBTag: "prod4"
+services.XYZCalibService.XCorrDBTag: "prod4"
+services.XYZCalibService.NormCorrDBTag: "prod4"

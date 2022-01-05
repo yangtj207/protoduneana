@@ -1,12 +1,11 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       HadronHitsRemoval
+// Class:       ProtonHitsRemoval
 // Plugin Type: producer (art v3_06_03)
-// File:        HadronHitsRemoval_module.cc
+// File:        ProtonHitsRemoval_module.cc
 //
 // Generated at Tue Jul 13 22:36:12 2021 by Tingjun Yang using cetskelgen
 // from cetlib version v3_11_01.
 ////////////////////////////////////////////////////////////////////////
-
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
@@ -16,14 +15,18 @@
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-
 #include <memory>
-
 #include "art_root_io/TFileService.h"
 #include "TTree.h"
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
+#include "protoduneana/Utilities/ProtoDUNEBeamCuts.h"
+#include "protoduneana/Utilities/ProtoDUNEEmptyEventFinder.h"
+#include "protoduneana/Utilities/ProtoDUNECalibration.h"
+
+
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -33,13 +36,11 @@
 #include "TVector3.h"
 #include <memory>
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
-
 #include <string>
 #include <vector>
 #include <utility>
 #include <memory>
 #include <iostream>
-
 // Framework includes
 #include "canvas/Utilities/InputTag.h"
 #include "art/Framework/Core/ModuleMacros.h"
@@ -47,7 +48,6 @@
 #include "art/Framework/Core/EDProducer.h"
 #include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-
 // LArSoft Includes
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RawData/RawDigit.h"
@@ -56,25 +56,22 @@
 #include "lardata/ArtDataHelper/HitCreator.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-
 namespace pdsp {
-  class HadronHitsRemoval;
+  class ProtonHitsRemoval;
 }
+
+
 using namespace std;
-
-
-class pdsp::HadronHitsRemoval : public art::EDProducer {
+class pdsp::ProtonHitsRemoval : public art::EDProducer {
 public:
-  explicit HadronHitsRemoval(fhicl::ParameterSet const& p);
+  explicit ProtonHitsRemoval(fhicl::ParameterSet const& p);
   // The compiler-generated destructor is fine for non-base
   // classes without bare pointers or other resource use.
-
   // Plugins should not be copied or assigned.
-  HadronHitsRemoval(HadronHitsRemoval const&) = delete;
-  HadronHitsRemoval(HadronHitsRemoval&&) = delete;
-  HadronHitsRemoval& operator=(HadronHitsRemoval const&) = delete;
-  HadronHitsRemoval& operator=(HadronHitsRemoval&&) = delete;
-
+  ProtonHitsRemoval(ProtonHitsRemoval const&) = delete;
+  ProtonHitsRemoval(ProtonHitsRemoval&&) = delete;
+  ProtonHitsRemoval& operator=(ProtonHitsRemoval const&) = delete;
+  ProtonHitsRemoval& operator=(ProtonHitsRemoval&&) = delete;
   // Required functions.
   void produce(art::Event& e) override;
   void beginJob() override;
@@ -83,7 +80,6 @@ public:
   
   bool PassBeamQualityCut() const;
   void TrueBeamInfo(const art::Event & evt, const simb::MCParticle* true_beam_particle);
-
 private:
   // Declare member data here.
   TTree *fTree;
@@ -93,26 +89,47 @@ private:
   protoana::ProtoDUNETrackUtils trackUtil;
   protoana::ProtoDUNEPFParticleUtils pfpUtil;
   protoana::ProtoDUNETruthUtils truthUtil;
-  // for beam quality cut of data
-  const double beam_startX_data = -27.911;
-  const double beam_startY_data = 424.364;
-  const double beam_startZ_data = 3.77836;
-  const double beam_startX_rms_data = 4.71128;
-  const double beam_startY_rms_data = 5.16472;
-  const double beam_startZ_rms_data = 1.10265;
+
+  //run info
+  int run;
+  int subrun;
+  int event;
+
+
+  //Data beam quality cut
+  const double beam_startZ_data = 3.75897e+00; //prod4a-reco2
+  const double beam_startZ_rms_data = 1.03771e+00; //prod4a-reco2
+  const double beam_startY_data = 4.23949e+02; //prod4a-reco2
+  const double beam_startY_rms_data = 4.61753e+00; //prod4a-reco2
+  const double beam_startX_data = -2.83979e+01; //prod4a-reco2
+  const double beam_startX_rms_data = 3.88357e+00; //prod4a-reco2
+
   const double beam_angleX_data = 100.454;
   const double beam_angleY_data = 103.523;
   const double beam_angleZ_data = 17.8288;
-  
-  const double beam_startX_mc = -30.8075;
-  const double beam_startY_mc = 422.41;
-  const double beam_startZ_mc = 0.11171;
-  const double beam_startX_rms_mc = 5.01719;
-  const double beam_startY_rms_mc = 4.50862;
-  const double beam_startZ_rms_mc = 0.217733;
+
+  //MC beam quality cut
+  //const double beam_startX_mc = -30.8075;
+  //const double beam_startY_mc = 422.41;
+  //const double beam_startZ_mc = 0.11171;
+  //const double beam_startX_rms_mc = 5.01719;
+  //const double beam_startY_rms_mc = 4.50862;
+  //const double beam_startZ_rms_mc = 0.217733;
+  //const double beam_angleX_mc = 101.578;
+  //const double beam_angleY_mc = 101.189;
+  //const double beam_angleZ_mc = 16.5942;
+
+  const double beam_startZ_mc = 4.98555e-02; //prod4a
+  const double beam_startZ_rms_mc = 2.06792e-01; //prod4a
+  const double beam_startY_mc = 4.22400e+02; //prod4a
+  const double beam_startY_rms_mc = 4.18191e+00; //prod4a
+  const double beam_startX_mc = -3.07693e+01; //prod4a
+  const double beam_startX_rms_mc = 4.75347e+00; //prod4a
+
   const double beam_angleX_mc = 101.578;
   const double beam_angleY_mc = 101.189;
   const double beam_angleZ_mc = 16.5942;
+
 
   double reco_beam_calo_startX, reco_beam_calo_startY, reco_beam_calo_startZ;
   double reco_beam_calo_endX, reco_beam_calo_endY, reco_beam_calo_endZ;
@@ -121,28 +138,37 @@ private:
   int true_beam_PDG;
   std::string true_beam_endProcess;
   double true_beam_len;
-  double true_beam_len_sce;
+  //double true_beam_len_sce;
   // Declare member data here.
+
+  double sel_len; // shorten to how long (cm)
+
+
+
 };
-
-
-pdsp::HadronHitsRemoval::HadronHitsRemoval(fhicl::ParameterSet const& p)
+pdsp::ProtonHitsRemoval::ProtonHitsRemoval(fhicl::ParameterSet const& p)
   : EDProducer{p}  // ,
   // More initializers here.
 {
-  cout<<"$$$HadronHitsRemoval$$$"<<endl;
+  cout<<"$$$ProtonHitsRemoval$$$"<<endl;
   // Call appropriate produces<>() functions here.
   recob::HitCollectionCreator::declare_products(producesCollector(), "", true, false);
   fGeom = &*(art::ServiceHandle<geo::Geometry>());
   produces<std::vector<recob::SpacePoint>>();
   produces<art::Assns<recob::Hit, recob::SpacePoint>>(); // this space point will only be used as a tag
+  sel_len=p.get<double>("seglen");
+
   // Call appropriate consumes<>() for any products to be retrieved by this module.
 }
-
-void pdsp::HadronHitsRemoval::beginJob(){
+void pdsp::ProtonHitsRemoval::beginJob(){
   cout<<"$$$beginJob"<<endl;
   art::ServiceHandle<art::TFileService> tfs;
   fTree = tfs->make<TTree>("beamana","beam analysis tree");
+
+  fTree->Branch("run",&run,"run/I");
+  fTree->Branch("subrun",&subrun,"subrun/I");
+  fTree->Branch("event",&event,"event/I");
+
   fTree->Branch("reco_beam_len_sce", &reco_beam_len_sce);
   fTree->Branch("beam_dx", &beam_dx);
   fTree->Branch("beam_dy", &beam_dy);
@@ -153,15 +179,15 @@ void pdsp::HadronHitsRemoval::beginJob(){
   fTree->Branch("true_beam_PDG", &true_beam_PDG);
   fTree->Branch("true_beam_endProcess", &true_beam_endProcess);
   fTree->Branch("true_beam_len", &true_beam_len);
-  fTree->Branch("true_beam_len_sce", &true_beam_len_sce);
+  //fTree->Branch("true_beam_len_sce", &true_beam_len_sce);
 }
-
-void pdsp::HadronHitsRemoval::produce(art::Event& evt)
+void pdsp::ProtonHitsRemoval::produce(art::Event& evt)
 {
   cout<<"#####EvtNo."<<evt.id().event()<<endl;
   reset();
   string fPFParticleTag = "pandora";
-  string fCalorimetryTagSCE = "pandoracalo";
+  //string fCalorimetryTagSCE = "pandoracalo";
+  string fCalorimetryTagSCE = "pandoracalinoxyzt";
   string fTrackerTag = "pandoraTrack";
   string fGeneratorTag = "generator";
   // Implementation of required member function here.
@@ -170,7 +196,13 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
   recob::HitCollectionCreator hcol(evt, true, false);
   std::unique_ptr<std::vector<recob::SpacePoint>> spvp(new std::vector<recob::SpacePoint>);
   auto assns = std::make_unique<art::Assns<recob::Hit, recob::SpacePoint>>();
-  
+
+  //get run info	
+  run = evt.run();
+  subrun = evt.subRun();
+  event = evt.id().event();
+  std::cout<<"run/subrun/evt:"<<run<<"/"<<subrun<<"/"<<event<<std::endl; 
+ 
   if (!evt.isRealData()) {// MC
     const simb::MCParticle* true_beam_particle = 0x0;
     auto mcTruths = evt.getValidHandle<std::vector<simb::MCTruth>>(fGeneratorTag);
@@ -180,10 +212,10 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
     }
     else{
       TrueBeamInfo(evt, true_beam_particle);
-      cout<<"true_beam_PDG"<<true_beam_PDG<<endl;
-      cout<<"true_beam_endProcess"<<true_beam_endProcess<<endl;
-      cout<<"true_beam_len"<<true_beam_len<<endl;
-      cout<<"true_beam_len_sce"<<true_beam_len_sce<<endl;
+      cout<<"true_beam_PDG="<<true_beam_PDG<<endl;
+      cout<<"true_beam_endProcess="<<true_beam_endProcess<<endl;
+      cout<<"true_beam_len="<<true_beam_len<<endl;
+      //cout<<"true_beam_len_sce="<<true_beam_len_sce<<endl;
     }
   }
   
@@ -209,7 +241,6 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
     const recob::PFParticle* particle = beam_slices.at(0).at(0);
     
     const recob::Track* thisTrack = pfpUtil.GetPFParticleTrack(*particle,evt,fPFParticleTag,fTrackerTag);
-
     //Primary Track Calorimetry
     if( thisTrack ){
       auto calo = trackUtil.GetRecoTrackCalorimetry(*thisTrack, evt, fTrackerTag,
@@ -248,6 +279,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
                            cos(beam_angleY_data*TMath::Pi()/180),
                            cos(beam_angleZ_data*TMath::Pi()/180));
           beamdir = beamdir_data.Unit();
+
         }
         else { // beam quality requirement (for MC)
           cout<<"@@@Is MC"<<endl;
@@ -271,18 +303,23 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         TVector3 dir = pt1 - pt0;
         dir = dir.Unit();
         beam_costh = dir.Dot(beamdir);
-
-        if (reco_beam_len_sce>100 && PassBeamQualityCut()){
+	std::cout<<"\n--> reco_beam_len_sce:"<<reco_beam_len_sce<<""<<std::endl;
+	std::cout<<"PassBeamQualityCut:"<<PassBeamQualityCut()<<std::endl;
+	std::cout<<"selected_track:"<<selected_track<<std::endl;
+        if (reco_beam_len_sce>75 && PassBeamQualityCut()){
           selected_track = 1;
-          if (reco_beam_len_sce>230 && reco_beam_len_sce<500)
+          //if (reco_beam_len_sce>230 && reco_beam_len_sce<500)
+          if (reco_beam_len_sce<140)
             selected_track = 2;
         }
+	std::cout<<"--> selected_track:"<<selected_track<<""<<std::endl;
       }
       
       string fHitModuleLabel = "hitpdune";
       //string fSpModuleLabel = "reco3d";
       
-      double sel_len = 10.; // shorten to how long (cm)
+      //double sel_len = 10.; // shorten to how long (cm)
+      std::cout<<"truncated length="<<sel_len<<" [cm]"<<std::endl;	
       
       if (selected_track == 2) { // selected long tracks (not smaller than 5 m)
         auto hitsHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
@@ -298,7 +335,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         const std::vector< art::Ptr< recob::Hit > > beamPFP_hits = pfpUtil.GetPFParticleHits_Ptrs( *particle, evt, fPFParticleTag );
         auto calo_dQdX = calo[index].dQdx();
         double reco_beam_len = thisTrack->Length();
-        cout<<"$$Length"<<reco_beam_len<<endl;
+        cout<<"$$Length:"<<reco_beam_len<<endl;
         size_t i = 0;
         for (; thisTrack->Length(i) > reco_beam_len - sel_len; ++i ){
           ;
@@ -384,13 +421,15 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
   evt.put(std::move(assns));
   fTree->Fill();
 }
-
-void pdsp::HadronHitsRemoval::endJob(){
+void pdsp::ProtonHitsRemoval::endJob(){
   cout<<"$$$endJob"<<endl;
 }
-
-void pdsp::HadronHitsRemoval::reset(){
+void pdsp::ProtonHitsRemoval::reset(){
   cout<<"$$$reset"<<endl;
+  run = -1;
+  subrun =-1;
+  event =-1;
+
   reco_beam_len_sce = -999;
   beam_dx = -999;
   beam_dy = -999;
@@ -408,24 +447,27 @@ void pdsp::HadronHitsRemoval::reset(){
   true_beam_PDG = -999;
   true_beam_endProcess = "";
   true_beam_len = -999.;
-  true_beam_len_sce = -999.;
+  //true_beam_len_sce = -999.;
 }
-
-bool pdsp::HadronHitsRemoval::PassBeamQualityCut() const{ // cut on beam entrance location and beam angle
-
+bool pdsp::ProtonHitsRemoval::PassBeamQualityCut() const{ // cut on beam entrance location and beam angle
   if (beam_dxy<-1) return false;
   if (beam_dxy>3) return false;
   
   if (beam_dz<-3) return false;
   if (beam_dz>3) return false;
+
+  if (beam_dy<-3) return false;
+  if (beam_dy>3) return false;
+
+  if (beam_dx<-3) return false;
+  if (beam_dx>3) return false;
   
-  if (beam_costh<0.95) return false;
+  if (beam_costh<0.96) return false;
   if (beam_costh>2) return false;
   
   return true;
 }
-
-void pdsp::HadronHitsRemoval::TrueBeamInfo( const art::Event & evt, const simb::MCParticle* true_beam_particle)
+void pdsp::ProtonHitsRemoval::TrueBeamInfo( const art::Event & evt, const simb::MCParticle* true_beam_particle)
 {
   true_beam_PDG = true_beam_particle->PdgCode();
   true_beam_endProcess = true_beam_particle->EndProcess();
@@ -452,7 +494,7 @@ void pdsp::HadronHitsRemoval::TrueBeamInfo( const art::Event & evt, const simb::
     true_beam_traj_Z_SCE.push_back(trajZ + offset.Z());*/
   }
   true_beam_len = 0;
-  true_beam_len_sce = 0;
+  //true_beam_len_sce = 0;
   for (size_t i = 1; i < true_beam_trajectory.size(); ++i) {
     true_beam_len += sqrt( pow( true_beam_traj_X.at(i)-true_beam_traj_X.at(i-1), 2)
                        + pow( true_beam_traj_Y.at(i)-true_beam_traj_Y.at(i-1), 2)
@@ -462,5 +504,4 @@ void pdsp::HadronHitsRemoval::TrueBeamInfo( const art::Event & evt, const simb::
                        + pow( true_beam_traj_Z_SCE.at(i)-true_beam_traj_Z_SCE.at(i-1), 2));*/
   }
 }
-
-DEFINE_ART_MODULE(pdsp::HadronHitsRemoval)
+DEFINE_ART_MODULE(pdsp::ProtonHitsRemoval)
