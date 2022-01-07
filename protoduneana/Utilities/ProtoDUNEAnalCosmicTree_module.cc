@@ -37,7 +37,7 @@
 #include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
-#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 
 // ROOT includes
 #include "TTree.h"
@@ -354,6 +354,7 @@ void protoana::ProtoDUNEAnalCosmicTree::FillCosmicsTree(art::Event const & evt){
 	fcosmicTrkPitchC[fNCOSMICS][plane]     = calovector[k].TrkPitchC();
       }
 
+      /*  Tom Junk, Jan 7, 2022:  to update to the new anab::ParticleID
       // PID
       std::vector<anab::ParticleID> pids = trackUtil.GetRecoTrackPID(*thisTrack, evt, fTrackerTag, fParticleIDTag);
       if(pids.size() != 3)
@@ -375,6 +376,7 @@ void protoana::ProtoDUNEAnalCosmicTree::FillCosmicsTree(art::Event const & evt){
 	fcosmicPID_MissingEavg[fNCOSMICS][plane]    = pids[plane].MissingEavg();
 	fcosmicPID_PIDA[fNCOSMICS][plane]           = pids[plane].PIDA();
       }
+      */
 
     }
     else if(thisShower != 0x0){

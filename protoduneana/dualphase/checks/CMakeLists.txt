@@ -24,8 +24,7 @@ cet_build_plugin(		HitNormCheck art::module
                         art_Persistency_Common canvas
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
-                        ${MF_MESSAGELOGGER}
-                        
+                        ${MF_MESSAGELOGGER}                        
                         cetlib cetlib_except
                         ROOT_BASIC_LIB_LIST
                         BASENAME_ONLY
@@ -46,7 +45,7 @@ cet_build_plugin(		CosmicsdQdx art::module
                         ${MF_MESSAGELOGGER}
                         cetlib cetlib_except
                         ROOT_BASIC_LIB_LIST
-			PROTODUNEDATAUTILS
+                        duneprototypes::ProtoDUNEDataUtils
 			ProtoDUNEUtilities
                         BASENAME_ONLY
 )
@@ -67,7 +66,7 @@ cet_build_plugin(		TrackHitInfo art::module
                         
                         cetlib cetlib_except
                         ROOT_BASIC_LIB_LIST
-			PROTODUNEDATAUTILS
+                        duneprototypes::ProtoDUNEDataUtils
 			ProtoDUNEUtilities
                         BASENAME_ONLY
 )

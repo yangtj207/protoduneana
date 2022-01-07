@@ -45,19 +45,19 @@
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
-//#include "dune/EventGenerator/ProtoDUNEbeamDataProducts/ProtoDUNEbeamsim.h"
-//#include "dune/EventGenerator/ProtoDUNEbeamDataProducts/ProtoDUNEBeamInstrument.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
+//#include "dunesim/EventGenerator/ProtoDUNEbeamDataProducts/ProtoDUNEbeamsim.h"
+//#include "dunesim/EventGenerator/ProtoDUNEbeamDataProducts/ProtoDUNEBeamInstrument.h"
 
 #include "lardata/ArtDataHelper/MVAReader.h"
 
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNETrackUtils.h"
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEShowerUtils.h"
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNETruthUtils.h"
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEPFParticleUtils.h"
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNETrackUtils.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEShowerUtils.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNETruthUtils.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEPFParticleUtils.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 
-#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"

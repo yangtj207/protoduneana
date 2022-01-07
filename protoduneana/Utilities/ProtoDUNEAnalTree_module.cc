@@ -41,12 +41,12 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
-#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
 
 // ROOT includes
@@ -902,6 +902,8 @@ void protoana::ProtoDUNEAnalTree::FillPrimaryPFParticle(art::Event const & evt,
       fprimaryTrkPitchC[plane]          = calovector[k].TrkPitchC();
     }
     
+    /* Tom Junk, Jan 7, 2022:  The anab::ParticleId breaking change requires adjustments
+
     // PID
     std::vector<anab::ParticleID> pids = trackUtil.GetRecoTrackPID(*thisTrack, evt, fTrackerTag, fParticleIDTag);
     if(pids.size() != 3 && fVerbose > 0)
@@ -923,6 +925,7 @@ void protoana::ProtoDUNEAnalTree::FillPrimaryPFParticle(art::Event const & evt,
       fprimaryPID_MissingEavg[plane]    = pids[plane].MissingEavg();
       fprimaryPID_PIDA[plane]           = pids[plane].PIDA();
     }
+    */
     
     // Get the true mc particle
     //const simb::MCParticle* mcparticle = truthUtil.GetMCParticleFromRecoTrack(*thisTrack, evt, fTrackerTag);
@@ -1160,6 +1163,7 @@ void protoana::ProtoDUNEAnalTree::FillPrimaryDaughterPFParticle(art::Event const
       fdaughterTrkPitchC[fNDAUGHTERS][plane]     = daughtercalovector[k].TrkPitchC();
     }
 
+   /* Tom Junk, Jan 7, 2022:  The anab::ParticleId breaking change requires adjustments
     // PID
     std::vector<anab::ParticleID> daughterpids = trackUtil.GetRecoTrackPID(*daughterTrack, evt, fTrackerTag, fParticleIDTag);
     if(daughterpids.size() != 3 && fVerbose > 0)
@@ -1181,7 +1185,8 @@ void protoana::ProtoDUNEAnalTree::FillPrimaryDaughterPFParticle(art::Event const
       fdaughterPID_MissingEavg[fNDAUGHTERS][plane]  = daughterpids[plane].MissingEavg();
       fdaughterPID_PIDA[fNDAUGHTERS][plane]         = daughterpids[plane].PIDA();
     }
-    
+   */
+  
     // Get the true mc particle
     //const simb::MCParticle* mcdaughterparticle = truthUtil.GetMCParticleFromRecoTrack(*daughterTrack, evt, fTrackerTag);
     mcdaughterparticle = truthUtil.GetMCParticleFromRecoTrack(clockData, *daughterTrack, evt, fTrackerTag);
@@ -1311,6 +1316,7 @@ void protoana::ProtoDUNEAnalTree::FillPrimaryGrandDaughterPFParticle(art::Event 
       fgranddaughterTrkPitchC[fNGRANDDAUGHTERS][plane]     = daughtercalovector[k].TrkPitchC();
     }
 
+  /* Tom Junk, Jan 7, 2022:  The anab::ParticleId breaking change requires adjustments
     // PID
     std::vector<anab::ParticleID> daughterpids = trackUtil.GetRecoTrackPID(*gdaughterTrack, evt, fTrackerTag, fParticleIDTag);
     if(daughterpids.size() != 3 && fVerbose > 0)
@@ -1332,7 +1338,8 @@ void protoana::ProtoDUNEAnalTree::FillPrimaryGrandDaughterPFParticle(art::Event 
       fgranddaughterPID_MissingEavg[fNGRANDDAUGHTERS][plane]  = daughterpids[plane].MissingEavg();
       fgranddaughterPID_PIDA[fNGRANDDAUGHTERS][plane]         = daughterpids[plane].PIDA();
     }
-    
+  */
+
     // Get the true mc particle
     //const simb::MCParticle* mcdaughterparticle = truthUtil.GetMCParticleFromRecoTrack(*gdaughterTrack, evt, fTrackerTag);
     mcdaughterparticle = truthUtil.GetMCParticleFromRecoTrack(clockData, *gdaughterTrack, evt, fTrackerTag);

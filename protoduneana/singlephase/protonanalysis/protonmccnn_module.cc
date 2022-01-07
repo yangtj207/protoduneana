@@ -40,9 +40,9 @@
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
-//#include "dune/EventGenerator/ProtoDUNEbeamDataProducts/ProtoDUNEbeamsim.h"
-//#include "dune/EventGenerator/ProtoDUNEbeamDataProducts/ProtoDUNEBeamInstrument.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
+//#include "dunesim/EventGenerator/ProtoDUNEbeamDataProducts/ProtoDUNEbeamsim.h"
+//#include "dunesim/EventGenerator/ProtoDUNEbeamDataProducts/ProtoDUNEBeamInstrument.h"
 
 #include "lardata/ArtDataHelper/MVAReader.h"
 
@@ -50,7 +50,7 @@
 #include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
-#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 
 #include "larsim/MCCheater/ParticleInventoryService.h"
 

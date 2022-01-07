@@ -27,10 +27,10 @@
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
 // DUNETPC specific includes
-//#include "dune/DAQTriggerSim/TriggerDataProducts/TriggerTypes.h"
-//#include "dune/DAQTriggerSim/TriggerDataProducts/BasicTrigger.h"
-#include "dune/DuneInterface/Data/AdcTypes.h"
-#include "dune/DuneInterface/Service/SimChannelExtractService.h"
+//#include "dunecore/DAQTriggerSim/TriggerDataProducts/TriggerTypes.h"
+//#include "dunecore/DAQTriggerSim/TriggerDataProducts/BasicTrigger.h"
+#include "dunecore/DuneInterface/Data/AdcTypes.h"
+#include "dunecore/DuneInterface/Service/SimChannelExtractService.h"
 
 #include "c2numpy.h"
 

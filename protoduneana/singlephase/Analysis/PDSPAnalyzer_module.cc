@@ -40,9 +40,9 @@
 #include "protoduneana/Utilities/ProtoDUNEBeamCuts.h"
 #include "protoduneana/Utilities/ProtoDUNEEmptyEventFinder.h"
 #include "protoduneana/Utilities/G4ReweightUtils.h"
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNECalibration.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNECalibration.h"
 #include "protoduneana/Utilities/ProtoDUNECalibration.h"
 
 #include "lardataobj/RecoBase/SpacePoint.h"
@@ -50,7 +50,7 @@
 #include "lardataobj/RecoBase/Track.h"
 
 #include "lardataobj/RawData/RDTimeStamp.h"
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 
 #include "lardata/ArtDataHelper/MVAReader.h"
 

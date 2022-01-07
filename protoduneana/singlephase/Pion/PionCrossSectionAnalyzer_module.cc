@@ -39,7 +39,7 @@
 #include "lardataobj/RecoBase/Track.h"
 
 #include "lardataobj/RawData/RDTimeStamp.h"
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 
 #include "art_root_io/TFileService.h"
 

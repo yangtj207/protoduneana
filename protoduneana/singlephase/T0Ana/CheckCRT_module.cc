@@ -21,8 +21,8 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/AnalysisBase/T0.h"
-#include "dune/Protodune/singlephase/CTB/data/pdspctb.h"
-#include "dune/Protodune/singlephase/CRT/data/CRTTrigger.h"
+#include "duneprototypes/Protodune/singlephase/CTB/data/pdspctb.h"
+#include "duneprototypes/Protodune/singlephase/CRT/data/CRTTrigger.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "TTree.h"
 

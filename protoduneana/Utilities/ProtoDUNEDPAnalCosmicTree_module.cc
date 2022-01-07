@@ -334,6 +334,7 @@ void protoana::ProtoDUNEDPAnalCosmicTree::FillCosmicsTree(art::Event const & evt
 	fcosmicTrkPitchC[fNCOSMICS][plane]     = calovector[k].TrkPitchC();
       }
 
+       /* Tom Junk, Jan 7, 2022:  The anab::ParticleId breaking change requires adjustments
       // PID
       std::vector<anab::ParticleID> pids = trackUtil.GetRecoTrackPID(*thisTrack, evt, fTrackerTag, fParticleIDTag);
       if(pids.size() != 3)
@@ -355,6 +356,7 @@ void protoana::ProtoDUNEDPAnalCosmicTree::FillCosmicsTree(art::Event const & evt
 	fcosmicPID_MissingEavg[fNCOSMICS][plane]    = pids[plane].MissingEavg();
 	fcosmicPID_PIDA[fNCOSMICS][plane]           = pids[plane].PIDA();
       }
+       */
 
     }
     else if(thisShower != 0x0){

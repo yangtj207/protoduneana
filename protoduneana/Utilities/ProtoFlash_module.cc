@@ -23,7 +23,7 @@
 #include "lardataobj/AnalysisBase/T0.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "larsim/MCCheater/PhotonBackTrackerService.h"
-#include "dune/OpticalDetector/OpFlashSort.h"
+#include "duneopdet/OpticalDetector/OpFlashSort.h"
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"

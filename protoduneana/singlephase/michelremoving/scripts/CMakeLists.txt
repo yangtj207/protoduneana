@@ -23,6 +23,7 @@ cet_make_exec( murecombfit
                LIBRARIES
                ROOT_BASIC_LIB_LIST
                ROOT_LIBRARIES
+	       ROOT::Minuit
 	       cetlib cetlib_except
 	       FHICLCPP
                MF_MESSAGELOGGER

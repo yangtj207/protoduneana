@@ -1,4 +1,3 @@
-find_ups_product( dunetpc )
 list(APPEND TrueLibs ProtoDUNEDataUtils)
 list(APPEND AliasLibs PROTODUNEDATAUTILS)
 
@@ -39,7 +38,7 @@ art_make(BASENAME_ONLY
   larsim_MCCheater_ParticleInventoryService_service
   larreco_RecoAlg
   ROOT_BASIC_LIB_LIST
-  PROTODUNEDATAUTILS
+  duneprototypes::ProtoDUNEDataUtils
   ProtoDUNEUtilities
   )
 
