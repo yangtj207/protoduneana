@@ -455,7 +455,11 @@ class secondary_noPion {
   }
 };
 
-auto data_beam_PID = [](const std::vector<int>& pidCandidates){
+auto data_beam_PID = [](const std::vector<int>& pidCandidates, const int & isMC, const int & true_PDG){
+  if (isMC) {
+    return (true_PDG == 211 || abs(true_PDG) == 13);
+  }
+
   auto pid_search = std::find(pidCandidates.begin(), pidCandidates.end(), 211);
   return (pid_search != pidCandidates.end());
 };

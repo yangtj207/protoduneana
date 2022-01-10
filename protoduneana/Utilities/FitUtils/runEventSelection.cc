@@ -141,7 +141,7 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
   testing testing2(4);
   auto data = frame.Define("testing1", testing(1)/*testing1*/)
            .Define("testing2", testing(2)/*testing2*/)
-           .Define("beamPID", data_beam_PID, {"beam_inst_PDG_candidates"})
+           .Define("beamPID", data_beam_PID, {"beam_inst_PDG_candidates", "MC", "true_beam_PDG"})
            .Define("passBeamQuality",
                    data_BI_quality(pset.get<bool>("DoNTracks")),
                    {"beam_inst_nMomenta", "beam_inst_nTracks"})
@@ -196,7 +196,7 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
          "beam_inst_dirX", "beam_inst_dirY", "beam_inst_dirZ"});
   }
   else {
-    data = data .Define(
+    data = data.Define(
         "passBeamCut",
         beam_cut_TPC(pset.get<bool>("DoAngle"),
                      pset.get<double>("XYZCut"),
