@@ -19,8 +19,8 @@ vector<vector<float>> dqdx_data(3);
 vector<vector<float>> E_data(3);
 vector<vector<float>> ke_data(3);
 
-float mpv[3][nbins] = {0};
-float errmpv[3][nbins] = {0};
+float mpv[3][nbins] = {{0}};
+float errmpv[3][nbins] = {{0}};
 
 float GetdEdx(float dQdx, float E_field, float calconst, float alp, float bet){
   float LAr_density=1.39;
