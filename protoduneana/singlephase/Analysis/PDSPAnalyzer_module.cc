@@ -837,7 +837,7 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
     //Neutron Reweighter
     // -- Just use proton fracs and parameter set
     // -- because it's just reaction
-    KPlusMultiRW = new G4MultiReweighter(
+    NeutronMultiRW = new G4MultiReweighter(
         2112, *ProtFracsFile, ProtParSet,
         p.get<fhicl::ParameterSet>("Material"),
         RWManager);
@@ -1232,7 +1232,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
         = BuildHierarchy(true_beam_ID, 2112, plist, fGeometryService,
                          event, "LAr", false);
     G4RWGridWeights(neutron_hierarchy, ProtParSet,
-                    g4rw_full_grid_neutron_weights, ProtMultiRW);
+                    g4rw_full_grid_neutron_weights, NeutronMultiRW);
     for (auto weights : g4rw_full_grid_neutron_weights) {
       g4rw_full_grid_neutron_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_neutron_coeffs.back());
@@ -1242,7 +1242,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
         = BuildHierarchy(true_beam_ID, 321, plist, fGeometryService,
                          event, "LAr", false);
     G4RWGridWeights(kplus_hierarchy, ProtParSet, g4rw_full_grid_kplus_weights,
-                    ProtMultiRW);
+                    KPlusMultiRW);
     for (auto weights : g4rw_full_grid_kplus_weights) {
       g4rw_full_grid_kplus_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_kplus_coeffs.back());
@@ -2331,6 +2331,12 @@ void pduneana::PDSPAnalyzer::BeamPFPInfo(
     reco_beam_PFP_michelScore_collection = -999.;
   }
 
+  const auto space_pts = pfpUtil.GetPFParticleSpacePoints(*particle, evt, fPFParticleTag);
+  for (const auto * sp : space_pts) {
+    reco_beam_spacePts_X.push_back(sp->XYZ()[0]);
+    reco_beam_spacePts_Y.push_back(sp->XYZ()[1]);
+    reco_beam_spacePts_Z.push_back(sp->XYZ()[2]);
+  }
 }
 
 void pduneana::PDSPAnalyzer::BeamTrackInfo(
@@ -2435,16 +2441,16 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
     const recob::Hit * theHit = it->second;
     size_t i = it->first;
 
-    double x = thisTrack->Trajectory().LocationAtPoint(i).X();
-    double y = thisTrack->Trajectory().LocationAtPoint(i).Y();
+    //double x = thisTrack->Trajectory().LocationAtPoint(i).X();
+    //double y = thisTrack->Trajectory().LocationAtPoint(i).Y();
     double z = thisTrack->Trajectory().LocationAtPoint(i).Z();
 
-    if( fSaveHits ){
-      //saving all hit coordinates for beamtrack
-      reco_beam_spacePts_X.push_back(x);
-      reco_beam_spacePts_Y.push_back(y);
-      reco_beam_spacePts_Z.push_back(z);
-    }
+    //if( fSaveHits ){
+    //  //saving all hit coordinates for beamtrack
+    //  reco_beam_spacePts_X.push_back(x);
+    //  reco_beam_spacePts_Y.push_back(y);
+    //  reco_beam_spacePts_Z.push_back(z);
+    //}
 
     //This creates the slices for the thin slice method.
     //To do: remove this
@@ -3697,11 +3703,24 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
       reco_daughter_PFP_michelScore_collection.push_back( -999. );
     }
 
+
+
     //Matching by hits to get true daughter info
     if( !evt.isRealData() ){
       DaughterMatchInfo(evt, daughterPFP, clockData);
     }
 
+    if (fSaveHits) {
+      reco_daughter_spacePts_X.push_back(std::vector<double>());
+      reco_daughter_spacePts_Y.push_back(std::vector<double>());
+      reco_daughter_spacePts_Z.push_back(std::vector<double>());
+      const auto space_pts = pfpUtil.GetPFParticleSpacePoints(*daughterPFP, evt, fPFParticleTag);
+      for (const auto * sp : space_pts) {
+        reco_daughter_spacePts_X.back().push_back(sp->XYZ()[0]);
+        reco_daughter_spacePts_Y.back().push_back(sp->XYZ()[1]);
+        reco_daughter_spacePts_Z.back().push_back(sp->XYZ()[2]);
+      }
+    }
 
     //Getting the default pandora reconstruction type (shower/track)
     const recob::Track * pandoraTrack = pfpUtil.GetPFParticleTrack(
