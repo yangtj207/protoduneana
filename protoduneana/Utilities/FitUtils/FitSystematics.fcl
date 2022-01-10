@@ -1,4 +1,22 @@
 BEGIN_PROLOG
+
+g4rw_proton_coeff: {
+  Name: "g4rw_proton_coeff"
+  Central: 1.
+  LowerLimit: 0.1
+  LowerLimit: 0.1
+  UpperLimit: 2.0
+  ThrowLimit: 0.1
+  ThrowLimitUp: 2.0
+  GenThrowLimit: 0.25
+  GenThrowLimitUp: 1.75
+  Sigma: .2
+
+  Options: {
+    Branch: "g4rw_full_grid_proton_coeffs"
+  }
+}
+
 G4RWSysts: {
   g4rw_QE1: {
     Name: "g4rw_QE1"

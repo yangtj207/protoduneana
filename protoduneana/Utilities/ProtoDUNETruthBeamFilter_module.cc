@@ -125,18 +125,17 @@ bool protoana::ProtoDUNETruthBeamFilter::filter(art::Event& evt){
   for(int i = 0; i < mctruth->NParticles(); ++i){
     const simb::MCParticle& part(mctruth->GetParticle(i));
   
-	  bool isgoodparticle   = (part.Process() == "primary" && mctruth->Origin()==4); //primary particle and beam origin
-	  if(!isgoodparticle) continue;
+    bool isgoodparticle   = (part.Process() == "primary" && mctruth->Origin()==4); //primary particle and beam origin
+    if(!isgoodparticle) continue;
     // Select partciles with the chosen pdg
     for(unsigned int j = 0; j < fPDG.size(); j++){
-		  if(part.PdgCode() == fPDG[j]){
-	  	  found = true;
-	  	  if(fDebug) std::cout << "this is a selected event with PDG "<< part.PdgCode() << std::endl;
-	  	  fSelectedEvents->Fill(1); //count selected events
-	 	    break;
-	    }
+      if(part.PdgCode() == fPDG[j]){
+        found = true;
+        if(fDebug) std::cout << "this is a selected event with PDG "<< part.PdgCode() << std::endl;
+        fSelectedEvents->Fill(1); //count selected events
+        break;
+      }
     }
-    
   }   
   
   return found;

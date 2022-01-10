@@ -9,13 +9,14 @@ process_name: PDSPAna
 services:
 {
   # Load the service that manages root files for histograms.
-  TFileService: { fileName: "pduneana_mc.root" }
+  TFileService: { fileName: "%ifb_pdsp_ntuple_test.root" }
   TimeTracker:       {}
   MemoryTracker:     {}
   RandomNumberGenerator: {} #ART native random number generator
   message:                      @local::dune_message_services_prod
   FileCatalogMetadata:          @local::art_file_catalog_mc
                                 @table::protodune_reco_services
+                                @table::protodune_services
   PdspChannelMapService:        @local::pdspchannelmap
   ChannelStatusService:         @local::pdsp_channel_status
   BackTrackerService: {
@@ -25,9 +26,12 @@ services:
       MinimumHitEnergyFraction: 1e-1
     }
   }
+  FileCatalogMetadataDUNE: { }
+  TFileMetadataDUNE: @local::dune_tfile_metadata
 }
 #services.message.destinations.LogStandardOut.threshold: "INFO"
 #services.Geometry: @local::protodunev6_geo
+services.TFileMetadataDUNE.dataTier: "root-tuple-virtual"
 
 source:
 {
@@ -71,22 +75,160 @@ physics.analyzers.pduneana.CalorimetryTagSCE: "pandoracali"
 physics.analyzers.pduneana.CalorimetryTagNoSCE: "pandoracalonosce" ##For no-SCE sample
 physics.analyzers.pduneana.Pandora2CaloSCE: "pandora2cali"
 physics.analyzers.pduneana.Verbose: false 
-physics.analyzers.pduneana.DoReweight: false 
+physics.analyzers.pduneana.DoReweight: true
+physics.analyzers.pduneana.FracsFile: "Geant4ReweightInput/LAr_PiPlus_cascade.root"
+physics.analyzers.pduneana.ProtFracsFile: "Geant4ReweightInput/proton.root"
+physics.analyzers.pduneana.ParameterSet: [
+  {
+    Cut: "inel"
+    Name: "fQE1"
+    Range: [0., 500.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "inel"
+    Name: "fQE2"
+    Range: [500., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+
+  {
+    Cut: "abs"
+    Name: "fAbs1"
+    Range: [0., 500.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "abs"
+    Name: "fAbs2"
+    Range: [500., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+
+  {
+    Cut: "cex"
+    Name: "fCex1"
+    Range: [0., 400.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "cex"
+    Name: "fCex2"
+    Range: [400., 800.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "cex"
+    Name: "fCex3"
+    Range: [800., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "reac"
+    Name: "fReac1"
+    Range: [0., 600.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "reac"
+    Name: "fReac2"
+    Range: [600., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "dcex"
+    Name: "fDCex"
+    Range: [0., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "prod"
+    Name: "fProd"
+    Range: [0., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  }
+]
+
+physics.analyzers.pduneana.PiMParameterSet: [
+  {
+    Cut: "inel"
+    Name: "fQE1"
+    Range: [0., 500.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "inel"
+    Name: "fQE2"
+    Range: [500., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+
+  {
+    Cut: "abs"
+    Name: "fAbs1"
+    Range: [0., 500.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "abs"
+    Name: "fAbs2"
+    Range: [500., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+
+  {
+    Cut: "cex"
+    Name: "fCex1"
+    Range: [0., 500.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "cex"
+    Name: "fCex2"
+    Range: [500., 800.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "cex"
+    Name: "fCex3"
+    Range: [800., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  }
+]
 physics.analyzers.pduneana.DoProtReweight: false 
 physics.analyzers.pduneana.GetTrackMichel: false 
 physics.analyzers.pduneana.CalibrationParsSCE: @local::CalorimetryParameters_SPProd4_MC_SCE #_eLT
 physics.analyzers.pduneana.CalibrationParsNoSCE: @local::CalorimetryParameters_SPProd4_MC_SCE #_eLT
 physics.analyzers.pduneana.Recalibrate: false
 physics.analyzers.pduneana.SCE: true
+physics.analyzers.pduneana.SaveHits: true
 
 services.ParticleInventoryService.ParticleInventory.EveIdCalculator: "EmEveIdCalculator"
 
 # xyzt database
 services.XYZCalibService.IsMC: true
 services.XYZCalibService.UseCondbXYZCorr: true
-services.XYZCalibService.YZCorrDBTag: "v6.0"
-services.XYZCalibService.XCorrDBTag: "v6.0"
-services.XYZCalibService.NormCorrDBTag: "v6.0"
+services.XYZCalibService.YZCorrDBTag: "prod4"
+services.XYZCalibService.XCorrDBTag: "prod4"
+services.XYZCalibService.NormCorrDBTag: "prod4"
 
 physics.producers.pandoracali:           @local::protodunespmcsce_calibrationdedx
 physics.producers.pandoracali.CalorimetryModuleLabel:     "pandoracalinoxyzt"
@@ -95,6 +237,7 @@ physics.producers.pandoracali.ApplyLifetimeCorrection:    false
 physics.producers.pandoracali.ApplyYZCorrection:          true
 physics.producers.pandoracali.ApplyXCorrection:           true
 physics.producers.pandoracali.ApplyNormCorrection:        false
+physics.producers.pandoracali.CaloAlg.CalAreaConstants: [1.04e-3, 1.04e-3, 1.0156e-3]
 
 physics.producers.pandora2cali:          @local::protodunespmcsce_calibrationdedx
 physics.producers.pandora2cali.TrackModuleLabel:          "pandora2Track"
@@ -103,6 +246,7 @@ physics.producers.pandora2cali.ApplyLifetimeCorrection:   false
 physics.producers.pandora2cali.ApplyYZCorrection:         true
 physics.producers.pandora2cali.ApplyXCorrection:          true
 physics.producers.pandora2cali.ApplyNormCorrection:       false
+physics.producers.pandora2cali.CaloAlg.CalAreaConstants: [1.04e-3, 1.04e-3, 1.0156e-3]
 
 services.DetectorPropertiesService.Electronlifetime: 35000
 

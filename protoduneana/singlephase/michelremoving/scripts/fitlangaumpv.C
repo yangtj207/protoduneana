@@ -1,3 +1,4 @@
+#include "LanGausFit.h"
 #include "TF1.h"
 #include "TSystem.h"
 #include "TFile.h"
@@ -11,6 +12,7 @@
 #include "TBox.h"
 #include "TLatex.h"
 #include "TPaveText.h"
+#include "TStyle.h"
 #include <string> 
 #include <fstream>
 
@@ -72,7 +74,7 @@ double dpdx(double KE,double x,double mass){
   double value=(1.0/x)*epsilon*((TMath::Log(A0)) + TMath::Log(A1) + 0.2 - b*b - density(b*g));
   return value;
 }
-
+/*
 Double_t langaufun(Double_t *x, Double_t *par) {
   Double_t invsq2pi = 0.398942280401;// Control constants
   //Double_t mpshift = -0.22278298;
@@ -104,7 +106,7 @@ Double_t langaufun(Double_t *x, Double_t *par) {
   return (par[2] * step * sum * invsq2pi / par[3]);
 }
 
- TF1 *langaufit(TH1D *his, Double_t *fitrange, Double_t *startvalues, Double_t *parlimitslo, Double_t *parlimitshi, Double_t *fitparams, Double_t *fiterrors, Double_t *ChiSqr, Int_t *NDF, Int_t *Status)
+ TF1 *langaufit(TH1 *his, Double_t *fitrange, Double_t *startvalues, Double_t *parlimitslo, Double_t *parlimitshi, Double_t *fitparams, Double_t *fiterrors, Double_t *ChiSqr, Int_t *NDF, Int_t *Status)
 // TF1 *langaufit(TH1D *his, Double_t *fitrange, Double_t *startvalues, Double_t *parlimitslo, Double_t *parlimitshi, Double_t *fitparams, Double_t *fiterrors, Double_t *ChiSqr, Int_t *NDF)
 {
   Int_t i;
@@ -124,7 +126,8 @@ Double_t langaufun(Double_t *x, Double_t *par) {
   }
 
 //  his->Fit(FunName,"RB0");   // fit within specified range, use ParLimits, do not plot
-  TFitResultPtr fitres = his->Fit(FunName,"RBOS"); // fit within specified range, use ParLimits, do not plot /////////////////// Initial code use the mode "RBO" (commented by VARUNA) ///////////
+  //his->SetStats(0);
+  TFitResultPtr fitres = his->Fit(FunName,"RBOSQ"); // fit within specified range, use ParLimits, do not plot /////////////////// Initial code use the mode "RBO" (commented by VARUNA) ///////////
 
   ffit->GetParameters(fitparams);    // obtain fit parameters
   for (i=0; i<4; i++) {
@@ -218,6 +221,7 @@ Int_t langaupro(Double_t *params, Double_t &maxx, Double_t &FWHM) {
   FWHM = fxr - fxl;
   return (0);
 }
+*/
 
 //void fit(){
 int main(int argc, char *argv[]) {
@@ -226,7 +230,7 @@ int main(int argc, char *argv[]) {
   if (!argv[1]){
     cout<<"Error: no input file"<<endl;
   }
-  
+  gStyle->SetOptStat(0);
   //string filename = "Validate_mich2_r5387.root";
   string filename = argv[1];
 
@@ -252,6 +256,8 @@ int main(int argc, char *argv[]) {
 
   TH1D *dedx[3][nbins];
   TH2D *dedxke[3];
+  //TH1F *hdqdx_mip[3];
+  TH1F *hdedx_mip[3];
 
   TCanvas *can = new TCanvas("can","can");
   TCanvas *can2 = new TCanvas("can2","can2",800,800);
@@ -268,8 +274,8 @@ int main(int argc, char *argv[]) {
   pad2->SetGridy();
   pad2->Draw();
 
-  TH2D *fr = new TH2D("fr",";KE (MeV);Data/MC",1000,0,500,1000,0.85,1.05);
-  fr->SetStats(0);
+  TH2D *frame = new TH2D("frame",";KE (MeV);Data/MC",1000,0,500,1000,0.85,1.05);
+  frame->SetStats(0);
 
 //  TLatex latex;
 //  latex.SetTextSize(0.04);
@@ -281,6 +287,8 @@ int main(int argc, char *argv[]) {
     can->cd();
     can->Print(Form("dedx_%zu.ps[", i));
     dedxke[i] = (TH2D*)f.Get(Form("dedxke_%zu",i));
+    //hdqdx_mip[i] = (TH1F*)f.Get(Form("hdqdx_mip_%zu",i));
+    hdedx_mip[i] = (TH1F*)f.Get(Form("hdedx_mip_%zu",i));
     vector<double> vke;
     vector<double> vdedx;
     vector<double> ededx;
@@ -291,6 +299,7 @@ int main(int argc, char *argv[]) {
     TVectorD *meanPitch = (TVectorD*)f.Get(Form("meanPitch%zu",i));
     double totalchi2 = 0;
     double chi2_250_450 = 0;
+    double avgpitch = 0;
     for (size_t j = 1; j<nbins; ++j){
       dedx[i][j] = (TH1D*)f.Get(Form("dedx_%zu_%zu", i, j));
       dedx[i][j]->Draw();
@@ -304,7 +313,13 @@ int main(int argc, char *argv[]) {
       }
       if (dedx[i][j]->GetMean()<10){
         //sv[0]=0.13*dedx[i]->GetRMS(); sv[1]=0.8*dedx[i]->GetMean(); sv[2]=dedx[i]->GetEntries()*0.1; sv[3]=.3;
-        sv[0]=0.1; sv[1]=0.8*dedx[i][j]->GetMean(); sv[2]=dedx[i][j]->GetEntries()*0.05; sv[3]=0.05;
+        if (i==2){
+          sv[0]=0.08; sv[1]=0.8*dedx[i][j]->GetMean(); sv[2]=dedx[i][j]->GetEntries()*0.05; sv[3]=0.13;
+        }
+        else{
+          sv[0]=0.08; sv[1]=0.8*dedx[i][j]->GetMean(); sv[2]=dedx[i][j]->GetEntries()*0.05; sv[3]=0.15;
+        }
+
         //if(j==0){ sv[0]=0.2; sv[1]=4.7; sv[2]=20; sv[3]=.01;}
         //if(j==1){ sv[0]=0.2; sv[1]=3.0; sv[2]=10; sv[3]=.01;}
         //if(j==2){ sv[1]=2.5;}
@@ -342,8 +357,33 @@ int main(int argc, char *argv[]) {
       if ((j+0.5)*binsize > 250 && (j+0.5)*binsize < 450){
         chi2_250_450 += pow((vdedx.back()-vdedxth.back())/ededx.back(),2);
       }
+      avgpitch += (*meanPitch)[j];
     }
+    avgpitch /= nbins - 1;
     can->Print(Form("dedx_%zu.ps]", i));
+
+    //Fit MIP dE/dx distributions
+    Double_t fr[2];
+    Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
+    fr[0]=1.1;//this was originally 0.
+    fr[1]=10.;
+    sv[0]=0.1; sv[1]=0.8*hdedx_mip[i]->GetMean(); sv[2]=hdedx_mip[i]->GetEntries()*0.05; sv[3]=0.05;
+    for(int k=0; k<4; ++k){
+      pllo[k] = 0.01*sv[k];
+      plhi[k] = 100*sv[k];
+    }
+    Double_t chisqr;
+    Int_t    ndf;
+    Int_t    status;
+    TF1 *fitsnr = langaufit(hdedx_mip[i],fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
+    cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
+    fitsnr->SetLineColor(kRed);
+    std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
+    std::cout << "************** Chi^2/NDF : " << fitsnr->GetChisquare()/fitsnr->GetNDF() << std::endl;
+    std::cout << "   MPV : " << fitsnr->GetParameter(1) << " $$$$$$$$$$$$" << std::endl;
+    can->Print(Form("dedx_mip_%zu.pdf",i));
+    can->Print(Form("dedx_mip_%zu.png",i));
+
     pad1->cd();
     TGraphErrors *gr = new TGraphErrors(vke.size(), &vke[0], &vdedx[0], 0, &ededx[0]);
     TGraph *grth = new TGraph(vke.size(), &vke[0], &vdedxth[0]);
@@ -360,17 +400,18 @@ int main(int argc, char *argv[]) {
     TPaveText *pt = new TPaveText(0.25,0.7,0.85,0.9,"NB NDC");
     pt->AddText(Form("Calibration constant = %.3f#times10^{-3}", calib_const[i]*1000));
     pt->AddText(Form("#alpha = %.3f, #beta' = %.3f", (*params)[0], (*params)[1]));
+    pt->AddText(Form("Average track pitch = %.2f", avgpitch));
     pt->AddText(Form("For 50<KE<500 MeV, #chi^{2} = %.1f, nbins = %zu", totalchi2, nbins-1));
     pt->AddText(Form("For 250<KE<450 MeV, #chi^{2} = %.1f, nbins = %d", chi2_250_450, 200/binsize));
     pt->Draw();
     pad2->cd();
-    fr->Draw();
-    fr->GetXaxis()->SetLabelSize(0.15);
-    fr->GetXaxis()->SetTitleSize(0.15);
-    fr->GetXaxis()->SetTitleOffset(1);
-    fr->GetYaxis()->SetLabelSize(0.1);
-    fr->GetYaxis()->SetTitleSize(0.15);
-    fr->GetYaxis()->SetTitleOffset(.3);
+    frame->Draw();
+    frame->GetXaxis()->SetLabelSize(0.15);
+    frame->GetXaxis()->SetTitleSize(0.15);
+    frame->GetXaxis()->SetTitleOffset(1);
+    frame->GetYaxis()->SetLabelSize(0.1);
+    frame->GetYaxis()->SetTitleSize(0.15);
+    frame->GetYaxis()->SetTitleOffset(.3);
     TBox *box = new TBox(250,0.85,450,1.05);
     box->SetFillColorAlpha(kRed,0.2);
     box->SetLineColor(kRed);

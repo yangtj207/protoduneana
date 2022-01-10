@@ -53,6 +53,7 @@ const double Mmu=105.658; // Mev for Mu
 const double Me=0.51; // Mev for electron
 const double rho=1.396;//g/cm^3
 string outfile_name;
+string sce;
 TString mn = "2";
 
 double spline_KE[13];
@@ -102,47 +103,49 @@ float protoDUNE_dEdx_calib::tot_Ef(float xval,float yval,float zval){
   float E0value=0.4867;
   //if(!usemap) return E0value;
   //std::cout << xval << " " << yval << " " << zval << std::endl;
-  if(xval>=0){
-    for (auto h : pos_hists) {
-      if (h->GetXaxis()->FindBin(xval) < 1 ||
-          h->GetXaxis()->FindBin(xval) > h->GetNbinsX()) {
-        std::cout << "xval oob: " << xval << std::endl;
+  if (sce=="on"){
+    if(xval>=0){
+      for (auto h : pos_hists) {
+        if (h->GetXaxis()->FindBin(xval) < 1 ||
+            h->GetXaxis()->FindBin(xval) > h->GetNbinsX()) {
+          std::cout << "xval oob: " << xval << std::endl;
+        }
+        if (h->GetYaxis()->FindBin(yval) < 1 ||
+            h->GetYaxis()->FindBin(yval) > h->GetNbinsY()) {
+          std::cout << "yval oob: " << yval << std::endl;
+        }
+        if (h->GetZaxis()->FindBin(zval) < 1 ||
+            h->GetZaxis()->FindBin(zval) > h->GetNbinsZ()) {
+          std::cout << "zval oob: " << zval << std::endl;
+        }
       }
-      if (h->GetYaxis()->FindBin(yval) < 1 ||
-          h->GetYaxis()->FindBin(yval) > h->GetNbinsY()) {
-        std::cout << "yval oob: " << yval << std::endl;
-      }
-      if (h->GetZaxis()->FindBin(zval) < 1 ||
-          h->GetZaxis()->FindBin(zval) > h->GetNbinsZ()) {
-        std::cout << "zval oob: " << zval << std::endl;
-      }
+      float ex=E0value+E0value*xpos->Interpolate(xval,yval,zval);
+      float ey=E0value*ypos->Interpolate(xval,yval,zval);
+      float ez=E0value*zpos->Interpolate(xval,yval,zval);
+      return sqrt(ex*ex+ey*ey+ez*ez);
     }
-    float ex=E0value+E0value*xpos->Interpolate(xval,yval,zval);
-    float ey=E0value*ypos->Interpolate(xval,yval,zval);
-    float ez=E0value*zpos->Interpolate(xval,yval,zval);
-    return sqrt(ex*ex+ey*ey+ez*ez);
-  }
-  if(xval<0){
-    for (auto h : neg_hists) {
-      if (h->GetXaxis()->FindBin(xval) < 1 ||
-          h->GetXaxis()->FindBin(xval) > h->GetNbinsX()) {
-        std::cout << "xval oob: " << xval << std::endl;
+    if(xval<0){
+      for (auto h : neg_hists) {
+        if (h->GetXaxis()->FindBin(xval) < 1 ||
+            h->GetXaxis()->FindBin(xval) > h->GetNbinsX()) {
+          std::cout << "xval oob: " << xval << std::endl;
+        }
+        if (h->GetYaxis()->FindBin(yval) < 1 ||
+            h->GetYaxis()->FindBin(yval) > h->GetNbinsY()) {
+          std::cout << "yval oob: " << yval << std::endl;
+        }
+        if (h->GetZaxis()->FindBin(zval) < 1 ||
+            h->GetZaxis()->FindBin(zval) > h->GetNbinsZ()) {
+          std::cout << "zval oob: " << zval << std::endl;
+        }
       }
-      if (h->GetYaxis()->FindBin(yval) < 1 ||
-          h->GetYaxis()->FindBin(yval) > h->GetNbinsY()) {
-        std::cout << "yval oob: " << yval << std::endl;
-      }
-      if (h->GetZaxis()->FindBin(zval) < 1 ||
-          h->GetZaxis()->FindBin(zval) > h->GetNbinsZ()) {
-        std::cout << "zval oob: " << zval << std::endl;
-      }
+      float ex=E0value+E0value*xneg->Interpolate(xval,yval,zval);
+      float ey=E0value*yneg->Interpolate(xval,yval,zval);
+      float ez=E0value*zneg->Interpolate(xval,yval,zval);
+      return sqrt(ex*ex+ey*ey+ez*ez);
     }
-    float ex=E0value+E0value*xneg->Interpolate(xval,yval,zval);
-    float ey=E0value*yneg->Interpolate(xval,yval,zval);
-    float ez=E0value*zneg->Interpolate(xval,yval,zval);
-    return sqrt(ex*ex+ey*ey+ez*ez);
   }
- else return E0value;
+  return E0value;
 }
 
 ////********************************************///
@@ -1172,7 +1175,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
 void protoDUNE_dEdx_calib::LoopMIP(vector<double> & norm_factors,
                                    vector<vector<double>> & calib_factors,
                                    TFile & outfile) {
-  std::cout << "******************************* Calibration.C is running *******************************" << std::endl;
+  std::cout << "******************************* LoopMIP is running *******************************" << std::endl;
 
   outfile.cd();
   std::map<int, std::vector<TH1D*>> dedx;
@@ -1221,10 +1224,10 @@ void protoDUNE_dEdx_calib::LoopMIP(vector<double> & norm_factors,
   int nhits[3] = {0};
 
   Long64_t nentries = fChain->GetEntries();
-  if (nentries > 200000){
+  if (nentries > 20000){
     cout<<"Total entries = "<<nentries<<endl;
-    cout<<"Only use 200000 events."<<endl;
-    nentries = 200000;
+    cout<<"Only use 20000 events."<<endl;
+    nentries = 20000;
   }
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
     //for (Long64_t jentry=0; jentry<20000;jentry++) {
@@ -1587,13 +1590,27 @@ int main(int argc, char ** argv) {
     calibs[2].push_back(calib_factor);
   }
 
-  t->LoopLite(norm_factors,
-              calibs,
-              output_file);
-
-//  t->LoopMIP(norm_factors,
-//             calibs,
-//             output_file);
+  std::string method = pset.get<std::string>("Method","Lite");
+  sce = pset.get<std::string>("SCE","on");
+  if (sce=="on"){
+    std::cout<<"SCE on"<<std::endl;
+  }
+  else{
+    std::cout<<"SCE off"<<std::endl;
+  }
+  if (method=="Lite"){
+    t->LoopLite(norm_factors,
+                calibs,
+                output_file);
+  }
+  else if (method=="MIP"){
+    t->LoopMIP(norm_factors,
+               calibs,
+               output_file);
+  }
+  else{
+    std::cout<<"Unknown method "<<method<<std::endl;
+  }
   delete t;
   std::cout << "************************* Start of hitplane 1 ***************************" << std::endl;
   output_file.Close();

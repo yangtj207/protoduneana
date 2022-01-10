@@ -1,6 +1,6 @@
 #include "ProtoDUNEBeamCuts.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 
 protoana::ProtoDUNEBeamCuts::ProtoDUNEBeamCuts( const fhicl::ParameterSet & pset ){
 

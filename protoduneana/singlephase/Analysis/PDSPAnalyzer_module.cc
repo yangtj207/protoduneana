@@ -40,9 +40,9 @@
 #include "protoduneana/Utilities/ProtoDUNEBeamCuts.h"
 #include "protoduneana/Utilities/ProtoDUNEEmptyEventFinder.h"
 #include "protoduneana/Utilities/G4ReweightUtils.h"
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNECalibration.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNECalibration.h"
 #include "protoduneana/Utilities/ProtoDUNECalibration.h"
 
 #include "lardataobj/RecoBase/SpacePoint.h"
@@ -50,7 +50,7 @@
 #include "lardataobj/RecoBase/Track.h"
 
 #include "lardataobj/RawData/RDTimeStamp.h"
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 
 #include "lardata/ArtDataHelper/MVAReader.h"
 
@@ -159,6 +159,10 @@ namespace pduneana {
     double michel;
     double none;
     size_t nHits;
+    double track_weight_by_charge;
+    double em_weight_by_charge;
+    double michel_weight_by_charge;
+    double none_weight_by_charge;
   };
 
   //Struct to handle calorimetry info more easily
@@ -200,15 +204,37 @@ namespace pduneana {
     const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits
         = pfpUtil.GetPFParticleHits_Ptrs(part, evt, fPFParticleTag);
 
+    double tot_charge = 0.;
     for (size_t h = 0; h < daughterPFP_hits.size(); ++h) {
       std::array<float,4> cnn_out = CNN_results.getOutput( daughterPFP_hits[h] );
-      output.track  += cnn_out[ CNN_results.getIndex("track") ];
-      output.em     += cnn_out[ CNN_results.getIndex("em") ];
-      output.michel += cnn_out[ CNN_results.getIndex("michel") ];
-      output.none   += cnn_out[ CNN_results.getIndex("none") ];
+      double hitcharge = daughterPFP_hits[h]->Integral();
+      double track_score = cnn_out[ CNN_results.getIndex("track") ];
+      double em_score = cnn_out[ CNN_results.getIndex("em") ];
+      double michel_score = cnn_out[ CNN_results.getIndex("michel") ];
+      double none_score = cnn_out[ CNN_results.getIndex("none") ];
+      output.track  += track_score;
+      output.em     += em_score;
+      output.michel += michel_score;
+      output.none   += none_score;
+      output.track_weight_by_charge  += hitcharge*track_score;
+      output.em_weight_by_charge     += hitcharge*em_score;
+      output.michel_weight_by_charge += hitcharge*michel_score;
+      output.none_weight_by_charge   += hitcharge*none_score;
+      tot_charge += hitcharge;
     }
-
     output.nHits = daughterPFP_hits.size();
+    if (tot_charge != 0) {
+      output.track_weight_by_charge  /= tot_charge;
+      output.em_weight_by_charge     /= tot_charge;
+      output.michel_weight_by_charge /= tot_charge;
+      output.none_weight_by_charge   /= tot_charge;
+    }
+    else {
+      output.track_weight_by_charge  = -999.;
+      output.em_weight_by_charge     = -999.;
+      output.michel_weight_by_charge = -999.;
+      output.none_weight_by_charge   = -999.;
+    }
 
     return output;
   }
@@ -220,15 +246,37 @@ namespace pduneana {
     cnnOutput2D output;
     const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits = pfpUtil.GetPFParticleHitsFromPlane_Ptrs( part, evt, fPFParticleTag, planeID );
 
-    for( size_t h = 0; h < daughterPFP_hits.size(); ++h ){
+    double tot_charge = 0.;
+    for (size_t h = 0; h < daughterPFP_hits.size(); ++h) {
       std::array<float,4> cnn_out = CNN_results.getOutput( daughterPFP_hits[h] );
-      output.track  += cnn_out[ CNN_results.getIndex("track") ];
-      output.em     += cnn_out[ CNN_results.getIndex("em") ];
-      output.michel += cnn_out[ CNN_results.getIndex("michel") ];
-      output.none   += cnn_out[ CNN_results.getIndex("none") ];
+      double hitcharge = daughterPFP_hits[h]->Integral();
+      double track_score = cnn_out[ CNN_results.getIndex("track") ];
+      double em_score = cnn_out[ CNN_results.getIndex("em") ];
+      double michel_score = cnn_out[ CNN_results.getIndex("michel") ];
+      double none_score = cnn_out[ CNN_results.getIndex("none") ];
+      output.track  += track_score;
+      output.em     += em_score;
+      output.michel += michel_score;
+      output.none   += none_score;
+      output.track_weight_by_charge  += hitcharge*track_score;
+      output.em_weight_by_charge     += hitcharge*em_score;
+      output.michel_weight_by_charge += hitcharge*michel_score;
+      output.none_weight_by_charge   += hitcharge*none_score;
+      tot_charge += hitcharge;
     }
-
     output.nHits = daughterPFP_hits.size();
+    if (tot_charge != 0) {
+      output.track_weight_by_charge  /= tot_charge;
+      output.em_weight_by_charge     /= tot_charge;
+      output.michel_weight_by_charge /= tot_charge;
+      output.none_weight_by_charge   /= tot_charge;
+    }
+    else {
+      output.track_weight_by_charge  = -999.;
+      output.em_weight_by_charge     = -999.;
+      output.michel_weight_by_charge = -999.;
+      output.none_weight_by_charge   = -999.;
+    }
 
     return output;
   }
@@ -241,7 +289,7 @@ using protoana::G4ReweightUtils::CreateNRWTrajs;
 using protoana::G4ReweightUtils::GetNTrajWeightFromSetPars;
 
 //Constructor for cnn struct
-pduneana::cnnOutput2D::cnnOutput2D() : track(0), em(0), michel(0), none(0), nHits(0) { }
+pduneana::cnnOutput2D::cnnOutput2D() : track(0), em(0), michel(0), none(0), nHits(0), track_weight_by_charge(0), em_weight_by_charge(0), michel_weight_by_charge(0), none_weight_by_charge(0) { }
 
 class pduneana::PDSPAnalyzer : public art::EDAnalyzer {
 public:
@@ -416,12 +464,16 @@ private:
   //EDIT: STANDARDIZE
   double reco_beam_startX, reco_beam_startY, reco_beam_startZ;
   double reco_beam_endX, reco_beam_endY, reco_beam_endZ;
+  int test_branch;
+  double true_beam_len;
   double reco_beam_len, reco_beam_alt_len;
   double reco_beam_alt_len_allTrack;
   double reco_beam_vertex_michel_score;
   int reco_beam_vertex_nHits;
   double reco_beam_vertex_michel_score_allTrack;
   int reco_beam_vertex_nHits_allTrack;
+  double reco_beam_vertex_michel_score_weight_by_charge;
+  double reco_beam_vertex_michel_score_weight_by_charge_allTrack;
 
   //position from SCE corrected calo
   double reco_beam_calo_startX, reco_beam_calo_startY, reco_beam_calo_startZ;
@@ -467,7 +519,7 @@ private:
   //For all track info 
   std::vector<double> reco_track_startX, reco_track_startY, reco_track_startZ,
                       reco_track_endX, reco_track_endY, reco_track_endZ,
-                      reco_track_michel_score;
+                      reco_track_michel_score, reco_track_michel_score_weight_by_charge;
   std::vector<int> reco_track_ID, reco_track_nHits;
 
 
@@ -548,12 +600,12 @@ private:
 
   int    reco_beam_PFP_ID;
   int    reco_beam_PFP_nHits;
-  double reco_beam_PFP_trackScore;
-  double reco_beam_PFP_emScore;
-  double reco_beam_PFP_michelScore;
-  double reco_beam_PFP_trackScore_collection;
-  double reco_beam_PFP_emScore_collection;
-  double reco_beam_PFP_michelScore_collection;
+  double reco_beam_PFP_trackScore, reco_beam_PFP_trackScore_weight_by_charge;
+  double reco_beam_PFP_emScore, reco_beam_PFP_emScore_weight_by_charge;
+  double reco_beam_PFP_michelScore, reco_beam_PFP_michelScore_weight_by_charge;
+  double reco_beam_PFP_trackScore_collection, reco_beam_PFP_trackScore_collection_weight_by_charge;
+  double reco_beam_PFP_emScore_collection, reco_beam_PFP_emScore_collection_weight_by_charge;
+  double reco_beam_PFP_michelScore_collection, reco_beam_PFP_michelScore_collection_weight_by_charge;
 
   int    reco_beam_allTrack_ID;
   bool   reco_beam_allTrack_beam_cuts, reco_beam_allTrack_flipped;
@@ -833,7 +885,7 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
     //Neutron Reweighter
     // -- Just use proton fracs and parameter set
     // -- because it's just reaction
-    KPlusMultiRW = new G4MultiReweighter(
+    NeutronMultiRW = new G4MultiReweighter(
         2112, *ProtFracsFile, ProtParSet,
         p.get<fhicl::ParameterSet>("Material"),
         RWManager);
@@ -901,9 +953,13 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
         std::pair<double, int> vertex_michel_score =
             trackUtil.GetVertexMichelScore(*tempTrack, evt, fTrackerTag,
                                            fHitTag);
+        std::pair<double, double> vertex_michel_score_weight_by_charge =
+            trackUtil.GetVertexMichelScore_weight_by_charge(*tempTrack, evt, fTrackerTag,
+                                           fHitTag);
 
         reco_track_michel_score.push_back(vertex_michel_score.first);
         reco_track_nHits.push_back(vertex_michel_score.second);
+        reco_track_michel_score_weight_by_charge.push_back( vertex_michel_score_weight_by_charge.second != 0 ? vertex_michel_score_weight_by_charge.first/vertex_michel_score_weight_by_charge.second : -999. );
         reco_track_ID.push_back(tempTrack->ID());
         reco_track_startX.push_back(startX);
         reco_track_startY.push_back(startY);
@@ -1228,7 +1284,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
         = BuildHierarchy(true_beam_ID, 2112, plist, fGeometryService,
                          event, "LAr", false);
     G4RWGridWeights(neutron_hierarchy, ProtParSet,
-                    g4rw_full_grid_neutron_weights, ProtMultiRW);
+                    g4rw_full_grid_neutron_weights, NeutronMultiRW);
     for (auto weights : g4rw_full_grid_neutron_weights) {
       g4rw_full_grid_neutron_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_neutron_coeffs.back());
@@ -1238,7 +1294,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
         = BuildHierarchy(true_beam_ID, 321, plist, fGeometryService,
                          event, "LAr", false);
     G4RWGridWeights(kplus_hierarchy, ProtParSet, g4rw_full_grid_kplus_weights,
-                    ProtMultiRW);
+                    KPlusMultiRW);
     for (auto weights : g4rw_full_grid_kplus_weights) {
       g4rw_full_grid_kplus_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_kplus_coeffs.back());
@@ -1271,7 +1327,9 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_endX", &reco_beam_endX);
   fTree->Branch("reco_beam_endY", &reco_beam_endY);
   fTree->Branch("reco_beam_endZ", &reco_beam_endZ);
+  fTree->Branch("true_beam_len", &true_beam_len);
   fTree->Branch("reco_beam_len", &reco_beam_len);
+  fTree->Branch("test_branch", &test_branch);
   fTree->Branch("reco_beam_alt_len", &reco_beam_alt_len);
   fTree->Branch("reco_beam_alt_len_allTrack", &reco_beam_alt_len_allTrack);
   fTree->Branch("reco_beam_calo_startX", &reco_beam_calo_startX);
@@ -1303,6 +1361,8 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_vertex_michel_score", &reco_beam_vertex_michel_score);
   fTree->Branch("reco_beam_vertex_nHits_allTrack", &reco_beam_vertex_nHits_allTrack);
   fTree->Branch("reco_beam_vertex_michel_score_allTrack", &reco_beam_vertex_michel_score_allTrack);
+  fTree->Branch("reco_beam_vertex_michel_score_weight_by_charge", &reco_beam_vertex_michel_score_weight_by_charge);
+  fTree->Branch("reco_beam_vertex_michel_score_weight_by_charge_allTrack", &reco_beam_vertex_michel_score_weight_by_charge_allTrack);
   fTree->Branch("reco_beam_trackID", &reco_beam_trackID);
   fTree->Branch("n_beam_slices", &n_beam_slices);
   fTree->Branch("n_beam_particles", &n_beam_particles);
@@ -1352,6 +1412,12 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_PFP_trackScore_collection", &reco_beam_PFP_trackScore_collection);
   fTree->Branch("reco_beam_PFP_emScore_collection", &reco_beam_PFP_emScore_collection);
   fTree->Branch("reco_beam_PFP_michelScore_collection", &reco_beam_PFP_michelScore_collection);
+  fTree->Branch("reco_beam_PFP_trackScore_weight_by_charge", &reco_beam_PFP_trackScore_weight_by_charge);
+  fTree->Branch("reco_beam_PFP_emScore_weight_by_charge", &reco_beam_PFP_emScore_weight_by_charge);
+  fTree->Branch("reco_beam_PFP_michelScore_weight_by_charge", &reco_beam_PFP_michelScore_weight_by_charge);
+  fTree->Branch("reco_beam_PFP_trackScore_collection_weight_by_charge", &reco_beam_PFP_trackScore_collection_weight_by_charge);
+  fTree->Branch("reco_beam_PFP_emScore_collection_weight_by_charge", &reco_beam_PFP_emScore_collection_weight_by_charge);
+  fTree->Branch("reco_beam_PFP_michelScore_collection_weight_by_charge", &reco_beam_PFP_michelScore_collection_weight_by_charge);
 
   fTree->Branch("reco_beam_allTrack_ID",              &reco_beam_allTrack_ID);
   fTree->Branch("reco_beam_allTrack_beam_cuts",       &reco_beam_allTrack_beam_cuts);
@@ -1381,6 +1447,7 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_track_endY", &reco_track_endY);
   fTree->Branch("reco_track_endZ", &reco_track_endZ);
   fTree->Branch("reco_track_michel_score", &reco_track_michel_score);
+  fTree->Branch("reco_track_michel_score_weight_by_charge", &reco_track_michel_score_weight_by_charge);
   fTree->Branch("reco_track_ID", &reco_track_ID);
   fTree->Branch("reco_track_nHits", &reco_track_nHits);
 
@@ -1800,7 +1867,9 @@ void pduneana::PDSPAnalyzer::reset()
   reco_beam_trackDirY = -999;
   reco_beam_trackDirZ = -999;
 
+  true_beam_len = -999.;
   reco_beam_len = -999;
+  test_branch = -1;
   reco_beam_alt_len = -999;
   reco_beam_alt_len_allTrack = -999;
   reco_beam_calo_startX = -999;
@@ -1829,6 +1898,7 @@ void pduneana::PDSPAnalyzer::reset()
   reco_track_endY.clear();
   reco_track_endZ.clear();
   reco_track_michel_score.clear();
+  reco_track_michel_score_weight_by_charge.clear();
   reco_track_ID.clear();
   reco_track_nHits.clear();
 
@@ -2064,6 +2134,12 @@ void pduneana::PDSPAnalyzer::reset()
   reco_beam_PFP_trackScore_collection = -999;
   reco_beam_PFP_emScore_collection = -999;
   reco_beam_PFP_michelScore_collection = -999;
+  reco_beam_PFP_trackScore_weight_by_charge = -999;
+  reco_beam_PFP_emScore_weight_by_charge = -999;
+  reco_beam_PFP_michelScore_weight_by_charge = -999;
+  reco_beam_PFP_trackScore_collection_weight_by_charge = -999;
+  reco_beam_PFP_emScore_collection_weight_by_charge = -999;
+  reco_beam_PFP_michelScore_collection_weight_by_charge = -999;
 
   reco_beam_allTrack_ID = -999;
   reco_beam_allTrack_beam_cuts = -999;
@@ -2103,6 +2179,8 @@ void pduneana::PDSPAnalyzer::reset()
   reco_beam_vertex_michel_score = -999.;
   reco_beam_vertex_nHits_allTrack = -999;
   reco_beam_vertex_michel_score_allTrack = -999.;
+  reco_beam_vertex_michel_score_weight_by_charge = -999.;
+  reco_beam_vertex_michel_score_weight_by_charge_allTrack = -999.;
 
   reco_beam_resRange_SCE.clear();
   reco_beam_TrkPitch_SCE.clear();
@@ -2301,6 +2379,9 @@ void pduneana::PDSPAnalyzer::BeamPFPInfo(
                              (cnn.em / cnn.nHits) : -999.);
     reco_beam_PFP_michelScore = (cnn.nHits > 0 ?
                                  (cnn.michel / cnn.nHits) : -999.);
+    reco_beam_PFP_trackScore_weight_by_charge = cnn.track_weight_by_charge;
+    reco_beam_PFP_emScore_weight_by_charge = cnn.em_weight_by_charge;
+    reco_beam_PFP_michelScore_weight_by_charge = cnn.michel_weight_by_charge;
 
     cnnOutput2D cnn_collection = GetCNNOutputFromPFParticleFromPlane( *particle, evt, *hitResults, pfpUtil, fPFParticleTag, 2 );
     reco_beam_PFP_trackScore_collection = (cnn_collection.nHits > 0 ?
@@ -2309,16 +2390,18 @@ void pduneana::PDSPAnalyzer::BeamPFPInfo(
                                         cnn_collection.em / cnn_collection.nHits : -999.);
     reco_beam_PFP_michelScore_collection = (cnn_collection.nHits > 0 ?
                                             cnn_collection.michel / cnn_collection.nHits : -999.);
-  }
-  else{
-    reco_beam_PFP_trackScore =  -999.;
-    reco_beam_PFP_emScore = -999.;
-    reco_beam_PFP_michelScore = -999.;
-    reco_beam_PFP_trackScore_collection =  -999.;
-    reco_beam_PFP_emScore_collection = -999.;
-    reco_beam_PFP_michelScore_collection = -999.;
+    reco_beam_PFP_trackScore_collection_weight_by_charge = cnn_collection.track_weight_by_charge;
+    reco_beam_PFP_emScore_collection_weight_by_charge = cnn_collection.em_weight_by_charge;
+    reco_beam_PFP_michelScore_collection_weight_by_charge = cnn_collection.michel_weight_by_charge;
+    
   }
 
+  const auto space_pts = pfpUtil.GetPFParticleSpacePoints(*particle, evt, fPFParticleTag);
+  for (const auto * sp : space_pts) {
+    reco_beam_spacePts_X.push_back(sp->XYZ()[0]);
+    reco_beam_spacePts_Y.push_back(sp->XYZ()[1]);
+    reco_beam_spacePts_Z.push_back(sp->XYZ()[2]);
+  }
 }
 
 void pduneana::PDSPAnalyzer::BeamTrackInfo(
@@ -2338,10 +2421,10 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
                                        0., -500., 500., 0., 500., 0.*/);
     reco_beam_vertex_nHits = vertex_michel_score.second;
     reco_beam_vertex_michel_score = vertex_michel_score.first;
-  }
-  else {
-    reco_beam_vertex_nHits = -999;
-    reco_beam_vertex_michel_score = -999.;
+    
+    std::pair<double, double> vertex_michel_score_weight_by_charge =
+        trackUtil.GetVertexMichelScore_weight_by_charge(*thisTrack, evt, fTrackerTag, fHitTag);
+    reco_beam_vertex_michel_score_weight_by_charge = (vertex_michel_score_weight_by_charge.second != 0 ? vertex_michel_score_weight_by_charge.first/vertex_michel_score_weight_by_charge.second : -999.);
   }
 
   if (fVerbose) std::cout << "Beam particle is track-like " << thisTrack->ID() << std::endl;
@@ -2420,16 +2503,16 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
     const recob::Hit * theHit = it->second;
     size_t i = it->first;
 
-    double x = thisTrack->Trajectory().LocationAtPoint(i).X();
-    double y = thisTrack->Trajectory().LocationAtPoint(i).Y();
+    //double x = thisTrack->Trajectory().LocationAtPoint(i).X();
+    //double y = thisTrack->Trajectory().LocationAtPoint(i).Y();
     double z = thisTrack->Trajectory().LocationAtPoint(i).Z();
 
-    if( fSaveHits ){
-      //saving all hit coordinates for beamtrack
-      reco_beam_spacePts_X.push_back(x);
-      reco_beam_spacePts_Y.push_back(y);
-      reco_beam_spacePts_Z.push_back(z);
-    }
+    //if( fSaveHits ){
+    //  //saving all hit coordinates for beamtrack
+    //  reco_beam_spacePts_X.push_back(x);
+    //  reco_beam_spacePts_Y.push_back(y);
+    //  reco_beam_spacePts_Z.push_back(z);
+    //}
 
     //This creates the slices for the thin slice method.
     //To do: remove this
@@ -3212,6 +3295,12 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
     true_beam_traj_Y_SCE.push_back(true_beam_trajectory.Y(i) + offset.Y());
     true_beam_traj_Z_SCE.push_back(true_beam_trajectory.Z(i) + offset.Z());
   }
+  true_beam_len = 0;
+  for (size_t i = 1; i < true_beam_trajectory.size(); ++i) {
+    true_beam_len += sqrt( pow( true_beam_traj_X.at(i)-true_beam_traj_X.at(i-1), 2)
+                       + pow( true_beam_traj_Y.at(i)-true_beam_traj_Y.at(i-1), 2)
+                       + pow( true_beam_traj_Z.at(i)-true_beam_traj_Z.at(i-1), 2));
+  }
 
   //Look through the daughters
   for( int i = 0; i < true_beam_particle->NumberDaughters(); ++i ){
@@ -3676,11 +3765,24 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
       reco_daughter_PFP_michelScore_collection.push_back( -999. );
     }
 
+
+
     //Matching by hits to get true daughter info
     if( !evt.isRealData() ){
       DaughterMatchInfo(evt, daughterPFP, clockData);
     }
 
+    if (fSaveHits) {
+      reco_daughter_spacePts_X.push_back(std::vector<double>());
+      reco_daughter_spacePts_Y.push_back(std::vector<double>());
+      reco_daughter_spacePts_Z.push_back(std::vector<double>());
+      const auto space_pts = pfpUtil.GetPFParticleSpacePoints(*daughterPFP, evt, fPFParticleTag);
+      for (const auto * sp : space_pts) {
+        reco_daughter_spacePts_X.back().push_back(sp->XYZ()[0]);
+        reco_daughter_spacePts_Y.back().push_back(sp->XYZ()[1]);
+        reco_daughter_spacePts_Z.back().push_back(sp->XYZ()[2]);
+      }
+    }
 
     //Getting the default pandora reconstruction type (shower/track)
     const recob::Track * pandoraTrack = pfpUtil.GetPFParticleTrack(
@@ -3753,23 +3855,6 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
             reco_daughter_allTrack_calo_Z.back().push_back(theXYZPoints[j].Z());
           }
 
-/*
-<<<<<<< HEAD
-          if (fCalibrateByHand) {
-            std::vector<float> cali_dEdX_SCE = calibration_SCE.GetCalibratedCalorimetry(*pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 2);
-            for( size_t j = 0; j < cali_dEdX_SCE.size(); ++j ){
-              reco_daughter_allTrack_calibrated_dEdX_SCE.back().push_back( cali_dEdX_SCE[j] );
-            }
-          }
-          else {
-            for (auto dedx : reco_daughter_allTrack_dEdX_SCE.back()) {
-              reco_daughter_allTrack_calibrated_dEdX_SCE.back().push_back(dedx);
-            }
-          }
-
-
-          if (fCalibrateByHand) {
-=======*/
           if (fRecalibrate) {
             std::vector<float> cali_dEdX_SCE
                 = calibration_SCE.GetCalibratedCalorimetry(
@@ -3779,7 +3864,6 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
               reco_daughter_allTrack_calibrated_dEdX_SCE.back().push_back(
                   cali_dEdX_SCE[j]);
             }
-//>>>>>>> 32b542a302943d59e3a1152ef8dcb75d7045bcf0
             std::vector<double> new_dQdX = calibration_SCE.CalibratedQdX(
                 *pandora2Track, evt, "pandora2Track",
                 fPandora2CaloSCE, 2, -10.);
@@ -4387,6 +4471,13 @@ void pduneana::PDSPAnalyzer::BeamForcedTrackInfo(
         std::pair<double, int> vertex_michel_score = trackUtil.GetVertexMichelScore(*pandora2Track, evt, "pandora2Track", fHitTag);
         reco_beam_vertex_nHits_allTrack = vertex_michel_score.second;
         reco_beam_vertex_michel_score_allTrack = vertex_michel_score.first;
+        
+        std::pair<double, double> vertex_michel_score_weight_by_charge =
+            trackUtil.GetVertexMichelScore_weight_by_charge(*pandora2Track, evt, "pandora2Track", fHitTag);
+        if (vertex_michel_score_weight_by_charge.second != 0)
+          reco_beam_vertex_michel_score_weight_by_charge_allTrack = vertex_michel_score_weight_by_charge.first/vertex_michel_score_weight_by_charge.second;
+        else
+          reco_beam_vertex_michel_score_weight_by_charge_allTrack = -999.;
       }
       reco_beam_allTrack_ID = pandora2Track->ID();
       reco_beam_allTrack_beam_cuts = beam_cuts.IsBeamlike( *pandora2Track, evt, "1" );
@@ -4634,7 +4725,7 @@ void pduneana::PDSPAnalyzer::G4RWGridWeights(
           for (size_t k = 1; k < hierarchy.size(); ++k) {
             std::vector<G4ReweightTraj *> & temp_trajs = hierarchy[k];
             weights.back().back()
-                *= GetNTrajWeightFromSetPars(temp_trajs, *MultiRW);
+                *= GetNTrajWeightFromSetPars(temp_trajs, *multi_rw);
           }
         }
       }

@@ -28,7 +28,7 @@
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 #include "protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
 
 // ROOT includes

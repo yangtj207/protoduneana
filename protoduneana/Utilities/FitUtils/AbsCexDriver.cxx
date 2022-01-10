@@ -100,24 +100,28 @@ void protoana::AbsCexDriver::FillMCEvents(
   tree->SetBranchAddress("reco_daughter_PFP_trackScore_collection",
                             &reco_daughter_track_scores);
 
+  /*
   std::vector<double> * g4rw_alt_primary_plus_sigma_weight = 0x0,
                       * g4rw_alt_primary_minus_sigma_weight = 0x0,
                       * g4rw_full_primary_plus_sigma_weight = 0x0,
-                      * g4rw_full_primary_minus_sigma_weight = 0x0;
+                      * g4rw_full_primary_minus_sigma_weight = 0x0;*/
   std::vector<std::vector<double>> * g4rw_primary_grid_weights = 0x0,
                                    * g4rw_full_grid_weights = 0x0,
-                                   * g4rw_full_grid_proton_weights = 0x0;
-  tree->SetBranchAddress("g4rw_alt_primary_plus_sigma_weight",
+                                   * g4rw_full_grid_proton_weights = 0x0,
+                                   * g4rw_full_grid_proton_coeffs = 0x0;
+  /*tree->SetBranchAddress("g4rw_alt_primary_plus_sigma_weight",
                             &g4rw_alt_primary_plus_sigma_weight);
   tree->SetBranchAddress("g4rw_alt_primary_minus_sigma_weight",
                             &g4rw_alt_primary_minus_sigma_weight);
   tree->SetBranchAddress("g4rw_full_primary_plus_sigma_weight",
                             &g4rw_full_primary_plus_sigma_weight);
   tree->SetBranchAddress("g4rw_full_primary_minus_sigma_weight",
-                            &g4rw_full_primary_minus_sigma_weight);
+                            &g4rw_full_primary_minus_sigma_weight);*/
   tree->SetBranchAddress("g4rw_full_grid_weights", &g4rw_full_grid_weights);
-  tree->SetBranchAddress("g4rw_full_grid_proton_weights", &g4rw_full_grid_proton_weights);
-
+  tree->SetBranchAddress("g4rw_full_grid_proton_weights",
+                         &g4rw_full_grid_proton_weights);
+  tree->SetBranchAddress("g4rw_full_grid_proton_coeffs",
+                         &g4rw_full_grid_proton_coeffs);
   tree->SetBranchAddress("g4rw_primary_grid_weights",
                             &g4rw_primary_grid_weights);
 
@@ -171,14 +175,14 @@ void protoana::AbsCexDriver::FillMCEvents(
     events.back().SetRecoDaughterTrackThetas(*reco_daughter_track_thetas);
     events.back().SetRecoDaughterTrackScores(*reco_daughter_track_scores);
     events.back().SetHasPi0Shower(has_pi0_shower);
-    events.back().MakeG4RWBranch("g4rw_alt_primary_plus_sigma_weight",
-                                  *g4rw_alt_primary_plus_sigma_weight);
-    events.back().MakeG4RWBranch("g4rw_alt_primary_minus_sigma_weight",
-                                  *g4rw_alt_primary_minus_sigma_weight);
-    events.back().MakeG4RWBranch("g4rw_full_primary_plus_sigma_weight",
-                                  *g4rw_full_primary_plus_sigma_weight);
-    events.back().MakeG4RWBranch("g4rw_full_primary_minus_sigma_weight",
-                                  *g4rw_full_primary_minus_sigma_weight);
+    //events.back().MakeG4RWBranch("g4rw_alt_primary_plus_sigma_weight",
+    //                              *g4rw_alt_primary_plus_sigma_weight);
+    //events.back().MakeG4RWBranch("g4rw_alt_primary_minus_sigma_weight",
+    //                              *g4rw_alt_primary_minus_sigma_weight);
+    //events.back().MakeG4RWBranch("g4rw_full_primary_plus_sigma_weight",
+    //                              *g4rw_full_primary_plus_sigma_weight);
+    //events.back().MakeG4RWBranch("g4rw_full_primary_minus_sigma_weight",
+    //                              *g4rw_full_primary_minus_sigma_weight);
     for (size_t j = 0; j < daughter_dQdXs->size(); ++j) {
       events.back().AddRecoDaughterTrackdQdX((*daughter_dQdXs)[j]);
       events.back().AddRecoDaughterTrackResRange((*daughter_resRanges)[j]);
@@ -203,6 +207,8 @@ void protoana::AbsCexDriver::FillMCEvents(
     }
     events.back().MakeG4RWBranch("g4rw_full_grid_proton_weights",
                                   (*g4rw_full_grid_proton_weights)[0]);
+    events.back().MakeG4RWCoeff("g4rw_full_grid_proton_coeffs",
+                                (*g4rw_full_grid_proton_coeffs)[0]);
   }
 
   //if (fSplitMC) {
@@ -233,14 +239,14 @@ void protoana::AbsCexDriver::FillMCEvents(
       fake_data_events.back().SetRecoDaughterTrackThetas(*reco_daughter_track_thetas);
       fake_data_events.back().SetRecoDaughterTrackScores(*reco_daughter_track_scores);
       fake_data_events.back().SetHasPi0Shower(has_pi0_shower);
-      fake_data_events.back().MakeG4RWBranch("g4rw_alt_primary_plus_sigma_weight",
-                                    *g4rw_alt_primary_plus_sigma_weight);
-      fake_data_events.back().MakeG4RWBranch("g4rw_alt_primary_minus_sigma_weight",
-                                    *g4rw_alt_primary_minus_sigma_weight);
-      fake_data_events.back().MakeG4RWBranch("g4rw_full_primary_plus_sigma_weight",
-                                    *g4rw_full_primary_plus_sigma_weight);
-      fake_data_events.back().MakeG4RWBranch("g4rw_full_primary_minus_sigma_weight",
-                                    *g4rw_full_primary_minus_sigma_weight);
+      //fake_data_events.back().MakeG4RWBranch("g4rw_alt_primary_plus_sigma_weight",
+      //                              *g4rw_alt_primary_plus_sigma_weight);
+      //fake_data_events.back().MakeG4RWBranch("g4rw_alt_primary_minus_sigma_weight",
+      //                              *g4rw_alt_primary_minus_sigma_weight);
+      //fake_data_events.back().MakeG4RWBranch("g4rw_full_primary_plus_sigma_weight",
+      //                              *g4rw_full_primary_plus_sigma_weight);
+      //fake_data_events.back().MakeG4RWBranch("g4rw_full_primary_minus_sigma_weight",
+      //                              *g4rw_full_primary_minus_sigma_weight);
       for (size_t j = 0; j < daughter_dQdXs->size(); ++j) {
         fake_data_events.back().AddRecoDaughterTrackdQdX((*daughter_dQdXs)[j]);
         fake_data_events.back().AddRecoDaughterTrackResRange((*daughter_resRanges)[j]);
@@ -264,6 +270,8 @@ void protoana::AbsCexDriver::FillMCEvents(
       }
       fake_data_events.back().MakeG4RWBranch("g4rw_full_grid_proton_weights",
                                     (*g4rw_full_grid_proton_weights)[0]);
+      fake_data_events.back().MakeG4RWCoeff("g4rw_full_grid_proton_coeffs",
+                                            (*g4rw_full_grid_proton_coeffs)[0]);
     }
   //}
 
@@ -644,6 +652,12 @@ void protoana::AbsCexDriver::RefillMCSamples(
       TSpline3 * spline
           = fFullSelectionSplines["dEdX_Cal_Spline"][new_selection][bin-1];
       weight *= spline->Eval(syst_pars.at("dEdX_Cal_Spline").GetValue());
+      if (weight < 0.) {
+        std::cout << syst_pars.at("dEdX_Cal_Spline").GetValue() <<
+                     " " <<
+                     spline->Eval(syst_pars.at("dEdX_Cal_Spline").GetValue()) <<
+                     std::endl;
+      }
     }
     if (weight < 0.) {
       std::cout << "Weight went negative after dedx spline" << std::endl;
@@ -677,6 +691,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
 
     weight *= GetSystWeight_G4RW(event, syst_pars, *this_sample, new_selection/*selection_ID*/,
                                  val[0]);
+    weight *= GetSystWeight_G4RWCoeff(event, syst_pars);
 
     weight *= GetSystWeight_BeamShift(event, syst_pars);
     if (weight < 0.) {
@@ -795,6 +810,7 @@ void protoana::AbsCexDriver::SetupSysts(
 
   SetupSyst_G4RW(events, samples, signal_sample_checks, beam_energy_bins,
                    pars, output_file);
+  SetupSyst_G4RWCoeff(pars);
 
   //SetupSyst_BeamRes(events, samples, pars, output_file);
   SetupSyst_BeamShift(pars, output_file);
@@ -1514,6 +1530,22 @@ void protoana::AbsCexDriver::SetupSyst_BeamShiftSpline(
   
 }
 
+void protoana::AbsCexDriver::SetupSyst_G4RWCoeff(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  for (auto it = pars.begin(); it != pars.end(); ++it) {
+    if ((it->first.find("g4rw") != std::string::npos ||
+         it->first.find("G4RW") != std::string::npos) &&
+        (it->first.find("oeff") != std::string::npos)) {
+      std::cout << "Setting up g4rw coeffsyst: " << it->first << std::endl;
+    }
+    else {
+      continue;
+    }
+    fG4RWCoeffBranches[it->first] = it->second.GetOption<std::string>("Branch");
+    std::cout << "Added " << it->first << " " << fG4RWCoeffBranches[it->first] << std::endl;
+  }
+}
+
 void protoana::AbsCexDriver::SetupSyst_G4RW(
     const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -1523,8 +1555,9 @@ void protoana::AbsCexDriver::SetupSyst_G4RW(
     TFile & output_file) {
   
   for (auto it = pars.begin(); it != pars.end(); ++it) {
-    if (it->first.find("g4rw") != std::string::npos ||
-        it->first.find("G4RW") != std::string::npos) {
+    if ((it->first.find("g4rw") != std::string::npos ||
+         it->first.find("G4RW") != std::string::npos) &&
+        (it->first.find("oeff") == std::string::npos)) {
       std::cout << "Setting up g4rw syst: " << it->first << std::endl;
     }
     else {
@@ -1536,21 +1569,21 @@ void protoana::AbsCexDriver::SetupSyst_G4RW(
     dir_name += "_Syst_Dir";
     TDirectory * dir = output_file.mkdir(dir_name.c_str());
 
-    size_t position = it->second.GetOption<size_t>("Position"); 
-    std::string plus_branch = it->second.GetOption<std::string>("PlusBranch");
-    std::string minus_branch = it->second.GetOption<std::string>("MinusBranch");
-    bool is_grid = it->second.GetOption<bool>("IsGrid");
+    //size_t position = it->second.GetOption<size_t>("Position"); 
+    //std::string plus_branch = it->second.GetOption<std::string>("PlusBranch");
+    //std::string minus_branch = it->second.GetOption<std::string>("MinusBranch");
+    //bool is_grid = it->second.GetOption<bool>("IsGrid");
     std::string grid_branch = it->second.GetOption<std::string>("GridBranch");
     std::vector<double> syst_vals;
 
-    if (!is_grid) {
-      syst_vals = {
-        it->second.GetLowerLimit(),
-        it->second.GetCentral(),
-        it->second.GetUpperLimit(),
-      };
-    }
-    else {
+    //if (!is_grid) {
+    //  syst_vals = {
+    //    it->second.GetLowerLimit(),
+    //    it->second.GetCentral(),
+    //    it->second.GetUpperLimit(),
+    //  };
+    //}
+    //else {
       //double end = it->second.GetOption<double>("GridEnd");
       double delta = it->second.GetOption<double>("GridDelta");
       double start = it->second.GetOption<double>("GridStart");
@@ -1558,14 +1591,13 @@ void protoana::AbsCexDriver::SetupSyst_G4RW(
 
       //double delta = (end - start)/(n-1);
       std::cout << "Added to grid: ";
-      //while (start <= end) {
       for (int i = 0; i < n; ++i) {
         syst_vals.push_back(start);
         std::cout << syst_vals.back() << " ";
         start += delta;
       }
       std::cout << std::endl;
-    };
+    //}
 
     //Set up the variation hists
     for (auto it2 = samples.begin(); it2 != samples.end(); ++it2) {
@@ -1574,24 +1606,24 @@ void protoana::AbsCexDriver::SetupSyst_G4RW(
           const std::map<int, TH1 *> & sel_hists
               = it2->second[i][j].GetSelectionHists();
           for (auto it3 = sel_hists.begin(); it3 != sel_hists.end(); ++it3) {
-            if (!is_grid) {
-              std::string shift_name = it3->second->GetName();
-              shift_name += "Minus";
-              TH1D * temp_hist = (TH1D*)it3->second->Clone(shift_name.c_str());
+            //if (!is_grid) {
+            //  std::string shift_name = it3->second->GetName();
+            //  shift_name += "Minus";
+            //  TH1D * temp_hist = (TH1D*)it3->second->Clone(shift_name.c_str());
 
-              temp_hist->Reset();
-              it2->second[i][j].AddSystematicShift(temp_hist, it->first,
-                                                   it3->first);
+            //  temp_hist->Reset();
+            //  it2->second[i][j].AddSystematicShift(temp_hist, it->first,
+            //                                       it3->first);
 
-              shift_name = it3->second->GetName();
-              shift_name += "Plus";
-              temp_hist = (TH1D*)it3->second->Clone(shift_name.c_str());
-              temp_hist->Reset();
+            //  shift_name = it3->second->GetName();
+            //  shift_name += "Plus";
+            //  temp_hist = (TH1D*)it3->second->Clone(shift_name.c_str());
+            //  temp_hist->Reset();
 
-              it2->second[i][j].AddSystematicShift(temp_hist, it->first,
-                                                   it3->first);
-            }
-            else {
+            //  it2->second[i][j].AddSystematicShift(temp_hist, it->first,
+            //                                       it3->first);
+            //}
+            //else {
               for (size_t k = 0; k < syst_vals.size(); ++k) {
                 if (k == ((syst_vals.size() - 1)/2)) continue;
                 //std::cout << "Adding shift " << k << std::endl;
@@ -1602,7 +1634,7 @@ void protoana::AbsCexDriver::SetupSyst_G4RW(
                 it2->second[i][j].AddSystematicShift(temp_hist, it->first,
                                                      it3->first);
               }
-            }
+            //}
           }
         }
       }
@@ -1680,12 +1712,12 @@ void protoana::AbsCexDriver::SetupSyst_G4RW(
 
       std::vector<double> vals;
       std::vector<double> weights;
-      if (!is_grid) {
-        vals = std::vector<double>(2, 0.);
-        weights = {event.GetG4RWWeight(minus_branch, position), 
-                   event.GetG4RWWeight(plus_branch, position)};
-      }
-      else {
+      //if (!is_grid) {
+      //  vals = std::vector<double>(2, 0.);
+      //  weights = {event.GetG4RWWeight(minus_branch, position), 
+      //             event.GetG4RWWeight(plus_branch, position)};
+      //}
+      //else {
         if (event.HasG4RWBranch(grid_branch)) {
           if (!event.GetG4RWBranch(grid_branch).size()) {
             weights = std::vector<double>(syst_vals.size(), 1.);
@@ -1702,7 +1734,7 @@ void protoana::AbsCexDriver::SetupSyst_G4RW(
         }
         weights.erase(weights.begin() + ((weights.size()-1)/2));
         vals.erase(vals.begin() + ((vals.size()-1)/2));
-      }
+      //}
 
       TH1D * selected_hist = (TH1D*)this_sample->GetSelectionHist(selection_ID);
       if (selection_ID == 4) {
@@ -2208,6 +2240,20 @@ void protoana::AbsCexDriver::SetupSyst_BeamShiftRatio(
     c.Write();
   }
 
+}
+
+double protoana::AbsCexDriver::GetSystWeight_G4RWCoeff(
+    const ThinSliceEvent & event,
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  double weight = 1.;
+
+  for (auto it = fG4RWCoeffBranches.begin(); it != fG4RWCoeffBranches.end();
+       ++it) {
+    weight *= event.GetG4RWCoeffWeight(
+        it->second, pars.at(it->first).GetValue());
+    //std::cout << pars.at(it->first).GetValue() << " " << weight << std::endl;
+  }
+  return weight;
 }
 
 double protoana::AbsCexDriver::GetSystWeight_G4RW(

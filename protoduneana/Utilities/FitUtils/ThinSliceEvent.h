@@ -235,6 +235,23 @@ class ThinSliceEvent {
   void MakeG4RWBranch(const std::string & br, const std::vector<double> & ws) {
     g4rw_weights[br] = ws;
   };
+  void MakeG4RWCoeff(const std::string & br, const std::vector<double> & cs) {
+    g4rw_coeffs[br] = cs;
+  };
+
+  //Get Weight from the polynomial defined by the coeffs
+  double GetG4RWCoeffWeight(const std::string & br, double input) const {
+    if (g4rw_coeffs.at(br).size() == 0) {
+      return 1.;
+    }
+
+    double results = 0.;
+    for (size_t i = 0; i < g4rw_coeffs.at(br).size(); ++i) {
+      results += g4rw_coeffs.at(br)[i]*std::pow(input, i); 
+    }
+    return results;
+  };
+
   double GetG4RWWeight(const std::string & br, size_t i) const {
     if (g4rw_weights.at(br).size() == 0) return 1.;
     return g4rw_weights.at(br).at(i); 
@@ -289,6 +306,7 @@ class ThinSliceEvent {
   std::vector<double> calibrated_dQdX, beam_EField,
                       track_pitch;
   std::map<std::string, std::vector<double>> g4rw_weights;
+  std::map<std::string, std::vector<double>> g4rw_coeffs;
   std::map<std::string, TSpline3*> g4rw_splines;
 };
 }

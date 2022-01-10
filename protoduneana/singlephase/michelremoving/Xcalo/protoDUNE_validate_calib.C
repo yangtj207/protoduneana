@@ -41,6 +41,7 @@ float bet=0.212;
 float dedx=2.08;
 bool userecom=true;
 bool recalib=true;
+bool sceon=true;
 float recom_factor(float totEf){
   if (!userecom) return 1;
   float xsi=bet*dedx/(LAr_density*totEf);
@@ -49,7 +50,7 @@ float recom_factor(float totEf){
   return (rec0*xsi)/log(alp+xsi);
 }
 
-float dEdx(float dQdx, float E_field){
+float GetdEdx(float dQdx, float E_field){
   float Beta = bet/(LAr_density*E_field);
   double Wion = 23.6e-6;
   return (exp(Beta * Wion *dQdx) - alp) / Beta;
@@ -64,19 +65,24 @@ TH3F *ypos=(TH3F*)ef->Get("Reco_ElecField_Y_Pos");
 TH3F *zpos=(TH3F*)ef->Get("Reco_ElecField_Z_Pos");
 float tot_Ef(float xval,float yval,float zval){
   float E0value=0.4867;
-  if(xval>=0){
-    float ex=E0value+E0value*xpos->GetBinContent(xpos->FindBin(xval,yval,zval));
-    float ey=0.0+E0value*ypos->GetBinContent(ypos->FindBin(xval,yval,zval));
-    float ez=0.0+E0value*zpos->GetBinContent(zpos->FindBin(xval,yval,zval));
-    return sqrt(ex*ex+ey*ey+ez*ez);
-    // return ex;
+  if (!sceon){
+    return E0value;
   }
   else{
-    float ex=E0value+E0value*xneg->GetBinContent(xneg->FindBin(xval,yval,zval));
-    float ey=0.0+E0value*yneg->GetBinContent(yneg->FindBin(xval,yval,zval));
-    float ez=0.0+E0value*zneg->GetBinContent(zneg->FindBin(xval,yval,zval));
-    return sqrt(ex*ex+ey*ey+ez*ez);
-    // return ex;
+    if(xval>=0){
+      float ex=E0value+E0value*xpos->GetBinContent(xpos->FindBin(xval,yval,zval));
+      float ey=0.0+E0value*ypos->GetBinContent(ypos->FindBin(xval,yval,zval));
+      float ez=0.0+E0value*zpos->GetBinContent(zpos->FindBin(xval,yval,zval));
+      return sqrt(ex*ex+ey*ey+ez*ez);
+      // return ex;
+    }
+    else{
+      float ex=E0value+E0value*xneg->GetBinContent(xneg->FindBin(xval,yval,zval));
+      float ey=0.0+E0value*yneg->GetBinContent(yneg->FindBin(xval,yval,zval));
+      float ez=0.0+E0value*zneg->GetBinContent(zneg->FindBin(xval,yval,zval));
+      return sqrt(ex*ex+ey*ey+ez*ez);
+      // return ex;
+    }
   }
 }
 
@@ -118,7 +124,7 @@ void protoDUNE_validate_calib::Loop(TString mn)
   //    calib_const[2] = 1.0205e-3;
   //  }
   double median_dQdx[3];
-  
+
   ifstream in;
   for (int i = 0; i<3; ++i){
     in.open(Form("global_median_%d_r%d.txt",i, run));
@@ -142,6 +148,7 @@ void protoDUNE_validate_calib::Loop(TString mn)
     in.clear();
     cout<<"median_dQdx["<<i<<"]="<<median_dQdx[i]<<" calorimetry constant = "<<calib_const[i]<<endl;
   }
+  
   //int x_bin_size=5;
   //int y_bin_size = 5; // nbiny bins in y direction
   //int z_bin_size = 5; // nbinz bins in z direction
@@ -149,10 +156,25 @@ void protoDUNE_validate_calib::Loop(TString mn)
   std::cout<<"efield at the anode pos"<<tot_Ef(352,300,300)<<std::endl;
 
   TFile *file = new TFile(Form("Validate_mich%s_r%d.root",mn.Data(), run),"recreate");
+
+  TTree *tree = new TTree("calotree","calo tree");
+  short plane;
+  float dQdx;
+  float dEdx;
+  float KE;
+  float E;
+  tree->Branch("plane",&plane,"plane/S");
+  tree->Branch("dQdx",&dQdx,"dQdx/F");
+  tree->Branch("dEdx",&dEdx,"dEdx/F");
+  tree->Branch("KE",&KE,"KE/F");
+  tree->Branch("E",&E,"E/F");
+
   TH1F *dqdx_X_hist[3];
   TH1F *dedx_X_hist[3];
   TH1F *hdqdx[3];
   TH1F *hdedx[3];
+  TH1F *hdqdx_mip[3];
+  TH1F *hdedx_mip[3];
 
   vector<vector<vector<float>>> dqdx_value(3);
   vector<vector<vector<float>>> dedx_value(3);
@@ -160,11 +182,20 @@ void protoDUNE_validate_calib::Loop(TString mn)
   for (unsigned int i = 0; i<3; ++i){
     dqdx_X_hist[i] = new TH1F(Form("dqdx_X_hist_%d",i), Form("plane_%d;X Coordinate(cm);dQ/dx(ADC/cm)",i),144,-360,360);
     dedx_X_hist[i] = new TH1F(Form("dedx_X_hist_%d",i), Form("plane_%d;X Coordinate(cm);dE/dx(MeV/cm)",i),144,-360,360);
+
+
     hdqdx[i] = new TH1F(Form("hdqdx_%d",i), Form("plane_%d;dQ/dx (e/cm);Entries",i), 100,0,2e5);
+    hdqdx[i]->Sumw2();
     hdedx[i] = new TH1F(Form("hdedx_%d",i), Form("plane_%d;dE/dx (MeV/cm);Entries",i), 100,0,10);
+    hdedx[i]->Sumw2();
+    hdqdx_mip[i] = new TH1F(Form("hdqdx_mip_%d",i), Form("plane_%d;dQ/dx (e/cm);Entries",i), 100,0,2e5);
+    hdqdx_mip[i]->Sumw2();
+    hdedx_mip[i] = new TH1F(Form("hdedx_mip_%d",i), Form("plane_%d;dE/dx (MeV/cm);Entries",i), 100,0,10);
+    hdedx_mip[i]->Sumw2();
 
     dqdx_value[i].resize(144);
     dedx_value[i].resize(144);
+                      
   }    
 
   ////////////////////////dEdx info//////////////////////////
@@ -189,16 +220,11 @@ void protoDUNE_validate_calib::Loop(TString mn)
 
   std::vector<std::vector<TH1D*>> dedx(3);
   TH2D *dedxke[3];
-  TH1D *dedxmip[3];
 
   for (size_t i = 0; i < 3; ++i) {
     dedxke[i] = new TH2D(Form("dedxke_%zu", i),
                          Form("Plane:%zu;KE (MeV);dE/dx (MeV/cm)", i),
                          250,0,500,80,0,8);
-    dedxmip[i] = new TH1D(Form("dedxmip_%zu", i),
-                          Form("Plane:%zu;dE/dx (MeV/cm)", i),
-                          200, 0.0, 10);
-    dedxmip[i]->Sumw2();
     for (size_t j = 0; j < nbins; ++j) {
       if(j < 2) {
         dedx[i].push_back(new TH1D(Form("dedx_%zu_%zu", i, j), 
@@ -215,18 +241,20 @@ void protoDUNE_validate_calib::Loop(TString mn)
   }
 
   ////////////////////// Importing Y-Z plane fractional corrections /////////////
-  TFile my_file(Form("YZcalo_mich%s_r%d.root",mn.Data(), run));
-  TFile my_file2(Form("Xcalo_mich%s_r%d.root",mn.Data(), run));
+
   TH2F *YZ_negativeX_corr[3];
   TH2F *YZ_positiveX_corr[3];
   TH1F *X_corr[3];
+
+  TFile my_file(Form("YZcalo_mich%s_r%d.root",mn.Data(), run));
+  TFile my_file2(Form("Xcalo_mich%s_r%d.root",mn.Data(), run));
   
   for (int i = 0; i<3; ++i){
     YZ_negativeX_corr[i] = (TH2F*)my_file.Get(Form("correction_dqdx_ZvsY_negativeX_hist_%d",i));
     YZ_positiveX_corr[i] = (TH2F*)my_file.Get(Form("correction_dqdx_ZvsY_positiveX_hist_%d",i));
     X_corr[i] = (TH1F*)my_file2.Get(Form("dqdx_X_correction_hist_%d",i));
   }
-
+  
   const int np = 13;
   double spline_KE[np] = {10, 14, 20, 30, 40, 80, 100, 140, 200, 300, 400, 800, 1000};
   double spline_Range[np] = {0.70437, 1.27937, 2.37894, 4.72636, 7.5788, 22.0917, 30.4441, 48.2235, 76.1461, 123.567, 170.845, 353.438, 441.476};
@@ -280,7 +308,9 @@ void protoDUNE_validate_calib::Loop(TString mn)
       //if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;
       
       // Loop over 3 planes
-      for (int j = 0; j<3; ++j){
+      for (short j = 0; j<3; ++j){
+
+        plane = j;
 
         bool negok = true;
         bool posok = true;
@@ -347,22 +377,25 @@ void protoDUNE_validate_calib::Loop(TString mn)
           for(int k=1; k<TMath::Min(ntrkhits[i][j]-1,3000); ++k){
             if((trkhity[i][j][k]<600)&&(trkhity[i][j][k]>0)){
               if((trkhitz[i][j][k]<695)&&(trkhitz[i][j][k]>0)){
-                double ke = sp->Eval(trkresrange[i][j][k]);
+                KE = sp->Eval(trkresrange[i][j][k]);
                 if(trkhitx[i][j][k]<0 && trkhitx[i][j][k]>-360 && negok){//negative drift
                   if(trkhitx[i][j][k]<0 && trkhitx[i][j][k+1]>0) continue;
                   if(trkhitx[i][j][k]<0 && trkhitx[i][j][k-1]>0) continue;
+                  float corrected_dqdx = trkdqdx[i][j][k];
+                  float corrected_dedx = trkdedx[i][j][k];
                   x_bin=X_corr[j]->FindBin(trkhitx[i][j][k]);
-                  float YZ_correction_factor_negativeX=YZ_negativeX_corr[j]->GetBinContent(YZ_negativeX_corr[j]->FindBin(trkhitz[i][j][k],trkhity[i][j][k]));
-                  float X_correction_factor=X_corr[j]->GetBinContent(x_bin);
-                  //float recom_correction=recom_factor(tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
-                  float normcorr = ref_dQdx[j]/median_dQdx[j];
-                  if (run>10000) normcorr = 1;
-                  float corrected_dqdx=trkdqdx[i][j][k]*YZ_correction_factor_negativeX*X_correction_factor*normcorr/calib_const[j];
-                  float corrected_dedx=dEdx(corrected_dqdx, tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
-                  if (!recalib){
-                    corrected_dqdx = trkdqdx[i][j][k];
-                    corrected_dedx = trkdedx[i][j][k];
+                  if (recalib){  
+                    float YZ_correction_factor_negativeX=YZ_negativeX_corr[j]->GetBinContent(YZ_negativeX_corr[j]->FindBin(trkhitz[i][j][k],trkhity[i][j][k]));
+                    float X_correction_factor=X_corr[j]->GetBinContent(x_bin);
+                    //float recom_correction=recom_factor(tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
+                    float normcorr = ref_dQdx[j]/median_dQdx[j];
+                    if (run>10000) normcorr = 1;
+                    corrected_dqdx=trkdqdx[i][j][k]*YZ_correction_factor_negativeX*X_correction_factor*normcorr/calib_const[j];
+                    corrected_dedx=GetdEdx(corrected_dqdx, tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
                   }
+                  dQdx = corrected_dqdx*calib_const[j];
+                  dEdx = corrected_dedx;
+                  E = tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]);
                   if (fid_xing && testneg_xing){
                     dqdx_value[j][x_bin-1].push_back(corrected_dqdx);
                     dedx_value[j][x_bin-1].push_back(corrected_dedx);
@@ -371,33 +404,41 @@ void protoDUNE_validate_calib::Loop(TString mn)
                     //if (k==0)  cout<<event<<" neg "<<x_bin<<" "<<trkhitx[i][j][k]<<" "<<trkhity[i][j][k]<<" "<<trkhitz[i][j][k]<<endl;
                   }
                   if (stpok && trkpitch[i][j][k]>=0.5 && trkpitch[i][j][k]<=0.8){
-                    size_t bin = size_t(ke/binsize);
+                    size_t bin = size_t(KE/binsize);
                     //std::cout << "Bin: " << bin << std::endl;
                     if(bin < nbins){
                       dedx[j][bin]->Fill(corrected_dedx);
-                      avgKE[j][bin] += ke;
+                      avgKE[j][bin] += KE;
                       avgPitch[j][bin] += trkpitch[i][j][k];
                       ++nhits[j][bin];
                     }
                     //dedxke[j]->Fill(trkresrange[i][j][k], corrected_dedx);
-                    dedxke[j]->Fill(ke, corrected_dedx);
+                    dedxke[j]->Fill(KE, corrected_dedx);
+                    if (dEdx<100) tree->Fill();
+                    if (KE>250 && KE<450){
+                      hdqdx_mip[j]->Fill(corrected_dqdx);
+                      hdedx_mip[j]->Fill(corrected_dedx);
+                    }
                   }
                 }//X containment
                 if(trkhitx[i][j][k]>0 && trkhitx[i][j][k]<360 && posok){//positive drift
                   if(trkhitx[i][j][k]>0 && trkhitx[i][j][k+1]<0) continue;
                   if(trkhitx[i][j][k]>0 && trkhitx[i][j][k-1]<0) continue;
+                  float corrected_dqdx = trkdqdx[i][j][k];
+                  float corrected_dedx = trkdedx[i][j][k];
                   x_bin=X_corr[j]->FindBin(trkhitx[i][j][k]);
-                  float YZ_correction_factor_positiveX=YZ_positiveX_corr[j]->GetBinContent(YZ_positiveX_corr[j]->FindBin(trkhitz[i][j][k],trkhity[i][j][k]));
-                  float X_correction_factor=X_corr[j]->GetBinContent(x_bin);
-                  //float recom_correction=recom_factor(tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
-                  float normcorr = ref_dQdx[j]/median_dQdx[j];
-                  if (run>10000) normcorr = 1;
-                  float corrected_dqdx=trkdqdx[i][j][k]*YZ_correction_factor_positiveX*X_correction_factor*normcorr/calib_const[j];
-                  float corrected_dedx=dEdx(corrected_dqdx, tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
-                  if (!recalib){
-                    corrected_dqdx = trkdqdx[i][j][k];
-                    corrected_dedx = trkdedx[i][j][k];
+                  if (recalib){  
+                    float YZ_correction_factor_positiveX=YZ_positiveX_corr[j]->GetBinContent(YZ_positiveX_corr[j]->FindBin(trkhitz[i][j][k],trkhity[i][j][k]));
+                    float X_correction_factor=X_corr[j]->GetBinContent(x_bin);
+                    //float recom_correction=recom_factor(tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
+                    float normcorr = ref_dQdx[j]/median_dQdx[j];
+                    if (run>10000) normcorr = 1;
+                    corrected_dqdx=trkdqdx[i][j][k]*YZ_correction_factor_positiveX*X_correction_factor*normcorr/calib_const[j];
+                    corrected_dedx=GetdEdx(corrected_dqdx, tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
                   }
+                  dQdx = corrected_dqdx*calib_const[j];
+                  dEdx = corrected_dedx;
+                  E = tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]);
                   //if (k==2) cout<<"x = "<<trkhitx[i][j][k]<<" y = "<<trkhity[i][j][k]<<" z = "<<trkhitz[i][j][k]<<" dqdx = "<<trkdqdx[i][j][k]<<" yzcorr = "<<YZ_correction_factor_positiveX<<" xcorr = "<<X_correction_factor<<" normcorr = "<<normcorr<<" corrected_dqdx = "<<corrected_dqdx<<" corrected_dedx = "<<corrected_dedx<<" "<<YZ_positiveX_corr[j]->GetXaxis()->FindBin(trkhitz[i][j][k])<<" "<<YZ_positiveX_corr[j]->GetYaxis()->FindBin(trkhity[i][j][k])<<" "<<YZ_positiveX_corr[j]->GetBinContent(YZ_positiveX_corr[j]->GetXaxis()->FindBin(trkhitz[i][j][k]),YZ_positiveX_corr[j]->GetYaxis()->FindBin(trkhity[i][j][k]))<<" "<<x_bin<<" "<<X_correction_factor<<endl;
                   //std::cout<<TrkID[i]<<" "<<trkhitx[i][j][k]<<" "<<trkhity[i][j][k]<<" "<<trkhitz[i][j][k]<<" "<<YZ_correction_factor_positiveX_2<<" "<<trkdqdx[i][j][k]<<" "<<corrected_dqdx_2<<std::endl;
                   if (fid_xing && testpos_xing){
@@ -408,16 +449,21 @@ void protoDUNE_validate_calib::Loop(TString mn)
                     //if (k==0)  cout<<event<<" pos "<<x_bin<<" "<<trkhitx[i][j][k]<<" "<<trkhity[i][j][k]<<" "<<trkhitz[i][j][k]<<endl;
                   }
                   if (stpok && trkpitch[i][j][k]>=0.5 && trkpitch[i][j][k]<=0.8){
-                    size_t bin = size_t(ke/binsize);
+                    size_t bin = size_t(KE/binsize);
                     //std::cout << "Bin: " << bin << std::endl;
                     if(bin < nbins){
                       dedx[j][bin]->Fill(corrected_dedx);
-                      avgKE[j][bin] += ke;
+                      avgKE[j][bin] += KE;
                       avgPitch[j][bin] += trkpitch[i][j][k];
                       ++nhits[j][bin];
                     }
                     //dedxke[j]->Fill(trkresrange[i][j][k], corrected_dedx);
-                    dedxke[j]->Fill(ke, corrected_dedx);
+                    dedxke[j]->Fill(KE, corrected_dedx);
+                    if (dEdx<100) tree->Fill();
+                    if (KE>250 && KE<450){
+                      hdqdx_mip[j]->Fill(corrected_dqdx);
+                      hdedx_mip[j]->Fill(corrected_dedx);
+                    }
                   }
                 }//X containment
               } // Z containment
@@ -480,6 +526,7 @@ int main(int argc, char *argv[]) {
   string infile = argv[1];
   string michelnumber = argv[2];
   string a3 = argv[3];
+  string sce = argv[4];
   if (a3 == "0"){
     recalib = false;
   }
@@ -518,7 +565,14 @@ int main(int argc, char *argv[]) {
     in.clear();
   }
 
-  userecom = true;
+  if (sce=="0"){
+    cout<<"SCE off"<<endl;
+    sceon = false;
+  }
+  else{
+    cout<<"SCE on"<<endl;
+    sceon = true;
+  }
   protoDUNE_validate_calib t(shtree);
   
   t.Loop(michelnumber.c_str());

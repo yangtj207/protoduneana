@@ -11,13 +11,14 @@ process_name: PDSPAna
 services:
 {
   # Load the service that manages root files for histograms.
-  TFileService: { fileName: "pduneana_data.root" }
+  TFileService: { fileName: "%ifb_pdsp_ntuple_test.root" }
   TimeTracker:       {}
   MemoryTracker:     {}
   RandomNumberGenerator: {} #ART native random number generator
   message:                      @local::dune_message_services_prod
-  FileCatalogMetadata:          @local::art_file_catalog_mc
+  FileCatalogMetadata:          @local::art_file_catalog_data
                                 @table::protodune_reco_services
+                                @table::protodune_services
   PdspChannelMapService:        @local::pdspchannelmap
   ChannelStatusService:         @local::pdsp_channel_status
   BackTrackerService: {
@@ -27,9 +28,12 @@ services:
       MinimumHitEnergyFraction: 1e-1
     }
   }
+  FileCatalogMetadataDUNE: { }
+  TFileMetadataDUNE: @local::dune_tfile_metadata
 }
 #services.message.destinations.LogStandardOut.threshold: "INFO"
 #services.Geometry: @local::protodunev6_geo
+services.TFileMetadataDUNE.dataTier: "root-tuple-virtual"
 
 source:
 {
@@ -71,6 +75,8 @@ physics:
 }
 
 outputs: {}
+physics.producers.pandoracali.CaloAlg.CalAreaConstants: [1.166e-3, 1.122e-3, 1.038e-3]
+physics.producers.pandora2cali.CaloAlg.CalAreaConstants: [1.166e-3, 1.122e-3, 1.038e-3]
 physics.analyzers.pduneana.SelectEvents: ["fpath"]
 physics.analyzers.pduneana.CalorimetryTagSCE: "pandoracali"
 physics.analyzers.pduneana.CalorimetryTagNoSCE: "pandoracalonosce" ##For no-SCE sample
@@ -97,6 +103,6 @@ services.SpaceCharge.EnableSimulationSCE: true
 # xyzt database
 services.XYZCalibService.IsMC: false
 services.XYZCalibService.UseCondbXYZCorr: true
-services.XYZCalibService.YZCorrDBTag: "v7.0"
-services.XYZCalibService.XCorrDBTag: "v7.0"
-services.XYZCalibService.NormCorrDBTag: "v7.0"
+services.XYZCalibService.YZCorrDBTag: "prod4"
+services.XYZCalibService.XCorrDBTag: "prod4"
+services.XYZCalibService.NormCorrDBTag: "prod4"

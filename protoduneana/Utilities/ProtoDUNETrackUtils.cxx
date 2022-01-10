@@ -6,7 +6,7 @@
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "art/Framework/Principal/Event.h"
 #include "canvas/Persistency/Common/FindManyP.h"
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "lardata/ArtDataHelper/MVAReader.h"
 
@@ -772,7 +772,132 @@ std::pair<double, int> protoana::ProtoDUNETrackUtils::GetVertexMichelScore(
 
   return results;
 }
+//Yinrui's modification
+std::pair<double, double> protoana::ProtoDUNETrackUtils::GetVertexMichelScore_weight_by_charge(
+    const recob::Track & track, const art::Event & evt,
+    const std::string trackModule, const std::string hitModule,
+    double min_length, double min_x,
+    double max_x, double min_y, double max_y, double min_z, bool check_wire,
+    double check_x, double check_y, double check_z) {
 
+  art::ServiceHandle<geo::Geometry> geom;
+  anab::MVAReader<recob::Hit, 4> hitResults(evt, "emtrkmichelid:emtrkmichel");
+
+  //Skip short tracks
+  //Skip tracks that start/end outside of interesting volume
+  auto start = track.Vertex();
+  auto end = track.End();
+  if ((TMath::Max(start.X(), end.X()) > max_x) ||
+      (TMath::Min(start.X(), end.X()) < min_x) ||
+      (TMath::Max(start.Y(), end.Y()) > max_y) ||
+      (TMath::Min(start.Y(), end.Y()) < min_y) ||
+      (TMath::Min(start.Z(), end.Z()) < min_z) ||
+      (track.Length() < min_length)) {
+    return {-1., 0};
+  }
+
+
+  //Get the hits from the TrackHitMetas and only for view 2 (collection plane)
+  std::map<size_t, const recob::Hit *>
+      hits_from_traj = GetRecoHitsFromTrajPoints(track, evt, trackModule);
+  std::vector<const recob::Hit *> hits_from_traj_view2;
+  std::vector<size_t> index_from_traj_view2;
+
+  for (auto it = hits_from_traj.begin(); it != hits_from_traj.end(); ++it) {
+    if (it->second->View() != 2) continue;
+    hits_from_traj_view2.push_back(it->second);
+    index_from_traj_view2.push_back(it->first);
+  }
+
+  //Find the vertex hit & info to compare to later
+  double highest_z = -100.;
+  int vertex_tpc = -1;
+  int vertex_wire = -1;
+  float vertex_peak_time = -1.;
+
+  if (check_z) {
+    for (const auto * hit : hits_from_traj_view2) {
+      double wire_z = geom->Wire(hit->WireID()).GetCenter().Z();
+      if (wire_z > highest_z) {
+        highest_z = wire_z;
+        vertex_tpc = hit->WireID().TPC;
+        vertex_peak_time = hit->PeakTime();
+        vertex_wire = hit->WireID().Wire;
+      }
+    }
+  }
+  else {
+    const recob::TrackTrajectory & traj = track.Trajectory();
+    double highest_diff = -1.;
+    for (size_t i = 0; i < hits_from_traj_view2.size(); ++i) {
+      const recob::Hit * hit = hits_from_traj_view2[i];
+      size_t traj_index = index_from_traj_view2[i];
+      
+      double traj_x = traj.LocationAtPoint(traj_index).X();
+      double traj_y = traj.LocationAtPoint(traj_index).Y();
+      double traj_z = traj.LocationAtPoint(traj_index).Z();
+
+      double diff = sqrt(std::pow((traj_x - check_x), 2) +
+                         std::pow((traj_y - check_y), 2) +
+                         std::pow((traj_z - check_z), 2));
+      if (diff > highest_diff) {
+        highest_diff = diff;
+        vertex_tpc = hit->WireID().TPC;
+        vertex_peak_time = hit->PeakTime();
+        vertex_wire = hit->WireID().Wire;
+      }
+    }
+  }
+  
+  std::pair<double, double> results = {0., 0.};
+
+  //Go through all hits in the event.
+  auto allHits = evt.getValidHandle<std::vector<recob::Hit>>(hitModule);
+  std::vector<art::Ptr<recob::Hit>> hit_vector;
+  art::fill_ptr_vector(hit_vector, allHits);
+  art::FindManyP<recob::Track> tracks_from_all_hits(allHits, evt, trackModule);
+  for (size_t i = 0; i < hit_vector.size(); ++i) {
+
+    //If this hit is in the trajectory hits vector, skip
+    const recob::Hit * theHit = hit_vector[i].get();
+    if (std::find(hits_from_traj_view2.begin(),
+        hits_from_traj_view2.end(),
+        theHit) != hits_from_traj_view2.end()) {
+      continue;
+    }
+
+    //Skip hits that are outside of our TPC/plane or window of interest
+    int wire = theHit->WireID().Wire;
+    float peak_time = theHit->PeakTime();
+    int tpc = theHit->WireID().TPC;
+    int plane = theHit->View();
+    if ((abs(wire - vertex_wire) > 15) ||
+        (abs(peak_time - vertex_peak_time) > 100.) ||
+        (tpc != vertex_tpc) || (plane != 2)) {
+      continue;
+    }
+
+    //It's ok if the hits don't come from any track
+    //or if that track is the primary one, because sometimes the michel hits
+    //are associated to it.
+    //
+    //It's not ok if the hits come from another track that is long
+    //(i.e. an actual daughter). Skip these
+    auto & tracks_from_hit = tracks_from_all_hits.at(hit_vector[i].key());
+    if (!tracks_from_hit.empty() &&
+        (tracks_from_hit[0].get()->ID() != track.ID()) &&
+        (tracks_from_hit[0].get()->Length() > 25.))
+      continue;
+
+    //add up the CNN results
+    std::array<float, 4> cnn_out = hitResults.getOutput(hit_vector[i]);
+    double hitcharge = hit_vector[i]->Integral();
+    results.first += hitcharge*cnn_out[hitResults.getIndex("michel")];
+    results.second += hitcharge;
+  }
+
+  return results;
+}
 //Ajib's implementation
 std::pair<double, int> protoana::ProtoDUNETrackUtils::GetVertexMichelScoreAlt(
     const recob::Track & track, const art::Event & evt,

@@ -10,7 +10,7 @@
 #include "photpropservices_dune.fcl"
 #include "ProtoDUNEDataUtils.fcl"
 #include "ProtoDUNEFembFilter.fcl"
-#include "protoDUNE_reco_data_prolog.fcl"
+#include "protoDUNE_reco_mc_prolog.fcl"
 #include "missingproductfilter.fcl"
 #include "protodune_tools_dune.fcl"
 
@@ -35,9 +35,9 @@ source:
 physics:
       {
           producers:{
-             @table::protoDUNE_reco_data_stage2_producers 
+             @table::protoDUNE_reco_mc_stage2_producers 
           }
-          reco: [ @sequence::protoDUNE_reco_data_stage2 ]
+          reco: [ @sequence::protoDUNE_reco_mc_stage2 ]
           filters:	
           {
               f1: @local::HVfilter
@@ -76,6 +76,7 @@ physics:
 
 # define the list of LArSoft modules to run through the simulate path
 physics.filters.f2.DataUtils.RawDigitTimeStampTag:        "caldata:dataprep"
+physics.producers.pandoracali.CaloAlg.CalAreaConstants: [1.04e-3, 1.04e-3, 1.0156e-3]
 physics.analyzers.michelremoving.TrackModuleLabel:        "pandoraTrack"
 physics.analyzers.michelremoving.CalorimetryModuleLabel:  "pandoracalonosce"
 physics.analyzers.michelremoving.HitsModuleLabel:  "hitpdune"
@@ -100,8 +101,8 @@ services.SpaceCharge.EnableCalEfieldSCE: true
 services.SpaceCharge.EnableCalSpatialSCE: true
 
 # xyzt database
-services.XYZCalibService.IsMC: false
+services.XYZCalibService.IsMC: true
 services.XYZCalibService.UseCondbXYZCorr: true
-services.XYZCalibService.YZCorrDBTag: "v5.0"
-services.XYZCalibService.XCorrDBTag: "v5.0"
-services.XYZCalibService.NormCorrDBTag: "v5.0"
+services.XYZCalibService.YZCorrDBTag: "prod4"
+services.XYZCalibService.XCorrDBTag: "prod4"
+services.XYZCalibService.NormCorrDBTag: "prod4"

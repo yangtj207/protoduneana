@@ -50,14 +50,14 @@
 #include "lardataobj/AnalysisBase/FlashMatch.h"
 #include "lardataobj/AnalysisBase/T0.h"
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
-#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 
 #include "TFile.h"
 #include "TTree.h"

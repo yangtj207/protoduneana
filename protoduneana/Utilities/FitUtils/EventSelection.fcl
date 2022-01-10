@@ -1,7 +1,7 @@
 TreeName: "pduneana/beamana"
 MCFile: "mc_try.root"
 DataFile: "data_try.root"
-UseMT: true
+UseMT: false
 
 
 CheckCalo: true 

@@ -1,5 +1,3 @@
-find_ups_product( dunetpc )
-
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
   cetlib cetlib_except

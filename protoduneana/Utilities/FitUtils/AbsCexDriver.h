@@ -126,6 +126,8 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<int, bool> & signal_sample_checks,
       std::vector<double> & beam_energy_bins) override;*/
   
+  void SetupSyst_G4RWCoeff(
+      const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_G4RW(
       const std::vector<ThinSliceEvent> & events,
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -243,6 +245,9 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<std::string, ThinSliceSystematic> & pars,
       const ThinSliceSample & sample,
       int selection_ID, double val);
+  double GetSystWeight_G4RWCoeff(
+      const ThinSliceEvent & event,
+      const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_EffVar(
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
@@ -325,6 +330,7 @@ class AbsCexDriver : public ThinSliceDriver {
 
    TH1D fBeamShiftRatioNomHist;
    std::vector<TSpline3*> fBeamShiftRatioSplines;
+   std::map<std::string, std::string> fG4RWCoeffBranches;
 };
 }
 #endif
