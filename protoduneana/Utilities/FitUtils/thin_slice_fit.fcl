@@ -4,8 +4,10 @@
 
 #MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
 #DataFileName: "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
-MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_22_21/eventSelection_mc_all.root"
-DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_22_21/eventSelection_mc_all.root"
+#MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_22_21/eventSelection_mc_all.root"
+#DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_22_21/eventSelection_mc_all.root"
+MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_4_22/AltSCE/eventSelection_mc_all.root"
+DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_4_22/AltSCE/eventSelection_data_BeamQuality.root"
 
 TreeName: "pduneana/beamana"
 
@@ -119,24 +121,24 @@ AnalysisOptions: {
   }
 }
 
-Systematics: [
-  @local::g4rw_proton_coeff
-]
-
 #Systematics: [
-#  #@local::SystematicsList.beam_shift_spline_2,
-#  @local::SystematicsList.beam_shift_ratio,
-#  @local::SystematicsList.dEdX_Cal_Spline,
-#  ##@local::G4RWSysts.g4rw_QE1,
-#  ##@local::G4RWSysts.g4rw_QE2,
-#  ##@local::G4RWSysts.g4rw_Prod,
-#  ##@local::G4RWSysts.g4rw_DCex,
-#  ##@local::G4RWSysts.g4rw_proton,
-#  ##@local::SystematicsList.beam_shift,
-#  @local::SystematicsList.ediv_weight,
-#  @local::SystematicsList.no_track_weight,
-#  @local::SystematicsList.beam_cut_weight
+#  @local::g4rw_proton_coeff
 #]
+
+Systematics: [
+  #@local::SystematicsList.beam_shift_spline_2,
+  @local::SystematicsList.beam_shift_ratio,
+  @local::SystematicsList.dEdX_Cal_Spline,
+  ##@local::G4RWSysts.g4rw_QE1,
+  ##@local::G4RWSysts.g4rw_QE2,
+  ##@local::G4RWSysts.g4rw_Prod,
+  ##@local::G4RWSysts.g4rw_DCex,
+  ##@local::G4RWSysts.g4rw_proton,
+  ##@local::SystematicsList.beam_shift,
+  @local::SystematicsList.ediv_weight,
+  @local::SystematicsList.no_track_weight,
+  @local::SystematicsList.beam_cut_weight
+]
 #
 #Systematics[2].Central: 1.0 
 #Systematics[3].Central: 1.0 
@@ -164,7 +166,8 @@ CovarianceBins: [
   ["beam_cut_weight", 4]
 ]
 #CovarianceFile: "full_with_dcex_beamcut.root"
-CovarianceFile: "no_g4rw_new_shift.root"
+#CovarianceFile: "no_g4rw_new_shift.root"
+CovarianceFile: "no_g4rw.root"
 #CovarianceFile: "full_no_beam_shift.root"
 CovarianceMatrix: "m"
 
@@ -313,7 +316,7 @@ UpperLimit: 10.0
 LowerLimit: 1.e-5
 ReducedIncidentChi2: false
 FitFlux: true
-ScaleDataToNorm: true 
+ScaleDataToNorm: false
 #DataNorm: 7189. 
 DataNorm: 66979.
 #RNGSeed: 0
@@ -331,7 +334,7 @@ DrawXSecUnderflow: false
 ## Validation
 RandomStart: false 
 SplitMC: false 
-DoFakeData: true 
+DoFakeData: false
 FluctuateStats: false 
 DoThrows: false 
 NThrows: 1000
