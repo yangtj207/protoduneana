@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import ROOT as RT
 from glob import glob as ls
 from argparse import ArgumentParser as ap

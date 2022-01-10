@@ -6,7 +6,7 @@
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "art/Framework/Principal/Event.h"
 #include "canvas/Persistency/Common/FindManyP.h"
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "lardata/ArtDataHelper/MVAReader.h"
 

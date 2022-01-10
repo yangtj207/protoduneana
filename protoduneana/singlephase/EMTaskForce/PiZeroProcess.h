@@ -20,7 +20,7 @@
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEShowerUtils.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEShowerUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "protoduneana/singlephase/EMTaskForce/ShowerProcess.h"
 

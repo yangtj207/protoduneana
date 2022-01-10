@@ -40,9 +40,9 @@
 #include "protoduneana/Utilities/ProtoDUNEBeamCuts.h"
 #include "protoduneana/Utilities/ProtoDUNEEmptyEventFinder.h"
 #include "protoduneana/Utilities/G4ReweightUtils.h"
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 
-//#include "dune/Protodune/singlephase/DataUtils/ProtoDUNECalibration.h"
+//#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNECalibration.h"
 #include "protoduneana/Utilities/ProtoDUNECalibration.h"
 
 #include "lardataobj/RecoBase/SpacePoint.h"
@@ -50,7 +50,7 @@
 #include "lardataobj/RecoBase/Track.h"
 
 #include "lardataobj/RawData/RDTimeStamp.h"
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 
 #include "lardata/ArtDataHelper/MVAReader.h"
 
@@ -159,6 +159,10 @@ namespace pduneana {
     double michel;
     double none;
     size_t nHits;
+    double track_weight_by_charge;
+    double em_weight_by_charge;
+    double michel_weight_by_charge;
+    double none_weight_by_charge;
   };
 
   //Struct to handle calorimetry info more easily
@@ -200,15 +204,37 @@ namespace pduneana {
     const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits
         = pfpUtil.GetPFParticleHits_Ptrs(part, evt, fPFParticleTag);
 
+    double tot_charge = 0.;
     for (size_t h = 0; h < daughterPFP_hits.size(); ++h) {
       std::array<float,4> cnn_out = CNN_results.getOutput( daughterPFP_hits[h] );
-      output.track  += cnn_out[ CNN_results.getIndex("track") ];
-      output.em     += cnn_out[ CNN_results.getIndex("em") ];
-      output.michel += cnn_out[ CNN_results.getIndex("michel") ];
-      output.none   += cnn_out[ CNN_results.getIndex("none") ];
+      double hitcharge = daughterPFP_hits[h]->Integral();
+      double track_score = cnn_out[ CNN_results.getIndex("track") ];
+      double em_score = cnn_out[ CNN_results.getIndex("em") ];
+      double michel_score = cnn_out[ CNN_results.getIndex("michel") ];
+      double none_score = cnn_out[ CNN_results.getIndex("none") ];
+      output.track  += track_score;
+      output.em     += em_score;
+      output.michel += michel_score;
+      output.none   += none_score;
+      output.track_weight_by_charge  += hitcharge*track_score;
+      output.em_weight_by_charge     += hitcharge*em_score;
+      output.michel_weight_by_charge += hitcharge*michel_score;
+      output.none_weight_by_charge   += hitcharge*none_score;
+      tot_charge += hitcharge;
     }
-
     output.nHits = daughterPFP_hits.size();
+    if (tot_charge != 0) {
+      output.track_weight_by_charge  /= tot_charge;
+      output.em_weight_by_charge     /= tot_charge;
+      output.michel_weight_by_charge /= tot_charge;
+      output.none_weight_by_charge   /= tot_charge;
+    }
+    else {
+      output.track_weight_by_charge  = -999.;
+      output.em_weight_by_charge     = -999.;
+      output.michel_weight_by_charge = -999.;
+      output.none_weight_by_charge   = -999.;
+    }
 
     return output;
   }
@@ -220,15 +246,37 @@ namespace pduneana {
     cnnOutput2D output;
     const std::vector< art::Ptr< recob::Hit > > daughterPFP_hits = pfpUtil.GetPFParticleHitsFromPlane_Ptrs( part, evt, fPFParticleTag, planeID );
 
-    for( size_t h = 0; h < daughterPFP_hits.size(); ++h ){
+    double tot_charge = 0.;
+    for (size_t h = 0; h < daughterPFP_hits.size(); ++h) {
       std::array<float,4> cnn_out = CNN_results.getOutput( daughterPFP_hits[h] );
-      output.track  += cnn_out[ CNN_results.getIndex("track") ];
-      output.em     += cnn_out[ CNN_results.getIndex("em") ];
-      output.michel += cnn_out[ CNN_results.getIndex("michel") ];
-      output.none   += cnn_out[ CNN_results.getIndex("none") ];
+      double hitcharge = daughterPFP_hits[h]->Integral();
+      double track_score = cnn_out[ CNN_results.getIndex("track") ];
+      double em_score = cnn_out[ CNN_results.getIndex("em") ];
+      double michel_score = cnn_out[ CNN_results.getIndex("michel") ];
+      double none_score = cnn_out[ CNN_results.getIndex("none") ];
+      output.track  += track_score;
+      output.em     += em_score;
+      output.michel += michel_score;
+      output.none   += none_score;
+      output.track_weight_by_charge  += hitcharge*track_score;
+      output.em_weight_by_charge     += hitcharge*em_score;
+      output.michel_weight_by_charge += hitcharge*michel_score;
+      output.none_weight_by_charge   += hitcharge*none_score;
+      tot_charge += hitcharge;
     }
-
     output.nHits = daughterPFP_hits.size();
+    if (tot_charge != 0) {
+      output.track_weight_by_charge  /= tot_charge;
+      output.em_weight_by_charge     /= tot_charge;
+      output.michel_weight_by_charge /= tot_charge;
+      output.none_weight_by_charge   /= tot_charge;
+    }
+    else {
+      output.track_weight_by_charge  = -999.;
+      output.em_weight_by_charge     = -999.;
+      output.michel_weight_by_charge = -999.;
+      output.none_weight_by_charge   = -999.;
+    }
 
     return output;
   }
@@ -241,7 +289,7 @@ using protoana::G4ReweightUtils::CreateNRWTrajs;
 using protoana::G4ReweightUtils::GetNTrajWeightFromSetPars;
 
 //Constructor for cnn struct
-pduneana::cnnOutput2D::cnnOutput2D() : track(0), em(0), michel(0), none(0), nHits(0) { }
+pduneana::cnnOutput2D::cnnOutput2D() : track(0), em(0), michel(0), none(0), nHits(0), track_weight_by_charge(0), em_weight_by_charge(0), michel_weight_by_charge(0), none_weight_by_charge(0) { }
 
 class pduneana::PDSPAnalyzer : public art::EDAnalyzer {
 public:
@@ -471,7 +519,7 @@ private:
   //For all track info 
   std::vector<double> reco_track_startX, reco_track_startY, reco_track_startZ,
                       reco_track_endX, reco_track_endY, reco_track_endZ,
-                      reco_track_michel_score;
+                      reco_track_michel_score, reco_track_michel_score_weight_by_charge;
   std::vector<int> reco_track_ID, reco_track_nHits;
 
 
@@ -552,12 +600,12 @@ private:
 
   int    reco_beam_PFP_ID;
   int    reco_beam_PFP_nHits;
-  double reco_beam_PFP_trackScore;
-  double reco_beam_PFP_emScore;
-  double reco_beam_PFP_michelScore;
-  double reco_beam_PFP_trackScore_collection;
-  double reco_beam_PFP_emScore_collection;
-  double reco_beam_PFP_michelScore_collection;
+  double reco_beam_PFP_trackScore, reco_beam_PFP_trackScore_weight_by_charge;
+  double reco_beam_PFP_emScore, reco_beam_PFP_emScore_weight_by_charge;
+  double reco_beam_PFP_michelScore, reco_beam_PFP_michelScore_weight_by_charge;
+  double reco_beam_PFP_trackScore_collection, reco_beam_PFP_trackScore_collection_weight_by_charge;
+  double reco_beam_PFP_emScore_collection, reco_beam_PFP_emScore_collection_weight_by_charge;
+  double reco_beam_PFP_michelScore_collection, reco_beam_PFP_michelScore_collection_weight_by_charge;
 
   int    reco_beam_allTrack_ID;
   bool   reco_beam_allTrack_beam_cuts, reco_beam_allTrack_flipped;
@@ -905,9 +953,13 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
         std::pair<double, int> vertex_michel_score =
             trackUtil.GetVertexMichelScore(*tempTrack, evt, fTrackerTag,
                                            fHitTag);
+        std::pair<double, double> vertex_michel_score_weight_by_charge =
+            trackUtil.GetVertexMichelScore_weight_by_charge(*tempTrack, evt, fTrackerTag,
+                                           fHitTag);
 
         reco_track_michel_score.push_back(vertex_michel_score.first);
         reco_track_nHits.push_back(vertex_michel_score.second);
+        reco_track_michel_score_weight_by_charge.push_back( vertex_michel_score_weight_by_charge.second != 0 ? vertex_michel_score_weight_by_charge.first/vertex_michel_score_weight_by_charge.second : -999. );
         reco_track_ID.push_back(tempTrack->ID());
         reco_track_startX.push_back(startX);
         reco_track_startY.push_back(startY);
@@ -1360,6 +1412,12 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_PFP_trackScore_collection", &reco_beam_PFP_trackScore_collection);
   fTree->Branch("reco_beam_PFP_emScore_collection", &reco_beam_PFP_emScore_collection);
   fTree->Branch("reco_beam_PFP_michelScore_collection", &reco_beam_PFP_michelScore_collection);
+  fTree->Branch("reco_beam_PFP_trackScore_weight_by_charge", &reco_beam_PFP_trackScore_weight_by_charge);
+  fTree->Branch("reco_beam_PFP_emScore_weight_by_charge", &reco_beam_PFP_emScore_weight_by_charge);
+  fTree->Branch("reco_beam_PFP_michelScore_weight_by_charge", &reco_beam_PFP_michelScore_weight_by_charge);
+  fTree->Branch("reco_beam_PFP_trackScore_collection_weight_by_charge", &reco_beam_PFP_trackScore_collection_weight_by_charge);
+  fTree->Branch("reco_beam_PFP_emScore_collection_weight_by_charge", &reco_beam_PFP_emScore_collection_weight_by_charge);
+  fTree->Branch("reco_beam_PFP_michelScore_collection_weight_by_charge", &reco_beam_PFP_michelScore_collection_weight_by_charge);
 
   fTree->Branch("reco_beam_allTrack_ID",              &reco_beam_allTrack_ID);
   fTree->Branch("reco_beam_allTrack_beam_cuts",       &reco_beam_allTrack_beam_cuts);
@@ -1389,6 +1447,7 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_track_endY", &reco_track_endY);
   fTree->Branch("reco_track_endZ", &reco_track_endZ);
   fTree->Branch("reco_track_michel_score", &reco_track_michel_score);
+  fTree->Branch("reco_track_michel_score_weight_by_charge", &reco_track_michel_score_weight_by_charge);
   fTree->Branch("reco_track_ID", &reco_track_ID);
   fTree->Branch("reco_track_nHits", &reco_track_nHits);
 
@@ -1839,6 +1898,7 @@ void pduneana::PDSPAnalyzer::reset()
   reco_track_endY.clear();
   reco_track_endZ.clear();
   reco_track_michel_score.clear();
+  reco_track_michel_score_weight_by_charge.clear();
   reco_track_ID.clear();
   reco_track_nHits.clear();
 
@@ -2074,6 +2134,12 @@ void pduneana::PDSPAnalyzer::reset()
   reco_beam_PFP_trackScore_collection = -999;
   reco_beam_PFP_emScore_collection = -999;
   reco_beam_PFP_michelScore_collection = -999;
+  reco_beam_PFP_trackScore_weight_by_charge = -999;
+  reco_beam_PFP_emScore_weight_by_charge = -999;
+  reco_beam_PFP_michelScore_weight_by_charge = -999;
+  reco_beam_PFP_trackScore_collection_weight_by_charge = -999;
+  reco_beam_PFP_emScore_collection_weight_by_charge = -999;
+  reco_beam_PFP_michelScore_collection_weight_by_charge = -999;
 
   reco_beam_allTrack_ID = -999;
   reco_beam_allTrack_beam_cuts = -999;
@@ -2313,6 +2379,9 @@ void pduneana::PDSPAnalyzer::BeamPFPInfo(
                              (cnn.em / cnn.nHits) : -999.);
     reco_beam_PFP_michelScore = (cnn.nHits > 0 ?
                                  (cnn.michel / cnn.nHits) : -999.);
+    reco_beam_PFP_trackScore_weight_by_charge = cnn.track_weight_by_charge;
+    reco_beam_PFP_emScore_weight_by_charge = cnn.em_weight_by_charge;
+    reco_beam_PFP_michelScore_weight_by_charge = cnn.michel_weight_by_charge;
 
     cnnOutput2D cnn_collection = GetCNNOutputFromPFParticleFromPlane( *particle, evt, *hitResults, pfpUtil, fPFParticleTag, 2 );
     reco_beam_PFP_trackScore_collection = (cnn_collection.nHits > 0 ?
@@ -2321,14 +2390,10 @@ void pduneana::PDSPAnalyzer::BeamPFPInfo(
                                         cnn_collection.em / cnn_collection.nHits : -999.);
     reco_beam_PFP_michelScore_collection = (cnn_collection.nHits > 0 ?
                                             cnn_collection.michel / cnn_collection.nHits : -999.);
-  }
-  else{
-    reco_beam_PFP_trackScore =  -999.;
-    reco_beam_PFP_emScore = -999.;
-    reco_beam_PFP_michelScore = -999.;
-    reco_beam_PFP_trackScore_collection =  -999.;
-    reco_beam_PFP_emScore_collection = -999.;
-    reco_beam_PFP_michelScore_collection = -999.;
+    reco_beam_PFP_trackScore_collection_weight_by_charge = cnn_collection.track_weight_by_charge;
+    reco_beam_PFP_emScore_collection_weight_by_charge = cnn_collection.em_weight_by_charge;
+    reco_beam_PFP_michelScore_collection_weight_by_charge = cnn_collection.michel_weight_by_charge;
+    
   }
 
   const auto space_pts = pfpUtil.GetPFParticleSpacePoints(*particle, evt, fPFParticleTag);
@@ -2359,10 +2424,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
     
     std::pair<double, double> vertex_michel_score_weight_by_charge =
         trackUtil.GetVertexMichelScore_weight_by_charge(*thisTrack, evt, fTrackerTag, fHitTag);
-    if (vertex_michel_score_weight_by_charge.second != 0)
-      reco_beam_vertex_michel_score_weight_by_charge = vertex_michel_score_weight_by_charge.first/vertex_michel_score_weight_by_charge.second;
-    else
-      reco_beam_vertex_michel_score_weight_by_charge = -999.;
+    reco_beam_vertex_michel_score_weight_by_charge = (vertex_michel_score_weight_by_charge.second != 0 ? vertex_michel_score_weight_by_charge.first/vertex_michel_score_weight_by_charge.second : -999.);
   }
 
   if (fVerbose) std::cout << "Beam particle is track-like " << thisTrack->ID() << std::endl;

@@ -1,4 +1,4 @@
-list(APPEND TrueLibs dune_ArtSupport ProtoDUNEDataUtils dune_DuneObj)
+list(APPEND TrueLibs dunecore_ArtSupport ProtoDUNEDataUtils dunecore_DuneObj)
 list(APPEND AliasLibs DUNEARTSUPPORT PROTODUNEDATAUTILS DUNEOBJLD)
 
 foreach(lib IN ZIP_LISTS TrueLibs AliasLibs)
@@ -12,9 +12,9 @@ foreach(lib IN ZIP_LISTS TrueLibs AliasLibs)
   endif()
 endforeach()
 
-#cet_find_library( DUNEARTSUPPORT NAMES dune_ArtSupport PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+#cet_find_library( DUNEARTSUPPORT NAMES dunecore_ArtSupport PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
 #cet_find_library( PROTODUNEDATAUTILS NAMES ProtoDUNEDataUtils PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
-#cet_find_library( DUNEOBJLD NAMES dune_DuneObj PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+#cet_find_library( DUNEOBJLD NAMES dunecore_DuneObj PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
 
 art_make( LIBRARY_NAME ProtoDUNEUtilities
 	  LIB_LIBRARIES
@@ -31,7 +31,7 @@ art_make( LIBRARY_NAME ProtoDUNEUtilities
                         lardata_Utilities
                         larsim_Simulation 
                         lardataobj_Simulation
-                        PROTODUNEDATAUTILS
+                        duneprototypes::ProtoDUNEDataUtils
                         geant4reweight::ReweightBaseLib
                         geant4reweight::PropBaseLib
                         DUNEOBJLD

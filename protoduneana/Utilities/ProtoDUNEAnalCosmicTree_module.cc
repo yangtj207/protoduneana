@@ -37,7 +37,7 @@
 #include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
-#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 
 // ROOT includes
 #include "TTree.h"
@@ -356,25 +356,94 @@ void protoana::ProtoDUNEAnalCosmicTree::FillCosmicsTree(art::Event const & evt){
 
       // PID
       std::vector<anab::ParticleID> pids = trackUtil.GetRecoTrackPID(*thisTrack, evt, fTrackerTag, fParticleIDTag);
-      if(pids.size() != 3)
-	std::cerr << "WARNING::PID vector size for primary is = " << pids.size() << std::endl;
-    
-      for(size_t k = 0; k < pids.size() && k<3; k++){
-	int plane = pids[k].PlaneID().Plane;
-	if(plane < 0) continue;
-	if(plane > 2) continue;
-	fcosmicPID_Pdg[fNCOSMICS][plane]            = pids[plane].Pdg();
-	fcosmicPID_Ndf[fNCOSMICS][plane]            = pids[plane].Ndf();
-	fcosmicPID_MinChi2[fNCOSMICS][plane]        = pids[plane].MinChi2();
-	fcosmicPID_DeltaChi2[fNCOSMICS][plane]      = pids[plane].DeltaChi2();
-	fcosmicPID_Chi2Proton[fNCOSMICS][plane]     = pids[plane].Chi2Proton();
-	fcosmicPID_Chi2Kaon[fNCOSMICS][plane]       = pids[plane].Chi2Kaon();
-	fcosmicPID_Chi2Pion[fNCOSMICS][plane]       = pids[plane].Chi2Pion();
-	fcosmicPID_Chi2Muon[fNCOSMICS][plane]       = pids[plane].Chi2Muon();
-	fcosmicPID_MissingE[fNCOSMICS][plane]       = pids[plane].MissingE();
-	fcosmicPID_MissingEavg[fNCOSMICS][plane]    = pids[plane].MissingEavg();
-	fcosmicPID_PIDA[fNCOSMICS][plane]           = pids[plane].PIDA();
+
+      // Set dummy values
+      double pidpdg[3] = {-1,-1,-1};
+      double pidchi[3] = {99999.,99999.,99999.};
+      double pid2ndchi[3] = {99999.,99999.,99999.};
+      int pidndf[3] = {-1,-1,-1};
+
+      for (size_t ipid=0; ipid<pids.size(); ipid++){ 
+	std::vector<anab::sParticleIDAlgScores> AlgScoresVec = pids[ipid].ParticleIDAlgScores();
+
+	// Loop though AlgScoresVec and find the variables we want
+
+	for (size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
+	  anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
+	  /*std::cout << "\n ParticleIDAlg " << AlgScore.fAlgName
+	    << "\n -- Variable type: " << AlgScore.fVariableType
+	    << "\n -- Track direction: " << AlgScore.fTrackDir
+	    << "\n -- Assuming PDG: " << AlgScore.fAssumedPdg
+	    << "\n -- Number of degrees of freedom: " << AlgScore.fNdf
+	    << "\n -- Value: " << AlgScore.fValue
+	    << "\n -- Using planeMask: " << AlgScore.fPlaneMask << std::endl;*/
+	  if (AlgScore.fPlaneMask.none() || AlgScore.fPlaneMask.count() > 1) continue;
+
+	  int planenum = -1;
+	  if (AlgScore.fPlaneMask.test(0)) planenum = 0;
+	  if (AlgScore.fPlaneMask.test(1)) planenum = 1;
+	  if (AlgScore.fPlaneMask.test(2)) planenum = 2;
+
+	  if (planenum<0 || planenum>2) continue;
+	  if (AlgScore.fAlgName == "Chi2"){
+	    if (TMath::Abs(AlgScore.fAssumedPdg) == 13){ // chi2mu
+	      fcosmicPID_Chi2Muon[fNCOSMICS][planenum] = AlgScore.fValue;
+	      if (AlgScore.fValue<pidchi[planenum]){
+		pidchi[planenum] = AlgScore.fValue;
+		pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+	      }
+	      else if (AlgScore.fValue<pid2ndchi[planenum]){
+		pid2ndchi[planenum] = AlgScore.fValue;
+	      }
+	    }
+	    else if (TMath::Abs(AlgScore.fAssumedPdg) == 2212){ // chi2pr
+	      fcosmicPID_Chi2Proton[fNCOSMICS][planenum] = AlgScore.fValue;
+	      if (AlgScore.fValue<pidchi[planenum]){
+		pidchi[planenum] = AlgScore.fValue;
+		pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+	      }
+	      else if (AlgScore.fValue<pid2ndchi[planenum]){
+		pid2ndchi[planenum] = AlgScore.fValue;
+	      }
+	    }
+	    else if (TMath::Abs(AlgScore.fAssumedPdg) == 211){ // chi2pi
+	      fcosmicPID_Chi2Pion[fNCOSMICS][planenum] = AlgScore.fValue;
+	      if (AlgScore.fValue<pidchi[planenum]){
+		pidchi[planenum] = AlgScore.fValue;
+		pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+	      }
+	      else if (AlgScore.fValue<pid2ndchi[planenum]){
+		pid2ndchi[planenum] = AlgScore.fValue;
+	      }
+	    }
+	    else if (TMath::Abs(AlgScore.fAssumedPdg) == 321){ // chi2ka
+	      fcosmicPID_Chi2Kaon[fNCOSMICS][planenum] = AlgScore.fValue;
+	      if (AlgScore.fValue<pidchi[planenum]){
+		pidchi[planenum] = AlgScore.fValue;
+		pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+	      }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+		pid2ndchi[planenum] = AlgScore.fValue;
+	      }
+	    }
+	  }
+	  else if (AlgScore.fVariableType==anab::kPIDA){
+	    fcosmicPID_PIDA[fNCOSMICS][planenum] = AlgScore.fValue;
+	  }
+	} // end loop though AlgScoresVec
+      } // end loop over pids[ipid]
+
+      // Finally, set min chi2
+      for (size_t plane=0; plane<3; plane++){
+        fcosmicPID_MinChi2[fNCOSMICS][plane] = pidchi[plane];
+        fcosmicPID_Pdg[fNCOSMICS][plane] = pidpdg[plane];
+	fcosmicPID_Ndf[fNCOSMICS][plane] = pidndf[plane];
+	fcosmicPID_DeltaChi2[fNCOSMICS][plane] = pid2ndchi[plane]-pidchi[plane];
       }
+
+      // NOT SET with new PID object
+      //fcosmicPID_MissingE[plane]       = pids[plane].MissingE();
+      //fcosmicPID_MissingEavg[plane]    = pids[plane].MissingEavg();
 
     }
     else if(thisShower != 0x0){

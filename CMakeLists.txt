@@ -14,7 +14,7 @@
 
 cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
-project(protoduneana VERSION 09.39.01 LANGUAGES CXX)
+project(protoduneana VERSION 09.41.00.02 LANGUAGES CXX)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
@@ -39,7 +39,12 @@ find_ups_boost( ) # Needs to be first to cover for a missing transitive
 find_ups_geant4( )
 find_ups_root()
 
-find_ups_product( dunetpc )
+find_ups_product( dunesw )
+find_ups_product( dunecore )
+find_ups_product( duneprototypes )
+find_ups_product( dunecalib )
+find_ups_product( duneopdet )
+find_ups_product( dunesim )
 find_ups_product( larcoreobj )
 find_ups_product( larcore  )
 find_ups_product( larevt )

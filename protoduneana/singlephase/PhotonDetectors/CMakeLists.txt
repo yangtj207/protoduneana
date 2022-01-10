@@ -1,16 +1,14 @@
 if(DEFINED ENV{DUNETPC_FQ_DIR})
-  message("DUNETPC_FQ_DIR defined. Using this to search for library dune_Geometry")
-  cet_find_library( DUNEGEOMETRY NAMES dune_Geometry PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+  message("DUNETPC_FQ_DIR defined. Using this to search for library dunecore_Geometry")
+  cet_find_library( DUNEGEOMETRY NAMES dunecore_Geometry PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
 else()
-  message("DUNETPC_FQ_DIR undefined. Expect we are building next to dunetpc. Aliasing library dune_Geometry to DUNEGEOMETRY")
-  set(DUNEGEOMETRY dune_Geometry)
+  message("DUNETPC_FQ_DIR undefined. Expect we are building next to dunetpc. Aliasing library dunecore_Geometry to DUNEGEOMETRY")
+  set(DUNEGEOMETRY dunecore_Geometry)
 endif()
 
 
-#cet_find_library( DUNEGEOMETRY NAMES dune_Geometry PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
+#cet_find_library( DUNEGEOMETRY NAMES dunecore_Geometry PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
 cet_find_library( RCEDAMLIB NAMES protodune-dam PATHS ENV DUNEPDSPRCE_LIB NO_DEFAULT_PATH )
-
-find_ups_product(dunetpc)
 
 cet_build_plugin(PDSPmatch art::module
                         lardataobj_RawData

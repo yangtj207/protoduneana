@@ -42,12 +42,12 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
-#include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+#include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEShowerUtils.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEPFParticleUtils.h"
-#include "dune/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
+#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
 
 // ROOT includes
@@ -909,29 +909,99 @@ void protoana::ProtoDUNEAnalysisTree::FillPrimaryPFParticle(art::Event const & e
       fprimaryRange[plane]              = calovector[k].Range();
       fprimaryTrkPitchC[plane]          = calovector[k].TrkPitchC();
     }
-    
+
     // PID
     std::vector<anab::ParticleID> pids = trackUtil.GetRecoTrackPID(*thisTrack, evt, fTrackerTag, fParticleIDTag);
-    if(pids.size() != 3 && fVerbose > 0)
-      std::cerr << "WARNING::PID vector size for primary is = " << pids.size() << std::endl;
-    
-    for(size_t k = 0; k < pids.size() && k<3; k++){
-      int plane = pids[k].PlaneID().Plane;
-      if(plane < 0) continue;
-      if(plane > 2) continue;
-      fprimaryPID_Pdg[plane]            = pids[plane].Pdg();
-      fprimaryPID_Ndf[plane]            = pids[plane].Ndf();
-      fprimaryPID_MinChi2[plane]        = pids[plane].MinChi2();
-      fprimaryPID_DeltaChi2[plane]      = pids[plane].DeltaChi2();
-      fprimaryPID_Chi2Proton[plane]     = pids[plane].Chi2Proton();
-      fprimaryPID_Chi2Kaon[plane]       = pids[plane].Chi2Kaon();
-      fprimaryPID_Chi2Pion[plane]       = pids[plane].Chi2Pion();
-      fprimaryPID_Chi2Muon[plane]       = pids[plane].Chi2Muon();
-      fprimaryPID_MissingE[plane]       = pids[plane].MissingE();
-      fprimaryPID_MissingEavg[plane]    = pids[plane].MissingEavg();
-      fprimaryPID_PIDA[plane]           = pids[plane].PIDA();
+
+    // Set dummy values
+    double pidpdg[3] = {-1,-1,-1};
+    double pidchi[3] = {99999.,99999.,99999.};
+    double pid2ndchi[3] = {99999.,99999.,99999.};
+    int pidndf[3] = {-1,-1,-1};
+
+    for (size_t ipid=0; ipid<pids.size(); ipid++){ 
+      std::vector<anab::sParticleIDAlgScores> AlgScoresVec = pids[ipid].ParticleIDAlgScores();
+
+      // Loop though AlgScoresVec and find the variables we want
+
+      for (size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
+        anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
+        /*std::cout << "\n ParticleIDAlg " << AlgScore.fAlgName
+          << "\n -- Variable type: " << AlgScore.fVariableType
+          << "\n -- Track direction: " << AlgScore.fTrackDir
+          << "\n -- Assuming PDG: " << AlgScore.fAssumedPdg
+          << "\n -- Number of degrees of freedom: " << AlgScore.fNdf
+          << "\n -- Value: " << AlgScore.fValue
+          << "\n -- Using planeMask: " << AlgScore.fPlaneMask << std::endl;*/
+        if (AlgScore.fPlaneMask.none() || AlgScore.fPlaneMask.count() > 1) continue;
+
+        int planenum = -1;
+        if (AlgScore.fPlaneMask.test(0)) planenum = 0;
+        if (AlgScore.fPlaneMask.test(1)) planenum = 1;
+        if (AlgScore.fPlaneMask.test(2)) planenum = 2;
+
+        if (planenum<0 || planenum>2) continue;
+        if (AlgScore.fAlgName == "Chi2"){
+          if (TMath::Abs(AlgScore.fAssumedPdg) == 13){ // chi2mu
+            fprimaryPID_Chi2Muon[planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+          else if (TMath::Abs(AlgScore.fAssumedPdg) == 2212){ // chi2pr
+            fprimaryPID_Chi2Proton[planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+          else if (TMath::Abs(AlgScore.fAssumedPdg) == 211){ // chi2pi
+            fprimaryPID_Chi2Pion[planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+          else if (TMath::Abs(AlgScore.fAssumedPdg) == 321){ // chi2ka
+            fprimaryPID_Chi2Kaon[planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+        }
+        else if (AlgScore.fVariableType==anab::kPIDA){
+          fprimaryPID_PIDA[planenum] = AlgScore.fValue;
+        }
+      } // end loop though AlgScoresVec
+    } // end loop over pid[ipid]
+
+      // Finally, set min chi2
+    for (size_t plane=0; plane<3; plane++){
+      fprimaryPID_MinChi2[plane] = pidchi[plane];
+      fprimaryPID_Pdg[plane] = pidpdg[plane];
+      fprimaryPID_Ndf[plane] = pidndf[plane];
+      fprimaryPID_DeltaChi2[plane] = pid2ndchi[plane]-pidchi[plane];
     }
-    
+
+    // NOT SET with new PID object
+    //fprimaryPID_MissingE[plane]       = pids[plane].MissingE();
+    //fprimaryPID_MissingEavg[plane]    = pids[plane].MissingEavg();
+
+
     // Get the true mc particle
     //const simb::MCParticle* mcparticle = truthUtil.GetMCParticleFromRecoTrack(*thisTrack, evt, fTrackerTag);
     mcparticle = truthUtil.GetMCParticleFromRecoTrack(clockData, *thisTrack, evt, fTrackerTag);
@@ -1171,26 +1241,96 @@ void protoana::ProtoDUNEAnalysisTree::FillPrimaryDaughterPFParticle(art::Event c
 
     // PID
     std::vector<anab::ParticleID> daughterpids = trackUtil.GetRecoTrackPID(*daughterTrack, evt, fTrackerTag, fParticleIDTag);
-    if(daughterpids.size() != 3 && fVerbose > 0)
-      std::cerr << "WARNING::PID vector size for daughter is = " << daughterpids.size() << std::endl;
-    
-    for(size_t k = 0; k < daughterpids.size() && k<3; k++){
-      int plane = daughterpids[k].PlaneID().Plane;
-      if(plane < 0) continue;
-      if(plane > 2) continue;
-      fdaughterPID_Pdg[fNDAUGHTERS][plane]          = daughterpids[plane].Pdg();
-      fdaughterPID_Ndf[fNDAUGHTERS][plane]          = daughterpids[plane].Ndf();
-      fdaughterPID_MinChi2[fNDAUGHTERS][plane]      = daughterpids[plane].MinChi2();
-      fdaughterPID_DeltaChi2[fNDAUGHTERS][plane]    = daughterpids[plane].DeltaChi2();
-      fdaughterPID_Chi2Proton[fNDAUGHTERS][plane]   = daughterpids[plane].Chi2Proton();
-      fdaughterPID_Chi2Kaon[fNDAUGHTERS][plane]     = daughterpids[plane].Chi2Kaon();
-      fdaughterPID_Chi2Pion[fNDAUGHTERS][plane]     = daughterpids[plane].Chi2Pion();
-      fdaughterPID_Chi2Muon[fNDAUGHTERS][plane]     = daughterpids[plane].Chi2Muon();
-      fdaughterPID_MissingE[fNDAUGHTERS][plane]     = daughterpids[plane].MissingE();
-      fdaughterPID_MissingEavg[fNDAUGHTERS][plane]  = daughterpids[plane].MissingEavg();
-      fdaughterPID_PIDA[fNDAUGHTERS][plane]         = daughterpids[plane].PIDA();
+
+    // Set dummy values
+    double pidpdg[3] = {-1,-1,-1};
+    double pidchi[3] = {99999.,99999.,99999.};
+    double pid2ndchi[3] = {99999.,99999.,99999.};
+    int pidndf[3] = {-1,-1,-1};
+
+    for (size_t ipid=0; ipid<daughterpids.size(); ipid++){ 
+      std::vector<anab::sParticleIDAlgScores> AlgScoresVec = daughterpids[ipid].ParticleIDAlgScores();
+
+      // Loop though AlgScoresVec and find the variables we want
+
+      for (size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
+        anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
+        /*std::cout << "\n ParticleIDAlg " << AlgScore.fAlgName
+          << "\n -- Variable type: " << AlgScore.fVariableType
+          << "\n -- Track direction: " << AlgScore.fTrackDir
+          << "\n -- Assuming PDG: " << AlgScore.fAssumedPdg
+          << "\n -- Number of degrees of freedom: " << AlgScore.fNdf
+          << "\n -- Value: " << AlgScore.fValue
+          << "\n -- Using planeMask: " << AlgScore.fPlaneMask << std::endl;*/
+        if (AlgScore.fPlaneMask.none() || AlgScore.fPlaneMask.count() > 1) continue;
+
+        int planenum = -1;
+        if (AlgScore.fPlaneMask.test(0)) planenum = 0;
+        if (AlgScore.fPlaneMask.test(1)) planenum = 1;
+        if (AlgScore.fPlaneMask.test(2)) planenum = 2;
+
+        if (planenum<0 || planenum>2) continue;
+        if (AlgScore.fAlgName == "Chi2"){
+          if (TMath::Abs(AlgScore.fAssumedPdg) == 13){ // chi2mu
+            fdaughterPID_Chi2Muon[fNDAUGHTERS][planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+          else if (TMath::Abs(AlgScore.fAssumedPdg) == 2212){ // chi2pr
+            fdaughterPID_Chi2Proton[fNDAUGHTERS][planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+          else if (TMath::Abs(AlgScore.fAssumedPdg) == 211){ // chi2pi
+            fdaughterPID_Chi2Pion[fNDAUGHTERS][planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+          else if (TMath::Abs(AlgScore.fAssumedPdg) == 321){ // chi2ka
+            fdaughterPID_Chi2Kaon[fNDAUGHTERS][planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+        }
+        else if (AlgScore.fVariableType==anab::kPIDA){
+          fdaughterPID_PIDA[fNDAUGHTERS][planenum] = AlgScore.fValue;
+        }
+      } // end loop though AlgScoresVec
+    } // end loop over pid[ipid]
+
+      // Finally, set min chi2
+    for (size_t plane=0; plane<3; plane++){
+      fdaughterPID_MinChi2[fNDAUGHTERS][plane] = pidchi[plane];
+      fdaughterPID_Pdg[fNDAUGHTERS][plane] = pidpdg[plane];
+      fdaughterPID_Ndf[fNDAUGHTERS][plane] = pidndf[plane];
+      fdaughterPID_DeltaChi2[fNDAUGHTERS][plane] = pid2ndchi[plane]-pidchi[plane];
     }
-    
+
+    // NOT SET with new PID object
+    //fdaughterPID_MissingE[plane]       = daughterpids[plane].MissingE();
+    //fdaughterPID_MissingEavg[plane]    = daughterpids[plane].MissingEavg();
+
+
     // Get the true mc particle
     //const simb::MCParticle* mcdaughterparticle = truthUtil.GetMCParticleFromRecoTrack(*daughterTrack, evt, fTrackerTag);
     mcdaughterparticle = truthUtil.GetMCParticleFromRecoTrack(clockData, *daughterTrack, evt, fTrackerTag);
@@ -1324,25 +1464,94 @@ void protoana::ProtoDUNEAnalysisTree::FillPrimaryGrandDaughterPFParticle(art::Ev
 
     // PID
     std::vector<anab::ParticleID> daughterpids = trackUtil.GetRecoTrackPID(*gdaughterTrack, evt, fTrackerTag, fParticleIDTag);
-    if(daughterpids.size() != 3 && fVerbose > 0)
-      std::cerr << "WARNING::PID vector size for grand-daughter is = " << daughterpids.size() << std::endl;
-    
-    for(size_t k = 0; k < daughterpids.size() && k<3; k++){
-      int plane = daughterpids[k].PlaneID().Plane;
-      if(plane < 0) continue;
-      if(plane > 2) continue;
-      fgranddaughterPID_Pdg[fNGRANDDAUGHTERS][plane]          = daughterpids[plane].Pdg();
-      fgranddaughterPID_Ndf[fNGRANDDAUGHTERS][plane]          = daughterpids[plane].Ndf();
-      fgranddaughterPID_MinChi2[fNGRANDDAUGHTERS][plane]      = daughterpids[plane].MinChi2();
-      fgranddaughterPID_DeltaChi2[fNGRANDDAUGHTERS][plane]    = daughterpids[plane].DeltaChi2();
-      fgranddaughterPID_Chi2Proton[fNGRANDDAUGHTERS][plane]   = daughterpids[plane].Chi2Proton();
-      fgranddaughterPID_Chi2Kaon[fNGRANDDAUGHTERS][plane]     = daughterpids[plane].Chi2Kaon();
-      fgranddaughterPID_Chi2Pion[fNGRANDDAUGHTERS][plane]     = daughterpids[plane].Chi2Pion();
-      fgranddaughterPID_Chi2Muon[fNGRANDDAUGHTERS][plane]     = daughterpids[plane].Chi2Muon();
-      fgranddaughterPID_MissingE[fNGRANDDAUGHTERS][plane]     = daughterpids[plane].MissingE();
-      fgranddaughterPID_MissingEavg[fNGRANDDAUGHTERS][plane]  = daughterpids[plane].MissingEavg();
-      fgranddaughterPID_PIDA[fNGRANDDAUGHTERS][plane]         = daughterpids[plane].PIDA();
+
+    // Set dummy values
+    double pidpdg[3] = {-1,-1,-1};
+    double pidchi[3] = {99999.,99999.,99999.};
+    double pid2ndchi[3] = {99999.,99999.,99999.};
+    int pidndf[3] = {-1,-1,-1};
+
+    for (size_t ipid=0; ipid<daughterpids.size(); ipid++){ 
+      std::vector<anab::sParticleIDAlgScores> AlgScoresVec = daughterpids[ipid].ParticleIDAlgScores();
+
+      // Loop though AlgScoresVec and find the variables we want
+
+      for (size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
+        anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
+        /*std::cout << "\n ParticleIDAlg " << AlgScore.fAlgName
+          << "\n -- Variable type: " << AlgScore.fVariableType
+          << "\n -- Track direction: " << AlgScore.fTrackDir
+          << "\n -- Assuming PDG: " << AlgScore.fAssumedPdg
+          << "\n -- Number of degrees of freedom: " << AlgScore.fNdf
+          << "\n -- Value: " << AlgScore.fValue
+          << "\n -- Using planeMask: " << AlgScore.fPlaneMask << std::endl;*/
+        if (AlgScore.fPlaneMask.none() || AlgScore.fPlaneMask.count() > 1) continue;
+
+        int planenum = -1;
+        if (AlgScore.fPlaneMask.test(0)) planenum = 0;
+        if (AlgScore.fPlaneMask.test(1)) planenum = 1;
+        if (AlgScore.fPlaneMask.test(2)) planenum = 2;
+
+        if (planenum<0 || planenum>2) continue;
+        if (AlgScore.fAlgName == "Chi2"){
+          if (TMath::Abs(AlgScore.fAssumedPdg) == 13){ // chi2mu
+            fgranddaughterPID_Chi2Muon[fNGRANDDAUGHTERS][planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+          else if (TMath::Abs(AlgScore.fAssumedPdg) == 2212){ // chi2pr
+            fgranddaughterPID_Chi2Proton[fNGRANDDAUGHTERS][planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+          else if (TMath::Abs(AlgScore.fAssumedPdg) == 211){ // chi2pi
+            fgranddaughterPID_Chi2Pion[fNGRANDDAUGHTERS][planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+          else if (TMath::Abs(AlgScore.fAssumedPdg) == 321){ // chi2ka
+            fgranddaughterPID_Chi2Kaon[fNGRANDDAUGHTERS][planenum] = AlgScore.fValue;
+            if (AlgScore.fValue<pidchi[planenum]){
+              pidchi[planenum] = AlgScore.fValue;
+              pidpdg[planenum] = TMath::Abs(AlgScore.fAssumedPdg);
+            }
+            else if (AlgScore.fValue<pid2ndchi[planenum]){
+              pid2ndchi[planenum] = AlgScore.fValue;
+            }
+          }
+        }
+        else if (AlgScore.fVariableType==anab::kPIDA){
+          fgranddaughterPID_PIDA[fNGRANDDAUGHTERS][planenum] = AlgScore.fValue;
+        }
+      } // end loop though AlgScoresVec
+    } // end loop over pid[ipid]
+
+      // Finally, set min chi2
+    for (size_t plane=0; plane<3; plane++){
+      fgranddaughterPID_MinChi2[fNGRANDDAUGHTERS][plane] = pidchi[plane];
+      fgranddaughterPID_Pdg[fNGRANDDAUGHTERS][plane] = pidpdg[plane];
+      fgranddaughterPID_Ndf[fNGRANDDAUGHTERS][plane] = pidndf[plane];
+      fgranddaughterPID_DeltaChi2[fNGRANDDAUGHTERS][plane] = pid2ndchi[plane]-pidchi[plane];
     }
+
+    // NOT SET with new PID object
+    //fgranddaughterPID_MissingE[fNGRANDDAUGHTERS][plane]       = daughterpids[plane].MissingE();
+    //fgranddaughterPID_MissingEavg[fNGRANDDAUGHTERS][plane]    = daughterpids[plane].MissingEavg();
     
     // Get the true mc particle
     //const simb::MCParticle* mcdaughterparticle = truthUtil.GetMCParticleFromRecoTrack(*gdaughterTrack, evt, fTrackerTag);

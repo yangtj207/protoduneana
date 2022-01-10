@@ -226,9 +226,9 @@ services.ParticleInventoryService.ParticleInventory.EveIdCalculator: "EmEveIdCal
 # xyzt database
 services.XYZCalibService.IsMC: true
 services.XYZCalibService.UseCondbXYZCorr: true
-services.XYZCalibService.YZCorrDBTag: "v6.0"
-services.XYZCalibService.XCorrDBTag: "v6.0"
-services.XYZCalibService.NormCorrDBTag: "v6.0"
+services.XYZCalibService.YZCorrDBTag: "prod4"
+services.XYZCalibService.XCorrDBTag: "prod4"
+services.XYZCalibService.NormCorrDBTag: "prod4"
 
 physics.producers.pandoracali:           @local::protodunespmcsce_calibrationdedx
 physics.producers.pandoracali.CalorimetryModuleLabel:     "pandoracalinoxyzt"
@@ -237,6 +237,7 @@ physics.producers.pandoracali.ApplyLifetimeCorrection:    false
 physics.producers.pandoracali.ApplyYZCorrection:          true
 physics.producers.pandoracali.ApplyXCorrection:           true
 physics.producers.pandoracali.ApplyNormCorrection:        false
+physics.producers.pandoracali.CaloAlg.CalAreaConstants: [1.04e-3, 1.04e-3, 1.0156e-3]
 
 physics.producers.pandora2cali:          @local::protodunespmcsce_calibrationdedx
 physics.producers.pandora2cali.TrackModuleLabel:          "pandora2Track"
@@ -245,6 +246,7 @@ physics.producers.pandora2cali.ApplyLifetimeCorrection:   false
 physics.producers.pandora2cali.ApplyYZCorrection:         true
 physics.producers.pandora2cali.ApplyXCorrection:          true
 physics.producers.pandora2cali.ApplyNormCorrection:       false
+physics.producers.pandora2cali.CaloAlg.CalAreaConstants: [1.04e-3, 1.04e-3, 1.0156e-3]
 
 services.DetectorPropertiesService.Electronlifetime: 35000
 
