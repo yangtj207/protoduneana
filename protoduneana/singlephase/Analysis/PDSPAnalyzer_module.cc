@@ -692,6 +692,9 @@ private:
   std::vector< int > reco_daughter_allTrack_ID;
   std::vector< double > reco_daughter_allTrack_Theta;
   std::vector< double > reco_daughter_allTrack_Phi;
+  std::vector<double> reco_daughter_allTrack_startDirX,
+                      reco_daughter_allTrack_startDirY,
+                      reco_daughter_allTrack_startDirZ;
   std::vector< std::vector< double > > reco_daughter_allTrack_dQdX_SCE, reco_daughter_allTrack_dEdX_SCE, reco_daughter_allTrack_resRange_SCE;
   std::vector< std::vector< double > > reco_daughter_allTrack_calibrated_dEdX_SCE, reco_daughter_allTrack_calibrated_dQdX_SCE, reco_daughter_allTrack_EField_SCE, reco_daughter_allTrack_calo_X, reco_daughter_allTrack_calo_Y, reco_daughter_allTrack_calo_Z;
   std::vector< double > reco_daughter_allTrack_Chi2_proton, reco_daughter_allTrack_Chi2_muon, reco_daughter_allTrack_Chi2_pion;
@@ -1521,6 +1524,9 @@ void pduneana::PDSPAnalyzer::beginJob() {
 
   fTree->Branch("reco_daughter_allTrack_Theta", &reco_daughter_allTrack_Theta);
   fTree->Branch("reco_daughter_allTrack_Phi", &reco_daughter_allTrack_Phi);
+  fTree->Branch("reco_daughter_allTrack_startDirX", &reco_daughter_allTrack_startDirX);
+  fTree->Branch("reco_daughter_allTrack_startDirY", &reco_daughter_allTrack_startDirY);
+  fTree->Branch("reco_daughter_allTrack_startDirZ", &reco_daughter_allTrack_startDirZ);
 
   fTree->Branch("reco_daughter_allTrack_len", &reco_daughter_allTrack_len);
   fTree->Branch("reco_daughter_allTrack_alt_len", &reco_daughter_allTrack_alt_len);
@@ -2296,6 +2302,9 @@ void pduneana::PDSPAnalyzer::reset()
   reco_daughter_allTrack_Chi2_ndof_pion.clear();
 
   reco_daughter_allTrack_Theta.clear();
+  reco_daughter_allTrack_startDirX.clear();
+  reco_daughter_allTrack_startDirY.clear();
+  reco_daughter_allTrack_startDirZ.clear();
   reco_daughter_allTrack_Phi.clear();
   reco_daughter_allTrack_len.clear();
   reco_daughter_allTrack_alt_len.clear();
@@ -4068,6 +4077,10 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         //Spatial + direction stuff from Pandora
         reco_daughter_allTrack_Theta.push_back(  pandora2Track->Theta() );
         reco_daughter_allTrack_Phi.push_back(  pandora2Track->Phi() );
+
+        reco_daughter_allTrack_startDirX.push_back(pandora2Track->StartDirection().X());
+        reco_daughter_allTrack_startDirY.push_back(pandora2Track->StartDirection().Y());
+        reco_daughter_allTrack_startDirZ.push_back(pandora2Track->StartDirection().Z());
 
         reco_daughter_allTrack_len.push_back(    pandora2Track->Length() );
         reco_daughter_allTrack_startX.push_back( pandora2Track->Trajectory().Start().X() );
