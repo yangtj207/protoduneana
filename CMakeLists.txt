@@ -14,7 +14,7 @@
 
 cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
-project(protoduneana VERSION 09.41.00.02 LANGUAGES CXX)
+project(protoduneana VERSION 09.41.00.03 LANGUAGES CXX)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
