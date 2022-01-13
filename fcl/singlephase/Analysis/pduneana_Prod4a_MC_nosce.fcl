@@ -7,6 +7,12 @@ physics.producers.pandoracali.ApplyLifetimeCorrection:    false
 physics.producers.pandoracali.ApplyYZCorrection:          true
 physics.producers.pandoracali.ApplyXCorrection:           true
 physics.producers.pandoracali.ApplyNormCorrection:        false
+physics.producers.pandoracali.ShowerCalorimetryModuleLabel:     "pandoraShowercalo"
+physics.producers.pandoracali.ShowerModuleLabel:           "pandoraShower"
+physics.producers.pandoracali.ApplyLifetimeCorrectionShower:    true 
+physics.producers.pandoracali.ApplyYZCorrectionShower:          true
+physics.producers.pandoracali.ApplyXCorrectionShower:           true
+physics.producers.pandoracali.ApplyNormCorrectionShower:        false
 physics.producers.pandoracali.CaloAlg.CalAreaConstants: [1.039e-3, 1.038e-3, 1.0168e-3]
 
 physics.producers.pandora2cali:          @local::protodunespmcnosce_calibrationdedx
@@ -16,6 +22,12 @@ physics.producers.pandora2cali.ApplyLifetimeCorrection:   false
 physics.producers.pandora2cali.ApplyYZCorrection:         true
 physics.producers.pandora2cali.ApplyXCorrection:          true
 physics.producers.pandora2cali.ApplyNormCorrection:       false
+physics.producers.pandora2cali.ShowerModuleLabel:          "pandora2Shower"
+physics.producers.pandora2cali.ShowerCalorimetryModuleLabel:    "pandora2Showercalo"
+physics.producers.pandora2cali.ApplyLifetimeCorrectionShower:   true 
+physics.producers.pandora2cali.ApplyYZCorrectionShower:         true
+physics.producers.pandora2cali.ApplyXCorrectionShower:          true
+physics.producers.pandora2cali.ApplyNormCorrectionShower:       false
 physics.producers.pandora2cali.CaloAlg.CalAreaConstants: [1.039e-3, 1.038e-3, 1.0168e-3]
 
 
