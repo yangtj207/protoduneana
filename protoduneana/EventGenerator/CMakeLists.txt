@@ -1,21 +1,8 @@
 
-if(DEFINED ENV{DUNETPC_FQ_DIR})
-  message("DUNETPC_FQ_DIR defined. Using this to search for library dunesim_EventGenerator_ProtoDUNEbeamDataProducts")
-  cet_find_library( EVGENPROTODUNEBEAMDATAPRODUCTS NAMES dunesim_EventGenerator_ProtoDUNEbeamDataProducts PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
-  message("Result: ${EVGENPROTODUNEBEAMDATAPRODUCTS}")
-else()
-  message("DUNETPC_FQ_DIR undefined. Expect we are building next to dunetpc. Aliasing library dunesim_EventGenerator_ProtoDUNEbeamDataProducts to EVGENPROTODUNEBEAMDATAPRODUCTS")
-  if(NOT EVGENPROTODUNEBEAMDATAPRODUCTS)
-    #add_library(EVGENPROTODUNEBEAMDATAPRODUCTS ALIAS dunesim_EventGenerator_ProtoDUNEbeamDataProducts)
-    set(EVGENPROTODUNEBEAMDATAPRODUCTS dunesim_EventGenerator_ProtoDUNEbeamDataProducts)
-  endif()
-endif()
-#cet_find_library( EVGENPROTODUNEBEAMDATAPRODUCTS NAMES dunesim_EventGenerator_ProtoDUNEbeamDataProducts PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
-
 include_directories( $ENV{IFDHC_FQ_DIR}/inc )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 art_make( BASENAME_ONLY
-          MODULE_LIBRARIES EVGENPROTODUNEBEAMDATAPRODUCTS
+          MODULE_LIBRARIES dunesim::EventGenerator_ProtoDUNEbeamDataProducts
                         larcoreobj_SummaryData
                         larcorealg_Geometry
                         larcore_Geometry_Geometry_service

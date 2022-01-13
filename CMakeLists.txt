@@ -39,7 +39,6 @@ find_ups_boost( ) # Needs to be first to cover for a missing transitive
 find_ups_geant4( )
 find_ups_root()
 
-find_ups_product( dunesw )
 find_ups_product( dunecore )
 find_ups_product( duneprototypes )
 find_ups_product( dunecalib )
