@@ -26,7 +26,6 @@
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
-// DUNETPC specific includes
 //#include "dunecore/DAQTriggerSim/TriggerDataProducts/TriggerTypes.h"
 //#include "dunecore/DAQTriggerSim/TriggerDataProducts/BasicTrigger.h"
 #include "dunecore/DuneInterface/Data/AdcTypes.h"

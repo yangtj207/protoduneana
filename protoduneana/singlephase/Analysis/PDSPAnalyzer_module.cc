@@ -733,7 +733,8 @@ private:
                       reco_daughter_allShower_dirX,
                       reco_daughter_allShower_dirY,
                       reco_daughter_allShower_dirZ,
-                      reco_daughter_allShower_energy;
+                      reco_daughter_allShower_energy,
+                      reco_daughter_allShower_calibrated_energy;
 
 
   std::vector<double> reco_daughter_allTrack_momByRange_proton;
@@ -793,6 +794,7 @@ private:
   bool fGetTrackMichel;
   bool fMCHasBI;
   bool fRecalibrate;
+  bool fGetCalibratedShowerEnergy;
   bool fCheckSlicesForBeam;
   bool fSCE;
 
@@ -840,6 +842,7 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   fDoProtReweight(p.get<bool>("DoProtReweight")),
   fGetTrackMichel(p.get<bool>("GetTrackMichel")),
   fRecalibrate(p.get<bool>("Recalibrate", true)),
+  fGetCalibratedShowerEnergy(p.get<bool>("GetCalibratedShowerEnergy", false)),
   fCheckSlicesForBeam(p.get<bool>("CheckSlicesForBeam", false)),
   fSCE(p.get<bool>("SCE", true)){
 
@@ -1555,6 +1558,7 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_daughter_allShower_dirY", &reco_daughter_allShower_dirY);
   fTree->Branch("reco_daughter_allShower_dirZ", &reco_daughter_allShower_dirZ);
   fTree->Branch("reco_daughter_allShower_energy", &reco_daughter_allShower_energy);
+  fTree->Branch("reco_daughter_allShower_calibrated_energy", &reco_daughter_allShower_calibrated_energy);
 
 
 
@@ -2330,6 +2334,7 @@ void pduneana::PDSPAnalyzer::reset()
   reco_daughter_allShower_dirY.clear();
   reco_daughter_allShower_dirZ.clear();
   reco_daughter_allShower_energy.clear();
+  reco_daughter_allShower_calibrated_energy.clear();
   ///////
 
 
@@ -4238,6 +4243,27 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
           //std::cout << std::endl;
         }
 
+        if (fGetCalibratedShowerEnergy) {
+          std::cout << "Getting calibrated shower energy" << std::endl;
+          auto calo = showerUtil.GetRecoShowerCalorimetry(
+              *pandora2Shower, evt, "pandora2Shower", "pandora2cali");
+          bool found_calo = false;
+          size_t index = 0;
+          for (index = 0; index < calo.size(); ++index) {
+            if (calo[index].PlaneID().Plane == 2) {
+              found_calo = true;
+              break; 
+            }
+          }
+          
+          if (!found_calo) {
+            reco_daughter_allShower_calibrated_energy.push_back(-999.);
+          }
+          else {
+            reco_daughter_allShower_calibrated_energy.push_back(calo[index].KineticEnergy());
+          }
+        }
+
         if (n_good_y < 1) {
           reco_daughter_allShower_energy.push_back(-999.);
         }
@@ -4255,6 +4281,7 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
           }
           reco_daughter_allShower_energy.push_back(total_shower_energy);
         }
+        
       }
       else{
         reco_daughter_allShower_ID.push_back(-999);
@@ -4266,6 +4293,7 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         reco_daughter_allShower_dirY.push_back(-999.);
         reco_daughter_allShower_dirZ.push_back(-999.);
         reco_daughter_allShower_energy.push_back(-999.);
+        reco_daughter_allShower_calibrated_energy.push_back(-999.);
       }
 
     }

@@ -1,13 +1,4 @@
-if(DEFINED ENV{DUNETPC_FQ_DIR})
-  message("DUNETPC_FQ_DIR defined. Using this to search for library dunecore_Geometry")
-  cet_find_library( DUNEGEOMETRY NAMES dunecore_Geometry PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
-else()
-  message("DUNETPC_FQ_DIR undefined. Expect we are building next to dunetpc. Aliasing library dunecore_Geometry to DUNEGEOMETRY")
-  set(DUNEGEOMETRY dunecore_Geometry)
-endif()
 
-
-#cet_find_library( DUNEGEOMETRY NAMES dunecore_Geometry PATHS ENV DUNETPC_FQ_DIR PATH_SUFFIXES lib NO_DEFAULT_PATH )
 cet_find_library( RCEDAMLIB NAMES protodune-dam PATHS ENV DUNEPDSPRCE_LIB NO_DEFAULT_PATH )
 
 cet_build_plugin(PDSPmatch art::module
@@ -16,7 +7,7 @@ cet_build_plugin(PDSPmatch art::module
                         larcorealg_Geometry
                         dune_raw_data::dune-raw-data_Overlays
                         artdaq_core::artdaq-core_Data
-                        DUNEGEOMETRY
+                        dunecore::Geometry
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -36,7 +27,7 @@ cet_build_plugin(PDSPmatchmc art::module
                         larcorealg_Geometry
                         dune_raw_data::dune-raw-data_Overlays
                         artdaq_core::artdaq-core_Data
-                        DUNEGEOMETRY
+                        dunecore::Geometry
                         nusimdata_SimulationBase
                         larsim_MCCheater_PhotonBackTrackerService_service
                         larsim_MCCheater_ParticleInventoryService_service

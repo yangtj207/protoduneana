@@ -218,6 +218,7 @@ physics.analyzers.pduneana.GetTrackMichel: false
 physics.analyzers.pduneana.CalibrationParsSCE: @local::CalorimetryParameters_SPProd4_MC_SCE #_eLT
 physics.analyzers.pduneana.CalibrationParsNoSCE: @local::CalorimetryParameters_SPProd4_MC_SCE #_eLT
 physics.analyzers.pduneana.Recalibrate: false
+physics.analyzers.pduneana.GetCalibratedShowerEnergy: true 
 physics.analyzers.pduneana.SCE: true
 physics.analyzers.pduneana.SaveHits: true
 
@@ -233,10 +234,16 @@ services.XYZCalibService.NormCorrDBTag: "prod4"
 physics.producers.pandoracali:           @local::protodunespmcsce_calibrationdedx
 physics.producers.pandoracali.CalorimetryModuleLabel:     "pandoracalinoxyzt"
 physics.producers.pandoracali.TrackModuleLabel:           "pandoraTrack"
+physics.producers.pandoracali.ShowerModuleLabel:           "pandoraShower"
+physics.producers.pandoracali.ShowerCalorimetryModuleLabel:     "pandoraShowercalo"
 physics.producers.pandoracali.ApplyLifetimeCorrection:    false
 physics.producers.pandoracali.ApplyYZCorrection:          true
 physics.producers.pandoracali.ApplyXCorrection:           true
 physics.producers.pandoracali.ApplyNormCorrection:        false
+physics.producers.pandoracali.ApplyLifetimeCorrectionShower:    true 
+physics.producers.pandoracali.ApplyYZCorrectionShower:          true
+physics.producers.pandoracali.ApplyXCorrectionShower:           true
+physics.producers.pandoracali.ApplyNormCorrectionShower:        false
 physics.producers.pandoracali.CaloAlg.CalAreaConstants: [1.04e-3, 1.04e-3, 1.0156e-3]
 
 physics.producers.pandora2cali:          @local::protodunespmcsce_calibrationdedx
@@ -246,6 +253,12 @@ physics.producers.pandora2cali.ApplyLifetimeCorrection:   false
 physics.producers.pandora2cali.ApplyYZCorrection:         true
 physics.producers.pandora2cali.ApplyXCorrection:          true
 physics.producers.pandora2cali.ApplyNormCorrection:       false
+physics.producers.pandora2cali.ShowerModuleLabel:          "pandora2Shower"
+physics.producers.pandora2cali.ShowerCalorimetryModuleLabel:    "pandora2Showercalo"
+physics.producers.pandora2cali.ApplyLifetimeCorrectionShower:   true 
+physics.producers.pandora2cali.ApplyYZCorrectionShower:         true
+physics.producers.pandora2cali.ApplyXCorrectionShower:          true
+physics.producers.pandora2cali.ApplyNormCorrectionShower:       false
 physics.producers.pandora2cali.CaloAlg.CalAreaConstants: [1.04e-3, 1.04e-3, 1.0156e-3]
 
 services.DetectorPropertiesService.Electronlifetime: 35000
