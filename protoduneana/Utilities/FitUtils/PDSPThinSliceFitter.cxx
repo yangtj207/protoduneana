@@ -492,6 +492,7 @@ void protoana::PDSPThinSliceFitter::FillMCEvents() {
     fEvents.back().MakeG4RWBranch("g4rw_full_grid_proton_weights",
                                   (*g4rw_full_grid_proton_weights)[0]);
   }
+  std::cout << std::endl;
 
   for (int i = fSplitVal; i < fMCTree->GetEntries(); ++i) {
     fMCTree->GetEntry(i);
@@ -1995,6 +1996,14 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fAddRegTerm = pset.get<bool>("AddRegTerm", false);
   fRegFactor = pset.get<double>("RegFactor", 0.);
 
+  fAddDiffInQuadrature = pset.get<bool>("AddDiffInQuadrature", false);
+  if (fAddDiffInQuadrature) {
+    std::vector<std::pair<int, std::string>> temp_vec
+        = pset.get<std::vector<std::pair<int, std::string>>>("Diffs");
+    fDiffGraphs = std::map<int, std::string>(temp_vec.begin(), temp_vec.end());
+    fDiffGraphFile = pset.get<std::string>("DiffGraphFile");
+  }
+
   //Initialize systematics
   if (fDoSysts) {
     fAddSystTerm = pset.get<bool>("AddSystTerm");
@@ -2246,6 +2255,30 @@ void protoana::PDSPThinSliceFitter::PlotThrows(
           }
         }
         ++bin_i;
+      }
+    }
+  }
+
+
+  //Add in quadrature here   
+  if (fAddDiffInQuadrature) {
+    std::map<int, TGraph*> diff_graph_map;
+    TFile diff_file(fDiffGraphFile.c_str(), "open");
+    for (auto it = fDiffGraphs.begin(); it != fDiffGraphs.end(); ++it) {
+      diff_graph_map[it->first] = (TGraph*)diff_file.Get(it->second.c_str());
+    }
+    
+    int diag_bin = 1;
+    for (auto it = diff_graph_map.begin(); it != diff_graph_map.end(); ++it) {
+      for (int i = 0; i < it->second->GetN(); ++i) {
+        xsec_cov.SetBinContent(diag_bin, diag_bin,
+                               (xsec_cov.GetBinContent(diag_bin, diag_bin)
+                                + std::pow(it->second->GetY()[i], 2)));
+        best_fit_xsec_errs[it->first][i]
+            = sqrt(std::pow(best_fit_xsec_errs[it->first][i], 2)
+                   + std::pow(it->second->GetY()[i], 2));
+
+        diag_bin++;
       }
     }
   }

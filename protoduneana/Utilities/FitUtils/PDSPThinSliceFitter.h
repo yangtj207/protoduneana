@@ -123,10 +123,12 @@ class PDSPThinSliceFitter {
   std::vector<double> fParLimits, fParLimitsUp;
   size_t fTotalSystParameters = 0;
   std::map<std::string, size_t> fCovarianceBins;
-  bool fAddSystTerm, fAddRegTerm;
+  bool fAddSystTerm, fAddRegTerm, fAddDiffInQuadrature;
   double fRegFactor = 0.;
   TMatrixD * fCovMatrix, * fCovMatrixDisplay;
   TDecompChol * fInputChol;
+  std::map<int, std::string> fDiffGraphs;
+  std::string fDiffGraphFile;
 
   std::map<std::string, double> fToyValues;
 
