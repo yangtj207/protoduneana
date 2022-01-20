@@ -149,6 +149,7 @@ void protoana::AbsCexDriver::FillMCEvents(
   for (size_t i = 0; i < 20; ++i) {xs.push_back(.1*(1 + i));}
 
   for (int i = 0; i < nentries; ++i) {
+    if (!(i % 20000)) std::cout << i << "/" << nentries << std::endl;
     tree->GetEntry(i);
 
     events.push_back(ThinSliceEvent(event, subrun, run));
@@ -210,8 +211,9 @@ void protoana::AbsCexDriver::FillMCEvents(
     events.back().MakeG4RWCoeff("g4rw_full_grid_proton_coeffs",
                                 (*g4rw_full_grid_proton_coeffs)[0]);
   }
+  std::cout << std::endl;
 
-  //if (fSplitMC) {
+  if (do_split) {
     for (int i = split_val; i < tree->GetEntries(); ++i) {
       tree->GetEntry(i);
 
@@ -273,7 +275,7 @@ void protoana::AbsCexDriver::FillMCEvents(
       fake_data_events.back().MakeG4RWCoeff("g4rw_full_grid_proton_coeffs",
                                             (*g4rw_full_grid_proton_coeffs)[0]);
     }
-  //}
+  }
 
   std::cout << "Filled MC Events" << std::endl;
 
@@ -2407,9 +2409,9 @@ void protoana::AbsCexDriver::BuildDataHists(
   TH1D & incident_hist = data_set.GetIncidentHist();
   std::map<int, TH1 *> & selected_hists = data_set.GetSelectionHists();
 
-  flux = tree->GetEntries() - split_val;
+  flux = tree->GetEntries()/* - split_val*/;
 
-  for (int i = /*0*/split_val; i < tree->GetEntries(); ++i) {
+  for (int i = 0/*split_val*/; i < tree->GetEntries(); ++i) {
     tree->GetEntry(i);
     //if (beam_fluxes) beam
     double val = 0.;

@@ -176,6 +176,14 @@ SystsToFix: [
   ["beam_shift", 0.]
 ]
 
+AddDiffInQuadrature: false
+Diffs: [
+  [1, "grXSecDiffAbs"],
+  [2, "grXSecDiffCex"],
+  [3, "grXSecDiffOtherInel"]
+]
+DiffGraphFile: "xsec_diff.root"
+
 Selections: [
   {
     Name: "Abs"
