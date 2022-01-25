@@ -58,6 +58,11 @@ pdspanalysis:
     ]
   }
 
+  # Parameters for the SparseNet
+  SpacePointLabel:     "pandora"
+  NeighbourRadii:     [3.0,10.,30.] # Distance in cm
+  ChargeRadii:        [3.0,10.,30.] # Distance in cm
+
   ParameterSet: [
     { 
       Cut:    "reac"

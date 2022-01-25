@@ -81,7 +81,225 @@
 #include "TGraph2D.h"
 #include "TROOT.h"
 
+
 namespace pduneana {
+
+  using std::string;
+  using std::vector;
+  using std::pair;
+  using std::map;
+  using std::set;
+
+  using art::Ptr;
+  using art::Event;
+  using art::ServiceHandle;
+
+  using cheat::BackTrackerService;
+  using cheat::ParticleInventoryService;
+
+  using simb::MCParticle;
+
+  using recob::Hit;
+  using recob::SpacePoint;
+
+  // Use the association between space points and hits to return a charge
+  std::map<unsigned int, float> GetSpacePointChargeMap(
+    std::vector<art::Ptr<recob::SpacePoint>> const& spacePoints,
+    std::vector<std::vector<art::Ptr<recob::Hit>>> const& sp2Hit) {
+
+    map<unsigned int, float> ret;
+
+    for (size_t spIdx = 0; spIdx < spacePoints.size(); ++spIdx) {
+      float charge = 0.0;
+      for (Ptr<Hit> hit : sp2Hit[spIdx]) {
+        charge += hit->Integral();
+      }
+      ret[spacePoints[spIdx]->ID()] = charge;
+    }
+
+    return ret;
+
+  } // function GetSpacePointChargeMap
+
+  std::map<unsigned int, float> GetSpacePointChargeMap(
+    art::Event const &evt, const std::string &spLabel)  {
+
+    art::Handle<vector<SpacePoint>> spacePointHandle;
+    vector<Ptr<SpacePoint>> spacePoints;
+    if (!evt.getByLabel(spLabel, spacePointHandle)) {
+      throw art::Exception(art::errors::LogicError)
+        << "Could not find spacepoints with module label "
+        << spLabel << "!";
+    }
+    art::fill_ptr_vector(spacePoints, spacePointHandle);
+    art::FindManyP<Hit> fmp(spacePointHandle, evt, spLabel);
+    vector<vector<Ptr<Hit>>> sp2Hit(spacePoints.size());
+    for (size_t spIdx = 0; spIdx < sp2Hit.size(); ++spIdx) {
+      sp2Hit[spIdx] = fmp.at(spIdx);
+    } // for spacepoint
+
+    return GetSpacePointChargeMap(spacePoints, sp2Hit);
+
+  } // function GetSpacePointChargeMap
+
+
+
+
+  // Get the two nearest neighbours to use for calcuation of angles between them and the node in question
+  
+
+  std::map<int,std::pair<int,int>> GetTwoNearestNeighbours(art::Event const &evt,
+    const std::vector<art::Ptr<recob::SpacePoint>> &sps) {
+    std::map<int,int> closestID;
+    std::map<int,int> secondID;
+    // Now loop over all of the space points and simultaneously fill our maps
+    // Get the space points from the event and make the map
+    for(const Ptr<SpacePoint> sp0 : sps){
+      // We want an entry even if it ends up being zero
+      int thisSP = sp0->ID();
+      int closest = -1;
+      int second = -1;
+      float closestDist = 99999;
+      float secondDist = 99999;
+      for(const Ptr<SpacePoint> sp1 : sps){
+        if(thisSP == sp1->ID()) continue;
+        // For some reason we have to use arrays
+        const double *p0 = sp0->XYZ();
+        const double *p1 = sp1->XYZ();
+        // Get the distance between the points
+        const float dx = p1[0] - p0[0];
+        const float dy = p1[1] - p0[1];
+        const float dz = p1[2] - p0[2];
+        const float dist = sqrt(dx*dx + dy*dy + dz*dz);
+        if(dist < closestDist){
+          secondDist = closestDist;
+          closestDist = dist;
+          second = closest;
+          closest = sp1->ID();
+        }
+        else if(dist < secondDist){
+          secondDist = dist;
+          second = sp1->ID();
+        }
+      }
+      closestID.insert(std::make_pair(thisSP,closest));
+      secondID.insert(std::make_pair(thisSP,second));
+    }
+    map<int,pair<int,int>> finalMap;
+    for(unsigned int m = 0; m < closestID.size(); ++m){
+      finalMap[m] = std::make_pair(closestID[m],secondID[m]);
+    }
+    return finalMap;
+  }
+
+
+  std::map<int,std::pair<int,int>> GetTwoNearestNeighbours_label(art::Event const &evt,
+    const std::string &spLabel) {
+    art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
+    std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
+    if(evt.getByLabel(spLabel,spacePointHandle)){
+      art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+    }
+    return GetTwoNearestNeighbours(evt,allSpacePoints);
+  }
+
+  
+  std::map<int,std::pair<int,int>> GetTwoNearestNeighbours_vec(art::Event const &evt,
+    const std::map<unsigned int, art::Ptr<recob::SpacePoint>> &sps)  {
+
+    vector<Ptr<SpacePoint>> vec;
+    for(auto m : sps){
+      vec.push_back(m.second);
+    }
+    return GetTwoNearestNeighbours(evt,vec);
+  }
+
+
+
+
+
+
+  std::vector<std::map<int,unsigned int>> GetNeighboursForRadii(art::Event const &evt,
+    const std::vector<float>& rangeCuts, const std::vector<float>& chargeRangeCuts, const std::vector<art::Ptr<recob::SpacePoint>> &sps) {
+    std::vector<std::map<int,unsigned int>> result;
+    // Initialise a map for each range cut value
+    for(unsigned int m = 0; m < rangeCuts.size(); ++m){
+      result.push_back(map<int,unsigned int>());
+    }
+    // Initialize a map for each charge range cut value
+    for(unsigned int m = 0; m < chargeRangeCuts.size(); ++m){
+      result.push_back(map<int,unsigned int>());
+    }
+ 
+    // Comput the charge map
+    // NOTE: space point label is hardcoded
+    std::map<unsigned int,float> chargeMap = GetSpacePointChargeMap(evt, "pandora");
+
+ 
+    for(const Ptr<SpacePoint> sp0 : sps){
+      // We want an entry even if it ends up being zero
+      for(auto &m : result){
+        m[sp0->ID()] = 0;
+      }
+      for(const Ptr<SpacePoint> sp1 : sps){
+        if(sp0->ID() == sp1->ID()) continue;
+        // For some reason we have to use arrays
+        const double *p0 = sp0->XYZ();
+        const double *p1 = sp1->XYZ();
+        // Get the distance between the points
+        const float dx = p1[0] - p0[0];
+        const float dy = p1[1] - p0[1];
+        const float dz = p1[2] - p0[2];
+        const float dist = sqrt(dx*dx + dy*dy + dz*dz);
+        // Fill the maps if we satify the criteria
+        for(unsigned int r = 0; r < rangeCuts.size(); ++r){
+          if(dist < rangeCuts[r]){
+            result[r][sp0->ID()] = result[r][sp0->ID()] + 1;
+          }
+        }
+        // Fill the maps with the charge within that radius
+        for(unsigned int r = 0; r < chargeRangeCuts.size(); ++r){
+          if(dist < chargeRangeCuts[r]){
+            float charge = chargeMap.at(sp1->ID()); 
+            // Instead of adding 1 I should add the charge of SP1!! (to be confirmed by Leigh)
+            result[r+rangeCuts.size()][sp0->ID()] = result[r+rangeCuts.size()][sp0->ID()] + charge;
+          }
+        }
+ 
+
+
+      }
+    }
+    return result;
+  }
+
+
+  // Sometimes we might want to know the number of neighbours within various radii
+  std::vector<std::map<int,unsigned int>> GetNeighboursForRadii_label(art::Event const &evt, const std::vector<float>& rangeCuts, const std::vector<float>& chargeRangeCuts, const std::string &spLabel) {
+    // Get the space points from the event and make the map
+    art::Handle<vector<SpacePoint>> spacePointHandle;
+    vector<Ptr<SpacePoint>> allSpacePoints;
+    if(evt.getByLabel(spLabel,spacePointHandle)){
+      art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+    }
+    return GetNeighboursForRadii(evt,rangeCuts, chargeRangeCuts, allSpacePoints);
+  }
+
+  std::vector<std::map<int,unsigned int>> GetNeighboursForRadii_vec(art::Event const &evt,
+    const std::vector<float>& rangeCuts, const std::vector<float>& chargeRangeCuts, const std::map<unsigned int,art::Ptr<recob::SpacePoint>> &sps) {
+    std::vector<art::Ptr<recob::SpacePoint>> vec;
+    for(auto m : sps){
+      vec.push_back(m.second);
+    }
+    return GetNeighboursForRadii(evt, rangeCuts, chargeRangeCuts, vec);
+  }
+
+
+
+
+
+
+
   class PDSPAnalyzer;
 
 
@@ -797,6 +1015,14 @@ private:
   bool fRecalibrate;
   bool fGetCalibratedShowerEnergy;
   bool fCheckSlicesForBeam;
+  // SparseNet params 
+  /// Module label for input space points
+  std::string fSpacePointLabel;
+  /// Radii for calculating number of neighbours for any number of cut values
+  std::vector<float> fNeighbourRadii;
+  /// Radii for calculating charge over distance
+  std::vector<float> fChargeRadii;
+
   bool fSCE;
 
   double fZ0, fPitch;
@@ -845,6 +1071,13 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   fRecalibrate(p.get<bool>("Recalibrate", true)),
   fGetCalibratedShowerEnergy(p.get<bool>("GetCalibratedShowerEnergy", false)),
   fCheckSlicesForBeam(p.get<bool>("CheckSlicesForBeam", false)),
+
+  // SparseNet params
+  fSpacePointLabel (p.get<std::string>    ("SpacePointLabel")), 
+  fNeighbourRadii (p.get<std::vector<float>>("NeighbourRadii")),
+  fChargeRadii (p.get<std::vector<float>>("ChargeRadii")),
+
+
   fSCE(p.get<bool>("SCE", true)){
 
   dEdX_template_file = OpenFile(dEdX_template_name);
@@ -1045,6 +1278,13 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     trueToPFPs = truthUtil.GetMapMCToPFPs_ByHits( clockData, evt, fPFParticleTag, fHitTag );
   }
 
+  // AAA: adding a vector of all the spacepoints for the SparseNet 
+  art::Handle<std::vector<recob::SpacePoint>> spacePointHandle; 
+  std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
+  if(evt.getByLabel(fSpacePointLabel,spacePointHandle)){
+    art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+  }  
+
 
   n_beam_slices = 0;
   n_beam_particles = 0;
@@ -1052,6 +1292,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       = pfpUtil.GetPFParticleSliceMap(evt, fPFParticleTag);
   std::vector<std::vector<const recob::PFParticle*>> beam_slices;
   for (auto slice : sliceMap) {
+    std::map<unsigned int,art::Ptr<recob::SpacePoint>> sliceSpacePoints;
     for (auto particle : slice.second) {
       bool added = false;
       if (pfpUtil.IsBeamParticle(*particle,evt, fPFParticleTag)) {
@@ -1075,7 +1316,12 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
           else {
             beam_track_IDs.push_back(-999);
           }
+          const std::vector<const recob::SpacePoint*> particlePoints = pfpUtil.GetPFParticleSpacePoints(*p, evt, "pandora");
+          for(const recob::SpacePoint* s : particlePoints) { 
+             sliceSpacePoints.insert(std::make_pair(s->ID(),allSpacePoints.at(s->ID())));
+          }
         }
+
       }
       if (!added) {continue;}
       //else {
