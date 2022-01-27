@@ -966,11 +966,14 @@ private:
   double reco_beam_momByRange_alt_proton;
   double reco_beam_momByRange_alt_muon;
 
-  //New hits info
+  //New hits info for SparseNet
   std::vector< double > reco_beam_spacePts_X, reco_beam_spacePts_Y, reco_beam_spacePts_Z;
   std::vector< std::vector< double > > reco_daughter_spacePts_X, reco_daughter_spacePts_Y, reco_daughter_spacePts_Z;
   std::vector< std::vector< double > > reco_daughter_shower_spacePts_X, reco_daughter_shower_spacePts_Y, reco_daughter_shower_spacePts_Z;
+ 
+  std::vector<float> sparsenet_features;
 
+  
 
 
 
@@ -1167,6 +1170,22 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
   protoana::ProtoDUNEPFParticleUtils                    pfpUtil;
   auto pfpVec = evt.getValidHandle< std::vector< recob::PFParticle > >( fPFParticleTag );
 
+  // Setup map for SparseNet
+  std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
+  art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
+  if(evt.getByLabel("pandora",spacePointHandle)){
+    art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+  }
+  // Graph space points for each slice we want to consider
+  std::map<unsigned int,std::map<unsigned int,art::Ptr<recob::SpacePoint>>> allGraphSpacePoints;
+ 
+  // We can calculate the number of neighbours for each space point with some radius
+  // Store the number of neighbours for each spacepoint ID, for each slice. If we
+  // only want the beam slice, or all of the slices together, this will have one
+  // element
+  std::map<unsigned int,std::vector<std::map<int,unsigned int>>> neighbourMap;
+ 
+
   if (fGetTrackMichel && !fSkipMVA) {
     for (const recob::PFParticle & pfp : (*pfpVec)) {
       const recob::Track* tempTrack = pfpUtil.GetPFParticleTrack(pfp, evt,
@@ -1278,14 +1297,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     trueToPFPs = truthUtil.GetMapMCToPFPs_ByHits( clockData, evt, fPFParticleTag, fHitTag );
   }
 
-  // AAA: adding a vector of all the spacepoints for the SparseNet 
-  art::Handle<std::vector<recob::SpacePoint>> spacePointHandle; 
-  std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
-  if(evt.getByLabel(fSpacePointLabel,spacePointHandle)){
-    art::fill_ptr_vector(allSpacePoints, spacePointHandle);
-  }  
-
-
+  // Processing beam slices
   n_beam_slices = 0;
   n_beam_particles = 0;
   const std::map<unsigned int, std::vector<const recob::PFParticle*>> sliceMap
@@ -1293,6 +1305,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
   std::vector<std::vector<const recob::PFParticle*>> beam_slices;
   for (auto slice : sliceMap) {
     std::map<unsigned int,art::Ptr<recob::SpacePoint>> sliceSpacePoints;
+
     for (auto particle : slice.second) {
       bool added = false;
       if (pfpUtil.IsBeamParticle(*particle,evt, fPFParticleTag)) {
@@ -1308,6 +1321,15 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
               = pfpUtil.GetPFParticleTrack(*p,evt,fPFParticleTag,fTrackerTag);
           ++n_beam_particles;
           beam_particle_scores.push_back(pfpUtil.GetBeamCosmicScore(*p, evt, fPFParticleTag));
+          
+          // AAA: adding map of spacepoints for the beam slice for the SparseNet
+          const std::vector<const recob::SpacePoint*> particlePoints = pfpUtil.GetPFParticleSpacePoints(*p, evt, "pandora");
+          for(const recob::SpacePoint* s : particlePoints) { 
+            sliceSpacePoints.insert(std::make_pair(s->ID(),allSpacePoints.at(s->ID())));
+          }
+          allGraphSpacePoints[slice.first] = sliceSpacePoints;
+          neighbourMap.insert(std::make_pair(slice.first, GetNeighboursForRadii_vec(evt,fNeighbourRadii, fChargeRadii, sliceSpacePoints)));
+
           if (track) {
             //std::cout << "Slice: " << slice.first << " ID: " << track->ID() <<
             //             std::endl;
@@ -1315,10 +1337,6 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
           }
           else {
             beam_track_IDs.push_back(-999);
-          }
-          const std::vector<const recob::SpacePoint*> particlePoints = pfpUtil.GetPFParticleSpacePoints(*p, evt, "pandora");
-          for(const recob::SpacePoint* s : particlePoints) { 
-             sliceSpacePoints.insert(std::make_pair(s->ID(),allSpacePoints.at(s->ID())));
           }
         }
 
@@ -1330,6 +1348,14 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     }
   }
   //std::cout << "Got " << beam_slices.size() <<" beam slices" << std::endl;
+
+  // AAA: some debugging message 
+  std::cout << "Found all neighbours for " << neighbourMap.size() << " slices" << std::endl;
+
+  // Get charge map for feature extraction
+  // ChargeMap function is linear in number of points so just do it once
+  std::map<unsigned int,float> chargeMap = GetSpacePointChargeMap(evt,"pandora");
+
 
 
   ///Gets the beam pfparticle
@@ -2093,6 +2119,8 @@ void pduneana::PDSPAnalyzer::beginJob() {
     fTree->Branch( "reco_daughter_shower_spacePts_X", &reco_daughter_shower_spacePts_X );
     fTree->Branch( "reco_daughter_shower_spacePts_Y", &reco_daughter_shower_spacePts_Y );
     fTree->Branch( "reco_daughter_shower_spacePts_Z", &reco_daughter_shower_spacePts_Z );
+    
+    fTree->Branch( "&sparsenet_features", &sparsenet_features );
   }
 
 }
@@ -2597,6 +2625,8 @@ void pduneana::PDSPAnalyzer::reset()
   reco_daughter_shower_spacePts_X.clear();
   reco_daughter_shower_spacePts_Y.clear();
   reco_daughter_shower_spacePts_Z.clear();
+ 
+  sparsenet_features.clear();
   //
 
   g4rw_primary_weights.clear();
@@ -2662,6 +2692,7 @@ void pduneana::PDSPAnalyzer::BeamPFPInfo(
     reco_beam_spacePts_X.push_back(sp->XYZ()[0]);
     reco_beam_spacePts_Y.push_back(sp->XYZ()[1]);
     reco_beam_spacePts_Z.push_back(sp->XYZ()[2]);
+    
   }
 }
 
