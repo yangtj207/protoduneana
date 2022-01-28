@@ -45,6 +45,8 @@
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
+#include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
+
 #include "TFile.h"
 #include "TTree.h"
 #include "TDirectory.h"
@@ -133,11 +135,20 @@ namespace dune{
     Int_t lastwire[kMaxTracks];
     Int_t endtpc[kMaxTracks];
     Float_t lastpeakt[kMaxTracks];
+    float true_trkstartx[kMaxTracks];
+    float true_trkstarty[kMaxTracks];
+    float true_trkstartz[kMaxTracks];
+    float true_trkendx[kMaxTracks];
+    float true_trkendy[kMaxTracks];
+    float true_trkendz[kMaxTracks];
     std::string fHitsModuleLabel;
     std::string fTrackModuleLabel;
     std::string fCalorimetryModuleLabel;
     bool  fSaveCaloInfo;
     bool  fSaveTrackInfo;
+
+    protoana::ProtoDUNETruthUtils truthUtil;
+
   }; 
 
   //========================================================================
@@ -200,6 +211,12 @@ namespace dune{
     fEventTree->Branch("lastwire",lastwire,"lastwire[cross_trks]/I");
     fEventTree->Branch("lastpeakt",lastpeakt,"lastpeakt[cross_trks]/F");
     fEventTree->Branch("endtpc",endtpc,"endtpc[cross_trks]/I");
+    fEventTree->Branch("true_trkstartx",true_trkstartx,"true_trkstartx[cross_trks]/F");
+    fEventTree->Branch("true_trkstarty",true_trkstarty,"true_trkstarty[cross_trks]/F");
+    fEventTree->Branch("true_trkstartz",true_trkstartz,"true_trkstartz[cross_trks]/F");
+    fEventTree->Branch("true_trkendx",true_trkendx,"true_trkendx[cross_trks]/F");
+    fEventTree->Branch("true_trkendy",true_trkendy,"true_trkendy[cross_trks]/F");
+    fEventTree->Branch("true_trkendz",true_trkendz,"true_trkendz[cross_trks]/F");
  
   }
 
@@ -253,6 +270,9 @@ namespace dune{
   
     art::FindManyP<recob::PFParticle> pfp_trk_assn(trackListHandle,evt,"pandoraTrack");
     art::FindManyP<anab::T0> fmT0(trackListHandle, evt ,"pmtrack");
+
+    // Get services
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
 
     isData = evt.isRealData();
     run = evt.run();
@@ -506,8 +526,19 @@ namespace dune{
 	  trkpitch[cross_trks-1][planenum][iHit]=(calos[ical]->TrkPitchVec())[iHit];
 	} // loop over iHit..
       } // loop over ical 2nd time...
-     
-    
+      if (!isData){
+        auto particles = truthUtil.GetMCParticleListFromRecoTrack(clockData, *tracklist[i], evt, fTrackModuleLabel);
+        for (auto & part : particles){
+          //cout<<(part.first)->PdgCode()<<" "<<part.second<<endl;
+          true_trkstartx[cross_trks-1] = (part.first)->Vx();
+          true_trkstarty[cross_trks-1] = (part.first)->Vy();
+          true_trkstartz[cross_trks-1] = (part.first)->Vz();
+          true_trkendx[cross_trks-1] = (part.first)->EndX();
+          true_trkendy[cross_trks-1] = (part.first)->EndY();
+          true_trkendz[cross_trks-1] = (part.first)->EndZ();
+          break;
+        }
+      }
     } // loop over trks...
   
     fEventTree->Fill();
@@ -553,6 +584,12 @@ namespace dune{
       ntrkhits[i][0] = -99999;
       ntrkhits[i][1] = -99999;
       ntrkhits[i][2] = -99999;
+      true_trkstartx[i]=-99999;
+      true_trkstarty[i]=-99999;
+      true_trkstartz[i]=-99999;
+      true_trkendx[i]=-99999;
+      true_trkendy[i]=-99999;
+      true_trkendz[i]=-99999;
       for(int j=0; j<3; j++){
 	for(int k=0; k<3000; k++){
 	  trkdqdx[i][j][k]=-99999;

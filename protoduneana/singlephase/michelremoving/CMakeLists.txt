@@ -62,6 +62,7 @@ art_make(
   ${FHICLCPP}
   cetlib cetlib_except
   ROOT_BASIC_LIB_LIST
+  ProtoDUNEUtilities
   SERVICE_LIBRARIES
   larcorealg_Geometry
   larcore_Geometry_Geometry_service
