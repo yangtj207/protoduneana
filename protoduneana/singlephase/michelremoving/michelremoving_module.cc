@@ -95,6 +95,7 @@ namespace dune{
     
   private:
     TTree* fEventTree;
+    bool     isData;
     Int_t    run;                  
     Int_t    subrun;               
     Int_t    event;
@@ -161,6 +162,7 @@ namespace dune{
     std::cout<<"job begin..."<<std::endl;
     art::ServiceHandle<art::TFileService> tfs;
     fEventTree = tfs->make<TTree>("Event", "Event Tree from Reco");
+    fEventTree->Branch("isData", &isData, "isData/O");
     fEventTree->Branch("event", &event,"event/I");
     fEventTree->Branch("evttime",&evttime,"evttime/D");
     fEventTree->Branch("run", &run,"run/I");
@@ -252,7 +254,7 @@ namespace dune{
     art::FindManyP<recob::PFParticle> pfp_trk_assn(trackListHandle,evt,"pandoraTrack");
     art::FindManyP<anab::T0> fmT0(trackListHandle, evt ,"pmtrack");
 
-
+    isData = evt.isRealData();
     run = evt.run();
     subrun = evt.subRun();
     event = evt.id().event();
@@ -513,6 +515,7 @@ namespace dune{
 	   
     /////////////////// Defintion of reset function ///////////
   void michelremoving::reset(){
+    isData = false;
     run = -99999;
     subrun = -99999;
     event = -99999;
