@@ -105,7 +105,7 @@ namespace pduneana {
 
   // Get the angle and the dot product between the vector from the base node to its neighbours
   void GetAngleAndDotProduct(const SpacePoint &baseNode,
-    const SpacePoint &n1, const SpacePoint &n2, float &dotProduct, float &angle) {
+    const SpacePoint &n1, const SpacePoint &n2, double &dotProduct, double &angle) {
     TVector3 basePos(baseNode.XYZ());
     TVector3 neighbour1Pos(n1.XYZ());
     TVector3 neighbour2Pos(n2.XYZ());
@@ -988,7 +988,15 @@ private:
   std::vector< std::vector< double > > reco_daughter_spacePts_X, reco_daughter_spacePts_Y, reco_daughter_spacePts_Z;
   std::vector< std::vector< double > > reco_daughter_shower_spacePts_X, reco_daughter_shower_spacePts_Y, reco_daughter_shower_spacePts_Z;
  
-  std::vector< std::vector< float > > sparsenet_features;
+  std::vector< std::vector< double > > sparsenet_features_charge;
+  std::vector< std::vector< double > > sparsenet_features_angle;
+  std::vector< std::vector< double > > sparsenet_features_dot_product;
+  std::vector< std::vector< double > > sparsenet_features_neighboring_nodes_3;
+  std::vector< std::vector< double > > sparsenet_features_neighboring_nodes_10;
+  std::vector< std::vector< double > > sparsenet_features_neighboring_nodes_30;
+  std::vector< std::vector< double > > sparsenet_features_charge_distance_3;
+  std::vector< std::vector< double > > sparsenet_features_charge_distance_10;
+  std::vector< std::vector< double > > sparsenet_features_charge_distance_30;
   
 
 
@@ -2101,7 +2109,16 @@ void pduneana::PDSPAnalyzer::beginJob() {
     fTree->Branch( "reco_daughter_shower_spacePts_Y", &reco_daughter_shower_spacePts_Y );
     fTree->Branch( "reco_daughter_shower_spacePts_Z", &reco_daughter_shower_spacePts_Z );
     
-    fTree->Branch( "&sparsenet_features", &sparsenet_features );
+    fTree->Branch( "sparsenet_features_charge", &sparsenet_features_charge );
+    fTree->Branch( "sparsenet_features_angle", &sparsenet_features_angle );
+    fTree->Branch( "sparsenet_features_dot_product", &sparsenet_features_dot_product );
+    fTree->Branch( "sparsenet_features_neighboring_nodes_3", &sparsenet_features_neighboring_nodes_3 );
+    fTree->Branch( "sparsenet_features_neighboring_nodes_10", &sparsenet_features_neighboring_nodes_10 );
+    fTree->Branch( "sparsenet_features_neighboring_nodes_30", &sparsenet_features_neighboring_nodes_30 );
+    fTree->Branch( "sparsenet_features_charge_distance_3", &sparsenet_features_charge_distance_3 );
+    fTree->Branch( "sparsenet_features_charge_distance_10", &sparsenet_features_charge_distance_10 );
+    fTree->Branch( "sparsenet_features_charge_distance_30", &sparsenet_features_charge_distance_30 );
+ 
   }
 
 }
@@ -2607,7 +2624,16 @@ void pduneana::PDSPAnalyzer::reset()
   reco_daughter_shower_spacePts_Y.clear();
   reco_daughter_shower_spacePts_Z.clear();
  
-  sparsenet_features.clear();
+  // SparseNet
+  sparsenet_features_charge.clear();
+  sparsenet_features_angle.clear();
+  sparsenet_features_dot_product.clear();
+  sparsenet_features_neighboring_nodes_3.clear();
+  sparsenet_features_neighboring_nodes_10.clear();
+  sparsenet_features_neighboring_nodes_30.clear();
+  sparsenet_features_charge_distance_3.clear();
+  sparsenet_features_charge_distance_10.clear();
+  sparsenet_features_charge_distance_30.clear();
   //
 
   g4rw_primary_weights.clear();
@@ -4046,13 +4072,21 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
     }
 
     if (fSaveHits) {
-      // SparseNet      
-
-
       reco_daughter_spacePts_X.push_back(std::vector<double>());
       reco_daughter_spacePts_Y.push_back(std::vector<double>());
       reco_daughter_spacePts_Z.push_back(std::vector<double>());
-      sparsenet_features.push_back(std::vector<float>());
+
+      // SparseNet features      
+      sparsenet_features_charge.push_back(std::vector<double>());
+      sparsenet_features_angle.push_back(std::vector<double>());
+      sparsenet_features_dot_product.push_back(std::vector<double>());
+      sparsenet_features_neighboring_nodes_3.push_back(std::vector<double>());
+      sparsenet_features_neighboring_nodes_10.push_back(std::vector<double>());
+      sparsenet_features_neighboring_nodes_30.push_back(std::vector<double>());
+      sparsenet_features_charge_distance_3.push_back(std::vector<double>());
+      sparsenet_features_charge_distance_10.push_back(std::vector<double>());
+      sparsenet_features_charge_distance_30.push_back(std::vector<double>());
+
 
       const auto space_pts = pfpUtil.GetPFParticleSpacePoints(*daughterPFP, evt, fPFParticleTag);
 
@@ -4072,41 +4106,65 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
       // Get charge map 
       std::map<unsigned int,float> chargeMap = GetSpacePointChargeMap(evt, "pandora");
 
+      // Loop over all spacepoints
       for (const auto * sp : space_pts) {
         reco_daughter_spacePts_X.back().push_back(sp->XYZ()[0]);
         reco_daughter_spacePts_Y.back().push_back(sp->XYZ()[1]);
         reco_daughter_spacePts_Z.back().push_back(sp->XYZ()[2]);        
-
-        // The neighbour map gives us our first feature(s)
+          
+        
+        // Add the number of neighbouring hits to the features
         for(unsigned int m = 0; m < fNeighbourRadii.size(); ++m){
-          sparsenet_features.back().push_back(neighbourMap.at(0)[m].at(sp->ID()));
+          if (m==0)
+            sparsenet_features_neighboring_nodes_3.back().push_back(neighbourMap.at(0)[m].at(sp->ID()));
+          if (m==1)
+            sparsenet_features_neighboring_nodes_10.back().push_back(neighbourMap.at(0)[m].at(sp->ID()));
+          if (m==2)
+            sparsenet_features_neighboring_nodes_30.back().push_back(neighbourMap.at(0)[m].at(sp->ID()));
         }
-         
+        
+ 
         // Add the charge map to the features 
-        sparsenet_features.back().push_back(chargeMap.at(sp->ID()));
-
-        // Angle and dot product between node and its two nearest neighbours
-        float angle = -999.;
-        float dotProduct = -999.;
+        sparsenet_features_charge.back().push_back(chargeMap.at(sp->ID()));
+        
+        // Add angle and dot product between node and its two nearest neighbours
+        double angle = -999.;
+        double dotProduct = -999.;        
         int n1ID = twoNearest[sp->ID()].first;
         int n2ID = twoNearest[sp->ID()].second;
-        const recob::SpacePoint n1 = *(space_pts.at(n1ID));
-        const recob::SpacePoint n2 = *(space_pts.at(n2ID));
-        GetAngleAndDotProduct(*(sp),n1,n2,dotProduct,angle);
-        sparsenet_features.back().push_back(dotProduct);
-        sparsenet_features.back().push_back(angle);
 
+        // AAA: horrible hack to get the spacepoint for a given ID
+        //const recob::SpacePoint n1 = *(space_pts.at(n1ID));
+        //const recob::SpacePoint n2 = *(space_pts.at(n2ID));     
+        recob::SpacePoint n1;
+        recob::SpacePoint n2;
+        for (const auto * sp : space_pts) {
+          if (sp->ID() == n1ID) 
+            n1 = *sp; 
+          if (sp->ID() == n2ID)
+            n2 = *sp;
+        }        
+        GetAngleAndDotProduct(*sp,n1,n2,dotProduct,angle);      
+        sparsenet_features_dot_product.back().push_back(dotProduct);
+        sparsenet_features_angle.back().push_back(angle);
+ 
         // Adding to the features vec the charge within radius
         for(unsigned int m = 0; m < fChargeRadii.size(); ++m){
-          sparsenet_features.back().push_back(neighbourMap.at(0)[m+fNeighbourRadii.size()].at(sp->ID()));
-        }  
+          if (m==0)
+            sparsenet_features_charge_distance_3.back().push_back(neighbourMap.at(0)[m+fNeighbourRadii.size()].at(sp->ID()));
+          if (m==1)
+            sparsenet_features_charge_distance_10.back().push_back(neighbourMap.at(0)[m+fNeighbourRadii.size()].at(sp->ID()));
+          if (m==2)
+            sparsenet_features_charge_distance_30.back().push_back(neighbourMap.at(0)[m+fNeighbourRadii.size()].at(sp->ID()));
+ 
+        } 
 
 
-      }
+      } // Loop over spacepoints
 
 
 
-    }
+    } // SaveHits
 
     //Getting the default pandora reconstruction type (shower/track)
     const recob::Track * pandoraTrack = pfpUtil.GetPFParticleTrack(
