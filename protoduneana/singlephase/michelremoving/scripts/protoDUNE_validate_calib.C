@@ -25,6 +25,9 @@
 #include <TImage.h>
 #include <iomanip>
 #include <algorithm>
+
+#include "fhiclcpp/ParameterSet.h"
+
 using namespace std;
 
 ////defining recombination function
@@ -38,17 +41,20 @@ float bet=0.212;
 //Abbey's parameters https://indico.fnal.gov/event/46503/contributions/215375/attachments/143230/181102/recombination_20210519.pdf
 //float alp=0.912;
 //float bet=0.195;
-float dedx=2.08;
-bool userecom=true;
+//float dedx=2.08;
+//bool userecom=true;
 bool recalib=true;
 bool sceon=true;
-float recom_factor(float totEf){
-  if (!userecom) return 1;
-  float xsi=bet*dedx/(LAr_density*totEf);
-  float xsi0=bet*dedx/(LAr_density*0.4867);
-  float rec0=log(alp+xsi0)/xsi0;
-  return (rec0*xsi)/log(alp+xsi);
-}
+int xbins;
+double xmin;
+double xmax;
+//float recom_factor(float totEf){
+//  if (!userecom) return 1;
+//  float xsi=bet*dedx/(LAr_density*totEf);
+//  float xsi0=bet*dedx/(LAr_density*0.4867);
+//  float rec0=log(alp+xsi0)/xsi0;
+//  return (rec0*xsi)/log(alp+xsi);
+//}
 
 float GetdEdx(float dQdx, float E_field){
   float Beta = bet/(LAr_density*E_field);
@@ -108,7 +114,7 @@ float zoffsetbd(float xval,float yval,float zval){
   }
 }
 
-void protoDUNE_validate_calib::Loop(TString mn)
+void protoDUNE_validate_calib::Loop(int mn)
 {
 
   if (fChain == 0) return;
@@ -125,28 +131,45 @@ void protoDUNE_validate_calib::Loop(TString mn)
   //  }
   double median_dQdx[3];
 
-  ifstream in;
-  for (int i = 0; i<3; ++i){
-    in.open(Form("global_median_%d_r%d.txt",i, run));
-    char line[1024];
-    while(1){
-      in.getline(line,1024);
-      if(!in.good()) break;
-      int n;
-      sscanf(line, "%d %lf", &n, &median_dQdx[i]);
+  ////////////////////// Importing Y-Z plane fractional corrections /////////////
+
+  TH2F *YZ_negativeX_corr[3];
+  TH2F *YZ_positiveX_corr[3];
+  TH1F *X_corr[3];
+
+  if (recalib){
+    ifstream in;
+    for (int i = 0; i<3; ++i){
+      in.open(Form("global_median_%d_r%d.txt",i, run));
+      char line[1024];
+      while(1){
+        in.getline(line,1024);
+        if(!in.good()) break;
+        int n;
+        sscanf(line, "%d %lf", &n, &median_dQdx[i]);
+      }
+      in.close();
+      in.clear();
+      in.open(Form("calconst_%d.txt", i));
+      while(1){
+        in.getline(line,1024);
+        if(!in.good()) break;
+        double error;
+        sscanf(line, "%lf %lf", &calib_const[i], &error);
+      }
+      in.close();
+      in.clear();
+      cout<<"median_dQdx["<<i<<"]="<<median_dQdx[i]<<" calorimetry constant = "<<calib_const[i]<<endl;
     }
-    in.close();
-    in.clear();
-    in.open(Form("calconst_%d.txt", i));
-    while(1){
-      in.getline(line,1024);
-      if(!in.good()) break;
-      double error;
-      sscanf(line, "%lf %lf", &calib_const[i], &error);
+
+    TFile my_file(Form("YZcalo_mich%d_r%d.root",mn, run));
+    TFile my_file2(Form("Xcalo_mich%d_r%d.root",mn, run));
+  
+    for (int i = 0; i<3; ++i){
+      YZ_negativeX_corr[i] = (TH2F*)my_file.Get(Form("correction_dqdx_ZvsY_negativeX_hist_%d",i));
+      YZ_positiveX_corr[i] = (TH2F*)my_file.Get(Form("correction_dqdx_ZvsY_positiveX_hist_%d",i));
+      X_corr[i] = (TH1F*)my_file2.Get(Form("dqdx_X_correction_hist_%d",i));
     }
-    in.close();
-    in.clear();
-    cout<<"median_dQdx["<<i<<"]="<<median_dQdx[i]<<" calorimetry constant = "<<calib_const[i]<<endl;
   }
   
   //int x_bin_size=5;
@@ -155,7 +178,7 @@ void protoDUNE_validate_calib::Loop(TString mn)
   std::cout<<"efield at the anode neg"<<tot_Ef(-352,300,300)<<std::endl;
   std::cout<<"efield at the anode pos"<<tot_Ef(352,300,300)<<std::endl;
 
-  TFile *file = new TFile(Form("Validate_mich%s_r%d.root",mn.Data(), run),"recreate");
+  TFile *file = new TFile(Form("Validate_mich%d_r%d.root",mn, run),"recreate");
 
   TTree *tree = new TTree("calotree","calo tree");
   short plane;
@@ -213,10 +236,9 @@ void protoDUNE_validate_calib::Loop(TString mn)
   double avgKE[3][nbins] = {{0}};
   double avgPitch[3][nbins] = {{0}};
   int nhits[3][nbins] = {{0}};
-  TVectorD params(3);
+  TVectorD params(2);
   params[0] = alp;
   params[1] = bet;
-  params[2] = dedx;
 
   std::vector<std::vector<TH1D*>> dedx(3);
   TH2D *dedxke[3];
@@ -238,21 +260,6 @@ void protoDUNE_validate_calib::Loop(TString mn)
       }
       dedx[i].back()->Sumw2();
     }
-  }
-
-  ////////////////////// Importing Y-Z plane fractional corrections /////////////
-
-  TH2F *YZ_negativeX_corr[3];
-  TH2F *YZ_positiveX_corr[3];
-  TH1F *X_corr[3];
-
-  TFile my_file(Form("YZcalo_mich%s_r%d.root",mn.Data(), run));
-  TFile my_file2(Form("Xcalo_mich%s_r%d.root",mn.Data(), run));
-  
-  for (int i = 0; i<3; ++i){
-    YZ_negativeX_corr[i] = (TH2F*)my_file.Get(Form("correction_dqdx_ZvsY_negativeX_hist_%d",i));
-    YZ_positiveX_corr[i] = (TH2F*)my_file.Get(Form("correction_dqdx_ZvsY_positiveX_hist_%d",i));
-    X_corr[i] = (TH1F*)my_file2.Get(Form("dqdx_X_correction_hist_%d",i));
   }
   
   const int np = 13;
@@ -383,7 +390,15 @@ void protoDUNE_validate_calib::Loop(TString mn)
                   if(trkhitx[i][j][k]<0 && trkhitx[i][j][k-1]>0) continue;
                   float corrected_dqdx = trkdqdx[i][j][k];
                   float corrected_dedx = trkdedx[i][j][k];
-                  x_bin=X_corr[j]->FindBin(trkhitx[i][j][k]);
+                  if (recalib){
+                    x_bin=X_corr[j]->FindBin(trkhitx[i][j][k]);
+                  }
+                  else{
+                    double binwidth = (xmax-xmin)/xbins;
+                    x_bin = int((trkhitx[i][j][k]-xmin)/binwidth)+1;
+                    if (x_bin<1) x_bin = 1;
+                    if (x_bin>xbins) x_bin = xbins;
+                  }
                   if (recalib){  
                     float YZ_correction_factor_negativeX=YZ_negativeX_corr[j]->GetBinContent(YZ_negativeX_corr[j]->FindBin(trkhitz[i][j][k],trkhity[i][j][k]));
                     float X_correction_factor=X_corr[j]->GetBinContent(x_bin);
@@ -426,7 +441,15 @@ void protoDUNE_validate_calib::Loop(TString mn)
                   if(trkhitx[i][j][k]>0 && trkhitx[i][j][k-1]<0) continue;
                   float corrected_dqdx = trkdqdx[i][j][k];
                   float corrected_dedx = trkdedx[i][j][k];
-                  x_bin=X_corr[j]->FindBin(trkhitx[i][j][k]);
+                  if (recalib){
+                    x_bin=X_corr[j]->FindBin(trkhitx[i][j][k]);
+                  }
+                  else{
+                    double binwidth = (xmax-xmin)/xbins;
+                    x_bin = int((trkhitx[i][j][k]-xmin)/binwidth)+1;
+                    if (x_bin<1) x_bin = 1;
+                    if (x_bin>xbins) x_bin = xbins;
+                  }
                   if (recalib){  
                     float YZ_correction_factor_positiveX=YZ_positiveX_corr[j]->GetBinContent(YZ_positiveX_corr[j]->FindBin(trkhitz[i][j][k],trkhity[i][j][k]));
                     float X_correction_factor=X_corr[j]->GetBinContent(x_bin);
@@ -514,41 +537,70 @@ void protoDUNE_validate_calib::Loop(TString mn)
 }
 
 int main(int argc, char *argv[]) {
-  
-  if (!argv[2]) {
-    cout << "Error: No input file or michelremoving tree number was provided!" << endl;
-    cout << "Usage: " << endl;
-    cout << "make_x_correction root_file_or_list [michelremoving_tree_number]" << endl;
 
-    return 0;
-  }
-  
-  string infile = argv[1];
-  string michelnumber = argv[2];
-  string a3 = argv[3];
-  string sce = argv[4];
-  if (a3 == "0"){
-    recalib = false;
-  }
-  else{
-    recalib = true;
+  bool found_fcl = false;
+
+  std::string fcl_file;
+
+  for (int iArg = 1; iArg < argc; iArg++) {
+    if (!strcasecmp(argv[iArg],"-c")) {
+     fcl_file = argv[++iArg];
+     found_fcl = true;
+    }
+    if (!strcasecmp(argv[iArg],"-h")) {
+      std::cout << "Usage: "<<argv[0] <<
+                   " -c fclfile.fcl" << std::endl;
+      return 1;
+    }
   }
 
-  cout<<"recalib="<<recalib<<endl;
-
-  if (!(michelnumber == "0"||michelnumber == "1"||michelnumber == "2"||michelnumber == "3")){
-    cout << "Error: Michel tree number must be 0,1, or 2" << endl;
+  if (!found_fcl) {
+    cout << "Error: No fcl file was provided! Please provide with '-c'" << endl;
     return 0;
   }
 
-  if (michelnumber=="0") michelnumber = "";
-  cout << Form("michelremoving%s/Event", michelnumber.c_str()) << endl;
+  ////Setting up fcl parameters
+  char const* fhicl_env = getenv("FHICL_FILE_PATH");
+  std::string search_path;
+
+  if (!fhicl_env) {
+    std::cerr << "Expected environment variable FHICL_FILE_PATH is missing " <<
+                 "or empty: using \".\"\n";
+    search_path = ".";
+  }
+  else {
+    search_path = std::string{fhicl_env};
+  }
+
+  cet::filepath_first_absolute_or_lookup_with_dot lookupPolicy{search_path};
+  auto const pset = fhicl::ParameterSet::make(fcl_file, lookupPolicy);
+
+  string infile = pset.get<string>("infile");
+  int michelnumber = pset.get<int>("michelnumber");
+  recalib = pset.get<bool>("recalib");
+  sceon = pset.get<bool>("sceon");
+  xbins = pset.get<int>("xbins");
+  xmin = pset.get<double>("xmin");
+  xmax = pset.get<double>("xmax");
+
+  cout<<"infile = "<<infile<<endl;
+  cout<<"michelnumber = "<<michelnumber<<endl;
+  cout<<"recalib = "<<recalib<<endl;
+  cout<<"sceon = "<<sceon<<endl;
+  cout<<"xbins = "<<xbins<<endl;
+  cout<<"xmin = "<<xmin<<endl;
+  cout<<"xmax = "<<xmax<<endl;
+
+  if (!(michelnumber == 0||michelnumber == 1||michelnumber == 2||michelnumber == 3)){
+    cout << "Error: Michel tree number must be 0, 1, 2 or 3" << endl;
+    return 0;
+  }
 
 
   TChain* shtree = new TChain("Event");
 
   if (infile.substr(infile.find_last_of(".") + 1) == "root"){
-    shtree->Add(Form("%s/michelremoving%s/Event", infile.c_str(), michelnumber.c_str()));
+    shtree->Add(Form("%s/michelremoving%d/Event", infile.c_str(), michelnumber));
   }
 
   else /*if(infile.substr(infile.find_last_of(".") + 1) == "list" || infile.substr(infile.find_last_of(".") + 1) == "txt")*/{
@@ -559,21 +611,13 @@ int main(int argc, char *argv[]) {
     while(1){
       in.getline(line,1024);
       if (!in.good()) break;
-      shtree->Add(Form("%s/michelremoving%s/Event", line, michelnumber.c_str()));
+      shtree->Add(Form("%s/michelremoving%d/Event", line, michelnumber));
     }
     in.close();
     in.clear();
   }
 
-  if (sce=="0"){
-    cout<<"SCE off"<<endl;
-    sceon = false;
-  }
-  else{
-    cout<<"SCE on"<<endl;
-    sceon = true;
-  }
   protoDUNE_validate_calib t(shtree);
   
-  t.Loop(michelnumber.c_str());
+  t.Loop(michelnumber);
 } // main
