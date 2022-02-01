@@ -1,3 +1,4 @@
+#include "CaloUtils.h"
 #include "LanGausFit.h"
 #include "TF1.h"
 #include "TSystem.h"
@@ -18,6 +19,7 @@
 
 using namespace std;
 
+/*
 const int Z=18; //Atomic number of Argon
 const double A=39.948; // g/mol Atomic mass of Argon
 const double I=188.0e-6; // ev
@@ -74,6 +76,8 @@ double dpdx(double KE,double x,double mass){
   double value=(1.0/x)*epsilon*((TMath::Log(A0)) + TMath::Log(A1) + 0.2 - b*b - density(b*g));
   return value;
 }
+*/
+
 /*
 Double_t langaufun(Double_t *x, Double_t *par) {
   Double_t invsq2pi = 0.398942280401;// Control constants

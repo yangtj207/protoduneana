@@ -185,11 +185,13 @@ void protoDUNE_validate_calib::Loop(int mn)
   TTree *tree = new TTree("calotree","calo tree");
   short plane;
   float dQdx;
+  float dQdx_e;
   float dEdx;
   float KE;
   float E;
   tree->Branch("plane",&plane,"plane/S");
   tree->Branch("dQdx",&dQdx,"dQdx/F");
+  tree->Branch("dQdx_e",&dQdx_e,"dQdx_e/F");
   tree->Branch("dEdx",&dEdx,"dEdx/F");
   tree->Branch("KE",&KE,"KE/F");
   tree->Branch("E",&E,"E/F");
@@ -475,7 +477,8 @@ void protoDUNE_validate_calib::Loop(int mn)
                     corrected_dqdx=trkdqdx[i][j][k]*YZ_correction_factor_negativeX*X_correction_factor*normcorr/calib_const[j];
                     corrected_dedx=GetdEdx(corrected_dqdx, tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
                   }
-                  dQdx = corrected_dqdx*calib_const[j];
+                  dQdx = corrected_dqdx;
+                  dQdx_e = corrected_dqdx*calib_const[j];
                   dEdx = corrected_dedx;
                   E = tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]);
                   if (fid_xing && testneg_xing){
@@ -526,7 +529,8 @@ void protoDUNE_validate_calib::Loop(int mn)
                     corrected_dqdx=trkdqdx[i][j][k]*YZ_correction_factor_positiveX*X_correction_factor*normcorr/calib_const[j];
                     corrected_dedx=GetdEdx(corrected_dqdx, tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
                   }
-                  dQdx = corrected_dqdx*calib_const[j];
+                  dQdx = corrected_dqdx;
+                  dQdx_e = corrected_dqdx*calib_const[j];
                   dEdx = corrected_dedx;
                   E = tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]);
                   //if (k==2) cout<<"x = "<<trkhitx[i][j][k]<<" y = "<<trkhity[i][j][k]<<" z = "<<trkhitz[i][j][k]<<" dqdx = "<<trkdqdx[i][j][k]<<" yzcorr = "<<YZ_correction_factor_positiveX<<" xcorr = "<<X_correction_factor<<" normcorr = "<<normcorr<<" corrected_dqdx = "<<corrected_dqdx<<" corrected_dedx = "<<corrected_dedx<<" "<<YZ_positiveX_corr[j]->GetXaxis()->FindBin(trkhitz[i][j][k])<<" "<<YZ_positiveX_corr[j]->GetYaxis()->FindBin(trkhity[i][j][k])<<" "<<YZ_positiveX_corr[j]->GetBinContent(YZ_positiveX_corr[j]->GetXaxis()->FindBin(trkhitz[i][j][k]),YZ_positiveX_corr[j]->GetYaxis()->FindBin(trkhity[i][j][k]))<<" "<<x_bin<<" "<<X_correction_factor<<endl;

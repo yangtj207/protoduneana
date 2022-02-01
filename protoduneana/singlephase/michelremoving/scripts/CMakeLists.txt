@@ -13,7 +13,7 @@ cet_make_exec( calculate_calibration_constants
 
 cet_make_library( LIBRARY_NAME CaloTools
                   SOURCE
-                  LanGausFit.C
+                  LanGausFit.C CaloUtils.cxx
                   LIBRARIES
                   ROOT_BASIC_LIB_LIST
                   )
