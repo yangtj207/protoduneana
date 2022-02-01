@@ -46,6 +46,7 @@ float bet=0.212;
 //bool userecom=true;
 bool recalib=true;
 bool sceon=true;
+bool corr_end;
 int xbins;
 double xmin;
 double xmax;
@@ -366,10 +367,14 @@ void protoDUNE_validate_calib::Loop(int mn)
           stpok = stpok && lastwire[i]>5 && lastwire[i]<795;
         }
 
+        double dist_corr = 0;
         if (stpok && ntrkhits[i][j]>1){
           TVector3 true_trkend(true_trkendx[i],
                                true_trkendy[i],
                                true_trkendz[i]);
+          TVector3 reco_trkend(trkendx[i],
+                               trkendy[i],
+                               trkendz[i]);
           TVector3 trkend0, trkend1;
           if (trkresrange[i][j][0]>trkresrange[i][j][ntrkhits[i][j]-1]){
             trkend0.SetXYZ(trkhitx[i][j][ntrkhits[i][j]-1],
@@ -393,11 +398,20 @@ void protoDUNE_validate_calib::Loop(int mn)
           else{
             dist_pl[j]->Fill(-(trkend0-true_trkend).Mag());
           }
+          if (corr_end){
+            if ((trkend0-reco_trkend)*(trkend1-reco_trkend)>0){
+              dist_corr = (trkend0-reco_trkend).Mag();
+            }
+            else{
+              dist_corr = -(trkend0-reco_trkend).Mag();
+            }
+          }
         }
 
         vector<float> res, dq, first5dq, last5dq;
 
         for(int k=0;k<ntrkhits[i][j];++k){
+          trkresrange[i][j][k] += dist_corr;
           res.push_back(trkresrange[i][j][k]);
           dq.push_back(trkdqdx[i][j][k]);
         }
@@ -631,6 +645,7 @@ int main(int argc, char *argv[]) {
   string infile = pset.get<string>("infile");
   int michelnumber = pset.get<int>("michelnumber");
   recalib = pset.get<bool>("recalib");
+  corr_end = pset.get<bool>("corr_end");
   sceon = pset.get<bool>("sceon");
   xbins = pset.get<int>("xbins");
   xmin = pset.get<double>("xmin");
@@ -640,6 +655,7 @@ int main(int argc, char *argv[]) {
   cout<<"michelnumber = "<<michelnumber<<endl;
   cout<<"recalib = "<<recalib<<endl;
   cout<<"sceon = "<<sceon<<endl;
+  cout<<"corr_end = "<<corr_end<<endl;
   cout<<"xbins = "<<xbins<<endl;
   cout<<"xmin = "<<xmin<<endl;
   cout<<"xmax = "<<xmax<<endl;
