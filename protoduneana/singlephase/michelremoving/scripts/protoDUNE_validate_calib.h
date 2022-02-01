@@ -60,6 +60,12 @@ public :
    Int_t           lastwire[30];   //[cross_trks]
    Float_t         lastpeakt[30];   //[cross_trks]
    Int_t           endtpc[30];   //[cross_trks]
+   Float_t         true_trkstartx[30];   //[cross_trks]
+   Float_t         true_trkstarty[30];   //[cross_trks]
+   Float_t         true_trkstartz[30];   //[cross_trks]
+   Float_t         true_trkendx[30];   //[cross_trks]
+   Float_t         true_trkendy[30];   //[cross_trks]
+   Float_t         true_trkendz[30];   //[cross_trks]
 
    // List of branches
    TBranch        *b_event;   //!
@@ -99,6 +105,12 @@ public :
    TBranch        *b_lastwire;   //!
    TBranch        *b_lastpeakt;   //!
    TBranch        *b_endtpc;   //!
+   TBranch        *b_true_trkstartx;   //!
+   TBranch        *b_true_trkstarty;   //!
+   TBranch        *b_true_trkstartz;   //!
+   TBranch        *b_true_trkendx;   //!
+   TBranch        *b_true_trkendy;   //!
+   TBranch        *b_true_trkendz;   //!
 
    protoDUNE_validate_calib(TTree *tree=0);
    virtual ~protoDUNE_validate_calib();
@@ -208,6 +220,12 @@ void protoDUNE_validate_calib::Init(TTree *tree)
    fChain->SetBranchAddress("lastwire", lastwire, &b_lastwire);
    fChain->SetBranchAddress("lastpeakt", lastpeakt, &b_lastpeakt);
    fChain->SetBranchAddress("endtpc", endtpc, &b_endtpc);
+   fChain->SetBranchAddress("true_trkstartx", true_trkstartx, &b_true_trkstartx);
+   fChain->SetBranchAddress("true_trkstarty", true_trkstarty, &b_true_trkstarty);
+   fChain->SetBranchAddress("true_trkstartz", true_trkstartz, &b_true_trkstartz);
+   fChain->SetBranchAddress("true_trkendx", true_trkendx, &b_true_trkendx);
+   fChain->SetBranchAddress("true_trkendy", true_trkendy, &b_true_trkendy);
+   fChain->SetBranchAddress("true_trkendz", true_trkendz, &b_true_trkendz);
    Notify();
 }
 

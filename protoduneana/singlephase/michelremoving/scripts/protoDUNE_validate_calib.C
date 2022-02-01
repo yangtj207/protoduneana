@@ -16,6 +16,7 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TChain.h>
+#include <TVector3.h>
 #include <TVectorD.h>
 #include <fstream>
 #include <vector>
@@ -45,6 +46,7 @@ float bet=0.212;
 //bool userecom=true;
 bool recalib=true;
 bool sceon=true;
+bool corr_end;
 int xbins;
 double xmin;
 double xmax;
@@ -192,6 +194,20 @@ void protoDUNE_validate_calib::Loop(int mn)
   tree->Branch("KE",&KE,"KE/F");
   tree->Branch("E",&E,"E/F");
 
+  TH1D *deltax = new TH1D("deltax","Reco_x - true_x (cm)", 100,-10,10);
+  TH1D *deltay = new TH1D("deltay","Reco_y - true_y (cm)", 100,-10,10);
+  TH1D *deltaz = new TH1D("deltaz","Reco_z - true_z (cm)", 100,-10,10);
+  TH1D *dist = new TH1D("dist","dist",100,0,10);
+  deltax->Sumw2();
+  deltay->Sumw2();
+  deltaz->Sumw2();
+  dist->Sumw2();
+  TH1D *dist_pl[3];
+  for (int i = 0; i<3; ++i){
+    dist_pl[i] = new TH1D(Form("dist_pl%d",i),Form("dist plane %d",i),100,-10,10);
+    dist_pl[i]->Sumw2();
+  }
+
   TH1F *dqdx_X_hist[3];
   TH1F *dedx_X_hist[3];
   TH1F *hdqdx[3];
@@ -308,6 +324,15 @@ void protoDUNE_validate_calib::Loop(int mn)
 
       bool sel_stp = fid_stp && adjacent_hits[i]==0 && dist_min[i]<5;
 
+      if (sel_stp){
+        deltax->Fill(trkendx[i]-true_trkendx[i]);
+        deltay->Fill(trkendy[i]-true_trkendy[i]);
+        deltaz->Fill(trkendz[i]-true_trkendz[i]);
+        dist->Fill(sqrt(pow(trkendx[i]-true_trkendx[i], 2)+
+                        pow(trkendy[i]-true_trkendy[i], 2)+
+                        pow(trkendz[i]-true_trkendz[i], 2)));
+      }
+
       bool testneg_xing=0;
       bool testpos_xing=0;
       if(trkstartx[i]<-350 or trkendx[i]<-350) testneg_xing=1;      
@@ -342,9 +367,51 @@ void protoDUNE_validate_calib::Loop(int mn)
           stpok = stpok && lastwire[i]>5 && lastwire[i]<795;
         }
 
+        double dist_corr = 0;
+        if (stpok && ntrkhits[i][j]>1){
+          TVector3 true_trkend(true_trkendx[i],
+                               true_trkendy[i],
+                               true_trkendz[i]);
+          TVector3 reco_trkend(trkendx[i],
+                               trkendy[i],
+                               trkendz[i]);
+          TVector3 trkend0, trkend1;
+          if (trkresrange[i][j][0]>trkresrange[i][j][ntrkhits[i][j]-1]){
+            trkend0.SetXYZ(trkhitx[i][j][ntrkhits[i][j]-1],
+                           trkhity[i][j][ntrkhits[i][j]-1],
+                           trkhitz[i][j][ntrkhits[i][j]-1]);
+            trkend1.SetXYZ(trkhitx[i][j][ntrkhits[i][j]-2],
+                             trkhity[i][j][ntrkhits[i][j]-2],
+                             trkhitz[i][j][ntrkhits[i][j]-2]);
+          }
+          else{
+            trkend0.SetXYZ(trkhitx[i][j][0],
+                             trkhity[i][j][0],
+                             trkhitz[i][j][0]);
+            trkend1.SetXYZ(trkhitx[i][j][1],
+                             trkhity[i][j][1],
+                             trkhitz[i][j][1]);
+          }
+          if ((trkend0-true_trkend)*(trkend1-true_trkend)<0){
+            dist_pl[j]->Fill((trkend0-true_trkend).Mag());
+          }
+          else{
+            dist_pl[j]->Fill(-(trkend0-true_trkend).Mag());
+          }
+          if (corr_end){
+            if ((trkend0-reco_trkend)*(trkend1-reco_trkend)>0){
+              dist_corr = (trkend0-reco_trkend).Mag();
+            }
+            else{
+              dist_corr = -(trkend0-reco_trkend).Mag();
+            }
+          }
+        }
+
         vector<float> res, dq, first5dq, last5dq;
 
         for(int k=0;k<ntrkhits[i][j];++k){
+          trkresrange[i][j][k] += dist_corr;
           res.push_back(trkresrange[i][j][k]);
           dq.push_back(trkdqdx[i][j][k]);
         }
@@ -578,6 +645,7 @@ int main(int argc, char *argv[]) {
   string infile = pset.get<string>("infile");
   int michelnumber = pset.get<int>("michelnumber");
   recalib = pset.get<bool>("recalib");
+  corr_end = pset.get<bool>("corr_end");
   sceon = pset.get<bool>("sceon");
   xbins = pset.get<int>("xbins");
   xmin = pset.get<double>("xmin");
@@ -587,6 +655,7 @@ int main(int argc, char *argv[]) {
   cout<<"michelnumber = "<<michelnumber<<endl;
   cout<<"recalib = "<<recalib<<endl;
   cout<<"sceon = "<<sceon<<endl;
+  cout<<"corr_end = "<<corr_end<<endl;
   cout<<"xbins = "<<xbins<<endl;
   cout<<"xmin = "<<xmin<<endl;
   cout<<"xmax = "<<xmax<<endl;
