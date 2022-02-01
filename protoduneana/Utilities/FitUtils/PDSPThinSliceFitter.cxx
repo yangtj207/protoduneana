@@ -320,9 +320,8 @@ void protoana::PDSPThinSliceFitter::BuildMCSamples() {
   TFile fMCFile(fMCFileName.c_str(), "OPEN");
   fMCTree = (TTree*)fMCFile.Get(fTreeName.c_str());
 
-  //FillMCEvents();
   fThinSliceDriver->FillMCEvents(fMCTree, fEvents, fFakeDataEvents, fSplitVal,
-                                 fSplitMC);
+                                 fSplitMC, (fDoFakeData && fFakeDataRoutine == "Asimov"));
   fThinSliceDriver->BuildMCSamples(fEvents, fSamples, fIsSignalSample,
                                    fNominalFluxes, fFluxesBySample,
                                    fBeamEnergyBins);
@@ -2262,21 +2261,29 @@ void protoana::PDSPThinSliceFitter::PlotThrows(
 
   //Add in quadrature here   
   if (fAddDiffInQuadrature) {
+    std::cout << "Adding diff in quad" << std::endl;
     std::map<int, TGraph*> diff_graph_map;
     TFile diff_file(fDiffGraphFile.c_str(), "open");
     for (auto it = fDiffGraphs.begin(); it != fDiffGraphs.end(); ++it) {
       diff_graph_map[it->first] = (TGraph*)diff_file.Get(it->second.c_str());
+      std::cout << it->first << " " << diff_graph_map[it->first] << std::endl;
     }
     
     int diag_bin = 1;
     for (auto it = diff_graph_map.begin(); it != diff_graph_map.end(); ++it) {
+      std::cout << it->first << " " << it->second->GetN() << " " <<
+                   best_fit_xsec_errs[it->first].size() << std::endl;
       for (int i = 0; i < it->second->GetN(); ++i) {
+        double diff_err = std::pow(it->second->GetY()[i], 2);
+        double best_fit_err = std::pow(best_fit_xsec_errs[it->first][i], 2);
+        std::cout << "Adding " << diff_err << " " << best_fit_err << " " <<
+                     sqrt(best_fit_err + diff_err) << " " <<
+                     sqrt(best_fit_err) << std::endl;
         xsec_cov.SetBinContent(diag_bin, diag_bin,
                                (xsec_cov.GetBinContent(diag_bin, diag_bin)
-                                + std::pow(it->second->GetY()[i], 2)));
+                                + diff_err));
         best_fit_xsec_errs[it->first][i]
-            = sqrt(std::pow(best_fit_xsec_errs[it->first][i], 2)
-                   + std::pow(it->second->GetY()[i], 2));
+            = sqrt(best_fit_err + diff_err);
 
         diag_bin++;
       }

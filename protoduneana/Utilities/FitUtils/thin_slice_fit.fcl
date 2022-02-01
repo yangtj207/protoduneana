@@ -6,7 +6,9 @@
 #DataFileName: "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
 #MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_22_21/eventSelection_mc_all.root"
 #DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_22_21/eventSelection_mc_all.root"
-MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_4_22/AltSCE/eventSelection_mc_all.root"
+#MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_4_22/AltSCE/eventSelection_mc_all.root"
+MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_31_22/eventSelection_mc_all.root"
+#MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_28_22/eventSelection_mc_all.root"
 DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_4_22/AltSCE/eventSelection_data_BeamQuality.root"
 
 TreeName: "pduneana/beamana"
@@ -55,9 +57,13 @@ AnalysisOptions: {
   }
 
   FakeDataG4RWGrid: {
-    Position: [7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 ]
-    Shift:    [12, 12, 12, 12, 12, 12, 12, 08, 08, 08, 08, 08, 08, 08 ]
-    Branch: "g4rw_full_grid_piplus_weights_fake_data"
+    #Position: [7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 ]
+    #Shift:    [12, 12, 12, 12, 12, 12, 12, 08, 08, 08, 08, 08, 08, 08 ]
+    #Branch: "g4rw_full_grid_piplus_weights_fake_data"
+
+    Position: [0]
+    Shift:    [15]
+    Branch: "g4rw_full_grid_proton_weights"
 
     ###(reac, 0), (abs, 1), (cex, 2), (dcex, 3), (prod, 4), (inel, 5) 
     ### x7 each (200 MeV bins) -- total range: 0, 41 (0, 1400)
@@ -140,8 +146,10 @@ Systematics: [
   @local::SystematicsList.beam_cut_weight
 ]
 #
-#Systematics[2].Central: 1.0 
-#Systematics[3].Central: 1.0 
+Systematics[2].Central: 1.0 
+Systematics[3].Central: 1.0 
+
+Systematics[1].Options.Cal_set.PlaneParameters[0].norm_factor: 1.
 
 #Systematics[6].Options.LowerLimit: -5.
 #Systematics[6].Options.UpperLimit: 5.
@@ -151,7 +159,7 @@ Systematics: [
 #Systematics[6].Options.Limits: [-.075, .075] 
 #Systematics[6].Options.WeightCap: -999.
 
-AddSystTerm: false 
+AddSystTerm: true 
 CovarianceBins: [
   ["dEdX_Cal_Spline", 0],
   #["g4rw_QE1", 1],
@@ -176,7 +184,7 @@ SystsToFix: [
   ["beam_shift", 0.]
 ]
 
-AddDiffInQuadrature: false
+AddDiffInQuadrature: true 
 Diffs: [
   [1, "grXSecDiffAbs"],
   [2, "grXSecDiffCex"],
@@ -188,39 +196,54 @@ Selections: [
   {
     Name: "Abs"
     ID: 1
-    RecoBins: [[0., 400., 500., 600., 700., 800., 900., 1200.]]
-    BinLabels: [["0 - 400", "400 - 500", "500 - 600",
-                 "600 - 700", "700 - 800", "800 - 900",
+    #RecoBins: [[0., 400., 500., 600., 700., 800., 900., 1200.]]
+    #BinLabels: [["0 - 400", "400 - 500", "500 - 600",
+    #             "600 - 700", "700 - 800", "800 - 900",
+    #             "900 - 1200"]]
+    RecoBins: [[0., 300., 350., 400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900., 1200.]]
+    BinLabels: [["0 - 300", "300 - 350", "350 - 400", "400 - 450", "450 - 500", "500 - 550", "550 - 600",
+                 "600 - 650", "650 - 700", "700 - 750", "750 - 800", "800 - 850", "850 - 900",
                  "900 - 1200"]]
-    #RecoBins: [[0., 400., 500., 600., 800., 1200.]]
-    #BinLabels: [["0 - 400", "400 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
+    #RecoBins: [[0., 500., 600., 700., 800., 900., 1200.]]
+    #BinLabels: [["0 - 500", "500 - 600", "600 - 700", "700 - 800",
+    #             "800 - 900", "900 - 1200"]]
     AxisTitles: ["Reconstructed KE (MeV)"]
   },
   {
     Name: "Cex"
     ID: 2
-    RecoBins: [[0., 500., 600., 700., 800., 900., 1200.]]
-    BinLabels: [["0 - 500", "500 - 600", "600 - 700",
-                 "700 - 800", "800 - 900", "900 - 1200"]]
-    #RecoBins: [[0., 500., 600., 800., 1200.]]
-    #BinLabels: [["0 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
+    #RecoBins: [[0., 400., 500., 600., 700., 800., 900., 1200.]]
+    #BinLabels: [["0 - 400", "400 - 500", "500 - 600",
+    #             "600 - 700", "700 - 800", "800 - 900",
+    #             "900 - 1200"]]
+    #RecoBins: [[0., 500., 600., 700., 800., 900., 1200.]]
+    #BinLabels: [["0 - 500", "500 - 600", "600 - 700",
+    #             "700 - 800", "800 - 900", "900 - 1200"]]
+    RecoBins: [[0., 400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900., 1200.]]
+    BinLabels: [["0 - 400", "400 - 450", "450 - 500", "500 - 550", "550 - 600",
+                 "600 - 650", "650 - 700", "700 - 750", "750 - 800", "800 - 850", "850 - 900",
+                 "900 - 1200"]]
     AxisTitles: ["Reconstructed KE (MeV)"]
   } ,
   {
     Name: "RejectedInt"
     ID: 3
-    #RecoBins: [[0., 300., 350., 400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900., 950., 1000., 1200.]]
-    #BinLabels: [["0 - 300", "300 - 350", "350 - 400", "400 - 450", "450 - 500",
-    #             "500 - 550", "550 - 600", "600 - 650", "650 - 700", "700 - 750",
-    #             "750 - 800", "800 - 850", "850 - 900", "900 - 950", "950 - 1000", "1000 - 1200"]]
-    RecoBins: [[0., 400., 500., 600., 800., 1200.]]
-    BinLabels: [["0 - 400", "400 - 500", "500 - 600", "600 - 800", "800 - 1200"]]
+    #RecoBins: [[0., 400., 500., 600., 700., 800., 900., 1200.]]
+    #BinLabels: [["0 - 400", "400 - 500", "500 - 600",
+    #             "600 - 700", "700 - 800", "800 - 900",
+    #             "900 - 1200"]]
+    #RecoBins: [[0., 500., 600., 700., 800., 900., 1200.]]
+    #BinLabels: [["0 - 500", "500 - 600", "600 - 700", "700 - 800",
+    #             "800 - 900", "900 - 1200"]]
+    RecoBins: [[0., 400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900., 1200.]]
+    BinLabels: [["0 - 400", "400 - 450", "450 - 500", "500 - 550", "550 - 600",
+                 "600 - 650", "650 - 700", "700 - 750", "750 - 800", "800 - 850", "850 - 900",
+                 "900 - 1200"]]
     AxisTitles: ["Reconstructed KE (MeV)"]
   },
   {
     Name: "APA2"
     ID: 4
-    #RecoBins: [[222, 275, 325, 375, 425, 580]]
     RecoBins: [[222, 234, 580]]
     AxisTitles: ["Reconstructed End Z (cm)"]
   },
@@ -233,6 +256,13 @@ Selections: [
   {
     Name: "NoBeamTrack"
     ID: 6
+    RecoBins: [[0, 1]]
+    AxisTitles: [""]
+  }
+
+  ,{
+    Name: "MichelCut"
+    ID: 7
     RecoBins: [[0, 1]]
     AxisTitles: [""]
   }
@@ -259,30 +289,32 @@ BeamEnergyBins: [0., 800., 900., 1000., 1100., 1200., 4000.]
 #For use identifying the true incident samples
 #used to make the final total pion incident histogram
 IncidentSamples: [1, 2, 3, 6, 7]
-MeasurementSamples: [1, 2]
+MeasurementSamples: [1, 2, 3]
 
 Samples: [
   {
     Name: "Abs"
     ID: 1
     IsSignal: true
-    #SignalBins: [400., 500., 600., 800., 1000.] 
-    SignalBins: [400., 500., 600., 700., 800., 1000.] 
+    #SignalBins: [400., 500., 600., 700., 800., 1000.] 
+    #SignalBins: [500., 600., 700., 800., 900.]
+    SignalBins: [400., 500., 600., 700., 800., 900.] 
     FluxType: 1
   },
   {
     Name: "Cex"
     ID: 2
     IsSignal: true
-    #SignalBins: [450., 600., 800., 1000.]
-    SignalBins: [500., 600., 700., 800., 900.]
+    #SignalBins: [500., 600., 700., 800., 900.]
+    SignalBins: [500., 600., 700., 800., 900.] 
     FluxType: 1
   },
   {
     Name: "OtherInel"
     ID: 3
-    IsSignal: false
-    SignalBins: @local::DefaultSignalBins
+    IsSignal: true 
+    SignalBins: [500., 600., 700., 800., 900.]
+    #SignalBins: [400., 500., 600., 700., 800., 900.] 
     FluxType: 1
   },
   {
@@ -341,12 +373,12 @@ DrawXSecUnderflow: false
 
 ## Validation
 RandomStart: false 
-SplitMC: false 
-DoFakeData: false
+SplitMC: true 
+DoFakeData: true 
 FluctuateStats: false 
-DoThrows: false 
-NThrows: 1000
-DoScans: true
+DoThrows: true 
+NThrows: 200 #00
+DoScans: false 
 RunHesse: false 
 Do1DShifts: false
 DoSysts: true
@@ -355,7 +387,5 @@ MaxRethrows: 1000
 
 FitType: "Normal"
 #FitType: "None"
-#FitType: "Pulls"
-#FitType: "Toy"
 
 NPulls: 10
