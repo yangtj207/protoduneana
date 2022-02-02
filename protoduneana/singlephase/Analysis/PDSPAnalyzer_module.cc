@@ -3048,7 +3048,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
       std::vector< float > new_dEdX = calibration_SCE.GetCalibratedCalorimetry(*thisTrack, evt, fTrackerTag, fCalorimetryTagSCE, 2, -10.);
       std::cout << new_dEdX.size() << " " << reco_beam_resRange_SCE.size() << std::endl;
       for( size_t i = 0; i < new_dEdX.size(); ++i ){ reco_beam_calibrated_dEdX_SCE.push_back( new_dEdX[i] ); }
-      std::cout << "got calibrated dedx" << std::endl;
+      //std::cout << "got calibrated dedx" << std::endl;
 
       std::vector<double> new_dQdX = calibration_SCE.CalibratedQdX(
         *thisTrack, evt, fTrackerTag,
@@ -4612,7 +4612,7 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         }
 
         if (fGetCalibratedShowerEnergy) {
-          std::cout << "Getting calibrated shower energy" << std::endl;
+          //std::cout << "Getting calibrated shower energy" << std::endl;
           auto calo = showerUtil.GetRecoShowerCalorimetry(
               *pandora2Shower, evt, "pandora2Shower", "pandora2cali");
           bool found_calo = false;
