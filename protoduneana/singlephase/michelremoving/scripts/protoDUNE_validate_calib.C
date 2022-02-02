@@ -50,6 +50,7 @@ bool corr_end;
 int xbins;
 double xmin;
 double xmax;
+string outfile;
 //float recom_factor(float totEf){
 //  if (!userecom) return 1;
 //  float xsi=bet*dedx/(LAr_density*totEf);
@@ -180,7 +181,8 @@ void protoDUNE_validate_calib::Loop(int mn)
   std::cout<<"efield at the anode neg"<<tot_Ef(-352,300,300)<<std::endl;
   std::cout<<"efield at the anode pos"<<tot_Ef(352,300,300)<<std::endl;
 
-  TFile *file = new TFile(Form("Validate_mich%d_r%d.root",mn, run),"recreate");
+  //TFile *file = new TFile(Form("Validate_mich%d_r%d.root",mn, run),"recreate");
+  TFile *file = new TFile(outfile.c_str(),"recreate");
 
   TTree *tree = new TTree("calotree","calo tree");
   short plane;
@@ -188,12 +190,14 @@ void protoDUNE_validate_calib::Loop(int mn)
   float dQdx_e;
   float dEdx;
   float KE;
+  float RR;
   float E;
   tree->Branch("plane",&plane,"plane/S");
   tree->Branch("dQdx",&dQdx,"dQdx/F");
   tree->Branch("dQdx_e",&dQdx_e,"dQdx_e/F");
   tree->Branch("dEdx",&dEdx,"dEdx/F");
   tree->Branch("KE",&KE,"KE/F");
+  tree->Branch("RR",&RR,"RR/F");
   tree->Branch("E",&E,"E/F");
 
   TH1D *deltax = new TH1D("deltax","Reco_x - true_x (cm)", 100,-10,10);
@@ -454,6 +458,7 @@ void protoDUNE_validate_calib::Loop(int mn)
             if((trkhity[i][j][k]<600)&&(trkhity[i][j][k]>0)){
               if((trkhitz[i][j][k]<695)&&(trkhitz[i][j][k]>0)){
                 KE = sp->Eval(trkresrange[i][j][k]);
+                RR = trkresrange[i][j][k];
                 if(trkhitx[i][j][k]<0 && trkhitx[i][j][k]>-360 && negok){//negative drift
                   if(trkhitx[i][j][k]<0 && trkhitx[i][j][k+1]>0) continue;
                   if(trkhitx[i][j][k]<0 && trkhitx[i][j][k-1]>0) continue;
@@ -647,6 +652,7 @@ int main(int argc, char *argv[]) {
   auto const pset = fhicl::ParameterSet::make(fcl_file, lookupPolicy);
 
   string infile = pset.get<string>("infile");
+  outfile = pset.get<string>("outfile");
   int michelnumber = pset.get<int>("michelnumber");
   recalib = pset.get<bool>("recalib");
   corr_end = pset.get<bool>("corr_end");
@@ -656,6 +662,7 @@ int main(int argc, char *argv[]) {
   xmax = pset.get<double>("xmax");
 
   cout<<"infile = "<<infile<<endl;
+  cout<<"outfile = "<<outfile<<endl;
   cout<<"michelnumber = "<<michelnumber<<endl;
   cout<<"recalib = "<<recalib<<endl;
   cout<<"sceon = "<<sceon<<endl;
