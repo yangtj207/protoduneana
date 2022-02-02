@@ -20,7 +20,7 @@ class AbsCexDriver : public ThinSliceDriver {
   void FillMCEvents(
     TTree * tree, std::vector<ThinSliceEvent> & events,
     std::vector<ThinSliceEvent> & fake_data_events,
-    int & split_val, const bool & do_split) override;
+    int & split_val, const bool & do_split, const bool & do_fake_data) override;
 
   void BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,
