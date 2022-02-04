@@ -150,3 +150,35 @@ Int_t langaupro(Double_t *params, Double_t &maxx, Double_t &FWHM) {
   FWHM = fxr - fxl;
   return (0);
 }
+
+TF1 *runlangaufit(TH1 *his, int plane){
+
+  double fr[2];
+  double sv[4], pllo[4], plhi[4], fp[4], fpe[4];
+  fr[0]=1.;//this was originally 0.
+  fr[1]=15.;
+  sv[0] = 0.08;
+  sv[1] = 0.9*his->GetMean();
+  sv[2] = 0.05*his->GetEntries();
+  if (plane!=2){//induction plane
+    sv[3] = 0.07;
+  }
+  else{
+    sv[3] = 0.15;
+  }
+  if(his->GetMean()>5){
+    fr[0] = 2.;
+    fr[1] = 15;
+    sv[0] = 1.;
+  }
+
+  for(int k=0; k<4; ++k){
+    pllo[k] = 0.01*sv[k];
+    plhi[k] = 100*sv[k];
+  }
+  double chisqr;
+  int    ndf;
+  int    status;
+  
+  return langaufit(his,fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
+}

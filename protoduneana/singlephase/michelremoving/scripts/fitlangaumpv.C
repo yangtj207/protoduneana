@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
   if (!argv[1]){
     cout<<"Error: no input file"<<endl;
   }
-  gStyle->SetOptStat(0);
+  gStyle->SetOptStat(2210);
   //string filename = "Validate_mich2_r5387.root";
   string filename = argv[1];
 
@@ -307,6 +307,7 @@ int main(int argc, char *argv[]) {
     for (size_t j = 1; j<nbins; ++j){
       dedx[i][j] = (TH1D*)f.Get(Form("dedx_%zu_%zu", i, j));
       dedx[i][j]->Draw();
+      /*
       Double_t fr[2];
       Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
       fr[0]=1.1;//this was originally 0.
@@ -341,9 +342,11 @@ int main(int argc, char *argv[]) {
       Int_t    ndf;
       Int_t    status;
       //    TF1 *fitsnr = langaufit(dedx[i][j],fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf);
-      TF1 *fitsnr = langaufit(dedx[i][j],fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
+      */
+      //TF1 *fitsnr = langaufit(dedx[i][j],fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
+      TF1 *fitsnr = runlangaufit(dedx[i][j], i);
       //    cout <<"************ Fit status (gMinuit): " << gMinuit << ", "<< gMinuit->fCstatu.Data() <<" *********"<<endl;
-      cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
+      //cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
       fitsnr->SetLineColor(kRed);
       std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
       std::cout << "************** Chi^2/NDF : " << fitsnr->GetChisquare()/fitsnr->GetNDF() << std::endl;
