@@ -77,6 +77,7 @@ void fcn(int& /*npar*/, double* /*gin*/, double &f, double *par, int /*iflag*/){
     }
   }
   cout<<"Chi2 = "<<chisq<<" "<<par[0]<<" "<<par[1]<<" "<<par[2]<<" "<<par[3]<<" "<<par[4]<<endl;
+  f = chisq;
 }
   
 
