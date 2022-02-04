@@ -127,10 +127,13 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
          "reco_beam_calo_startZ", "reco_beam_calo_endX",
          "reco_beam_calo_endY", "reco_beam_calo_endZ"});
   }
-  mc = mc.Define("selection_ID", selection_ID,
+  mc = mc.Define("vertex_cut",
+                 vertex_michel_cut(pset.get<double>("MichelCut")),
+                 {"reco_beam_vertex_michel_score", "reco_beam_vertex_nHits"});
+  mc = mc.Define("selection_ID", selection_ID(pset.get<bool>("DoMichel")),
                  {"primary_isBeamType", "primary_ends_inAPA3",
                   "has_noPion_daughter", "passBeamCut",
-                  "has_shower_dist_energy"});
+                  "has_shower_dist_energy", "vertex_cut"});
   std::cout << "Filtering MC" << std::endl;
   auto filtered = mc.Filter("true_beam_PDG == 211 || true_beam_PDG == -13");
   return filtered;
@@ -214,10 +217,14 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
          "reco_beam_calo_startZ", "reco_beam_calo_endX",
          "reco_beam_calo_endY", "reco_beam_calo_endZ"});
   }
-  data = data.Define("selection_ID", selection_ID,
+  data = data.Define("vertex_cut",
+                     vertex_michel_cut(pset.get<double>("fMichelCut")),
+                     {"reco_beam_vertex_michel_score",
+                      "reco_beam_vertex_nHits"});
+  data = data.Define("selection_ID", selection_ID(pset.get<bool>("DoMichel")),
                  {"primary_isBeamType", "primary_ends_inAPA3",
                   "has_noPion_daughter", "passBeamCut",
-                  "has_shower_dist_energy"});
+                  "has_shower_dist_energy", "vertex_cut"});
   auto filtered = data.Filter("beamPID == true");
   return filtered;
 }

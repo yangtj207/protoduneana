@@ -24,7 +24,7 @@ class ThinSliceDriver {
   virtual void FillMCEvents(
     TTree * tree, std::vector<ThinSliceEvent> & events,
     std::vector<ThinSliceEvent> & fake_data_events,
-    int & split_val, const bool & do_split) = 0;
+    int & split_val, const bool & do_split, const bool & do_fake_data) = 0;
 
   virtual void BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,

@@ -39,6 +39,7 @@
 #include "protoduneana/Utilities/ProtoDUNEBeamlineUtils.h"
 #include "protoduneana/Utilities/ProtoDUNEBeamCuts.h"
 #include "protoduneana/Utilities/ProtoDUNEEmptyEventFinder.h"
+
 #include "protoduneana/Utilities/G4ReweightUtils.h"
 //#include "duneprototypes/Protodune/singlephase/DataUtils/ProtoDUNEDataUtils.h"
 
@@ -80,7 +81,242 @@
 #include "TGraph2D.h"
 #include "TROOT.h"
 
+
 namespace pduneana {
+
+  using std::string;
+  using std::vector;
+  using std::pair;
+  using std::map;
+  using std::set;
+
+  using art::Ptr;
+  using art::Event;
+  using art::ServiceHandle;
+
+  using cheat::BackTrackerService;
+  using cheat::ParticleInventoryService;
+
+  using simb::MCParticle;
+
+  using recob::Hit;
+  using recob::SpacePoint;
+
+
+  // Get the angle and the dot product between the vector from the base node to its neighbours
+  void GetAngleAndDotProduct(const SpacePoint &baseNode,
+    const SpacePoint &n1, const SpacePoint &n2, double &dotProduct, double &angle) {
+    TVector3 basePos(baseNode.XYZ());
+    TVector3 neighbour1Pos(n1.XYZ());
+    TVector3 neighbour2Pos(n2.XYZ());
+    TVector3 baseToNeighbour1 = neighbour1Pos - basePos;
+    TVector3 baseToNeighbour2 = neighbour2Pos - basePos;
+    dotProduct = baseToNeighbour1.Dot(baseToNeighbour2);
+    angle = baseToNeighbour1.Angle(baseToNeighbour2);
+    return;
+  }
+
+
+
+
+  // Use the association between space points and hits to return a charge
+  std::map<unsigned int, float> GetSpacePointChargeMap(
+    std::vector<art::Ptr<recob::SpacePoint>> const& spacePoints,
+    std::vector<std::vector<art::Ptr<recob::Hit>>> const& sp2Hit) {
+
+    map<unsigned int, float> ret;
+
+    for (size_t spIdx = 0; spIdx < spacePoints.size(); ++spIdx) {
+      float charge = 0.0;
+      for (Ptr<Hit> hit : sp2Hit[spIdx]) {
+        charge += hit->Integral();
+      }
+      ret[spacePoints[spIdx]->ID()] = charge;
+    }
+
+    return ret;
+
+  } // function GetSpacePointChargeMap
+
+  std::map<unsigned int, float> GetSpacePointChargeMap(
+    art::Event const &evt, const std::string &spLabel)  {
+
+    art::Handle<vector<SpacePoint>> spacePointHandle;
+    vector<Ptr<SpacePoint>> spacePoints;
+    if (!evt.getByLabel(spLabel, spacePointHandle)) {
+      throw art::Exception(art::errors::LogicError)
+        << "Could not find spacepoints with module label "
+        << spLabel << "!";
+    }
+    art::fill_ptr_vector(spacePoints, spacePointHandle);
+    art::FindManyP<Hit> fmp(spacePointHandle, evt, spLabel);
+    vector<vector<Ptr<Hit>>> sp2Hit(spacePoints.size());
+    for (size_t spIdx = 0; spIdx < sp2Hit.size(); ++spIdx) {
+      sp2Hit[spIdx] = fmp.at(spIdx);
+    } // for spacepoint
+
+    return GetSpacePointChargeMap(spacePoints, sp2Hit);
+
+  } // function GetSpacePointChargeMap
+
+
+
+
+  // Get the two nearest neighbours to use for calcuation of angles between them and the node in question
+  
+
+  std::map<int,std::pair<int,int>> GetTwoNearestNeighbours(art::Event const &evt,
+    const std::vector<const recob::SpacePoint*> &sps) {
+    std::map<int,int> closestID;
+    std::map<int,int> secondID;
+    // Now loop over all of the space points and simultaneously fill our maps
+    // Get the space points from the event and make the map
+    for(auto sp0 : sps){
+      // We want an entry even if it ends up being zero
+      int thisSP = sp0->ID();
+      int closest = -1;
+      int second = -1;
+      float closestDist = 99999;
+      float secondDist = 99999;
+      for(auto sp1 : sps){
+        if(thisSP == sp1->ID()) continue;
+        // For some reason we have to use arrays
+        const double *p0 = sp0->XYZ();
+        const double *p1 = sp1->XYZ();
+        // Get the distance between the points
+        const float dx = p1[0] - p0[0];
+        const float dy = p1[1] - p0[1];
+        const float dz = p1[2] - p0[2];
+        const float dist = sqrt(dx*dx + dy*dy + dz*dz);
+        if(dist < closestDist){
+          secondDist = closestDist;
+          closestDist = dist;
+          second = closest;
+          closest = sp1->ID();
+        }
+        else if(dist < secondDist){
+          secondDist = dist;
+          second = sp1->ID();
+        }
+      }
+      closestID.insert(std::make_pair(thisSP,closest));
+      secondID.insert(std::make_pair(thisSP,second));
+    }
+    map<int,pair<int,int>> finalMap;
+    for(unsigned int m = 0; m < closestID.size(); ++m){
+      finalMap[m] = std::make_pair(closestID[m],secondID[m]);
+    }
+    return finalMap;
+  }
+
+/*
+  std::map<int,std::pair<int,int>> GetTwoNearestNeighbours_label(art::Event const &evt,
+    const std::string &spLabel) {
+    art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
+    std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
+    if(evt.getByLabel(spLabel,spacePointHandle)){
+      art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+    }
+    return GetTwoNearestNeighbours(evt,allSpacePoints);
+  }
+
+  
+  std::map<int,std::pair<int,int>> GetTwoNearestNeighbours_vec(art::Event const &evt,
+    const std::map<unsigned int, art::Ptr<recob::SpacePoint>> &sps)  {
+
+    vector<Ptr<SpacePoint>> vec;
+    for(auto m : sps){
+      vec.push_back(m.second);
+    }
+    return GetTwoNearestNeighbours(evt,vec);
+  }
+
+*/
+
+
+
+
+  std::vector<std::map<int,unsigned int>> GetNeighboursForRadii(art::Event const &evt,
+    const std::vector<float>& rangeCuts, const std::vector<float>& chargeRangeCuts, const std::vector<const recob::SpacePoint*> &sps) {
+    std::vector<std::map<int,unsigned int>> result;
+    // Initialise a map for each range cut value
+    for(unsigned int m = 0; m < rangeCuts.size(); ++m){
+      result.push_back(map<int,unsigned int>());
+    }
+    // Initialize a map for each charge range cut value
+    for(unsigned int m = 0; m < chargeRangeCuts.size(); ++m){
+      result.push_back(map<int,unsigned int>());
+    }
+ 
+    // Comput the charge map
+    // NOTE: space point label is hardcoded
+    std::map<unsigned int,float> chargeMap = GetSpacePointChargeMap(evt, "pandora");
+
+ 
+    for(auto sp0 : sps){
+      // We want an entry even if it ends up being zero
+      for(auto &m : result){
+        m[sp0->ID()] = 0;
+      }
+      for(auto sp1 : sps){
+        if(sp0->ID() == sp1->ID()) continue;
+        // For some reason we have to use arrays
+        const double *p0 = sp0->XYZ();
+        const double *p1 = sp1->XYZ();
+        // Get the distance between the points
+        const float dx = p1[0] - p0[0];
+        const float dy = p1[1] - p0[1];
+        const float dz = p1[2] - p0[2];
+        const float dist = sqrt(dx*dx + dy*dy + dz*dz);
+        // Fill the maps if we satify the criteria
+        for(unsigned int r = 0; r < rangeCuts.size(); ++r){
+          if(dist < rangeCuts[r]){
+            result[r][sp0->ID()] = result[r][sp0->ID()] + 1;
+          }
+        }
+        // Fill the maps with the charge within that radius
+        for(unsigned int r = 0; r < chargeRangeCuts.size(); ++r){
+          if(dist < chargeRangeCuts[r]){
+            float charge = chargeMap.at(sp1->ID()); 
+            // Instead of adding 1 I should add the charge of SP1!! (to be confirmed by Leigh)
+            result[r+rangeCuts.size()][sp0->ID()] = result[r+rangeCuts.size()][sp0->ID()] + charge;
+          }
+        }
+ 
+
+
+      }
+    }
+    return result;
+  }
+
+/*
+  // Sometimes we might want to know the number of neighbours within various radii
+  std::vector<std::map<int,unsigned int>> GetNeighboursForRadii_label(art::Event const &evt, const std::vector<float>& rangeCuts, const std::vector<float>& chargeRangeCuts, const std::string &spLabel) {
+    // Get the space points from the event and make the map
+    art::Handle<vector<SpacePoint>> spacePointHandle;
+    vector<Ptr<SpacePoint>> allSpacePoints;
+    if(evt.getByLabel(spLabel,spacePointHandle)){
+      art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+    }
+    return GetNeighboursForRadii(evt,rangeCuts, chargeRangeCuts, allSpacePoints);
+  }
+
+  std::vector<std::map<int,unsigned int>> GetNeighboursForRadii_vec(art::Event const &evt,
+    const std::vector<float>& rangeCuts, const std::vector<float>& chargeRangeCuts, const std::map<unsigned int,art::Ptr<recob::SpacePoint>> &sps) {
+    std::vector<art::Ptr<recob::SpacePoint>> vec;
+    for(auto m : sps){
+      vec.push_back(m.second);
+    }
+    return GetNeighboursForRadii(evt, rangeCuts, chargeRangeCuts, vec);
+  }
+
+*/
+
+
+
+
+
   class PDSPAnalyzer;
 
 
@@ -747,11 +983,21 @@ private:
   double reco_beam_momByRange_alt_proton;
   double reco_beam_momByRange_alt_muon;
 
-  //New hits info
+  //New hits info for SparseNet
   std::vector< double > reco_beam_spacePts_X, reco_beam_spacePts_Y, reco_beam_spacePts_Z;
   std::vector< std::vector< double > > reco_daughter_spacePts_X, reco_daughter_spacePts_Y, reco_daughter_spacePts_Z;
   std::vector< std::vector< double > > reco_daughter_shower_spacePts_X, reco_daughter_shower_spacePts_Y, reco_daughter_shower_spacePts_Z;
-
+ 
+  std::vector< std::vector< double > > sparsenet_features_charge;
+  std::vector< std::vector< double > > sparsenet_features_angle;
+  std::vector< std::vector< double > > sparsenet_features_dot_product;
+  std::vector< std::vector< double > > sparsenet_features_neighboring_nodes_3;
+  std::vector< std::vector< double > > sparsenet_features_neighboring_nodes_10;
+  std::vector< std::vector< double > > sparsenet_features_neighboring_nodes_30;
+  std::vector< std::vector< double > > sparsenet_features_charge_distance_3;
+  std::vector< std::vector< double > > sparsenet_features_charge_distance_10;
+  std::vector< std::vector< double > > sparsenet_features_charge_distance_30;
+  
 
 
 
@@ -796,6 +1042,14 @@ private:
   bool fRecalibrate;
   bool fGetCalibratedShowerEnergy;
   bool fCheckSlicesForBeam;
+  // SparseNet params 
+  /// Module label for input space points
+  std::string fSpacePointLabel;
+  /// Radii for calculating number of neighbours for any number of cut values
+  std::vector<float> fNeighbourRadii;
+  /// Radii for calculating charge over distance
+  std::vector<float> fChargeRadii;
+
   bool fSCE;
 
   double fZ0, fPitch;
@@ -844,6 +1098,13 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   fRecalibrate(p.get<bool>("Recalibrate", true)),
   fGetCalibratedShowerEnergy(p.get<bool>("GetCalibratedShowerEnergy", false)),
   fCheckSlicesForBeam(p.get<bool>("CheckSlicesForBeam", false)),
+
+  // SparseNet params
+  fSpacePointLabel (p.get<std::string>    ("SpacePointLabel")), 
+  fNeighbourRadii (p.get<std::vector<float>>("NeighbourRadii")),
+  fChargeRadii (p.get<std::vector<float>>("ChargeRadii")),
+
+
   fSCE(p.get<bool>("SCE", true)){
 
   dEdX_template_file = OpenFile(dEdX_template_name);
@@ -1044,7 +1305,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     trueToPFPs = truthUtil.GetMapMCToPFPs_ByHits( clockData, evt, fPFParticleTag, fHitTag );
   }
 
-
+  // Processing beam slices
   n_beam_slices = 0;
   n_beam_particles = 0;
   const std::map<unsigned int, std::vector<const recob::PFParticle*>> sliceMap
@@ -1066,6 +1327,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
               = pfpUtil.GetPFParticleTrack(*p,evt,fPFParticleTag,fTrackerTag);
           ++n_beam_particles;
           beam_particle_scores.push_back(pfpUtil.GetBeamCosmicScore(*p, evt, fPFParticleTag));
+
           if (track) {
             //std::cout << "Slice: " << slice.first << " ID: " << track->ID() <<
             //             std::endl;
@@ -1075,6 +1337,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
             beam_track_IDs.push_back(-999);
           }
         }
+
       }
       if (!added) {continue;}
       //else {
@@ -1083,7 +1346,6 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     }
   }
   //std::cout << "Got " << beam_slices.size() <<" beam slices" << std::endl;
-
 
   ///Gets the beam pfparticle
   if(beam_slices.size() == 0){
@@ -1846,6 +2108,17 @@ void pduneana::PDSPAnalyzer::beginJob() {
     fTree->Branch( "reco_daughter_shower_spacePts_X", &reco_daughter_shower_spacePts_X );
     fTree->Branch( "reco_daughter_shower_spacePts_Y", &reco_daughter_shower_spacePts_Y );
     fTree->Branch( "reco_daughter_shower_spacePts_Z", &reco_daughter_shower_spacePts_Z );
+    
+    fTree->Branch( "sparsenet_features_charge", &sparsenet_features_charge );
+    fTree->Branch( "sparsenet_features_angle", &sparsenet_features_angle );
+    fTree->Branch( "sparsenet_features_dot_product", &sparsenet_features_dot_product );
+    fTree->Branch( "sparsenet_features_neighboring_nodes_3", &sparsenet_features_neighboring_nodes_3 );
+    fTree->Branch( "sparsenet_features_neighboring_nodes_10", &sparsenet_features_neighboring_nodes_10 );
+    fTree->Branch( "sparsenet_features_neighboring_nodes_30", &sparsenet_features_neighboring_nodes_30 );
+    fTree->Branch( "sparsenet_features_charge_distance_3", &sparsenet_features_charge_distance_3 );
+    fTree->Branch( "sparsenet_features_charge_distance_10", &sparsenet_features_charge_distance_10 );
+    fTree->Branch( "sparsenet_features_charge_distance_30", &sparsenet_features_charge_distance_30 );
+ 
   }
 
 }
@@ -2350,6 +2623,17 @@ void pduneana::PDSPAnalyzer::reset()
   reco_daughter_shower_spacePts_X.clear();
   reco_daughter_shower_spacePts_Y.clear();
   reco_daughter_shower_spacePts_Z.clear();
+ 
+  // SparseNet
+  sparsenet_features_charge.clear();
+  sparsenet_features_angle.clear();
+  sparsenet_features_dot_product.clear();
+  sparsenet_features_neighboring_nodes_3.clear();
+  sparsenet_features_neighboring_nodes_10.clear();
+  sparsenet_features_neighboring_nodes_30.clear();
+  sparsenet_features_charge_distance_3.clear();
+  sparsenet_features_charge_distance_10.clear();
+  sparsenet_features_charge_distance_30.clear();
   //
 
   g4rw_primary_weights.clear();
@@ -2415,6 +2699,7 @@ void pduneana::PDSPAnalyzer::BeamPFPInfo(
     reco_beam_spacePts_X.push_back(sp->XYZ()[0]);
     reco_beam_spacePts_Y.push_back(sp->XYZ()[1]);
     reco_beam_spacePts_Z.push_back(sp->XYZ()[2]);
+    
   }
 }
 
@@ -2763,7 +3048,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
       std::vector< float > new_dEdX = calibration_SCE.GetCalibratedCalorimetry(*thisTrack, evt, fTrackerTag, fCalorimetryTagSCE, 2, -10.);
       std::cout << new_dEdX.size() << " " << reco_beam_resRange_SCE.size() << std::endl;
       for( size_t i = 0; i < new_dEdX.size(); ++i ){ reco_beam_calibrated_dEdX_SCE.push_back( new_dEdX[i] ); }
-      std::cout << "got calibrated dedx" << std::endl;
+      //std::cout << "got calibrated dedx" << std::endl;
 
       std::vector<double> new_dQdX = calibration_SCE.CalibratedQdX(
         *thisTrack, evt, fTrackerTag,
@@ -3790,13 +4075,96 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
       reco_daughter_spacePts_X.push_back(std::vector<double>());
       reco_daughter_spacePts_Y.push_back(std::vector<double>());
       reco_daughter_spacePts_Z.push_back(std::vector<double>());
+
+      // SparseNet features      
+      sparsenet_features_charge.push_back(std::vector<double>());
+      sparsenet_features_angle.push_back(std::vector<double>());
+      sparsenet_features_dot_product.push_back(std::vector<double>());
+      sparsenet_features_neighboring_nodes_3.push_back(std::vector<double>());
+      sparsenet_features_neighboring_nodes_10.push_back(std::vector<double>());
+      sparsenet_features_neighboring_nodes_30.push_back(std::vector<double>());
+      sparsenet_features_charge_distance_3.push_back(std::vector<double>());
+      sparsenet_features_charge_distance_10.push_back(std::vector<double>());
+      sparsenet_features_charge_distance_30.push_back(std::vector<double>());
+
+
       const auto space_pts = pfpUtil.GetPFParticleSpacePoints(*daughterPFP, evt, fPFParticleTag);
+
+
+      // We can calculate the number of neighbours for each space point with some radius 
+      // Store the number of neighbours for each spacepoint ID, for each slice. If we 
+      // only want the beam slice, or all of the slices together, this will have one 
+      // element 
+      std::map<unsigned int,std::vector<std::map<int,unsigned int>>> neighbourMap; 
+      // Get number of neighbours for each spacepoint. Slice number 0 is for all spacepoints
+      neighbourMap.insert(std::make_pair(0,GetNeighboursForRadii(evt,fNeighbourRadii, fChargeRadii, space_pts))); 
+
+      // Get map of two neighrest spacepoints
+      std::map<int,std::pair<int,int>> twoNearest = GetTwoNearestNeighbours(evt,space_pts);
+
+
+      // Get charge map 
+      std::map<unsigned int,float> chargeMap = GetSpacePointChargeMap(evt, "pandora");
+
+      // Loop over all spacepoints
       for (const auto * sp : space_pts) {
         reco_daughter_spacePts_X.back().push_back(sp->XYZ()[0]);
         reco_daughter_spacePts_Y.back().push_back(sp->XYZ()[1]);
-        reco_daughter_spacePts_Z.back().push_back(sp->XYZ()[2]);
-      }
-    }
+        reco_daughter_spacePts_Z.back().push_back(sp->XYZ()[2]);        
+          
+        
+        // Add the number of neighbouring hits to the features
+        for(unsigned int m = 0; m < fNeighbourRadii.size(); ++m){
+          if (m==0)
+            sparsenet_features_neighboring_nodes_3.back().push_back(neighbourMap.at(0)[m].at(sp->ID()));
+          if (m==1)
+            sparsenet_features_neighboring_nodes_10.back().push_back(neighbourMap.at(0)[m].at(sp->ID()));
+          if (m==2)
+            sparsenet_features_neighboring_nodes_30.back().push_back(neighbourMap.at(0)[m].at(sp->ID()));
+        }
+        
+ 
+        // Add the charge map to the features 
+        sparsenet_features_charge.back().push_back(chargeMap.at(sp->ID()));
+        
+        // Add angle and dot product between node and its two nearest neighbours
+        double angle = -999.;
+        double dotProduct = -999.;        
+        int n1ID = twoNearest[sp->ID()].first;
+        int n2ID = twoNearest[sp->ID()].second;
+
+        // AAA: horrible hack to get the spacepoint for a given ID
+        //const recob::SpacePoint n1 = *(space_pts.at(n1ID));
+        //const recob::SpacePoint n2 = *(space_pts.at(n2ID));     
+        recob::SpacePoint n1;
+        recob::SpacePoint n2;
+        for (const auto * sp : space_pts) {
+          if (sp->ID() == n1ID) 
+            n1 = *sp; 
+          if (sp->ID() == n2ID)
+            n2 = *sp;
+        }        
+        GetAngleAndDotProduct(*sp,n1,n2,dotProduct,angle);      
+        sparsenet_features_dot_product.back().push_back(dotProduct);
+        sparsenet_features_angle.back().push_back(angle);
+ 
+        // Adding to the features vec the charge within radius
+        for(unsigned int m = 0; m < fChargeRadii.size(); ++m){
+          if (m==0)
+            sparsenet_features_charge_distance_3.back().push_back(neighbourMap.at(0)[m+fNeighbourRadii.size()].at(sp->ID()));
+          if (m==1)
+            sparsenet_features_charge_distance_10.back().push_back(neighbourMap.at(0)[m+fNeighbourRadii.size()].at(sp->ID()));
+          if (m==2)
+            sparsenet_features_charge_distance_30.back().push_back(neighbourMap.at(0)[m+fNeighbourRadii.size()].at(sp->ID()));
+ 
+        } 
+
+
+      } // Loop over spacepoints
+
+
+
+    } // SaveHits
 
     //Getting the default pandora reconstruction type (shower/track)
     const recob::Track * pandoraTrack = pfpUtil.GetPFParticleTrack(
@@ -4244,7 +4612,7 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         }
 
         if (fGetCalibratedShowerEnergy) {
-          std::cout << "Getting calibrated shower energy" << std::endl;
+          //std::cout << "Getting calibrated shower energy" << std::endl;
           auto calo = showerUtil.GetRecoShowerCalorimetry(
               *pandora2Shower, evt, "pandora2Shower", "pandora2cali");
           bool found_calo = false;

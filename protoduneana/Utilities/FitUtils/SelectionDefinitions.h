@@ -59,7 +59,7 @@ class new_interaction_topology {
   }
 };
 
-auto selection_ID = [](bool beam_is_track, bool ends_in_APA3,
+/*auto selection_ID = [](bool beam_is_track, bool ends_in_APA3,
                        bool no_pion_daughter,
                        bool beam_cuts, bool has_shower) {
   if (!beam_is_track) {
@@ -83,6 +83,45 @@ auto selection_ID = [](bool beam_is_track, bool ends_in_APA3,
   }
   else {
     return 1;
+  }
+};*/
+
+class selection_ID {
+ private:
+  bool fDoMichel;
+ public:
+  selection_ID(bool do_michel) : fDoMichel(do_michel) {};
+
+  int operator()(bool beam_is_track, bool ends_in_APA3,
+                 bool no_pion_daughter,
+                 bool beam_cuts, bool has_shower, bool michel_cut) {
+
+    if (!beam_is_track) {
+      return 6;
+    }
+
+    if (!beam_cuts) {
+      return 5;
+    }
+    
+    if (!ends_in_APA3) {
+      return 4;
+    }
+
+    if (fDoMichel && michel_cut) {
+      return 7;
+    }
+
+    if (!no_pion_daughter) {
+      return 3;
+    }
+
+    if (has_shower) {
+      return 2;
+    }
+    else {
+      return 1;
+    }
   }
 };
 
@@ -363,6 +402,37 @@ class shower_dists {
 };
 
 
+bool shower_dist_energy_check(double shower_dist, double shower_energy) {
+
+  double x1 = 7.5, y1 = 880.;
+  double x2 = 90., y2 = 305.;
+
+  if (shower_energy < 140. && shower_dist < 2.5) {
+    return false;
+  }
+  else if (shower_energy < 60. && shower_dist < 5.) {
+    return false;
+  }
+  else if (shower_energy < 20. && shower_dist < 15.) {
+    return false;
+  }
+  else if (shower_energy > 880.) {
+    return false;
+  }
+  else if (shower_dist > 90.) {
+    return false;
+  }
+  //(x-x1)(y2-y1) - (y-y1)(x2-x1)
+  //(x1, y1) --> (7.5, 880)
+  //(x2, y2) --> (305., 90.)
+  //x --> dist, y --> energy
+  else if (((shower_dist - x1)*(y2 - y1) - (shower_energy - y1)*(x2 - x1)) < 0) {
+    return false;
+  }
+  
+  return true;
+}
+
 class has_shower_dist_energy {
  private:
   double fTrackScoreCut;
@@ -379,10 +449,11 @@ class has_shower_dist_energy {
        double dist = sqrt(std::pow((shower_x[i] - x), 2) +
                           std::pow((shower_y[i] - y), 2) +
                           std::pow((shower_z[i] - z), 2));
+       
        if ((track_score[i] < fTrackScoreCut) &&
-           (track_score[i] > 0.) &&
-           (dist > 5. && dist < 1000.) &&
-           (energy[i] > 80. && energy[i] < 1000.)) {
+           (track_score[i] > 0.) && shower_dist_energy_check(dist, energy[i])
+           /*(dist > 5. && dist < 1000.) &&
+           (energy[i] > 80. && energy[i] < 1000.)*/) {
          return true;
        }
     }
@@ -575,4 +646,15 @@ class beam_cut_TPC {
 
    return true;
    }
+};
+
+class vertex_michel_cut {
+ private:
+  double fCutVal;
+ public:
+  vertex_michel_cut(double cut_val) : fCutVal(cut_val) {}
+  bool operator()(double score, int n_hits) {
+    return (n_hits > 0 && (score/n_hits) > fCutVal);
+  }
+  
 };
