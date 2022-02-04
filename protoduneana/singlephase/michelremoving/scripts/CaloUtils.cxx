@@ -1,5 +1,6 @@
 #include "CaloUtils.h"
 #include "TMath.h"
+#include <TSpline.h>
 
 double beta(double gamma){
   double value=TMath::Sqrt(1-(1.0/(gamma*gamma)));
@@ -44,4 +45,18 @@ double dpdx(double KE,double x,double mass){
   double A1=double(epsilon)/I;
   double value=(1.0/x)*epsilon*((TMath::Log(A0)) + TMath::Log(A1) + 0.2 - b*b - density(b*g));
   return value;
+}
+
+double GetMuKEfromRange(double range){
+
+  const int np = 13;
+  double spline_KE[np] = {10, 14, 20, 30, 40, 80, 100, 140, 200, 300, 400, 800, 1000};
+  double spline_Range[np] = {0.70437, 1.27937, 2.37894, 4.72636, 7.5788, 22.0917, 30.4441, 48.2235, 76.1461, 123.567, 170.845, 353.438, 441.476};
+
+  TSpline3 *sp = new TSpline3("Cubic Spline", spline_Range, spline_KE,13,"b2e2",0,0);
+
+  double KE = sp->Eval(range);
+  
+  delete sp;
+  return KE;
 }

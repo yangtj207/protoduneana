@@ -37,6 +37,18 @@ cet_make_exec( murecombfit
                CaloTools
                )
 
+cet_make_exec( resrangefit
+               SOURCE resrangefit.C
+               LIBRARIES
+               ROOT_BASIC_LIB_LIST
+               ROOT_LIBRARIES
+	       ROOT::Minuit
+               cetlib cetlib_except
+	       FHICLCPP
+               MF_MESSAGELOGGER
+               CaloTools
+               )
+
 cet_make_exec( ConvertXCorrection
                SOURCE ConvertXCorrection.C
                LIBRARIES

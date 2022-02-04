@@ -19,4 +19,6 @@ double Wmax(double KE,double mass);
 
 double dpdx(double KE,double x,double mass);
 
+double GetMuKEfromRange(double range);
+
 #endif
