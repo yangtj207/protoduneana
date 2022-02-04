@@ -263,14 +263,17 @@ int main(int argc, char ** argv) {
                    1.2,
                    0.3};
   char name[5][100] = {"calconst0",
-                         "calconst1",
-                         "calconst2",
-                         "alpha",
-                         "beta"};
-
+                       "calconst1",
+                       "calconst2",
+                       "alpha",
+                       "beta"};
+  
   for (int i = 0; i<5; ++i){
     gMinuit->mnparm(i,name[i],vstart[i],step[i],min[i],max[i],ierflg);
   }
+  gMinuit->FixParameter(0);
+  gMinuit->FixParameter(1);
+  gMinuit->FixParameter(2);
   arglist[0] = 500;
   arglist[1] = 1;
   gMinuit->mnexcm("MIGRAD",arglist,2,ierflg);
