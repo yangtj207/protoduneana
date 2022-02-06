@@ -60,3 +60,11 @@ double GetMuKEfromRange(double range){
   delete sp;
   return KE;
 }
+
+double GetdEdx(double dQdx, double E_field, double calconst, double alp, double bet){
+
+  double Beta = bet/(rho*E_field);
+  double Wion = 23.6e-6;
+  return (exp(Beta * Wion *dQdx/calconst) - alp) / Beta;
+
+}

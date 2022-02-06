@@ -21,4 +21,6 @@ double dpdx(double KE,double x,double mass);
 
 double GetMuKEfromRange(double range);
 
+double GetdEdx(double dQdx, double E_field, double calconst, double alp, double bet);
+
 #endif

@@ -2,6 +2,9 @@
 #include "TMath.h"
 #include "TROOT.h"
 #include "TFitResult.h"
+#include <iostream>
+
+using namespace std;
 
 Double_t langaufun(Double_t *x, Double_t *par) {
 
@@ -160,7 +163,7 @@ TF1 *runlangaufit(TH1 *his, int plane){
   sv[0] = 0.08;
   sv[1] = 0.9*his->GetMean();
   sv[2] = 0.05*his->GetEntries();
-  if (plane!=2){//induction plane
+  if (plane==2){//collcection plane
     sv[3] = 0.07;
   }
   else{
@@ -179,6 +182,11 @@ TF1 *runlangaufit(TH1 *his, int plane){
   double chisqr;
   int    ndf;
   int    status;
-  
-  return langaufit(his,fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
+
+  TF1 *fit = langaufit(his,fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
+  if (chisqr/ndf>10 || fit->GetParError(1)>1000){
+    cout<<"Fit failed. chisq = "<<chisqr<<" ndf = "<<ndf<<endl;
+  }
+
+  return fit;
 }
