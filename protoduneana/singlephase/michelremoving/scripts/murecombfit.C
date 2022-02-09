@@ -236,7 +236,7 @@ int main(int argc, char ** argv) {
 
   arglist[0] = 1;
   gMinuit->mnexcm("SET ERR",arglist,1,ierflg);
-  arglist[0] = -1;
+
   double vstart[5] = {1.166e-3,
                       1.122e-3,
                       1.038e-3,
@@ -271,9 +271,14 @@ int main(int argc, char ** argv) {
   gMinuit->FixParameter(2);
 
   gMinuit->mnexcm("show eps", arglist, 0, ierflg);
- //set EPS precision
+
+  //set EPS precision
   arglist[0] = 1.e-7;
   gMinuit->mnexcm("SET EPS",arglist,1,ierflg);
+
+  //set strategy
+//  arglist[0] = 0;
+//  gMinuit->mnexcm("SET STR",arglist,1,ierflg);
 
   arglist[0] = 5;
   arglist[1] = 10;
