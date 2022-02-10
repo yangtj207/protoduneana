@@ -299,6 +299,10 @@ int main(int argc, char *argv[]) {
     vector<double> vdedxth;
     vector<double> ratio;
     vector<double> eratio;
+    vector<double> lwidth;
+    vector<double> elwidth;
+    vector<double> gwidth;
+    vector<double> egwidth;
     TVectorD *meanKE = (TVectorD*)f.Get(Form("meanKE%zu",i));
     TVectorD *meanPitch = (TVectorD*)f.Get(Form("meanPitch%zu",i));
     double totalchi2 = 0;
@@ -357,6 +361,10 @@ int main(int argc, char *argv[]) {
       vke.push_back((*meanKE)[j]);
       vdedx.push_back(fitsnr->GetParameter(1));
       ededx.push_back(fitsnr->GetParError(1));
+      lwidth.push_back(fitsnr->GetParameter(0));
+      elwidth.push_back(fitsnr->GetParError(0));
+      gwidth.push_back(fitsnr->GetParameter(3));
+      egwidth.push_back(fitsnr->GetParError(3));
       vdedxth.push_back(dpdx((*meanKE)[j], (*meanPitch)[j], Mmu));
       ratio.push_back(vdedx.back()/vdedxth.back());
       eratio.push_back(ededx.back()/vdedxth.back());
@@ -426,6 +434,25 @@ int main(int argc, char *argv[]) {
     grratio->Draw("p");
     can2->Print(Form("dedxke_%zu.png",i));
     can2->Print(Form("dedxke_%zu.pdf",i));
+    can->cd();
+    TGraphErrors *grlwidth = new TGraphErrors(vke.size(), &vke[0], &lwidth[0], 0, &elwidth[0]);
+    TGraphErrors *grgwidth = new TGraphErrors(vke.size(), &vke[0], &gwidth[0], 0, &egwidth[0]);
+    grlwidth->SetMarkerStyle(20);
+    grlwidth->SetTitle(Form("Plane %zu", i));
+    grlwidth->GetXaxis()->SetTitle("KE (MeV)");
+    grlwidth->GetYaxis()->SetTitle("Landau width");
+    grlwidth->Draw("ap");
+    grlwidth->Fit("pol2");
+    can->Print(Form("lwidth_%zu.png",i));
+    can->Print(Form("lwidth_%zu.pdf",i));
+    grgwidth->SetMarkerStyle(20);
+    grgwidth->SetTitle(Form("Plane %zu", i));
+    grgwidth->GetXaxis()->SetTitle("KE (MeV)");
+    grgwidth->GetYaxis()->SetTitle("Gaussian width");
+    grgwidth->Draw("ap");
+    grgwidth->Fit("pol2");
+    can->Print(Form("gwidth_%zu.png",i));
+    can->Print(Form("gwidth_%zu.pdf",i));
   }
 
 }
