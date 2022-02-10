@@ -50,6 +50,7 @@ bool corr_end;
 int xbins;
 double xmin;
 double xmax;
+string outfile;
 //float recom_factor(float totEf){
 //  if (!userecom) return 1;
 //  float xsi=bet*dedx/(LAr_density*totEf);
@@ -180,18 +181,23 @@ void protoDUNE_validate_calib::Loop(int mn)
   std::cout<<"efield at the anode neg"<<tot_Ef(-352,300,300)<<std::endl;
   std::cout<<"efield at the anode pos"<<tot_Ef(352,300,300)<<std::endl;
 
-  TFile *file = new TFile(Form("Validate_mich%d_r%d.root",mn, run),"recreate");
+  //TFile *file = new TFile(Form("Validate_mich%d_r%d.root",mn, run),"recreate");
+  TFile *file = new TFile(outfile.c_str(),"recreate");
 
   TTree *tree = new TTree("calotree","calo tree");
   short plane;
   float dQdx;
+  float dQdx_e;
   float dEdx;
   float KE;
+  float RR;
   float E;
   tree->Branch("plane",&plane,"plane/S");
   tree->Branch("dQdx",&dQdx,"dQdx/F");
+  tree->Branch("dQdx_e",&dQdx_e,"dQdx_e/F");
   tree->Branch("dEdx",&dEdx,"dEdx/F");
   tree->Branch("KE",&KE,"KE/F");
+  tree->Branch("RR",&RR,"RR/F");
   tree->Branch("E",&E,"E/F");
 
   TH1D *deltax = new TH1D("deltax","Reco_x - true_x (cm)", 100,-10,10);
@@ -452,6 +458,7 @@ void protoDUNE_validate_calib::Loop(int mn)
             if((trkhity[i][j][k]<600)&&(trkhity[i][j][k]>0)){
               if((trkhitz[i][j][k]<695)&&(trkhitz[i][j][k]>0)){
                 KE = sp->Eval(trkresrange[i][j][k]);
+                RR = trkresrange[i][j][k];
                 if(trkhitx[i][j][k]<0 && trkhitx[i][j][k]>-360 && negok){//negative drift
                   if(trkhitx[i][j][k]<0 && trkhitx[i][j][k+1]>0) continue;
                   if(trkhitx[i][j][k]<0 && trkhitx[i][j][k-1]>0) continue;
@@ -475,7 +482,8 @@ void protoDUNE_validate_calib::Loop(int mn)
                     corrected_dqdx=trkdqdx[i][j][k]*YZ_correction_factor_negativeX*X_correction_factor*normcorr/calib_const[j];
                     corrected_dedx=GetdEdx(corrected_dqdx, tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
                   }
-                  dQdx = corrected_dqdx*calib_const[j];
+                  dQdx = corrected_dqdx;
+                  dQdx_e = corrected_dqdx*calib_const[j];
                   dEdx = corrected_dedx;
                   E = tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]);
                   if (fid_xing && testneg_xing){
@@ -526,7 +534,8 @@ void protoDUNE_validate_calib::Loop(int mn)
                     corrected_dqdx=trkdqdx[i][j][k]*YZ_correction_factor_positiveX*X_correction_factor*normcorr/calib_const[j];
                     corrected_dedx=GetdEdx(corrected_dqdx, tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]));
                   }
-                  dQdx = corrected_dqdx*calib_const[j];
+                  dQdx = corrected_dqdx;
+                  dQdx_e = corrected_dqdx*calib_const[j];
                   dEdx = corrected_dedx;
                   E = tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]);
                   //if (k==2) cout<<"x = "<<trkhitx[i][j][k]<<" y = "<<trkhity[i][j][k]<<" z = "<<trkhitz[i][j][k]<<" dqdx = "<<trkdqdx[i][j][k]<<" yzcorr = "<<YZ_correction_factor_positiveX<<" xcorr = "<<X_correction_factor<<" normcorr = "<<normcorr<<" corrected_dqdx = "<<corrected_dqdx<<" corrected_dedx = "<<corrected_dedx<<" "<<YZ_positiveX_corr[j]->GetXaxis()->FindBin(trkhitz[i][j][k])<<" "<<YZ_positiveX_corr[j]->GetYaxis()->FindBin(trkhity[i][j][k])<<" "<<YZ_positiveX_corr[j]->GetBinContent(YZ_positiveX_corr[j]->GetXaxis()->FindBin(trkhitz[i][j][k]),YZ_positiveX_corr[j]->GetYaxis()->FindBin(trkhity[i][j][k]))<<" "<<x_bin<<" "<<X_correction_factor<<endl;
@@ -643,6 +652,7 @@ int main(int argc, char *argv[]) {
   auto const pset = fhicl::ParameterSet::make(fcl_file, lookupPolicy);
 
   string infile = pset.get<string>("infile");
+  outfile = pset.get<string>("outfile");
   int michelnumber = pset.get<int>("michelnumber");
   recalib = pset.get<bool>("recalib");
   corr_end = pset.get<bool>("corr_end");
@@ -652,6 +662,7 @@ int main(int argc, char *argv[]) {
   xmax = pset.get<double>("xmax");
 
   cout<<"infile = "<<infile<<endl;
+  cout<<"outfile = "<<outfile<<endl;
   cout<<"michelnumber = "<<michelnumber<<endl;
   cout<<"recalib = "<<recalib<<endl;
   cout<<"sceon = "<<sceon<<endl;

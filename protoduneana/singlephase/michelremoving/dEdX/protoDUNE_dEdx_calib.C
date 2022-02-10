@@ -1,4 +1,5 @@
 #define protoDUNE_dEdx_calib_cxx
+#include "protoduneana/singlephase/michelremoving/scripts/LanGausFit.h"
 #include "protoDUNE_dEdx_calib.h"
 #include <TH2.h>
 #include <TH3.h>
@@ -1098,6 +1099,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
       for (size_t k = 0; k < nbin; k++){
         if (!dedx[i][j][k]->GetEntries()) continue;
         std::cout << "Fitting ************** " << k << std::endl;
+        /*
         Double_t fr[2];
         Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
         fr[0]=1.1;//this was originally 0.
@@ -1123,14 +1125,16 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
         Int_t    ndf;
         Int_t    status;
         TF1 *fitsnr = langaufit(dedx[i][j][k],fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
-        cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
-        fitsnr->SetLineColor(kRed);
-        std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
-        std::cout << "************** Chi^2/NDF : " << fitsnr->GetChisquare()/fitsnr->GetNDF() << std::endl;
-        std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$  KE : " << sp->Eval((k*binsize+double(binsize)/2)) << "   MPV : " << fitsnr->GetParameter(1) << " $$$$$$$$$$$$" << std::endl;
+        */
+        TF1 *fitsnr = runlangaufit(dedx[i][j][k], i);
+//        cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
+//        fitsnr->SetLineColor(kRed);
+//        std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
+//        std::cout << "************** Chi^2/NDF : " << fitsnr->GetChisquare()/fitsnr->GetNDF() << std::endl;
+//        std::cout << "$$$$$$$$$$$$$$$$$$$$$$$$$$  KE : " << sp->Eval((k*binsize+double(binsize)/2)) << "   MPV : " << fitsnr->GetParameter(1) << " $$$$$$$$$$$$" << std::endl;
         if((k*binsize+double(binsize)/2)<=450 && (k*binsize+double(binsize)/2)>=250){
           dof++;
-          if((dedx[i][j][k]->GetEntries()>100) && fitsnr->GetNDF() != 0 && status > 2 && (fitsnr->GetParError(1)<1000) && (fitsnr->GetChisquare()/fitsnr->GetNDF()<10)){
+          if((dedx[i][j][k]->GetEntries()>100) && fitsnr->GetNDF() != 0 && (fitsnr->GetParError(1)<1000) && (fitsnr->GetChisquare()/fitsnr->GetNDF()<10)){
           //cout<<" i "<<i<<" res range "<<i*binsize+double(binsize)/2<<"  KE "<<sp->Eval(i*binsize+double(binsize)/2)<<endl;
 
           ////////////////////////////////////////////// Chi 2 calculation ////////////////////////////
@@ -1144,7 +1148,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
             chi_numerator.push_back(num);
           }
           else{
-            cout<<dedx[i][j][k]->GetEntries()<<" "<<fitsnr->GetNDF()<<" "<<status<<" "<<fitsnr->GetParError(1)<<" "<<fitsnr->GetChisquare()<<" "<<fitsnr->GetNDF()<<endl;
+            cout<<dedx[i][j][k]->GetEntries()<<" "<<fitsnr->GetNDF()<<" "<<fitsnr->GetParError(1)<<" "<<fitsnr->GetChisquare()<<" "<<fitsnr->GetNDF()<<endl;
           }
         }
       }

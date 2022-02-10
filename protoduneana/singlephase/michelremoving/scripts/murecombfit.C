@@ -1,3 +1,4 @@
+#include "CaloUtils.h"
 #include "LanGausFit.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "cetlib/filepath_maker.h"
@@ -15,28 +16,21 @@ using namespace std;
 const int nbins = 50;
 int binsize = 10;
 
-vector<vector<float>> dqdx_data(3);
-vector<vector<float>> E_data(3);
-vector<vector<float>> ke_data(3);
+vector<vector<double>> dqdx_data(3);
+vector<vector<double>> E_data(3);
+vector<vector<double>> ke_data(3);
 
-float mpv[3][nbins] = {{0}};
-float errmpv[3][nbins] = {{0}};
-
-float GetdEdx(float dQdx, float E_field, float calconst, float alp, float bet){
-  float LAr_density=1.39;
-  float Beta = bet/(LAr_density*E_field);
-  double Wion = 23.6e-6;
-  return (exp(Beta * Wion *dQdx/calconst) - alp) / Beta;
-}
+double mpv[3][nbins] = {{0}};
+double errmpv[3][nbins] = {{0}};
 
 void fcn(int& /*npar*/, double* /*gin*/, double &f, double *par, int /*iflag*/){
 
   double chisq = 0;
 
-  TH1F *dedx_data[3][nbins];
+  TH1D *dedx_data[3][nbins];
   for (int i = 0; i<3; ++i){
     for (int j = 0; j<nbins; ++j){
-      dedx_data[i][j] = new TH1F(Form("dedx_data_%d_%d",i,j),
+      dedx_data[i][j] = new TH1D(Form("dedx_data_%d_%d",i,j),
                                  Form("dedx_data_%d_%d",i,j),
                                  300, 0, 15);
     }
@@ -48,6 +42,7 @@ void fcn(int& /*npar*/, double* /*gin*/, double &f, double *par, int /*iflag*/){
       }
     }
     for (int j = 1; j<nbins; ++j){
+      /*
       Double_t fr[2];
       Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
       fr[0]=1.1;//this was originally 0.
@@ -64,7 +59,8 @@ void fcn(int& /*npar*/, double* /*gin*/, double &f, double *par, int /*iflag*/){
       Double_t chisqr;
       Int_t    ndf;
       Int_t    status;
-      TF1 *fitsnr = langaufit(dedx_data[i][j],fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
+      */
+      TF1 *fitsnr = runlangaufit(dedx_data[i][j], i);
       //cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
       //fitsnr->SetLineColor(kRed);
       //std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
@@ -77,6 +73,7 @@ void fcn(int& /*npar*/, double* /*gin*/, double &f, double *par, int /*iflag*/){
     }
   }
   cout<<"Chi2 = "<<chisq<<" "<<par[0]<<" "<<par[1]<<" "<<par[2]<<" "<<par[3]<<" "<<par[4]<<endl;
+  f = chisq;
 }
   
 
@@ -152,16 +149,16 @@ int main(int argc, char ** argv) {
                               250,0,500,80,0,8);
   }
 
-  //TH1F *dedx_data[3][nbins];
-  TH1F *dedx_mc[3][nbins];
+  //TH1D *dedx_data[3][nbins];
+  TH1D *dedx_mc[3][nbins];
 
   for (int i = 0; i<3; ++i){
     for (int j = 0; j<nbins; ++j){
-//      dedx_data[i][j] = new TH1F(Form("dedx_data_%d_%d",i,j),
+//      dedx_data[i][j] = new TH1D(Form("dedx_data_%d_%d",i,j),
 //                                 Form("Plane %d, j %d",i,j),
 //                                 300, 0, 15);
 //      dedx_data[i][j]->Sumw2();
-      dedx_mc[i][j] = new TH1F(Form("dedx_mc_%d_%d",i,j),
+      dedx_mc[i][j] = new TH1D(Form("dedx_mc_%d_%d",i,j),
                                Form("Plane %d, j %d",i,j),
                                300, 0, 15);
       dedx_mc[i][j]->Sumw2();
@@ -182,6 +179,7 @@ int main(int argc, char ** argv) {
 
   for (int i = 0; i<3; ++i){
     for (int j = 1; j<nbins; ++j){
+      /*
       Double_t fr[2];
       Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
       fr[0]=1.1;//this was originally 0.
@@ -198,19 +196,17 @@ int main(int argc, char ** argv) {
       Double_t chisqr;
       Int_t    ndf;
       Int_t    status;
-      TF1 *fitsnr = langaufit(dedx_mc[i][j],fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
-      cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
-      fitsnr->SetLineColor(kRed);
-      std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
-      std::cout << "************** Chi^2/NDF : " << fitsnr->GetChisquare()/fitsnr->GetNDF() << std::endl;
-      std::cout << "   MPV : " << fitsnr->GetParameter(1) << " $$$$$$$$$$$$" << std::endl;
+      */
+      TF1 *fitsnr = runlangaufit(dedx_mc[i][j], i);
+      //cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
+      //fitsnr->SetLineColor(kRed);
+//      std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
+//      std::cout << "************** Chi^2/NDF : " << fitsnr->GetChisquare()/fitsnr->GetNDF() << std::endl;
+//      std::cout << "   MPV : " << fitsnr->GetParameter(1) << " $$$$$$$$$$$$" << std::endl;
       mpv[i][j] = fitsnr->GetParameter(1);
       errmpv[i][j] = fitsnr->GetParError(1);
     }
   }       
-
-  foutput->Write();
-  foutput->Close();
 
   string data_file = pset.get<string>("Datafile");
 
@@ -240,7 +236,7 @@ int main(int argc, char ** argv) {
 
   arglist[0] = 1;
   gMinuit->mnexcm("SET ERR",arglist,1,ierflg);
-  arglist[0] = -1;
+
   double vstart[5] = {1.166e-3,
                       1.122e-3,
                       1.038e-3,
@@ -249,30 +245,57 @@ int main(int argc, char ** argv) {
   double step[5] = {0.1e-3,
                     0.1e-3,
                     0.1e-3,
-                    0.05,
-                    0.05};
+                    0.01,
+                    0.01};
   double min[5] = {0.9e-3,
                    0.9e-3,
                    0.9e-3,
-                   0.7,
-                   0.1};
+                   0.,
+                   0.};
   double max[5] = {1.4e-3,
                    1.4e-3,
                    1.4e-3,
-                   1.2,
-                   0.3};
+                   0,
+                   0.};
   char name[5][100] = {"calconst0",
-                         "calconst1",
-                         "calconst2",
-                         "alpha",
-                         "beta"};
-
+                       "calconst1",
+                       "calconst2",
+                       "alpha",
+                       "beta"};
+  
   for (int i = 0; i<5; ++i){
     gMinuit->mnparm(i,name[i],vstart[i],step[i],min[i],max[i],ierflg);
   }
+  gMinuit->FixParameter(0);
+  gMinuit->FixParameter(1);
+  gMinuit->FixParameter(2);
+
+  gMinuit->mnexcm("show eps", arglist, 0, ierflg);
+
+  //set EPS precision
+  arglist[0] = 1.e-7;
+  gMinuit->mnexcm("SET EPS",arglist,1,ierflg);
+
+  //set strategy
+//  arglist[0] = 0;
+//  gMinuit->mnexcm("SET STR",arglist,1,ierflg);
+
+  arglist[0] = 5;
+  arglist[1] = 10;
+  arglist[2] = 0.2;
+  arglist[3] = 0.25;
+  gMinuit->mnexcm("scan", arglist, 4, ierflg);
+
+  arglist[0] = 4;
+  arglist[1] = 10;
+  arglist[2] = 0.925;
+  arglist[3] = 0.935;
+  gMinuit->mnexcm("scan", arglist, 4, ierflg);
+
   arglist[0] = 500;
   arglist[1] = 1;
-  gMinuit->mnexcm("MIGRAD",arglist,2,ierflg);
+  //gMinuit->mnexcm("MIGRAD",arglist,2,ierflg);
+  gMinuit->mnexcm("MINIMIZE",arglist,2,ierflg);
 
   double par[5];
   double epar[5];
@@ -280,6 +303,11 @@ int main(int argc, char ** argv) {
     gMinuit->GetParameter(i, par[i], epar[i]);
     cout<<name[i]<<" "<<par[i]<<" "<<epar[i]<<endl;
   }
+
+  foutput->cd();
+  foutput->Write();
+  gMinuit->Write("gMinuit");
+  foutput->Close();
 
   return 0;
 } // main
