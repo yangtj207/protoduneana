@@ -160,19 +160,38 @@ TF1 *runlangaufit(TH1 *his, int plane){
   double sv[4], pllo[4], plhi[4], fp[4], fpe[4];
   fr[0]=1.;//this was originally 0.
   fr[1]=15.;
-  sv[0] = 0.08;
-  sv[1] = 0.9*his->GetMean();
+  sv[1] = his->GetBinCenter(his->GetMaximumBin());
   sv[2] = 0.05*his->GetEntries();
-  if (plane==2){//collcection plane
-    sv[3] = 0.07;
+  if (his->GetMean()>5.5){
+    fr[0] = 2;
+    if (plane==2){
+      sv[0] = 0.7;
+      sv[3] = 0.7;
+    }
+    else{
+      sv[0] = 0.4;
+      sv[3] = 1.7;
+    }
+  }
+  else if (his->GetMean()>4){
+    fr[0] = 2;
+    if (plane==2){
+      sv[0] = 0.3;
+      sv[3] = 0.5;
+    }
+    else{
+      sv[0] = 0.2;
+      sv[3] = 0.6;
+    }
   }
   else{
-    sv[3] = 0.15;
-  }
-  if(his->GetMean()>5){
-    fr[0] = 2.;
-    fr[1] = 15;
-    sv[0] = 1.;
+    sv[0] = 0.08;
+    if (plane==2){//collcection plane
+      sv[3] = 0.07;
+    }
+    else{
+      sv[3] = 0.15;
+    }
   }
 
   for(int k=0; k<4; ++k){
@@ -184,8 +203,45 @@ TF1 *runlangaufit(TH1 *his, int plane){
   int    status;
 
   TF1 *fit = langaufit(his,fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
-  if (chisqr/ndf>10 || fit->GetParError(1)>1000){
-    cout<<"Fit failed. chisq = "<<chisqr<<" ndf = "<<ndf<<endl;
+  //cout<<"chisqr = "<<chisqr<<" ndf = "<<ndf<<" status = "<<status<<endl;
+  if (chisqr/ndf > 10 || status != 3){
+    cout<<"Fit failed."<<endl; 
+    cout<<"chisq = "<<chisqr<<endl;
+    cout<<"ndf = "<<ndf<<endl;
+    cout<<"status = "<<status<<endl;
+    cout<<"hist mean = "<<his->GetMean()<<endl;
+    cout<<"hist rms = "<<his->GetRMS()<<endl;
+    cout<<"hist entries = "<<his->GetEntries()<<endl;
+    for (int i = 0; i<4; ++i){
+      cout<<"Par["<<i<<"] = "<<fit->GetParameter(i)<<"+-"<<fit->GetParError(i)<<endl;
+    }
+
+//    if(his->GetMean()>4){
+//      if (plane != 2){
+//        sv[0] = 0.2;
+//        sv[3] = 0.6;
+//      }
+//      else{
+//        sv[0] = 0.3;
+//        sv[3] = 0.5;
+//      }
+//    }
+//
+//
+    cout<<"Refitting"<<endl;
+    for(int k=0; k<4; ++k){
+      sv[k]*=1.01;
+      pllo[k] = 0.01*sv[k];
+      plhi[k] = 100*sv[k];
+    }
+    fit = langaufit(his,fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
+    cout<<"chisq = "<<chisqr<<endl;
+    cout<<"ndf = "<<ndf<<endl;
+    cout<<"status = "<<status<<endl;
+    for (int i = 0; i<4; ++i){
+      cout<<"Par["<<i<<"] = "<<fit->GetParameter(i)<<"+-"<<fit->GetParError(i)<<endl;
+    }
+    if (chisqr/ndf < 10 && status == 3) cout<<"Refitting was successful"<<endl;
   }
 
   return fit;
