@@ -426,7 +426,7 @@ SystematicsList: {
     sigma: .1
 
     Options: {
-      F: .61329
+      F: 0.65314953 
       Cut: 234. 
     }
   }
@@ -443,7 +443,8 @@ SystematicsList: {
 
     Options: {
       #F: 0.14826903 
-      F: 0.16407504 
+      #F: 0.16407504 
+      F: 0.16374722
     }
   }
   beam_cut_weight: {
@@ -458,8 +459,41 @@ SystematicsList: {
     sigma: .1
 
     Options: {
-      F: 0.2305
+      F: 0.23198111 
+    }
+  }
+
+  low_p_weight: {
+    Name: "low_p_weight"
+    Central: 1.0
+    LowerLimit: 0.01
+    UpperLimit: 5.0
+    ThrowLimit: 0.01
+    ThrowLimitUp: 5.0
+    GenThrowLimit: 0.01
+    GenThrowLimitUp: 5.0
+    sigma: .1
+
+    Options: {
+      Fractions: [0.11257, 0.11752, 0.125, 0.12009, 0.10625, 0.10667]
+    }
+  }
+
+  npi0_weight: {
+    Name: "npi0_weight"
+    Central: 1.0
+    LowerLimit: 0.01
+    UpperLimit: 5.0
+    ThrowLimit: 0.01
+    ThrowLimitUp: 5.0
+    GenThrowLimit: 0.01
+    GenThrowLimitUp: 5.0
+    sigma: .1
+
+    Options: {
+      Fractions: [0.01264, 0.02818, 0.03742, 0.04429, 0.03888, 0.04155]
     }
   }
 }
+
 END_PROLOG

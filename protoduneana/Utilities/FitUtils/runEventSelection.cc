@@ -61,7 +61,8 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
            .Define("new_interaction_topology",
                    new_interaction_topology(pset.get<double>("EndZLow"),
                                             pset.get<double>("EndZHigh"),
-                                            pset.get<double>("Threshold")),
+                                            pset.get<double>("Threshold"),
+                                            pset.get<bool>("CexNPi0")),
                    {"true_beam_PDG",
                     "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
                     "true_beam_daughter_PDG", "true_beam_daughter_startP"})
@@ -218,7 +219,7 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
          "reco_beam_calo_endY", "reco_beam_calo_endZ"});
   }
   data = data.Define("vertex_cut",
-                     vertex_michel_cut(pset.get<double>("fMichelCut")),
+                     vertex_michel_cut(pset.get<double>("MichelCut")),
                      {"reco_beam_vertex_michel_score",
                       "reco_beam_vertex_nHits"});
   data = data.Define("selection_ID", selection_ID(pset.get<bool>("DoMichel")),

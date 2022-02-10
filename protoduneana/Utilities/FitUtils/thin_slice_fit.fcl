@@ -20,11 +20,12 @@ AnalysisOptions: {
   #FakeDataRoutine: "G4RW"
   #FakeDataRoutine: "dEdX"
   #FakeDataRoutine: "EffVar"
-  #FakeDataRoutine: "G4RWGrid"
+  FakeDataRoutine: "G4RWGrid"
   #FakeDataRoutine: "PionAngle"
   #FakeDataRoutine: "AngleVar"
   #FakeDataRoutine: "BeamWeight"
-  FakeDataRoutine: "Asimov"
+  #FakeDataRoutine: "LowP"
+  #FakeDataRoutine: "Asimov"
   #FakeDataRoutine: "Toy"
 
   SetToy: false 
@@ -60,13 +61,14 @@ AnalysisOptions: {
     #Position: [7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 ]
     #Shift:    [12, 12, 12, 12, 12, 12, 12, 08, 08, 08, 08, 08, 08, 08 ]
     #Branch: "g4rw_full_grid_piplus_weights_fake_data"
-
-    Position: [0]
-    Shift:    [15]
-    Branch: "g4rw_full_grid_proton_weights"
-
     ###(reac, 0), (abs, 1), (cex, 2), (dcex, 3), (prod, 4), (inel, 5) 
     ### x7 each (200 MeV bins) -- total range: 0, 41 (0, 1400)
+
+    Position: [0]
+    Shift:    [07]
+    Branch: "g4rw_full_grid_proton_weights"
+    SingleBranch: true
+
   }
 
   FakeDatadEdX: {
@@ -107,6 +109,18 @@ AnalysisOptions: {
   FakeDataBeamWeight: {
     RatioFile: "beam_weight.root"
   }
+
+  FakeDataLowP: {
+    Fractions: [0.11257, 0.11752, 0.125, 0.12009, 0.10625, 0.10667]
+    Scale: 2.0
+  }
+
+
+
+
+
+
+
   EndZCut: 222.10561
   SliceCut: 464
   WirePitch: .47974
@@ -132,65 +146,47 @@ AnalysisOptions: {
 #]
 
 Systematics: [
-  #@local::SystematicsList.beam_shift_spline_2,
-  @local::SystematicsList.beam_shift_ratio,
   @local::SystematicsList.dEdX_Cal_Spline,
-  ##@local::G4RWSysts.g4rw_QE1,
-  ##@local::G4RWSysts.g4rw_QE2,
-  ##@local::G4RWSysts.g4rw_Prod,
-  ##@local::G4RWSysts.g4rw_DCex,
-  ##@local::G4RWSysts.g4rw_proton,
-  ##@local::SystematicsList.beam_shift,
+  @local::SystematicsList.beam_shift,
   @local::SystematicsList.ediv_weight,
   @local::SystematicsList.no_track_weight,
   @local::SystematicsList.beam_cut_weight
+  #,@local::SystematicsList.low_p_weight
+  #,@local::g4rw_proton_coeff
 ]
-#
+Systematics[1].Options.WeightCap: 30.
 Systematics[2].Central: 1.0 
 Systematics[3].Central: 1.0 
-
+Systematics[2].Options.F: .6531
 Systematics[1].Options.Cal_set.PlaneParameters[0].norm_factor: 1.
-
-#Systematics[6].Options.LowerLimit: -5.
-#Systematics[6].Options.UpperLimit: 5.
-#Systematics[6].Options.ThrowLimit: -5.
-#Systematics[6].Options.ThrowLimitUp: 5.
-#Systematics[6].Options.SaveInfo: false 
-#Systematics[6].Options.Limits: [-.075, .075] 
-#Systematics[6].Options.WeightCap: -999.
+#Systematics[3].Options.
 
 AddSystTerm: true 
+
 CovarianceBins: [
   ["dEdX_Cal_Spline", 0],
-  #["g4rw_QE1", 1],
-  #["g4rw_QE2", 2],
-  #["g4rw_Prod", 3],
-  #["g4rw_DCex", 4],
-  #["g4rw_proton", 5],
   ["ediv_weight", 1],
-  #["beam_shift_spline_2", 2],
-  ["beam_shift_ratio", 2],
+  ["beam_shift", 2],
   ["no_track_weight", 3],
   ["beam_cut_weight", 4]
+  #,["g4rw_proton_coeff", 5]
+ #,["low_p_weight", 5]
 ]
-#CovarianceFile: "full_with_dcex_beamcut.root"
-#CovarianceFile: "no_g4rw_new_shift.root"
+#CovarianceFile: "no_g4rw_lowp.root"
 CovarianceFile: "no_g4rw.root"
-#CovarianceFile: "full_no_beam_shift.root"
+#CovarianceFile: "with_g4rw_prot.root"
 CovarianceMatrix: "m"
 
-FixVariables: false #true 
+FixVariables: true 
 SystsToFix: [
   ["beam_shift", 0.]
+  #,["low_p_weight", 1.]
 ]
 
-AddDiffInQuadrature: true 
-Diffs: [
-  [1, "grXSecDiffAbs"],
-  [2, "grXSecDiffCex"],
-  [3, "grXSecDiffOtherInel"]
-]
-DiffGraphFile: "xsec_diff.root"
+
+AddDiffInQuadrature: false 
+DiffCovName: "diffs_2D"
+DiffGraphFile: "diffs_2_9_22.root"
 
 Selections: [
   {
@@ -364,6 +360,11 @@ DataNorm: 66979.
 FitFunctionType: 2
 #####################
 
+FitUnderOverflow: true
+TieUnderOver: true
+
+GetMeanXSec: false
+
 ## Plotting
 #PlotStyle: @local::ReducedColorsStyle
 PlotStyle: @local::DefaultColorsStyle
@@ -373,13 +374,14 @@ DrawXSecUnderflow: false
 
 ## Validation
 RandomStart: false 
-SplitMC: true 
-DoFakeData: true 
+SplitMC: false 
+MaxEntries: 40000
+DoFakeData: false #true 
 FluctuateStats: false 
 DoThrows: true 
-NThrows: 200 #00
+NThrows: 500 #00
 DoScans: false 
-RunHesse: false 
+RunHesse: true
 Do1DShifts: false
 DoSysts: true
 MaxRethrows: 1000
