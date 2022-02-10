@@ -2,10 +2,12 @@ class new_interaction_topology {
  private:
   double fEndZLow, fEndZHigh;
   double fThreshold;
+  bool fCexNPi0;
  public: 
   new_interaction_topology(double endz_low, double endz_high,
-                           double threshold)
-    : fEndZLow(endz_low), fEndZHigh(endz_high), fThreshold(threshold) {}
+                           double threshold, bool cex_nPi0)
+    : fEndZLow(endz_low), fEndZHigh(endz_high), fThreshold(threshold),
+      fCexNPi0(cex_nPi0) {}
 
   int operator()(int pdg, double endZ,
                  std::string process, int nPi0,
@@ -33,14 +35,17 @@ class new_interaction_topology {
           }
         }
 
-        if (has_pion_above_threshold) {
+        if (has_pion_above_threshold || (!fCexNPi0 && nPi0 > 1)) {
           topology = 3;
         }
         else if (nPi0 == 0) {
           topology = 1;
         }
-        else if (nPi0 > 0) {
+        else if ((fCexNPi0 && nPi0 > 0) || (!fCexNPi0 && nPi0 == 1)) {
           topology = 2;
+        }
+        else {
+          std::cout << "warning" << std::endl;
         }
       }
       else {
