@@ -24,14 +24,15 @@ class ThinSliceDriver {
   virtual void FillMCEvents(
     TTree * tree, std::vector<ThinSliceEvent> & events,
     std::vector<ThinSliceEvent> & fake_data_events,
-    int & split_val, const bool & do_split, const bool & do_fake_data) = 0;
+    int & split_val, const bool & do_split, int max_entries,
+    const bool & do_fake_data) = 0;
 
   virtual void BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,
     int split_val = 0) = 0;
 
   virtual void BuildFakeData(
-    TTree * tree,
+    TTree * tree, const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
     const std::map<int, bool> & signal_sample_checks,
     ThinSliceDataSet & data_set, double & flux,
@@ -56,7 +57,7 @@ class ThinSliceDriver {
       const std::map<int, std::vector<double>> & signal_pars,
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
-      bool fit_under_over, bool fill_incident = false) = 0;
+      bool fit_under_over, bool tie_under_over, bool fill_incident = false) = 0;
 
   /*
   virtual void BuildSystSamples(

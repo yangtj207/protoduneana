@@ -20,13 +20,14 @@ class AbsCexDriver : public ThinSliceDriver {
   void FillMCEvents(
     TTree * tree, std::vector<ThinSliceEvent> & events,
     std::vector<ThinSliceEvent> & fake_data_events,
-    int & split_val, const bool & do_split, const bool & do_fake_data) override;
+    int & split_val, const bool & do_split, int max_entries,
+    const bool & do_fake_data) override;
 
   void BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,
     int split_val = 0) override;
   void BuildFakeData(
-    TTree * tree,
+    TTree * tree, const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
     const std::map<int, bool> & signal_sample_checks,
     ThinSliceDataSet & data_set, double & flux,
@@ -34,7 +35,7 @@ class AbsCexDriver : public ThinSliceDriver {
     std::vector<double> & beam_energy_bins,
     int split_val = 0) override;
   void FakeDataSampleScales(
-    TTree * tree,
+    const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
     const std::map<int, bool> & signal_sample_checks,
     ThinSliceDataSet & data_set, double & flux,
@@ -47,15 +48,15 @@ class AbsCexDriver : public ThinSliceDriver {
     ThinSliceDataSet & data_set, double & flux,
     std::map<int, std::vector<double>> & sample_scales,
     int split_val = 0);
-  void FakeDataG4RW(
-    TTree * tree,
-    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
-    const std::map<int, bool> & signal_sample_checks,
-    ThinSliceDataSet & data_set, double & flux,
-    std::map<int, std::vector<double>> & sample_scales,
-    int split_val = 0);
+  //void FakeDataG4RW(
+  //  TTree * tree,
+  //  std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+  //  const std::map<int, bool> & signal_sample_checks,
+  //  ThinSliceDataSet & data_set, double & flux,
+  //  std::map<int, std::vector<double>> & sample_scales,
+  //  int split_val = 0);
   void FakeDataG4RWGrid(
-    TTree * tree,
+    const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
     const std::map<int, bool> & signal_sample_checks,
     ThinSliceDataSet & data_set, double & flux,
@@ -63,12 +64,19 @@ class AbsCexDriver : public ThinSliceDriver {
     std::vector<double> & beam_energy_bins,
     int split_val = 0);
   void FakeDataEffVar(
-    TTree * tree,
+    const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
     const std::map<int, bool> & signal_sample_checks,
     ThinSliceDataSet & data_set, double & flux,
     std::map<int, std::vector<double>> & sample_scales,
     int split_val = 0);
+
+  void FakeDataLowP(
+    const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    const std::map<int, bool> & signal_sample_checks,
+    ThinSliceDataSet & data_set, double & flux,
+    std::map<int, std::vector<double>> & sample_scales, int split_val = 0);
 
   void FakeDatadEdX(
     TTree * tree,
@@ -118,7 +126,8 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<int, std::vector<double>> & signal_pars,
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
-      bool fit_under_over, bool fill_incident = false) override;
+      bool fit_under_over, bool tie_under_over,
+      bool fill_incident = false) override;
 
   /*void BuildSystSamples(
       TTree * tree,
@@ -214,6 +223,10 @@ class AbsCexDriver : public ThinSliceDriver {
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);
+  void SetupSyst_LowP(
+    const std::map<std::string, ThinSliceSystematic> & pars);
+  void SetupSyst_NPi0(
+    const std::map<std::string, ThinSliceSystematic> & pars);
   /*void SetupSyst_BeamShift2D(
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);*/
@@ -250,6 +263,14 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_EffVar(
       const ThinSliceEvent & event,
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_LowP(
+      const ThinSliceEvent & event,
+      int signal_index,
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_NPi0(
+      const ThinSliceEvent & event,
+      int signal_index,
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_EDiv(
       const ThinSliceEvent & event,
@@ -314,6 +335,7 @@ class AbsCexDriver : public ThinSliceDriver {
    TRandom3 fRNG = TRandom3(0);
 
    double fEffVarF, fEffVarCut;
+   std::vector<double> fLowPFractions, fNPi0Fractions;
    double fEDivF, fEDivCut, fNoTrackF, fBeamCutF;
    ProtoDUNETrackUtils fTrackUtil;
 

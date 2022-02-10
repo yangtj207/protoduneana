@@ -29,7 +29,8 @@ namespace protoana {
 
 class PDSPThinSliceFitter {
  public:
-  PDSPThinSliceFitter(std::string fcl_file, std::string output_file);
+  PDSPThinSliceFitter(std::string fcl_file, std::string output_file,
+                      std::string mc_file = "", std::string data_file = "");
   void FillMCEvents();
   void BuildMCSamples();
   void SaveMCSamples();
@@ -127,8 +128,9 @@ class PDSPThinSliceFitter {
   double fRegFactor = 0.;
   TMatrixD * fCovMatrix, * fCovMatrixDisplay;
   TDecompChol * fInputChol;
-  std::map<int, std::string> fDiffGraphs;
-  std::string fDiffGraphFile;
+  //std::map<int, std::string> fDiffGraphs;
+  std::string fDiffGraphFile, fDiffCovName;
+  TH2D * fDiffCov;
 
   std::map<std::string, double> fToyValues;
 
@@ -172,9 +174,12 @@ class PDSPThinSliceFitter {
   std::string fFakeDataRoutine;
   bool fDoFluctuateStats;
   bool fSplitMC;
+  int fMaxEntries = -1;
   int fSplitVal = 0;
   bool fFillIncidentInFunction = false;
   bool fFitUnderOverflow = false;
+  bool fGetMeanXSec = false;
+  bool fTieUnderOver = false;
   bool fUseFakeSamples = false;
   bool fFitFlux;
   size_t fNThrows, fMaxRethrows;

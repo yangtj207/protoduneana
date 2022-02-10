@@ -33,6 +33,7 @@ class ThinSliceEvent {
     reco_daughter_track_res_range = std::vector<std::vector<double>>();
     reco_daughter_efield = std::vector<std::vector<double>>();
     has_pi0_shower = false;
+    true_daughter_PDGs = std::vector<int>();
   };
   /*
   ~ThinSliceEvent() {
@@ -197,6 +198,20 @@ class ThinSliceEvent {
     true_beam_slices = v;
   };
 
+  const std::vector<int> & GetTrueDaughterPDGs() const {
+    return true_daughter_PDGs;
+  };
+  void SetTrueDaughterPDGs(std::vector<int> v) {
+    true_daughter_PDGs = v;
+  };
+
+  const std::vector<double> & GetTrueDaughterStartPs() const {
+    return true_daughter_startPs;
+  };
+  void SetTrueDaughterStartPs(std::vector<double> v) {
+    true_daughter_startPs = v;
+  };
+
   const std::vector<double> & GetdQdXCalibrated() const {
     return calibrated_dQdX;
   };
@@ -302,7 +317,8 @@ class ThinSliceEvent {
                                    reco_daughter_track_res_range,
                                    reco_daughter_efield;
 
-  std::vector<int> true_beam_slices;
+  std::vector<int> true_beam_slices, true_daughter_PDGs;
+  std::vector<double> true_daughter_startPs;
   std::vector<double> calibrated_dQdX, beam_EField,
                       track_pitch;
   std::map<std::string, std::vector<double>> g4rw_weights;

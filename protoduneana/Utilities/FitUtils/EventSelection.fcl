@@ -1,13 +1,14 @@
 TreeName: "pduneana/beamana"
 MCFile: "mc_try.root"
 DataFile: "data_try.root"
-UseMT: false 
+UseMT: false
 
 
 CheckCalo: true 
 EndZHigh: 222.10561
 EndZLow: -.49375
-Threshold: .150
+Threshold: .0 #.150
+CexNPi0: false #true
 TrackScoreCut: 0.3
 Limit: 0.16
 
