@@ -194,7 +194,7 @@ SystsToFix: [
 ]
 
 
-AddDiffInQuadrature: true
+AddDiffInQuadrature:  false 
 DiffCovName: "diffs_2D"
 #DiffGraphFile: "diffs_2_9_22.root"
 DiffGraphFile: "fluc_xsec_diff.root"
@@ -370,8 +370,8 @@ MaxEntries: 50000
 MaxDataEntries: 50000 #10000 #68685
 DoFakeData: false 
 FluctuateStats: false 
-DoThrows: false #true 
-NThrows: 200 #00
+DoThrows: true 
+NThrows: 400 #00
 DoScans: false 
 RunHesse: true
 Do1DShifts: false
