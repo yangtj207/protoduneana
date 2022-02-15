@@ -494,6 +494,36 @@ SystematicsList: {
       Fractions: [0.01264, 0.02818, 0.03742, 0.04429, 0.03888, 0.04155]
     }
   }
+
+  end_z_no_track_weight: {
+    Name: "end_z_no_track_weight"
+    Central: 1.
+    LowerLimit: 0.01
+    UpperLimit: 5.0
+    ThrowLimit: 0.01
+    ThrowLimitUp: 5.0
+    GenThrowLimit: 0.01
+    GenThrowLimitUp: 5.0
+    sigma: .1
+    Options: {
+      Cut: 30.
+
+    }
+  }
+
+  upstream_int_weight: {
+    Name: "upstream_int_weight"
+    Central: 1.
+    LowerLimit: 0.01
+    UpperLimit: 5.0
+    ThrowLimit: 0.01
+    ThrowLimitUp: 5.0
+    GenThrowLimit: 0.01
+    GenThrowLimitUp: 5.0
+    sigma: .1
+    Options: {
+    }
+  }
 }
 
 END_PROLOG

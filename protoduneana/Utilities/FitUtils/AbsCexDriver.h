@@ -48,13 +48,6 @@ class AbsCexDriver : public ThinSliceDriver {
     ThinSliceDataSet & data_set, double & flux,
     std::map<int, std::vector<double>> & sample_scales,
     int split_val = 0);
-  //void FakeDataG4RW(
-  //  TTree * tree,
-  //  std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
-  //  const std::map<int, bool> & signal_sample_checks,
-  //  ThinSliceDataSet & data_set, double & flux,
-  //  std::map<int, std::vector<double>> & sample_scales,
-  //  int split_val = 0);
   void FakeDataG4RWGrid(
     const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -223,6 +216,8 @@ class AbsCexDriver : public ThinSliceDriver {
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);
+  void SetupSyst_EndZNoTrackWeight(
+      const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_LowP(
     const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_NPi0(
@@ -272,6 +267,9 @@ class AbsCexDriver : public ThinSliceDriver {
       const ThinSliceEvent & event,
       int signal_index,
       const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_EndZNoTrack(
+      const ThinSliceEvent & event,
+      const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_EDiv(
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
@@ -279,6 +277,9 @@ class AbsCexDriver : public ThinSliceDriver {
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_BeamEffs(
+      const ThinSliceEvent & event,
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_UpstreamInt(
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
   void WrapUpSysts(TFile & output_file) override;
@@ -336,6 +337,7 @@ class AbsCexDriver : public ThinSliceDriver {
 
    double fEffVarF, fEffVarCut;
    std::vector<double> fLowPFractions, fNPi0Fractions;
+   double fEndZNoTrackCut;
    double fEDivF, fEDivCut, fNoTrackF, fBeamCutF;
    ProtoDUNETrackUtils fTrackUtil;
 

@@ -3,12 +3,14 @@ MCFile: "mc_try.root"
 DataFile: "data_try.root"
 UseMT: false
 
+DoReconstructable: false 
+
 
 CheckCalo: true 
 EndZHigh: 222.10561
 EndZLow: -.49375
-Threshold: .0 #.150
-CexNPi0: false #true
+Threshold: .150
+CexNPi0: true
 TrackScoreCut: 0.3
 Limit: 0.16
 
@@ -20,7 +22,7 @@ dEdXHigh: 3.4
 UseBI: false 
 DoNTracks: false
 
-DoMichel: true
+DoMichel: false 
 MichelCut: 0.6
 
 ####Using BI

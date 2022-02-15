@@ -283,8 +283,11 @@ int main(int argc, char ** argv){
     std::cout << "Calling DefineMC" << std::endl;
     auto mc = DefineMC(frame, pset);
     std::cout << "Snapshotting" << std::endl;
+    if (pset.get<bool>("DoReconstructable"))
+      mc = mc.Filter("reco_reconstructable_beam_event");
     auto time0 = std::chrono::high_resolution_clock::now();
     mc.Snapshot(tree_name, "eventSelection_mc_all.root");
+    //mc.Snapshot(tree_name, "eventSelection_mc_reconstructable.root");
     auto time1 = std::chrono::high_resolution_clock::now();
     std::cout << "Time: " <<
                  std::chrono::duration_cast<std::chrono::seconds>(time1 - time0).count() <<
@@ -297,9 +300,19 @@ int main(int argc, char ** argv){
     std::cout << "Calling DefineData" << std::endl;
     auto data = DefineData(data_frame, pset);
     std::cout << "Snapshotting" << std::endl;
-    data.Snapshot(tree_name, "eventSelection_data_all.root");
+    if (pset.get<bool>("SaveAllData", false))
+      data.Snapshot(tree_name, "eventSelection_data_all.root");
     data = data.Filter("passBeamQuality");
+    //asdf
+    if (pset.get<bool>("DoReconstructable"))
+      data = data.Filter("reco_reconstructable_beam_event");
+
+    auto time0 = std::chrono::high_resolution_clock::now();
     data.Snapshot(tree_name, "eventSelection_data_BeamQuality.root");
+    auto time1 = std::chrono::high_resolution_clock::now();
+    std::cout << "Time: " <<
+                 std::chrono::duration_cast<std::chrono::seconds>(time1 - time0).count() <<
+                 std::endl;
   }
 
   return 0;

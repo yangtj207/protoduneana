@@ -174,7 +174,7 @@ class PDSPThinSliceFitter {
   std::string fFakeDataRoutine;
   bool fDoFluctuateStats;
   bool fSplitMC;
-  int fMaxEntries = -1;
+  int fMaxEntries = -1, fMaxDataEntries = -1;
   int fSplitVal = 0;
   bool fFillIncidentInFunction = false;
   bool fFitUnderOverflow = false;
