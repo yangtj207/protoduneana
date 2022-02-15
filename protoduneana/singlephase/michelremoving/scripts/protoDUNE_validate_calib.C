@@ -50,6 +50,7 @@ bool corr_end;
 int xbins;
 double xmin;
 double xmax;
+vector<double> rroffset;
 string outfile;
 //float recom_factor(float totEf){
 //  if (!userecom) return 1;
@@ -139,6 +140,7 @@ void protoDUNE_validate_calib::Loop(int mn)
   TH2F *YZ_negativeX_corr[3];
   TH2F *YZ_positiveX_corr[3];
   TH1F *X_corr[3];
+  TFile *my_file, *my_file2;
 
   if (recalib){
     ifstream in;
@@ -165,13 +167,13 @@ void protoDUNE_validate_calib::Loop(int mn)
       cout<<"median_dQdx["<<i<<"]="<<median_dQdx[i]<<" calorimetry constant = "<<calib_const[i]<<endl;
     }
 
-    TFile my_file(Form("YZcalo_mich%d_r%d.root",mn, run));
-    TFile my_file2(Form("Xcalo_mich%d_r%d.root",mn, run));
+    my_file = TFile::Open(Form("YZcalo_mich%d_r%d.root",mn, run));
+    my_file2 = TFile::Open(Form("Xcalo_mich%d_r%d.root",mn, run));
   
     for (int i = 0; i<3; ++i){
-      YZ_negativeX_corr[i] = (TH2F*)my_file.Get(Form("correction_dqdx_ZvsY_negativeX_hist_%d",i));
-      YZ_positiveX_corr[i] = (TH2F*)my_file.Get(Form("correction_dqdx_ZvsY_positiveX_hist_%d",i));
-      X_corr[i] = (TH1F*)my_file2.Get(Form("dqdx_X_correction_hist_%d",i));
+      YZ_negativeX_corr[i] = (TH2F*)my_file->Get(Form("correction_dqdx_ZvsY_negativeX_hist_%d",i));
+      YZ_positiveX_corr[i] = (TH2F*)my_file->Get(Form("correction_dqdx_ZvsY_positiveX_hist_%d",i));
+      X_corr[i] = (TH1F*)my_file2->Get(Form("dqdx_X_correction_hist_%d",i));
     }
   }
   
@@ -413,6 +415,7 @@ void protoDUNE_validate_calib::Loop(int mn)
             }
           }
         }
+        dist_corr += rroffset[j];
 
         vector<float> res, dq, first5dq, last5dq;
 
@@ -660,7 +663,7 @@ int main(int argc, char *argv[]) {
   xbins = pset.get<int>("xbins");
   xmin = pset.get<double>("xmin");
   xmax = pset.get<double>("xmax");
-
+  rroffset = pset.get<vector<double>>("rroffset");
   cout<<"infile = "<<infile<<endl;
   cout<<"outfile = "<<outfile<<endl;
   cout<<"michelnumber = "<<michelnumber<<endl;
@@ -670,6 +673,7 @@ int main(int argc, char *argv[]) {
   cout<<"xbins = "<<xbins<<endl;
   cout<<"xmin = "<<xmin<<endl;
   cout<<"xmax = "<<xmax<<endl;
+  for (int i = 0; i<3; ++i) cout<<"rroffset["<<i<<"] = "<<rroffset[i]<<endl;
 
   if (!(michelnumber == 0||michelnumber == 1||michelnumber == 2||michelnumber == 3)){
     cout << "Error: Michel tree number must be 0, 1, 2 or 3" << endl;

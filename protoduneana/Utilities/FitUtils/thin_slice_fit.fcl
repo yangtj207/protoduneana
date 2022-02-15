@@ -20,12 +20,12 @@ AnalysisOptions: {
   #FakeDataRoutine: "G4RW"
   #FakeDataRoutine: "dEdX"
   #FakeDataRoutine: "EffVar"
-  FakeDataRoutine: "G4RWGrid"
+  #FakeDataRoutine: "G4RWGrid"
   #FakeDataRoutine: "PionAngle"
   #FakeDataRoutine: "AngleVar"
   #FakeDataRoutine: "BeamWeight"
   #FakeDataRoutine: "LowP"
-  #FakeDataRoutine: "Asimov"
+  FakeDataRoutine: "Asimov"
   #FakeDataRoutine: "Toy"
 
   SetToy: false 
@@ -65,7 +65,7 @@ AnalysisOptions: {
     ### x7 each (200 MeV bins) -- total range: 0, 41 (0, 1400)
 
     Position: [0]
-    Shift:    [07]
+    Shift:    [05]
     Branch: "g4rw_full_grid_proton_weights"
     SingleBranch: true
 
@@ -141,40 +141,50 @@ AnalysisOptions: {
   }
 }
 
-#Systematics: [
-#  @local::g4rw_proton_coeff
-#]
-
 Systematics: [
   @local::SystematicsList.dEdX_Cal_Spline,
   @local::SystematicsList.beam_shift,
   @local::SystematicsList.ediv_weight,
-  @local::SystematicsList.no_track_weight,
+  #@local::SystematicsList.no_track_weight,
   @local::SystematicsList.beam_cut_weight
   #,@local::SystematicsList.low_p_weight
   #,@local::g4rw_proton_coeff
+  ,@local::SystematicsList.end_z_no_track_weight
+  ,@local::SystematicsList.upstream_int_weight
 ]
 Systematics[1].Options.WeightCap: 30.
-Systematics[2].Central: 1.0 
-Systematics[3].Central: 1.0 
+#Systematics[2].Central: 1.0 
+#Systematics[3].Central: 1.0 
 Systematics[2].Options.F: .6531
 Systematics[1].Options.Cal_set.PlaneParameters[0].norm_factor: 1.
 #Systematics[3].Options.
 
 AddSystTerm: true 
 
+#CovarianceBins: [
+#  ["dEdX_Cal_Spline", 0],
+#  ["ediv_weight", 1],
+#  ["beam_shift", 2],
+#  ["no_track_weight", 3],
+#  ["beam_cut_weight", 4]
+#  #,["g4rw_proton_coeff", 5]
+# #,["low_p_weight", 5]
+#  ,["end_z_no_track_weight", 5]
+#  #,["upstream_int_weight", 5]
+#]
+
 CovarianceBins: [
   ["dEdX_Cal_Spline", 0],
   ["ediv_weight", 1],
   ["beam_shift", 2],
-  ["no_track_weight", 3],
-  ["beam_cut_weight", 4]
-  #,["g4rw_proton_coeff", 5]
- #,["low_p_weight", 5]
+  ["beam_cut_weight", 3]
+ ,["end_z_no_track_weight", 4]
+ ,["upstream_int_weight", 5]
 ]
 #CovarianceFile: "no_g4rw_lowp.root"
-CovarianceFile: "no_g4rw.root"
+#CovarianceFile: "no_g4rw.root"
 #CovarianceFile: "with_g4rw_prot.root"
+CovarianceFile: "with_endz_notrack_upstream_int_without_beameff.root"
 CovarianceMatrix: "m"
 
 FixVariables: true 
@@ -184,57 +194,34 @@ SystsToFix: [
 ]
 
 
-AddDiffInQuadrature: false 
+AddDiffInQuadrature:  false 
 DiffCovName: "diffs_2D"
-DiffGraphFile: "diffs_2_9_22.root"
+#DiffGraphFile: "diffs_2_9_22.root"
+DiffGraphFile: "fluc_xsec_diff.root"
 
 Selections: [
   {
     Name: "Abs"
     ID: 1
-    #RecoBins: [[0., 400., 500., 600., 700., 800., 900., 1200.]]
-    #BinLabels: [["0 - 400", "400 - 500", "500 - 600",
-    #             "600 - 700", "700 - 800", "800 - 900",
-    #             "900 - 1200"]]
     RecoBins: [[0., 300., 350., 400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900., 1200.]]
-    BinLabels: [["0 - 300", "300 - 350", "350 - 400", "400 - 450", "450 - 500", "500 - 550", "550 - 600",
-                 "600 - 650", "650 - 700", "700 - 750", "750 - 800", "800 - 850", "850 - 900",
-                 "900 - 1200"]]
-    #RecoBins: [[0., 500., 600., 700., 800., 900., 1200.]]
-    #BinLabels: [["0 - 500", "500 - 600", "600 - 700", "700 - 800",
-    #             "800 - 900", "900 - 1200"]]
+    #RecoBins: [[0., 300., 325., 350., 375., 400., 425., 450., 475., 500., 525., 550., 575., 600.,
+    #            625., 650., 675., 700., 725., 750., 775., 800., 825., 850., 875., 900., 1200.]]
     AxisTitles: ["Reconstructed KE (MeV)"]
   },
   {
     Name: "Cex"
     ID: 2
-    #RecoBins: [[0., 400., 500., 600., 700., 800., 900., 1200.]]
-    #BinLabels: [["0 - 400", "400 - 500", "500 - 600",
-    #             "600 - 700", "700 - 800", "800 - 900",
-    #             "900 - 1200"]]
-    #RecoBins: [[0., 500., 600., 700., 800., 900., 1200.]]
-    #BinLabels: [["0 - 500", "500 - 600", "600 - 700",
-    #             "700 - 800", "800 - 900", "900 - 1200"]]
     RecoBins: [[0., 400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900., 1200.]]
-    BinLabels: [["0 - 400", "400 - 450", "450 - 500", "500 - 550", "550 - 600",
-                 "600 - 650", "650 - 700", "700 - 750", "750 - 800", "800 - 850", "850 - 900",
-                 "900 - 1200"]]
+    #RecoBins: [[0., 300., 325., 350., 375., 400., 425., 450., 475., 500., 525., 550., 575., 600.,
+    #            625., 650., 675., 700., 725., 750., 775., 800., 825., 850., 875., 900., 1200.]]
     AxisTitles: ["Reconstructed KE (MeV)"]
   } ,
   {
     Name: "RejectedInt"
     ID: 3
-    #RecoBins: [[0., 400., 500., 600., 700., 800., 900., 1200.]]
-    #BinLabels: [["0 - 400", "400 - 500", "500 - 600",
-    #             "600 - 700", "700 - 800", "800 - 900",
-    #             "900 - 1200"]]
-    #RecoBins: [[0., 500., 600., 700., 800., 900., 1200.]]
-    #BinLabels: [["0 - 500", "500 - 600", "600 - 700", "700 - 800",
-    #             "800 - 900", "900 - 1200"]]
     RecoBins: [[0., 400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900., 1200.]]
-    BinLabels: [["0 - 400", "400 - 450", "450 - 500", "500 - 550", "550 - 600",
-                 "600 - 650", "650 - 700", "700 - 750", "750 - 800", "800 - 850", "850 - 900",
-                 "900 - 1200"]]
+    #RecoBins: [[0., 300., 325., 350., 375., 400., 425., 450., 475., 500., 525., 550., 575., 600.,
+    #            625., 650., 675., 700., 725., 750., 775., 800., 825., 850., 875., 900., 1200.]]
     AxisTitles: ["Reconstructed KE (MeV)"]
   },
   {
@@ -256,12 +243,12 @@ Selections: [
     AxisTitles: [""]
   }
 
-  ,{
-    Name: "MichelCut"
-    ID: 7
-    RecoBins: [[0, 1]]
-    AxisTitles: [""]
-  }
+  #,{
+  #  Name: "MichelCut"
+  #  ID: 7
+  #  RecoBins: [[0, 1]]
+  #  AxisTitles: [""]
+  #}
 ]
 
 
@@ -295,14 +282,15 @@ Samples: [
     #SignalBins: [400., 500., 600., 700., 800., 1000.] 
     #SignalBins: [500., 600., 700., 800., 900.]
     SignalBins: [400., 500., 600., 700., 800., 900.] 
+    #SignalBins: [400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900.] 
     FluxType: 1
   },
   {
     Name: "Cex"
     ID: 2
     IsSignal: true
-    #SignalBins: [500., 600., 700., 800., 900.]
     SignalBins: [500., 600., 700., 800., 900.] 
+    #SignalBins: [500., 550., 600., 650., 700., 750., 800., 850., 900.] 
     FluxType: 1
   },
   {
@@ -310,6 +298,7 @@ Samples: [
     ID: 3
     IsSignal: true 
     SignalBins: [500., 600., 700., 800., 900.]
+    #SignalBins: [500., 550., 600., 650., 700., 750., 800., 850., 900.]
     #SignalBins: [400., 500., 600., 700., 800., 900.] 
     FluxType: 1
   },
@@ -355,13 +344,15 @@ FitFlux: true
 ScaleDataToNorm: false
 #DataNorm: 7189. 
 DataNorm: 66979.
-#RNGSeed: 0
+
+AddRegTerm: false 
+RegFactor: 5.
 
 FitFunctionType: 2
 #####################
 
 FitUnderOverflow: true
-TieUnderOver: true
+TieUnderOver: false 
 
 GetMeanXSec: false
 
@@ -374,12 +365,13 @@ DrawXSecUnderflow: false
 
 ## Validation
 RandomStart: false 
-SplitMC: false 
-MaxEntries: 40000
-DoFakeData: false #true 
+SplitMC:  false 
+MaxEntries: 50000
+MaxDataEntries: 50000 #10000 #68685
+DoFakeData: false 
 FluctuateStats: false 
 DoThrows: true 
-NThrows: 500 #00
+NThrows: 400 #00
 DoScans: false 
 RunHesse: true
 Do1DShifts: false

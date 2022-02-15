@@ -220,12 +220,15 @@ void protoDUNE_validate_calib::Init(TTree *tree)
    fChain->SetBranchAddress("lastwire", lastwire, &b_lastwire);
    fChain->SetBranchAddress("lastpeakt", lastpeakt, &b_lastpeakt);
    fChain->SetBranchAddress("endtpc", endtpc, &b_endtpc);
-   fChain->SetBranchAddress("true_trkstartx", true_trkstartx, &b_true_trkstartx);
-   fChain->SetBranchAddress("true_trkstarty", true_trkstarty, &b_true_trkstarty);
-   fChain->SetBranchAddress("true_trkstartz", true_trkstartz, &b_true_trkstartz);
-   fChain->SetBranchAddress("true_trkendx", true_trkendx, &b_true_trkendx);
-   fChain->SetBranchAddress("true_trkendy", true_trkendy, &b_true_trkendy);
-   fChain->SetBranchAddress("true_trkendz", true_trkendz, &b_true_trkendz);
+   TBranch *br = (TBranch*)fChain->GetListOfBranches()->FindObject("true_trkstartx");
+   if (br){
+     fChain->SetBranchAddress("true_trkstartx", true_trkstartx, &b_true_trkstartx);
+     fChain->SetBranchAddress("true_trkstarty", true_trkstarty, &b_true_trkstarty);
+     fChain->SetBranchAddress("true_trkstartz", true_trkstartz, &b_true_trkstartz);
+     fChain->SetBranchAddress("true_trkendx", true_trkendx, &b_true_trkendx);
+     fChain->SetBranchAddress("true_trkendy", true_trkendy, &b_true_trkendy);
+     fChain->SetBranchAddress("true_trkendz", true_trkendz, &b_true_trkendz);
+   }
    Notify();
 }
 

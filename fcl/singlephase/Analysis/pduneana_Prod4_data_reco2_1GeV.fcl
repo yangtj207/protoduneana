@@ -34,6 +34,7 @@ services:
 #services.message.destinations.LogStandardOut.threshold: "INFO"
 #services.Geometry: @local::protodunev6_geo
 services.TFileMetadataDUNE.dataTier: "root-tuple-virtual"
+services.FileCatalogMetadata.fileType: "detector"
 
 source:
 {

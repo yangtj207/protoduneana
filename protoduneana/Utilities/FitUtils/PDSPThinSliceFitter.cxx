@@ -683,7 +683,7 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
                                   "OPEN");
   TTree * tree = (TTree*)inputFile->Get(fTreeName.c_str());
   if (!fDoFakeData) {
-    fThinSliceDriver->BuildDataHists(tree, fDataSet, fDataFlux, fSplitVal);
+    fThinSliceDriver->BuildDataHists(tree, fDataSet, fDataFlux, /*fSplitVal*/fMaxDataEntries);
   }
   else if (fFakeDataRoutine == "Toy") {
     BuildDataFromToy();
@@ -975,7 +975,7 @@ void protoana::PDSPThinSliceFitter::NormalFit() {
     std::cout << "Found minimimum. Fit status: " << fMinimizer->Status() << std::endl;
     double chi2_syst = (fAddSystTerm ? CalcChi2SystTerm() : 0.);
     double chi2_stat = fThinSliceDriver->CalculateChi2(fSamples, fDataSet).first;
-    //double chi2_reg = (fAddRegTerm ? CalcRegTerm() : 0.);
+    double chi2_reg = (fAddRegTerm ? CalcRegTerm() : 0.);
     std::cout << "chi2 Syst: " << chi2_syst << std::endl;
     std::cout << "chi2 Stat: " << chi2_stat << std::endl;
 
@@ -1188,6 +1188,9 @@ void protoana::PDSPThinSliceFitter::NormalFit() {
     TVectorD chi2_stat_out(1);
     chi2_stat_out[0] = chi2_stat;
     chi2_stat_out.Write("chi2_stat");
+    TVectorD chi2_reg_out(1);
+    chi2_reg_out[0] = chi2_reg;
+    chi2_reg_out.Write("chi2_reg");
 
     fBestFitSignalPars = fSignalParameters; 
     fBestFitFluxPars = fFluxParameters; 
@@ -1923,11 +1926,11 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
         double syst_chi2 = (fAddSystTerm ? CalcChi2SystTerm() : 0.);
 
         //Do I need to do this in ThinSliceDriver?
-        //double reg_term  = (fAddRegTerm ? CalcRegTerm() : 0.);
+        double reg_term  = (fAddRegTerm ? CalcRegTerm() : 0.);
         //
 
         //std::cout << (chi2_points.first + syst_chi2) << std::endl;
-        return (chi2_points.first + syst_chi2 /* + reg_term */);
+        return (chi2_points.first + syst_chi2 + reg_term);
       },
       fTotalSignalParameters + fTotalFluxParameters + fTotalSystParameters);
       std::cout << "Done F2" << std::endl;
@@ -2005,6 +2008,7 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
     fFakeDataRoutine = fAnalysisOptions.get<std::string>("FakeDataRoutine");
   }
   fMaxEntries = pset.get<int>("MaxEntries", -1);
+  fMaxDataEntries = pset.get<int>("MaxDataEntries", -1);
   fSplitMC = pset.get<bool>("SplitMC");
   fDoThrows = pset.get<bool>("DoThrows");
   fDoScans = pset.get<bool>("DoScans");
