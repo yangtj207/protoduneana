@@ -1,27 +1,28 @@
 
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
-  ${ART_FRAMEWORK_CORE}
-  ${ART_FRAMEWORK_PRINCIPAL}
-  ${ART_FRAMEWORK_SERVICES_REGISTRY}
-  ${ART_FRAMEWORK_SERVICES_BASIC}
-  ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-  ${ART_ROOT_IO_TFILESERVICE_SERVICE}
-  ${ART_PERSISTENCY_COMMON}
+  ART_FRAMEWORK_CORE
+  ART_FRAMEWORK_PRINCIPAL
+  ART_FRAMEWORK_SERVICES_REGISTRY
+  ART_ROOT_IO_TFILE_SUPPORT
+  ROOT::Core
+  ART_ROOT_IO_TFILESERVICE_SERVICE
+  art::Persistency_Common
   canvas
-  art_Persistency_Provenance
-  ${ART_UTILITIES}
-  ${MF_MESSAGELOGGER}
-  cetlib cetlib_except
-  lardataobj_RecoBase
-  lardata_Utilities
-  larcorealg_Geometry
-  lardataobj_RawData
-  nusimdata_SimulationBase
-  larsim_MCCheater_PhotonBackTrackerService_service           
-  larsim_MCCheater_BackTrackerService_service           
-  larsim_MCCheater_ParticleInventoryService_service
-  larreco_RecoAlg
+  art::Persistency_Provenance
+  art::Utilities
+  messagefacility::MF_MessageLogger
+  cetlib 
+  cetlib_except
+  lardataobj::RecoBase
+  lardata::Utilities
+  larcorealg::Geometry
+  lardataobj::RawData
+  nusimdata::SimulationBase
+  larsim::MCCheater_PhotonBackTrackerService_service           
+  larsim::MCCheater_BackTrackerService_service           
+  larsim::MCCheater_ParticleInventoryService_service
+  larreco::RecoAlg
   ROOT_BASIC_LIB_LIST
   )
 if(DEFINED ENV{HEP_HPC_DIR})
