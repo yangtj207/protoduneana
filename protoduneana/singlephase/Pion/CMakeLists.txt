@@ -1,36 +1,35 @@
 
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
-  cetlib cetlib_except
-  larsim_Simulation
-  lardataobj_Simulation
-  lardataobj_RecoBase
-  lardata_Utilities
-  lardata_ArtDataHelper
-  larcorealg_Geometry
-  nusimdata_SimulationBase
-  larsim_MCCheater_PhotonBackTrackerService_service           
-  larsim_MCCheater_BackTrackerService_service           
-  larsim_MCCheater_ParticleInventoryService_service
-  larreco_RecoAlg
+  cetlib 
+  cetlib_except
+  larsim::Simulation
+  lardataobj::Simulation
+  lardataobj::RecoBase
+  lardata::Utilities
+  lardata::ArtDataHelper
+  larcorealg::Geometry
+  nusimdata::SimulationBase
+  larsim::MCCheater_PhotonBackTrackerService_service           
+  larsim::MCCheater_BackTrackerService_service           
+  larsim::MCCheater_ParticleInventoryService_service
+  larreco::RecoAlg
   ROOT_BASIC_LIB_LIST
   ProtoDUNEUtilities
   geant4reweight::ReweightBaseLib
   geant4reweight::PropBaseLib
-  ${ART_FRAMEWORK_CORE}
-  ${ART_FRAMEWORK_PRINCIPAL}
-  ${ART_FRAMEWORK_SERVICES_REGISTRY}
-  ${ART_FRAMEWORK_SERVICES_BASIC}
-  ${ART_FRAMEWORK_SERVICES_OPTIONAL}
-  ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
-  ${ART_PERSISTENCY_COMMON}
+  ART_FRAMEWORK_CORE
+  ART_FRAMEWORK_PRINCIPAL
+  ART_FRAMEWORK_SERVICES_REGISTRY
+  art::Persistency_Common
   canvas
-  art_Persistency_Provenance
+  art::Persistency_Provenance
   art_root_io
-  ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-  ${ART_ROOT_IO_TFILESERVICE_SERVICE}
-  ${ART_UTILITIES}
-  ${MF_MESSAGELOGGER}
+  ART_ROOT_IO_TFILE_SUPPORT
+  ROOT::Core
+  ART_ROOT_IO_TFILESERVICE_SERVICE
+  art::Utilities
+  messagefacility::MF_MessageLogger
   )
 install_headers()
 install_fhicl()
