@@ -78,6 +78,7 @@ class PDSPThinSliceFitter {
   ThinSliceDataSet fDataSet;
   std::map<int, bool> fIsSignalSample;
   TFile fMCFile;
+  //std::string fMCXSecFileName = "";
   TTree * fMCTree;
   TFile fDataFile;
   TTree * fDataTree;

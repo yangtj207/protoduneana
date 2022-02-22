@@ -2037,6 +2037,8 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
 
   fRNG = TRandom3(pset.get<int>("RNGSeed", 0));
 
+  //fMCXSecFileName = pset.get<std::string>("MCXSecFile", "");
+
   fAddRegTerm = pset.get<bool>("AddRegTerm", false);
   fRegFactor = pset.get<double>("RegFactor", 0.);
 

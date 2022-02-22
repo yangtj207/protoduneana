@@ -238,6 +238,8 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_BeamEffsWeight(
       const std::map<std::string, ThinSliceSystematic> & pars);
+  void SetupSyst_BoxBeam(
+      const std::map<std::string, ThinSliceSystematic> & pars);
 
   /*double GetSystWeight_BeamRes(
       const ThinSliceEvent & event,
@@ -269,6 +271,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_EndZNoTrack(
       const ThinSliceEvent & event,
+      int signal_index,
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_EDiv(
       const ThinSliceEvent & event,
@@ -280,6 +283,9 @@ class AbsCexDriver : public ThinSliceDriver {
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_UpstreamInt(
+      const ThinSliceEvent & event,
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_BoxBeam(
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
   void WrapUpSysts(TFile & output_file) override;
@@ -301,6 +307,7 @@ class AbsCexDriver : public ThinSliceDriver {
    bool fMultinomial;
    bool fSkipFirstLast;
    double fEndZCut;
+   std::map<int, std::vector<double>> fEndZFractions;
    double fTrajZStart;
    std::string fSliceMethod;
    int fSliceCut;
@@ -355,6 +362,7 @@ class AbsCexDriver : public ThinSliceDriver {
    TH1D fBeamShiftRatioNomHist;
    std::vector<TSpline3*> fBeamShiftRatioSplines;
    std::map<std::string, std::string> fG4RWCoeffBranches;
+   std::vector<std::pair<double, double>> fBoxBeamRegions;
 };
 }
 #endif
