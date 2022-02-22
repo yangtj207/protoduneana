@@ -1,0 +1,212 @@
+#include "PDSPAnalyzer.fcl"
+#include "services_dune.fcl"
+#include "ProtoDUNEFembFilter.fcl"
+#include "ProtoDUNEUnstableHVFilter.fcl"
+#include "protoDUNE_reco_data_prolog.fcl"
+#include "missingproductfilter.fcl"
+#include "protodune_tools_dune.fcl"
+
+process_name: PDSPAna
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "%ifb_pdsp_ntuple_test.root" }
+  TimeTracker:       {}
+  MemoryTracker:     {}
+  RandomNumberGenerator: {} #ART native random number generator
+  message:                      @local::dune_message_services_prod_debug
+  FileCatalogMetadata:          @local::art_file_catalog_data
+                                @table::protodune_data_reco_services
+                                #@table::protodune_services
+  PdspChannelMapService:        @local::pdspchannelmap
+  ChannelStatusService:         @local::pdsp_channel_status
+  BackTrackerService: {
+    BackTracker: {
+      SimChannelModuleLabel: "tpcrawdecoder:simpleSC"
+      G4ModuleLabel: "largeant"
+      MinimumHitEnergyFraction: 1e-1
+    }
+  }
+  FileCatalogMetadataDUNE: { }
+  TFileMetadataDUNE: @local::dune_tfile_metadata
+  IFDH: {}
+}
+#services.message.destinations.LogStandardOut.threshold: "DEBUG"
+services.TFileMetadataDUNE.dataTier: "root-tuple-virtual"
+services.FileCatalogMetadata.fileType: "detector"
+
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+  fileNames: ["input_file.root"]
+}
+
+physics:
+{
+
+ producers:{
+
+   pandoracaloAltSCE:        @local::pdune_sp_calodata
+   pandorapidAltSCE:            @local::standard_chi2pid
+   pandoraShowercaloAltSCE:  @local::pdune_sp_showercalodata
+   pandoracalinoxyztAltSCE:	@local::protodunespdata_calibrationdedx
+   pandoracalipidnoxyztAltSCE:	@local::standard_chi2pid
+
+   pandora2caloAltSCE:          @local::pdune_sp_alltrackcalodata
+   pandora2pidAltSCE:           @local::standard_chi2pid
+   pandora2ShowercaloAltSCE:    @local::pdune_sp_allshowercalodata
+   pandora2calinoxyztAltSCE:	   @local::protodunespdata_calibrationdedx
+   pandora2calipidnoxyztAltSCE:	   @local::standard_chi2pid
+   @table::protoDUNE_reco_data_stage2_producers
+ }
+
+ #Create path to run module
+ reco: [
+   pandoracaloAltSCE,
+   pandorapidAltSCE,
+   pandoraShowercaloAltSCE,
+   pandoracalinoxyztAltSCE,
+   pandoracalipidnoxyztAltSCE,
+   pandora2caloAltSCE,
+   pandora2pidAltSCE,
+   pandora2ShowercaloAltSCE,
+   pandora2calinoxyztAltSCE,
+   pandora2calipidnoxyztAltSCE,
+   @sequence::protoDUNE_reco_data_stage2
+ ]
+
+ filters: { 
+   f1: @local::HVfilter
+   f2: @local::pdsp_fembfilter_beamside
+   f3: @local::standard_missingproductfilter
+   @table::protoDUNE_reco_data_filters
+ }
+
+ fpath: [f1, f2, f3]
+
+ analyzers:
+ {
+  pduneana:          @local::pdspanalysis
+ }
+ 
+ ana:  [ pduneana ]
+
+ #stream1: [ out1 ]
+ 
+ end_paths:     [ ana ]
+ #output: [ out1 ]
+ #trigger_paths: [reco]
+ #end_paths: [ output ]
+
+}
+outputs: {}
+#{
+#    out1:
+#        {
+#        compressionLevel: 1
+#        module_type: RootOutput
+#        saveMemoryObjectThreshold: 10485760
+#        fileName: "%ifb_reco.root"
+#        dataTier:    "full-reconstructed"
+##        outputCommands: [ "drop *", "keep raw::RawDigitrecob*_*_*_*", "keep recob::*_*_*_*" ]
+#        outputCommands: [ "keep *", "drop artdaq::Fragments_*_*TPC_*", "drop artdaq::Fragments_*_*FELIX_*", "drop raw::RawDigit*_*_*_*", "drop recob::Wires_caldata_dataprep_*", "drop *_wclsdatasp_wiener_*", "drop *_reco3d_noreg_*", "drop *_reco3d_pre_*" ]
+##       outputCommands: [ "keep *", "drop artdaq::Fragments_*_*TPC_*", "drop artdaq::Fragments_*_*FELIX_*" ]
+#  #      fileProperties: {
+#  #          maxInputFiles: 1
+#  #          }
+#        }
+#    }
+
+#outputs: {}
+physics.producers.pandoracalinoxyztAltSCE.CalorimetryModuleLabel:  "pandoracaloAltSCE"
+physics.producers.pandoracalinoxyztAltSCE.TrackModuleLabel:  "pandoraTrack"
+physics.producers.pandoracalinoxyztAltSCE.ApplyLifetimeCorrection: true
+physics.producers.pandoracalinoxyztAltSCE.ApplyYZCorrection:       false
+physics.producers.pandoracalinoxyztAltSCE.ApplyXCorrection:        false
+physics.producers.pandoracalinoxyztAltSCE.ApplyNormCorrection:     false
+
+physics.producers.pandorapidAltSCE.CalorimetryModuleLabel: "pandoracaloAltSCE"
+physics.producers.pandorapidAltSCE.TrackModuleLabel:       "pandoraTrack"
+
+physics.producers.pandora2pidAltSCE.CalorimetryModuleLabel: "pandora2caloAltSCE"
+physics.producers.pandora2pidAltSCE.TrackModuleLabel:       "pandoraTrack"
+
+physics.producers.pandoracalipidnoxyztAltSCE.CalorimetryModuleLabel: "pandoracalinoxyztAltSCE"
+physics.producers.pandoracalipidnoxyztAltSCE.TrackModuleLabel:       "pandoraTrack"
+
+physics.producers.pandora2calinoxyztAltSCE.CalorimetryModuleLabel:  "pandora2caloAltSCE"
+physics.producers.pandora2calinoxyztAltSCE.TrackModuleLabel:        "pandora2Track"
+physics.producers.pandora2calinoxyztAltSCE.ApplyLifetimeCorrection: true   
+physics.producers.pandora2calinoxyztAltSCE.ApplyYZCorrection:       false   
+physics.producers.pandora2calinoxyztAltSCE.ApplyXCorrection:        false
+physics.producers.pandora2calinoxyztAltSCE.ApplyNormCorrection:     false
+
+physics.producers.pandora2calipidnoxyztAltSCE.CalorimetryModuleLabel:   "pandora2calinoxyztAltSCE"
+physics.producers.pandora2calipidnoxyztAltSCE.TrackModuleLabel:          "pandora2Track"
+
+physics.producers.pandoracali.CalorimetryModuleLabel:       "pandoracalinoxyztAltSCE"
+physics.producers.pandoracali.ShowerCalorimetryModuleLabel:       "pandoraShowercaloAltSCE"
+physics.producers.pandoracali.TrackModuleLabel:       "pandoraTrack"
+physics.producers.pandoracali.ShowerModuleLabel:       "pandoraShower"
+physics.producers.pandoracali.ApplyLifetimeCorrection:       false
+physics.producers.pandoracali.ApplyYZCorrection:             true
+physics.producers.pandoracali.ApplyXCorrection:              true
+physics.producers.pandoracali.ApplyNormCorrection:           true
+physics.producers.pandoracali.ApplyLifetimeCorrectionShower:       true 
+physics.producers.pandoracali.ApplyYZCorrectionShower:             true
+physics.producers.pandoracali.ApplyXCorrectionShower:              true
+physics.producers.pandoracali.ApplyNormCorrectionShower:           true
+
+physics.producers.pandora2cali.TrackModuleLabel:             "pandora2Track"
+physics.producers.pandora2cali.ShowerModuleLabel:       "pandora2Shower"
+physics.producers.pandora2cali.ShowerCalorimetryModuleLabel:       "pandora2ShowercaloAltSCE"
+physics.producers.pandora2cali.CalorimetryModuleLabel:       "pandora2calinoxyztAltSCE"
+physics.producers.pandora2cali.ApplyLifetimeCorrection:      false   
+physics.producers.pandora2cali.ApplyYZCorrection:            true   
+physics.producers.pandora2cali.ApplyXCorrection:             true
+physics.producers.pandora2cali.ApplyNormCorrection:          true
+physics.producers.pandora2cali.ApplyLifetimeCorrectionShower:       true 
+physics.producers.pandora2cali.ApplyYZCorrectionShower:             true
+physics.producers.pandora2cali.ApplyXCorrectionShower:              true
+physics.producers.pandora2cali.ApplyNormCorrectionShower:           true
+
+physics.producers.pandoracali.CaloAlg.CalAreaConstants: [1.166e-3, 1.122e-3, 1.038e-3]
+physics.producers.pandora2cali.CaloAlg.CalAreaConstants: [1.166e-3, 1.122e-3, 1.038e-3]
+
+physics.analyzers.pduneana.SelectEvents: ["fpath"]
+physics.analyzers.pduneana.CalorimetryTagSCE: "pandoracali"
+physics.analyzers.pduneana.CalorimetryTagNoSCE: "pandoracalonosce" ##For no-SCE sample
+physics.analyzers.pduneana.Pandora2CaloSCE: "pandora2cali"
+physics.analyzers.pduneana.Verbose: false
+physics.analyzers.pduneana.DoReweight: false 
+physics.analyzers.pduneana.DoProtReweight: false 
+physics.analyzers.pduneana.GetTrackMichel: false 
+physics.analyzers.pduneana.CalibrationParsSCE: @local::CalorimetryParameters_SPProd4_Data_r5387 #_eLT
+physics.analyzers.pduneana.CalibrationParsNoSCE: @local::CalorimetryParameters_SPProd4_Data_r5387 #_eLT
+physics.analyzers.pduneana.Recalibrate: false
+physics.analyzers.pduneana.SCE: true
+
+services.ParticleInventoryService.ParticleInventory.EveIdCalculator: "EmEveIdCalculator"
+
+services.DetectorPropertiesService.Electronlifetime: 35000
+
+services.SpaceCharge.EnableCalEfieldSCE: true
+services.SpaceCharge.EnableCalSpatialSCE: true
+services.SpaceCharge.EnableSimEfieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+services.SpaceCharge.EnableSimulationSCE: true
+services.SpaceCharge.CalibrationInputFilename: "SpaceChargeProtoDUNE/SCE_Alternate_v4_EField.root"
+
+# xyzt database
+services.XYZCalibService.IsMC: false
+services.XYZCalibService.UseCondbXYZCorr: true
+services.XYZCalibService.YZCorrDBTag: "prod4"
+services.XYZCalibService.XCorrDBTag: "prod4"
+services.XYZCalibService.NormCorrDBTag: "prod4"
+
+# lifetime database
+services.LifetimeCalibService.IsMC: false
+services.LifetimeCalibService.UseCondbLifetime: true
+services.LifetimeCalibService.LifetimeDBTag: "v1.0"
