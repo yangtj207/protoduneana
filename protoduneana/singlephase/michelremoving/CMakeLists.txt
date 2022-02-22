@@ -1,86 +1,87 @@
 art_make( 
   LIB_LIBRARIES 
-  lardataobj_RecoBase
-  larana_OpticalDetector_OpHitFinder
-  larsim_MCSTReco
-  lardataobj_MCBase
-  larcorealg_Geometry
-  larcore_Geometry_Geometry_service
-  larsim_PhotonPropagation_PhotonVisibilityService_service
-  larana_OpticalDetector_OpDigiProperties_service
-  lardata_Utilities
-  nusimdata_SimulationBase
-  ${ART_FRAMEWORK_CORE}
-  ${ART_FRAMEWORK_PRINCIPAL}
-  ${ART_FRAMEWORK_SERVICES_REGISTRY}
-  ${ART_FRAMEWORK_SERVICES_BASIC}
-  ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-  ${ART_ROOT_IO_TFILESERVICE_SERVICE}
-  ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
-  art_Persistency_Common canvas
-  art_Persistency_Provenance canvas
-  art_Utilities
+  lardataobj::RecoBase
+  larana::OpticalDetector_OpHitFinder
+  larsim::MCSTReco
+  lardataobj::MCBase
+  larcorealg::Geometry
+  larcore::Geometry_Geometry_service
+  larsim::PhotonPropagation_PhotonVisibilityService_service
+  larana::OpticalDetector_OpDigiProperties_service
+  lardata::Utilities
+  nusimdata::SimulationBase
+  ART_FRAMEWORK_CORE
+  ART_FRAMEWORK_PRINCIPAL
+  ART_FRAMEWORK_SERVICES_REGISTRY
+  ART_ROOT_IO_TFILE_SUPPORT
+  ROOT::Core
+  ART_ROOT_IO_TFILESERVICE_SERVICE
+  ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE
+  art::Persistency_Common
+  art::Persistency_Provenance
+  art::Utilities
   canvas
-  ${MF_MESSAGELOGGER}
-  ${MF_UTILITIES}
-  ${FHICLCPP}
+  messagefacility::MF_MessageLogger
+  fhiclcpp
   cetlib cetlib_except
   ROOT_BASIC_LIB_LIST
-  MODULE_LIBRARIES larana_OpticalDetector_OpDigiProperties_service
-  larana_OpticalDetector_OpHitFinder
-  larana_OpticalDetector
-  larsim_PhotonPropagation_PhotonVisibilityService_service
-  larsim_MCCheater_BackTrackerService_service
-  larsim_MCCheater_ParticleInventoryService_service
-  larevt_Filters
-  lardata_RecoObjects
-  lardataobj_RecoBase
-  lardataobj_MCBase
-  larreco_RecoAlg
-  larcorealg_Geometry
-  larcore_Geometry_Geometry_service
-  larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
-  lardata_Utilities
-  lardataobj_RawData
-  larreco_Calorimetry
-  lardataobj_AnalysisBase
-  nurandom_RandomUtils_NuRandomService_service
-  nusimdata_SimulationBase
-  ${ART_FRAMEWORK_CORE}
-  ${ART_FRAMEWORK_PRINCIPAL}
-  ${ART_FRAMEWORK_SERVICES_REGISTRY}
-  ${ART_FRAMEWORK_SERVICES_BASIC}
-  ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-  ${ART_ROOT_IO_TFILESERVICE_SERVICE}
-  ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
-  art_Persistency_Common
-  art_Persistency_Provenance
-  art_Utilities
+  MODULE_LIBRARIES larana::OpticalDetector_OpDigiProperties_service
+  larana::OpticalDetector_OpHitFinder
+  larana::OpticalDetector
+  larsim::PhotonPropagation_PhotonVisibilityService_service
+  larsim::MCCheater_BackTrackerService_service
+  larsim::MCCheater_ParticleInventoryService_service
+  larevt::Filters
+  lardata::RecoObjects
+  lardataobj::RecoBase
+  lardataobj::MCBase
+  larreco::RecoAlg
+  larcorealg::Geometry
+  larcore::Geometry_Geometry_service
+  larsim::Simulation 
+  nug4::ParticleNavigation 
+  lardataobj::Simulation
+  lardata::Utilities
+  lardataobj::RawData
+  larreco::Calorimetry
+  lardataobj::AnalysisBase
+  nurandom::RandomUtils_NuRandomService_service
+  nusimdata::SimulationBase
+  ART_FRAMEWORK_CORE
+  ART_FRAMEWORK_PRINCIPAL
+  ART_FRAMEWORK_SERVICES_REGISTRY
+  ART_ROOT_IO_TFILE_SUPPORT
+  ROOT::Core
+  ART_ROOT_IO_TFILESERVICE_SERVICE
+  ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE
+  art::Persistency_Common
+  art::Persistency_Provenance
+  art::Utilities
   canvas
-  ${MF_MESSAGELOGGER}
-  ${MF_UTILITIES}
-  ${FHICLCPP}
-  cetlib cetlib_except
+  messagefacility::MF_MessageLogger
+  fhiclcpp
+  cetlib 
+  cetlib_except
   ROOT_BASIC_LIB_LIST
   ProtoDUNEUtilities
   SERVICE_LIBRARIES
-  larcorealg_Geometry
-  larcore_Geometry_Geometry_service
-  ${ART_FRAMEWORK_CORE}
-  ${ART_FRAMEWORK_PRINCIPAL}
-  ${ART_FRAMEWORK_SERVICES_REGISTRY}
-  ${ART_FRAMEWORK_SERVICES_BASIC}
-  ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-  ${ART_ROOT_IO_TFILESERVICE_SERVICE}
-  art_Persistency_Common
-  art_Persistency_Provenance	
-  art_Utilities
+  larcorealg::Geometry
+  larcore::Geometry_Geometry_service
+  ART_FRAMEWORK_CORE
+  ART_FRAMEWORK_PRINCIPAL
+  ART_FRAMEWORK_SERVICES_REGISTRY
+  ART_ROOT_IO_TFILE_SUPPORT
+  ROOT::Core
+  ART_ROOT_IO_TFILESERVICE_SERVICE
+  art::Persistency_Common
+  art::Persistency_Provenance	
+  art::Utilities
   canvas
-  ${MF_MESSAGELOGGER}
-  ${MF_UTILITIES}
-  ${FHICLCPP}
-  cetlib cetlib_except
-  ${CLHEP}
+  messagefacility::MF_MessageLogger
+  fhiclcpp
+  cetlib 
+  cetlib_except
+  CLHEP
   ROOT_BASIC_LIB_LIST
   )
 
