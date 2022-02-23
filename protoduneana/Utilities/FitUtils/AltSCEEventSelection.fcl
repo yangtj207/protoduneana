@@ -3,7 +3,7 @@ MCFile: "mc_try.root"
 DataFile: "data_try.root"
 UseMT: false
 
-DoReconstructable: true
+DoReconstructable: false 
 
 CheckCalo: true 
 EndZHigh: 222.10561

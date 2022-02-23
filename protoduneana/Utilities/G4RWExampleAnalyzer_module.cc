@@ -109,8 +109,9 @@ private:
   int true_beam_nTrajPts;
   std::vector<double> true_beam_traj_dx, true_beam_traj_X, true_beam_traj_Y,
                       true_beam_traj_Z, true_beam_traj_KE,
-                      true_beam_traj_rx, true_beam_traj_ry, true_beam_traj_rz;
-  std::vector<std::string> true_beam_traj_procs;
+                      true_beam_traj_rx, true_beam_traj_ry, true_beam_traj_rz,
+                      true_beam_traj_deltaE;
+  std::vector<std::string> true_beam_traj_procs, true_beam_traj_mats;
   std::vector<double> true_beam_dEdX;
   std::vector<double> reco_beam_len,
                       reco_beam_startX, reco_beam_startY, reco_beam_startZ,
@@ -313,6 +314,15 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
   true_beam_traj_rx.push_back(true_beam_trajectory.Px(0)/p_mag);
   true_beam_traj_ry.push_back(true_beam_trajectory.Py(0)/p_mag);
   true_beam_traj_rz.push_back(true_beam_trajectory.Pz(0)/p_mag);
+  true_beam_traj_deltaE.push_back(0.);
+
+  geo::Point_t test_point{
+      true_beam_trajectory.X(0), 
+      true_beam_trajectory.Y(0), 
+      true_beam_trajectory.Z(0)};
+  const TGeoMaterial * test_material = fGeometryService->Material(test_point);
+  true_beam_traj_mats.push_back(test_material->GetName());
+
   if (proc_map.find(0) != proc_map.end()) {
     true_beam_traj_procs.push_back(proc_map.at(0));
   }
@@ -341,12 +351,20 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
     true_beam_traj_rx.push_back(true_beam_trajectory.Px(i)/p_mag);
     true_beam_traj_ry.push_back(true_beam_trajectory.Py(i)/p_mag);
     true_beam_traj_rz.push_back(true_beam_trajectory.Pz(i)/p_mag);
+    true_beam_traj_deltaE.push_back(1.e3*(true_beam_trajectory.E(i) -
+                                          true_beam_trajectory.E(i-1)));
     if (proc_map.find(i) != proc_map.end()) {
       true_beam_traj_procs.push_back(proc_map.at(i));
     }
     else {
       true_beam_traj_procs.push_back("");
     }
+    geo::Point_t test_point{
+        true_beam_trajectory.X(i), 
+        true_beam_trajectory.Y(i), 
+        true_beam_trajectory.Z(i)};
+    const TGeoMaterial * test_material = fGeometryService->Material(test_point);
+    true_beam_traj_mats.push_back(test_material->GetName());
   }
 
 
@@ -515,8 +533,10 @@ void protoana::G4RWExampleAnalyzer::beginJob() {
   fTree->Branch("true_beam_traj_rx", &true_beam_traj_rx);
   fTree->Branch("true_beam_traj_ry", &true_beam_traj_ry);
   fTree->Branch("true_beam_traj_rz", &true_beam_traj_rz);
+  fTree->Branch("true_beam_traj_deltaE", &true_beam_traj_deltaE);
   fTree->Branch("true_beam_traj_KE", &true_beam_traj_KE);
   fTree->Branch("true_beam_traj_procs", &true_beam_traj_procs);
+  fTree->Branch("true_beam_traj_mats", &true_beam_traj_mats);
   fTree->Branch("true_beam_startP", &true_beam_startP);
   fTree->Branch("true_beam_startX", &true_beam_startX);
   fTree->Branch("true_beam_startY", &true_beam_startY);
@@ -576,9 +596,11 @@ void protoana::G4RWExampleAnalyzer::reset() {
   true_beam_traj_Z.clear();
   true_beam_traj_KE.clear();
   true_beam_traj_procs.clear();
+  true_beam_traj_mats.clear();
   true_beam_traj_rx.clear();
   true_beam_traj_ry.clear();
   true_beam_traj_rz.clear();
+  true_beam_traj_deltaE.clear();
   true_beam_startP = -1.;
   true_beam_startX = -1.;
   true_beam_startY = -1.;

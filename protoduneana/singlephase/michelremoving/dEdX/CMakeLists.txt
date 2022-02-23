@@ -3,7 +3,8 @@ cet_make_exec( dEdX_calibration
                LIBRARIES
                ROOT_BASIC_LIB_LIST
                CaloTools
-	       cetlib cetlib_except
-	       ${FHICLCPP}
-               ${MF_MESSAGELOGGER}
+	       cetlib 
+	       cetlib_except
+	       fhiclcpp
+               messagefacility::MF_MessageLogger
                )

@@ -146,14 +146,15 @@ Systematics: [
   @local::SystematicsList.beam_shift,
   @local::SystematicsList.ediv_weight,
   #@local::SystematicsList.no_track_weight,
-  @local::SystematicsList.beam_cut_weight
+  #@local::SystematicsList.beam_cut_weight
   #,@local::SystematicsList.low_p_weight
-  #,@local::g4rw_proton_coeff
-  ,@local::SystematicsList.end_z_no_track_weight
+  @local::g4rw_proton_coeff
+  #,@local::SystematicsList.end_z_no_track_weight
   ,@local::SystematicsList.upstream_int_weight
+  ,@local::SystematicsList.box_beam_weight
 ]
 Systematics[1].Options.WeightCap: 30.
-#Systematics[2].Central: 1.0 
+Systematics[2].Central: 1.0 
 #Systematics[3].Central: 1.0 
 Systematics[2].Options.F: .6531
 Systematics[1].Options.Cal_set.PlaneParameters[0].norm_factor: 1.
@@ -177,14 +178,16 @@ CovarianceBins: [
   ["dEdX_Cal_Spline", 0],
   ["ediv_weight", 1],
   ["beam_shift", 2],
-  ["beam_cut_weight", 3]
- ,["end_z_no_track_weight", 4]
- ,["upstream_int_weight", 5]
+  #["beam_cut_weight", 3]
+  ["box_beam_weight", 3]
+ #,["end_z_no_track_weight", 4]
+ ,["upstream_int_weight", 4]
+ ,["g4rw_proton_coeff", 5]
 ]
 #CovarianceFile: "no_g4rw_lowp.root"
 #CovarianceFile: "no_g4rw.root"
 #CovarianceFile: "with_g4rw_prot.root"
-CovarianceFile: "with_endz_notrack_upstream_int_without_beameff.root"
+CovarianceFile: "full_2_16_22_thresholds_no_endz.root"
 CovarianceMatrix: "m"
 
 FixVariables: true 
@@ -242,13 +245,12 @@ Selections: [
     RecoBins: [[0, 1]]
     AxisTitles: [""]
   }
-
-  #,{
-  #  Name: "MichelCut"
-  #  ID: 7
-  #  RecoBins: [[0, 1]]
-  #  AxisTitles: [""]
-  #}
+  ,{
+    Name: "MichelCut"
+    ID: 7
+    RecoBins: [[0, 1]]
+    AxisTitles: [""]
+  }
 ]
 
 
@@ -366,11 +368,11 @@ DrawXSecUnderflow: false
 ## Validation
 RandomStart: false 
 SplitMC:  false 
-MaxEntries: 50000
-MaxDataEntries: 50000 #10000 #68685
-DoFakeData: false 
+MaxEntries: 30000
+MaxDataEntries: 100000 #10000 #68685
+DoFakeData: true 
 FluctuateStats: false 
-DoThrows: true 
+DoThrows: false 
 NThrows: 400 #00
 DoScans: false 
 RunHesse: true

@@ -57,7 +57,7 @@ void protoana::AbsCexDriver::FillMCEvents(
   int true_beam_PDG;
   double true_beam_interactingEnergy, reco_beam_interactingEnergy;
   double true_beam_endP, true_beam_mass, true_beam_endZ;
-  double reco_beam_endZ, true_beam_startP;
+  double reco_beam_endZ, true_beam_startP, reco_beam_startY;
   double beam_inst_P;
   std::vector<double> * reco_beam_incidentEnergies = 0x0,
                       * true_beam_incidentEnergies = 0x0,
@@ -82,6 +82,7 @@ void protoana::AbsCexDriver::FillMCEvents(
   tree->SetBranchAddress("reco_beam_interactingEnergy",
                          &reco_beam_interactingEnergy);
   tree->SetBranchAddress("reco_beam_endZ", &reco_beam_endZ);
+  tree->SetBranchAddress("reco_beam_startY", &reco_beam_startY);
   tree->SetBranchAddress("reco_beam_incidentEnergies",
                          &reco_beam_incidentEnergies);
   tree->SetBranchAddress("true_beam_incidentEnergies",
@@ -169,6 +170,7 @@ void protoana::AbsCexDriver::FillMCEvents(
     events.back().SetTrueStartP(true_beam_startP);
     events.back().SetTrueMass(true_beam_mass);
     events.back().SetRecoEndZ(reco_beam_endZ);
+    events.back().SetRecoStartY(reco_beam_startY);
 
     events.back().SetRecoIncidentEnergies(*reco_beam_incidentEnergies);
     events.back().SetTrueIncidentEnergies(*true_beam_incidentEnergies);
@@ -736,7 +738,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
     weight *= GetSystWeight_LowP(event, signal_index, syst_pars);
     weight *= GetSystWeight_NPi0(event, signal_index, syst_pars);
 
-    weight *= GetSystWeight_EndZNoTrack(event, syst_pars);
+    weight *= GetSystWeight_EndZNoTrack(event, signal_index, syst_pars);
     weight *= GetSystWeight_UpstreamInt(event, syst_pars);
 
     this_sample->FillSelectionHist(new_selection, val, weight);
@@ -844,6 +846,17 @@ void protoana::AbsCexDriver::SetupSysts(
 
 }
 
+void protoana::AbsCexDriver::SetupSyst_BoxBeam(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("box_beam_weight") == pars.end()) {
+    return;
+  }
+  fBoxBeamRegions
+      = pars.at("box_beam_weight").GetOption<
+          std::vector<std::pair<double, double>>>("Regions");
+}
+
+
 void protoana::AbsCexDriver::SetupSyst_EffVarWeight(
     const std::map<std::string, ThinSliceSystematic> & pars) {
   if (pars.find("eff_var_weight") == pars.end()) {
@@ -941,11 +954,23 @@ void protoana::AbsCexDriver::SetupSyst_EndZNoTrackWeight(
     const std::map<std::string, ThinSliceSystematic> & pars) {
   if (pars.find("end_z_no_track_weight") != pars.end()) {
     fEndZNoTrackCut = pars.at("end_z_no_track_weight").GetOption<double>("Cut");
+
+    std::vector<std::pair<int, std::vector<double>>> temp
+        = pars.at("end_z_no_track_weight").GetOption
+            <std::vector<std::pair<int, std::vector<double>>>>("Fractions");
+    fEndZFractions = std::map<int, std::vector<double>>(temp.begin(), temp.end());
+    //for (auto it = fEndZFractions.begin(); it != fEndZFractions.end(); ++it) {
+    //  std::cout << it->first << " ";
+    //  for (auto & f : it->second) std::cout << f << " ";
+    //  std::cout << std::endl;
+    //}
+
   }
 }
 
 double protoana::AbsCexDriver::GetSystWeight_EndZNoTrack(
     const ThinSliceEvent & event,
+    int signal_index,
     const std::map<std::string, ThinSliceSystematic> & pars) {
   if (pars.find("end_z_no_track_weight") == pars.end())
     return 1.;
@@ -953,11 +978,21 @@ double protoana::AbsCexDriver::GetSystWeight_EndZNoTrack(
   //Upstream Interactions
   if (event.GetSampleID() == 4) return 1.;
 
-  if (event.GetSelectionID() != 6) return 1.;
+  //if (event.GetSelectionID() != 6) return 1.;
+
+  if (fEndZFractions[event.GetSampleID()].size() == 0) return 1.;
 
   if (event.GetTrueEndZ() > fEndZNoTrackCut) return 1.;
 
-  return pars.at("end_z_no_track_weight").GetValue();
+  double variation = pars.at("end_z_no_track_weight").GetValue();
+
+  double fraction = (signal_index > -1 ?
+                     fEndZFractions[event.GetSampleID()][signal_index] : fEndZFractions[event.GetSampleID()].back());
+
+  return (event.GetSelectionID() == 6 ? variation :
+          (1. - variation*fraction)/(1. - fraction));
+
+  //return pars.at("end_z_no_track_weight").GetValue();
 }
 
 double protoana::AbsCexDriver::GetSystWeight_UpstreamInt(
@@ -969,6 +1004,27 @@ double protoana::AbsCexDriver::GetSystWeight_UpstreamInt(
   return ((event.GetSampleID() == 4) ?
           pars.at("upstream_int_weight").GetValue() :
           1.);
+}
+
+double protoana::AbsCexDriver::GetSystWeight_BoxBeam(
+    const ThinSliceEvent & event,
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("box_beam_weight") == pars.end()) return 1.;
+
+  if (event.GetSelectionID() != 5) return 1.;
+
+  double startY = event.GetRecoStartY();
+
+  bool near_box_beam = false;
+  for (const auto & region : fBoxBeamRegions) {
+    if (region.first < startY && startY < region.second) {
+      near_box_beam = true;
+      break;
+    }
+  }
+
+  return (near_box_beam ? pars.at("box_beam_weight").GetValue() : 1.);
+
 }
 
 double protoana::AbsCexDriver::GetSystWeight_LowP(
@@ -4695,23 +4751,15 @@ void protoana::AbsCexDriver::CompareSelections(
     cSelectionNoData.Write();
     leg.Draw("same");
 
-
-
-
     leg.AddEntry(data_hist, "Data");
     
     std::pair<double, size_t> chi2 = CalculateChi2(samples, data_set);
     if (chi2.first < 0. && chi2.first > -1.e7) {
       chi2.first = 0.;
     }
-    /*std::string chi2_str = "#chi^{2}/ndof = " +
-                           std::to_string(chi2.first) + "/" +
-                           std::to_string(chi2.second - nPars);*/
     TString chi2_str;
     chi2_str.Form("#chi^{2} = %.2f", chi2.first);
     leg.AddEntry((TObject*)0x0, chi2_str, "");
-    //std::string chi2_str = "#chi^{2} = " + std::to_string(chi2.first);
-    //leg.AddEntry((TObject*)0x0, chi2_str.c_str(), "");
 
     cSelection.cd();
     std::string title = data_set.GetSelectionName(selection_ID);
@@ -4773,17 +4821,7 @@ void protoana::AbsCexDriver::CompareSelections(
     p2.Draw();
     p2.cd();
     hRatio->Sumw2();
-    std::string r_title = "";/*(selection_ID != 4 ?
-                           ";Reconstructed KE (MeV)" :
-                           ";Reconstructed End Z (cm)");*/
-    //if (selection_ID == 4) {
-    //  r_title += ";Reconstructed End Z (cm)";
-    //}
-    //else if (selection_ID < 4) {
-    //  r_title += ";Reconstructed KE (MeV)";
-    //}
-    //r_title += ";Data/MC";
-    //hRatio->SetTitle(r_title.c_str());
+    std::string r_title = "";
     hRatio->GetYaxis()->SetTitle("Data/MC");
     hRatio->SetTitleSize(.04, "XY");
     hRatio->Draw("ep");
@@ -4811,38 +4849,7 @@ void protoana::AbsCexDriver::CompareSelections(
     canvas_name += "Diff";
     TCanvas cDiff(canvas_name.c_str(), "");
     cDiff.SetTicks();
-    /*TPad p1((canvas_name + "pad1").c_str(), "", 0, 0.3, 1., 1.);
-    p1.SetBottomMargin(0.1);
-    p1.Draw();
-    p1.cd();
-    mc_stack.Draw("hist");
-    mc_stack.GetHistogram()->SetTitle("Abs;;");
-    for (int i = 1; i < mc_stack.GetHistogram()->GetNbinsX(); ++i) {
-      hDiff->GetXaxis()->SetBinLabel(
-          i, mc_stack.GetHistogram()->GetXaxis()->GetBinLabel(i));
-      mc_stack.GetHistogram()->GetXaxis()->SetBinLabel(i, "");
-    }
-    mc_stack.Draw("hist");
-    data_hist->Draw("e1 same");*/
-
     cDiff.cd();
-    /*TPad p3((canvas_name + "pad3").c_str(), "", 0, 0, 1., 0.3);
-    p3.SetTopMargin(0.1);
-    p3.SetBottomMargin(.2);
-    p3.Draw();
-    p3.cd();*/
-    //hDiff->Sumw2();
-    /*std::string r_title = "";*//*(selection_ID != 4 ?
-                           ";Reconstructed KE (MeV)" :
-                           ";Reconstructed End Z (cm)");*/
-    //if (selection_ID == 4) {
-    //  r_title += ";Reconstructed End Z (cm)";
-    //}
-    //else if (selection_ID < 4) {
-    //  r_title += ";Reconstructed KE (MeV)";
-    //}
-    //r_title += ";Data/MC";
-    //hDiff->SetTitle(r_title.c_str());
     hDiff->GetYaxis()->SetTitle("r");
     hDiff->SetTitleSize(.04, "XY");
     hDiff->Draw("ep");
@@ -4851,6 +4858,26 @@ void protoana::AbsCexDriver::CompareSelections(
 
     ///Write in NoStacks here
 
+    THStack full_mc_stack((stack_name + "Full").c_str(), "");
+    //TLegend leg;
+    size_t iColorFull = 0;
+    //need to add second loop with temp hists
+    for (auto it2 = temp_hists.begin(); it2 != temp_hists.end(); ++it2) {
+      TH1D * sel_hist = it2->second.at(0);
+      std::pair<int, int> color_fill = GetColorAndStyle(iColorFull, plot_style);
+      sel_hist->SetFillColor(color_fill.first);
+      sel_hist->SetFillStyle(color_fill.second);
+      sel_hist->SetLineColor(kBlack);
+
+
+      for (size_t i = 1; i < it2->second.size(); ++i) {
+        sel_hist->Add(it2->second.at(i));
+      }
+      temp_vec.push_back(sel_hist);
+      full_mc_stack.Add(sel_hist);
+      ++iColorFull;
+    }
+    full_mc_stack.Write();
   }
 
   double total_muons = 0.;

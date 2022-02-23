@@ -1,32 +1,34 @@
 
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
-  lardataobj_RecoBase
-  lardata_Utilities
-  larcorealg_Geometry
-  nusimdata_SimulationBase
-  larsim_MCCheater_PhotonBackTrackerService_service           
-  larsim_MCCheater_BackTrackerService_service           
-  larsim_MCCheater_ParticleInventoryService_service
-  larreco_RecoAlg
+  lardataobj::RecoBase
+  lardata::Utilities
+  larcorealg::Geometry
+  nusimdata::SimulationBase
+  larsim::MCCheater_PhotonBackTrackerService_service           
+  larsim::MCCheater_BackTrackerService_service           
+  larsim::MCCheater_ParticleInventoryService_service
+  larreco::RecoAlg
   ROOT_BASIC_LIB_LIST
   duneprototypes::ProtoDUNEDataUtils
   ProtoDUNEUtilities
-  larsim_Simulation
-  lardataobj_Simulation
-  lardataobj_RawData
-  ${ART_FRAMEWORK_CORE}
-  ${ART_FRAMEWORK_PRINCIPAL}
-  ${ART_FRAMEWORK_SERVICES_REGISTRY}
-  ${ART_FRAMEWORK_SERVICES_BASIC}
+  larsim::Simulation
+  lardataobj::Simulation
+  lardataobj::RawData
+  ART_FRAMEWORK_CORE
+  ART_FRAMEWORK_PRINCIPAL
+  ART_FRAMEWORK_SERVICES_REGISTRY
   art_root_io
-  ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-  ${ART_ROOT_IO_TFILESERVICE_SERVICE}
-  art_Persistency_Common canvas
-  art_Persistency_Provenance canvas
-  art_Utilities canvas
-  ${MF_MESSAGELOGGER}
-  cetlib cetlib_except
+  ART_ROOT_IO_TFILE_SUPPORT
+  ROOT::Core
+  ART_ROOT_IO_TFILESERVICE_SERVICE
+  art::Persistency_Common
+  art::Persistency_Provenance
+  art::Utilities 
+  canvas
+  messagefacility::MF_MessageLogger
+  cetlib 
+  cetlib_except
   )
 
 cet_remove_compiler_flags(CXX -pedantic)
