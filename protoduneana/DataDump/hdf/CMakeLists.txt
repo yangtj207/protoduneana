@@ -3,7 +3,6 @@ art_make(BASENAME_ONLY
   ART_FRAMEWORK_CORE
   ART_FRAMEWORK_PRINCIPAL
   ART_FRAMEWORK_SERVICES_REGISTRY
-  ART_FRAMEWORK_SERVICES_BASIC
   ART_ROOT_IO_TFILE_SUPPORT 
   ROOT::Core
   ART_ROOT_IO_TFILESERVICE_SERVICE
@@ -23,7 +22,7 @@ art_make(BASENAME_ONLY
   larsim::MCCheater_ParticleInventoryService_service
   larreco::RecoAlg
   ROOT_BASIC_LIB_LIST
-  hep_hpc::hdf5
+  hep_hpc_hdf5
   HDF5
   )
 
