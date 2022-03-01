@@ -530,6 +530,7 @@ namespace dune{
         auto particles = truthUtil.GetMCParticleListFromRecoTrack(clockData, *tracklist[i], evt, fTrackModuleLabel);
         for (auto & part : particles){
           //cout<<(part.first)->PdgCode()<<" "<<part.second<<endl;
+          if (!part.first) continue;
           true_trkstartx[cross_trks-1] = (part.first)->Vx();
           true_trkstarty[cross_trks-1] = (part.first)->Vy();
           true_trkstartz[cross_trks-1] = (part.first)->Vz();
