@@ -180,8 +180,8 @@ void protoDUNE_validate_calib::Loop(int mn)
   //int x_bin_size=5;
   //int y_bin_size = 5; // nbiny bins in y direction
   //int z_bin_size = 5; // nbinz bins in z direction
-  std::cout<<"efield at the anode neg"<<tot_Ef(-352,300,300)<<std::endl;
-  std::cout<<"efield at the anode pos"<<tot_Ef(352,300,300)<<std::endl;
+  std::cout<<"efield at the anode neg: "<<tot_Ef(-352,300,300)<<std::endl;
+  std::cout<<"efield at the anode pos: "<<tot_Ef(352,300,300)<<std::endl;
 
   //TFile *file = new TFile(Form("Validate_mich%d_r%d.root",mn, run),"recreate");
   TFile *file = new TFile(outfile.c_str(),"recreate");

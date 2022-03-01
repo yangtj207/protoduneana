@@ -663,3 +663,22 @@ class vertex_michel_cut {
   }
   
 };
+
+class fixed_interacting_energy {
+  private:
+   double fEnergyFix;
+  public:
+   fixed_interacting_energy(double fix_val = -1.) : fEnergyFix(fix_val) {}
+   double operator()(const std::vector<double> & incident_energies,
+                     double interacting_energy) {
+     double energy = interacting_energy;
+     for (size_t k = 1; k < incident_energies.size(); ++k) {
+       double deltaE = ((incident_energies)[k-1] -
+                        (incident_energies)[k]);
+       if (deltaE > fEnergyFix && fEnergyFix > 0.) {
+         energy += deltaE; 
+       }
+     }
+     return energy;
+   }
+};

@@ -91,6 +91,9 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                    {"true_beam_endPx", "true_beam_endPy", "true_beam_endPz",
                     "true_beam_daughter_PDG", "true_beam_daughter_startPx", 
                     "true_beam_daughter_startPy", "true_beam_daughter_startPz"})
+           .Define("reco_beam_fixed_interactingEnergy",
+                   fixed_interacting_energy(80.),
+                   {"reco_beam_incidentEnergies", "reco_beam_interactingEnergy"})
            .Define("daughter_PDGs_types", daughter_PDG_types,
                    {"reco_daughter_PFP_true_byHits_PDG"});
 
@@ -171,6 +174,9 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
            .Define("reco_daughter_allTrack_truncLibo_dEdX_pos",
                    truncatedMean_pos(pset.get<double>("Limit")),
                    {"reco_daughter_allTrack_calibrated_dEdX_SCE"})
+           .Define("reco_beam_fixed_interactingEnergy",
+                   fixed_interacting_energy(80.),
+                   {"reco_beam_incidentEnergies", "reco_beam_interactingEnergy"})
            .Define("has_noPion_daughter",
                    secondary_noPion(
                        pset.get<double>("TrackScoreCut"),
@@ -221,8 +227,8 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
   data = data.Define("vertex_cut",
                      vertex_michel_cut(pset.get<double>("MichelCut")),
                      {"reco_beam_vertex_michel_score",
-                      "reco_beam_vertex_nHits"});
-  data = data.Define("selection_ID", selection_ID(pset.get<bool>("DoMichel")),
+                      "reco_beam_vertex_nHits"})/*;
+  data = data*/.Define("selection_ID", selection_ID(pset.get<bool>("DoMichel")),
                  {"primary_isBeamType", "primary_ends_inAPA3",
                   "has_noPion_daughter", "passBeamCut",
                   "has_shower_dist_energy", "vertex_cut"});

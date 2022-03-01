@@ -54,12 +54,16 @@ MCSigmaZ: 0.22
 MCMeanThetaX: 101.58
 MCMeanThetaY: 101.19
 MCMeanThetaZ: 16.59
+
 DataMeanX: -27.91
 DataMeanY: 424.36
 DataMeanZ: 3.78
 DataSigmaX: 4.71
 DataSigmaY: 5.16
 DataSigmaZ: 1.10
-DataMeanThetaX: 100.45
-DataMeanThetaY: 103.52
-DataMeanThetaZ: 17.83
+#DataMeanThetaX: 100.45
+#DataMeanThetaY: 103.52
+#DataMeanThetaZ: 17.83
+DataMeanThetaX: 100.95
+DataMeanThetaY: 104.17
+DataMeanThetaZ: 18.05

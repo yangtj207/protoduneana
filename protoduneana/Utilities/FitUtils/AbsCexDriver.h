@@ -363,6 +363,7 @@ class AbsCexDriver : public ThinSliceDriver {
    std::vector<TSpline3*> fBeamShiftRatioSplines;
    std::map<std::string, std::string> fG4RWCoeffBranches;
    std::vector<std::pair<double, double>> fBoxBeamRegions;
+   double fBoxBeamFraction;
 };
 }
 #endif

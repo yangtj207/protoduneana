@@ -683,7 +683,9 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
                                   "OPEN");
   TTree * tree = (TTree*)inputFile->Get(fTreeName.c_str());
   if (!fDoFakeData) {
-    fThinSliceDriver->BuildDataHists(tree, fDataSet, fDataFlux, /*fSplitVal*/fMaxDataEntries);
+    fThinSliceDriver->BuildDataHists(
+        tree, fDataSet, fDataFlux,
+        fMaxDataEntries);
   }
   else if (fFakeDataRoutine == "Toy") {
     BuildDataFromToy();
