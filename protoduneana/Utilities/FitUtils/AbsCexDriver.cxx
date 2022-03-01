@@ -854,6 +854,7 @@ void protoana::AbsCexDriver::SetupSyst_BoxBeam(
   fBoxBeamRegions
       = pars.at("box_beam_weight").GetOption<
           std::vector<std::pair<double, double>>>("Regions");
+  fBoxBeamFraction = pars.at("box_beam_weight").GetOption<double>("Fraction");
 }
 
 
@@ -978,8 +979,6 @@ double protoana::AbsCexDriver::GetSystWeight_EndZNoTrack(
   //Upstream Interactions
   if (event.GetSampleID() == 4) return 1.;
 
-  //if (event.GetSelectionID() != 6) return 1.;
-
   if (fEndZFractions[event.GetSampleID()].size() == 0) return 1.;
 
   if (event.GetTrueEndZ() > fEndZNoTrackCut) return 1.;
@@ -987,7 +986,8 @@ double protoana::AbsCexDriver::GetSystWeight_EndZNoTrack(
   double variation = pars.at("end_z_no_track_weight").GetValue();
 
   double fraction = (signal_index > -1 ?
-                     fEndZFractions[event.GetSampleID()][signal_index] : fEndZFractions[event.GetSampleID()].back());
+                     fEndZFractions[event.GetSampleID()][signal_index] :
+                     fEndZFractions[event.GetSampleID()].back());
 
   return (event.GetSelectionID() == 6 ? variation :
           (1. - variation*fraction)/(1. - fraction));
@@ -1023,7 +1023,9 @@ double protoana::AbsCexDriver::GetSystWeight_BoxBeam(
     }
   }
 
-  return (near_box_beam ? pars.at("box_beam_weight").GetValue() : 1.);
+  double variation = pars.at("box_beam_weight").GetValue();
+  return (near_box_beam ? variation :
+          (1. - variation*fBoxBeamFraction)/(1. - fBoxBeamFraction));
 
 }
 

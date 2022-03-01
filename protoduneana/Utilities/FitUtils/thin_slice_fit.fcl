@@ -346,7 +346,6 @@ FitFlux: true
 ScaleDataToNorm: false
 #DataNorm: 7189. 
 DataNorm: 66979.
-
 AddRegTerm: false 
 RegFactor: 5.
 
