@@ -1011,7 +1011,7 @@ double protoana::AbsCexDriver::GetSystWeight_BoxBeam(
     const std::map<std::string, ThinSliceSystematic> & pars) {
   if (pars.find("box_beam_weight") == pars.end()) return 1.;
 
-  if (event.GetSelectionID() != 5) return 1.;
+  //if (event.GetSelectionID() != 5) return 1.;
 
   double startY = event.GetRecoStartY();
 
@@ -1024,9 +1024,9 @@ double protoana::AbsCexDriver::GetSystWeight_BoxBeam(
   }
 
   double variation = pars.at("box_beam_weight").GetValue();
-  return (near_box_beam ? variation :
-          (1. - variation*fBoxBeamFraction)/(1. - fBoxBeamFraction));
-
+  //return (near_box_beam ? variation :
+  //        (1. - variation*fBoxBeamFraction)/(1. - fBoxBeamFraction));
+  return (near_box_beam ? variation : 1.);
 }
 
 double protoana::AbsCexDriver::GetSystWeight_LowP(
