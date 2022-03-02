@@ -22,7 +22,7 @@ dEdXHigh: 3.4
 UseBI: false 
 DoNTracks: false
 
-DoMichel: false 
+DoMichel: true 
 MichelCut: 0.6
 
 ####Using BI
