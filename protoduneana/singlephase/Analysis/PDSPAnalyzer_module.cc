@@ -561,6 +561,7 @@ private:
                    anab::MVAReader<recob::Hit,4> * hitResults);
   void BeamForcedTrackInfo(const art::Event & evt,
                            const recob::PFParticle * particle);
+  void CheckEff(const art::Event & evt, int rightTrackID);
   void TrueBeamInfo(const art::Event & evt,
                     const simb::MCParticle* true_beam_particle,
                     detinfo::DetectorClocksData const& clockData,
@@ -703,6 +704,7 @@ private:
   int test_branch;
   double true_beam_len;
   double reco_beam_len, reco_beam_alt_len;
+  int for_truncation_method;
   double reco_beam_alt_len_allTrack;
   double reco_beam_vertex_michel_score;
   int reco_beam_vertex_nHits;
@@ -1347,6 +1349,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
   }
   //std::cout << "Got " << beam_slices.size() <<" beam slices" << std::endl;
 
+  int rightTrackID = -1;
   ///Gets the beam pfparticle
   if(beam_slices.size() == 0){
     std::cout << "We found no beam particles for this event... moving on" << std::endl;
@@ -1398,6 +1401,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     if( thisTrack ){
       //Get reconstructed beam track info
       BeamTrackInfo(evt, thisTrack, clockData);
+      rightTrackID = thisTrack->ID();
     }
     else if( thisShower ){
       //Get reconstructed beam shower info 
@@ -1413,12 +1417,12 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     //To do: BeamForcedShowerInfo?
   }
 
-
+  bool check_eff = true;
+  if (check_eff) CheckEff(evt, rightTrackID);
   //If MC, attempt to match to some MCParticle
   if( !evt.isRealData() ){
     TrueBeamInfo(evt, true_beam_particle, clockData, plist, trueToPFPs, hitResults);
   }
-
 
   //New geant4reweight stuff
   //To do: put in its own function
@@ -1599,6 +1603,7 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_len", &reco_beam_len);
   fTree->Branch("test_branch", &test_branch);
   fTree->Branch("reco_beam_alt_len", &reco_beam_alt_len);
+  fTree->Branch("for_truncation_method", &for_truncation_method);
   fTree->Branch("reco_beam_alt_len_allTrack", &reco_beam_alt_len_allTrack);
   fTree->Branch("reco_beam_calo_startX", &reco_beam_calo_startX);
   fTree->Branch("reco_beam_calo_startY", &reco_beam_calo_startY);
@@ -2154,6 +2159,7 @@ void pduneana::PDSPAnalyzer::reset()
   reco_beam_len = -999;
   test_branch = -1;
   reco_beam_alt_len = -999;
+  for_truncation_method = -1;
   reco_beam_alt_len_allTrack = -999;
   reco_beam_calo_startX = -999;
   reco_beam_calo_startY = -999;
@@ -3313,6 +3319,43 @@ void pduneana::PDSPAnalyzer::BeamShowerInfo(const art::Event & evt, const recob:
   }
 }
 
+void pduneana::PDSPAnalyzer::CheckEff(const art::Event & evt, int rightTrackID) {
+  auto hitHandler = evt.getValidHandle<std::vector<recob::Hit> >("hitpdune");
+  auto spHandler = evt.getValidHandle< std::vector<recob::SpacePoint> >("hitpdune");
+  art::FindManyP<recob::Hit> hitFromSP(spHandler, evt, "hitpdune");
+  art::FindManyP<recob::Track> trackFromHit(hitHandler, evt, "pandoraTrack");
+  if (hitFromSP.size() > 0) {
+    for_truncation_method = 0;
+    auto const & hits = hitFromSP.at(0);
+    std::vector<int> keys;
+    for (auto const & hit: hits){
+      auto const & tracks = trackFromHit.at(hit.key()); // const std::vector<art::Ptr<recob::Track>, std::allocator<art::Ptr<recob::Track> > >
+      if (!tracks.empty()){
+        keys.push_back(tracks[0].key());
+      }
+    }
+    
+    // find the most common element (mode) in keys
+    int repetition = 0;
+    int mode = -2;
+    std::map<int,int> mmap;
+    //for (std::vector<int>::iterator vi = keys.begin(); vi != keys.end(); vi++) {
+    for (auto vi: keys) {
+      mmap[vi]++;
+      if (mmap[vi] > repetition) {
+        repetition = mmap[vi];
+        mode = vi;
+      }
+    }
+    
+    if (repetition > hits.size()/2.) { // if repetition of mode in keys > 1/2 size of tagged hits
+      for_truncation_method = 1; // reconstructed
+      if (mode == rightTrackID) {
+        for_truncation_method = 2; // identified
+      }
+    }
+  }
+}
 
 //Info from the true beam from event only in MC
 void pduneana::PDSPAnalyzer::TrueBeamInfo(
