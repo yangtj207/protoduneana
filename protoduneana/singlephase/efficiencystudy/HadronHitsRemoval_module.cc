@@ -123,13 +123,29 @@ private:
   double true_beam_len;
   double true_beam_len_sce;
   // Declare member data here.
+  std::string fHitModuleLabel;
+  std::string fPFParticleTag;
+  std::string fCalorimetryTagSCE;
+  std::string fTrackerTag;
+  std::string fGeneratorTag;
+
+  double fLimit1;
+  double fLimit2Lower, fLimit2Upper;
+  double fTruncationLength;
 };
 
 
 pdsp::HadronHitsRemoval::HadronHitsRemoval(fhicl::ParameterSet const& p)
-  : EDProducer{p}  // ,
-  // More initializers here.
-{
+  : EDProducer{p},
+    fHitModuleLabel(p.get<std::string>("HitModuleLabel", "hitpdune")),
+    fPFParticleTag(p.get<std::string>("PFParticleTag", "pandora")),
+    fCalorimetryTagSCE(p.get<std::string>("CalorimetryTagSCE", "pandoracalo")),
+    fTrackerTag(p.get<std::string>("TrackerTag", "pandoraTrack")),
+    fGeneratorTag(p.get<std::string>("GeneratorTag", "generator")),
+    fLimit1(p.get<double>("Limit1", 100.)),
+    fLimit2Lower(p.get<double>("Limit2Lower", 230.)),
+    fLimit2Upper(p.get<double>("Limit2Upper", 500.)),
+    fTruncationLength(p.get<double>("TruncationLength", 10.)) {
   cout<<"$$$HadronHitsRemoval$$$"<<endl;
   // Call appropriate produces<>() functions here.
   recob::HitCollectionCreator::declare_products(producesCollector(), "", true, false);
@@ -160,10 +176,6 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
 {
   cout<<"#####EvtNo."<<evt.id().event()<<endl;
   reset();
-  string fPFParticleTag = "pandora";
-  string fCalorimetryTagSCE = "pandoracalo";
-  string fTrackerTag = "pandoraTrack";
-  string fGeneratorTag = "generator";
   // Implementation of required member function here.
   // Add code to select beam tracks using Pandora information
   
@@ -205,6 +217,9 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
       //}
     }
   }
+
+  std::cout << "Got beam slices: " << beam_slices.size() << std::endl;
+
   if (beam_slices.size() > 0){
     const recob::PFParticle* particle = beam_slices.at(0).at(0);
     
@@ -272,17 +287,19 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         dir = dir.Unit();
         beam_costh = dir.Dot(beamdir);
 
-        if (reco_beam_len_sce>100 && PassBeamQualityCut()){
+        std::cout << "Length: " << reco_beam_len_sce << std::endl;
+        if (reco_beam_len_sce>fLimit1 && PassBeamQualityCut()){
           selected_track = 1;
-          if (reco_beam_len_sce>230 && reco_beam_len_sce<500)
+          if (reco_beam_len_sce>fLimit2Lower && reco_beam_len_sce<fLimit2Upper)
             selected_track = 2;
         }
+        std::cout << "Selected: " << selected_track << std::endl;
       }
       
-      string fHitModuleLabel = "hitpdune";
+      //string fHitModuleLabel = "hitpdune";
       //string fSpModuleLabel = "reco3d";
       
-      double sel_len = 10.; // shorten to how long (cm)
+      //double sel_len = 10.; // shorten to how long (cm)
       
       if (selected_track == 2) { // selected long tracks (not smaller than 5 m)
         auto hitsHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
@@ -300,7 +317,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         double reco_beam_len = thisTrack->Length();
         cout<<"$$Length"<<reco_beam_len<<endl;
         size_t i = 0;
-        for (; thisTrack->Length(i) > reco_beam_len - sel_len; ++i ){
+        for (; thisTrack->Length(i) > reco_beam_len - fTruncationLength/*sel_len*/; ++i ){
           ;
         }
         TVector3 pos = thisTrack->LocationAtPoint<TVector3>(i);
