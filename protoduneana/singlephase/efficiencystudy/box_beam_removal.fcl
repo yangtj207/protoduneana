@@ -25,7 +25,7 @@ services.SpaceCharge.EnableCalSpatialSCE: true
 source:
 {
   module_type: RootInput
-  maxEvents:  1            # Number of events to create
+  maxEvents:  -1            # Number of events to create
 }
 
 #added physics-> productors -> module types

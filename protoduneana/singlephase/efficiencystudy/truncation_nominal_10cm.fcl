@@ -37,10 +37,10 @@ physics:
         GeneratorTag:         "generator"
         BeamlineUtils:        @local::standard_protodunebeamlineutils
 
-        PFParticleTag:           "pandoraBoxBeam"
-        HitModuleLabel:          "hitpduneBoxBeam"
-        CalorimetryTagSCE:       "pandoracaloBoxBeam"
-        TrackerTag:              "pandoraTrackBoxBeam"
+        PFParticleTag:           "pandora"
+        HitModuleLabel:          "hitpdune"
+        CalorimetryTagSCE:       "pandoracalo"
+        TrackerTag:              "pandoraTrack"
         Limit1: 100.
         Limit2Lower: 230.
         TruncationLength: 10.
@@ -65,7 +65,7 @@ outputs:
  out1:
  {
    module_type: RootOutput
-   fileName:    "%ifb_box_beam_truncated.root"
+   fileName:    "%ifb_truncated.root"
    dataTier:    "full-reconstructed"
    compressionLevel: 1
    saveMemoryObjectThreshold: 0
