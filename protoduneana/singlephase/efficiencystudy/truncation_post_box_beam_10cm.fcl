@@ -41,9 +41,9 @@ physics:
         HitModuleLabel:          "hitpduneBoxBeam"
         CalorimetryTagSCE:       "pandoracaloBoxBeam"
         TrackerTag:              "pandoraTrackBoxBeam"
-        Limit1: 50.
-        Limit2Lower: 50.
-        TruncationLength: 10.
+        Limit1: 100.
+        Limit2Lower: 230.
+        TruncationLength: 500.
       }
   }
 
