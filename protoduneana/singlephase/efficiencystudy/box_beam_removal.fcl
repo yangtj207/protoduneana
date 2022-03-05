@@ -86,4 +86,7 @@ outputs:
  }
 }
 #add physics block and imbeded  
-outputs.out1.outputCommands: [ "keep *", "drop *_hitpdune_*_Reco1", "drop *_pandora*_*_Reco1", "drop *_anodepiercerst0_*_Reco1", "drop *_op*_*_Reco1", "drop *_emtrkmichelid_*_Reco2" ]
+outputs.out1.outputCommands: [
+  "keep *", "drop *_hitpdune_*_Reco1", "drop *_pandora*_*_Reco1", "drop *_anodepiercerst0_*_Reco1", "drop *_op*_*_Reco1", "drop *_emtrkmichelid_*_Reco2",
+  "drop *_*_*_Reco2", "drop *_*_*_Reco1"
+]

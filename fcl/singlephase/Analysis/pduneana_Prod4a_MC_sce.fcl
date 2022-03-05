@@ -220,7 +220,7 @@ physics.analyzers.pduneana.CalibrationParsNoSCE: @local::CalorimetryParameters_S
 physics.analyzers.pduneana.Recalibrate: false
 physics.analyzers.pduneana.GetCalibratedShowerEnergy: true 
 physics.analyzers.pduneana.SCE: true
-physics.analyzers.pduneana.SaveHits: true
+physics.analyzers.pduneana.SaveHits: false 
 
 services.ParticleInventoryService.ParticleInventory.EveIdCalculator: "EmEveIdCalculator"
 

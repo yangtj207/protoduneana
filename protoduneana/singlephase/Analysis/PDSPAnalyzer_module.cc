@@ -1044,6 +1044,7 @@ private:
   bool fRecalibrate;
   bool fGetCalibratedShowerEnergy;
   bool fCheckSlicesForBeam;
+  bool fCheckTruncation;
   // SparseNet params 
   /// Module label for input space points
   std::string fSpacePointLabel;
@@ -1100,6 +1101,7 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   fRecalibrate(p.get<bool>("Recalibrate", true)),
   fGetCalibratedShowerEnergy(p.get<bool>("GetCalibratedShowerEnergy", false)),
   fCheckSlicesForBeam(p.get<bool>("CheckSlicesForBeam", false)),
+  fCheckTruncation(p.get<bool>("CheckTruncation", false)),
 
   // SparseNet params
   fSpacePointLabel (p.get<std::string>    ("SpacePointLabel")), 
@@ -1417,8 +1419,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     //To do: BeamForcedShowerInfo?
   }
 
-  bool check_eff = true;
-  if (check_eff) CheckEff(evt, rightTrackID);
+  if (fCheckTruncation) CheckEff(evt, rightTrackID);
   //If MC, attempt to match to some MCParticle
   if( !evt.isRealData() ){
     TrueBeamInfo(evt, true_beam_particle, clockData, plist, trueToPFPs, hitResults);
