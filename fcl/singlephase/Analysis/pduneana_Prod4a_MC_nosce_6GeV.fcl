@@ -1,0 +1,115 @@
+#include "pduneana_Prod4a_MC_nosce.fcl"
+physics.analyzers.pduneana.ParameterSet: [
+  {
+    Cut: "inel"
+    Name: "fQE1"
+    Range: [0., 500.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "inel"
+    Name: "fQE2"
+    Range: [500., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "inel"
+    Name: "fQE3"
+    Range: [2000., 9000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "abs"
+    Name: "fAbs1"
+    Range: [0., 500.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "abs"
+    Name: "fAbs2"
+    Range: [500., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "abs"
+    Name: "fAbs3"
+    Range: [2000., 9000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "cex"
+    Name: "fCex1"
+    Range: [0., 400.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "cex"
+    Name: "fCex2"
+    Range: [400., 800.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "cex"
+    Name: "fCex3"
+    Range: [800., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "cex"
+    Name: "fCex4"
+    Range: [2000., 9000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "reac"
+    Name: "fReac1"
+    Range: [0., 600.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "reac"
+    Name: "fReac2"
+    Range: [600., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "reac"
+    Name: "fReac3"
+    Range: [2000., 9000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "dcex"
+    Name: "fDCex"
+    Range: [0., 9000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "prod"
+    Name: "fProd"
+    Range: [0., 9000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "elast"
+    Name: "fElast"
+    Range: [0., 9000.]
+    Nominal: 1.0 
+    Sigma: .2
+  }
+]
