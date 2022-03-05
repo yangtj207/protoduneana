@@ -3,7 +3,9 @@
 #include "ProtoDUNEBeamlineUtils.fcl"
 #include "protoDUNE_reco_data_prolog.fcl"
 #include "protodune_tools_dune.fcl"
-process_name: ProtonHitsRemoval
+
+process_name: HadronHitsRemoval
+
 services:
 {
   #Load the service that manages root files for histograms.
@@ -15,31 +17,35 @@ services:
   message:      @local::standard_info
   IFDH: {}
 }
+
 #services.BackTrackerService.BackTracker.SimChannelModuleLabel: "tpcrawdecoder:simpleSC"
 services.SpaceCharge.EnableCalEfieldSCE: true
 services.SpaceCharge.EnableCalSpatialSCE: true
 #physics.analyzers.hitana.SaveTrackInfo: true
+
 #source is now a root file
 source:
 {
   module_type: RootInput
   maxEvents:  1            # Number of events to create
 }
+
 #added physics-> productors -> module types
+
 physics:
 {
   producers:
   {   @table::protoDUNE_reco_data_stage1_producers
-      hitpdune: {module_type:          "ProtonHitsRemoval"
+      hitpdune: {module_type:          "HadronHitsRemoval"
         GeneratorTag:         "generator"
         #BeamCuts:             @local::Prod2BeamCuts
         BeamlineUtils:        @local::standard_protodunebeamlineutils
+
         #TrackerTag:              "pandoraTrack"
         #HitTag:                  "hitpdune"
         #ShowerTag:               "pandoraShower"
         PFParticleTag:           "pandora"
         HitTag:                  "hitpdune"
-        seglen: 10
       }
   }
   reco: [hitpdune,
@@ -90,6 +96,7 @@ physics.producers.pandoracalinoxyzt:     @local::protodunespmcsce_calibrationded
 physics.producers.pandora2calinoxyzt:    @local::protodunespmcsce_calibrationdedx
 physics.producers.pandora2calinoxyzt.CalorimetryModuleLabel:    "pandora2calo"
 physics.producers.pandora2calinoxyzt.TrackModuleLabel:          "pandora2Track"
+
 outputs:
 {
  out1:

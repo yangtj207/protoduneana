@@ -157,6 +157,13 @@ physics.analyzers.pduneana.ParameterSet: [
     Range: [0., 2000.]
     Nominal: 1.0 
     Sigma: .2
+  },
+  {
+    Cut: "elast"
+    Name: "fElast"
+    Range: [0., 9000.]
+    Nominal: 1.0 
+    Sigma: .2
   }
 ]
 
@@ -220,7 +227,7 @@ physics.analyzers.pduneana.CalibrationParsNoSCE: @local::CalorimetryParameters_S
 physics.analyzers.pduneana.Recalibrate: false
 physics.analyzers.pduneana.GetCalibratedShowerEnergy: true 
 physics.analyzers.pduneana.SCE: true
-physics.analyzers.pduneana.SaveHits: true
+physics.analyzers.pduneana.SaveHits: false 
 
 services.ParticleInventoryService.ParticleInventory.EveIdCalculator: "EmEveIdCalculator"
 

@@ -1,0 +1,15 @@
+#include "evd_protoDUNE_noped.fcl"
+
+services.ColorDrawingOptions.RawQHigh: [100]
+services.ColorDrawingOptions.RawQLow:  [-50]
+services.RawDrawingOptions.RawDataLabels: ["tpcrawdecoder:daq", "caldata:dataprep"]
+services.RawDrawingOptions.PedestalOption: 1
+services.RawDrawingOptions.MinimumSignal: 5.0
+services.RecoDrawingOptions.WireModuleLabels: ["caldata", "digitwire", "wclsdatasp:gauss", "caldata:dataprep"]
+services.ChannelStatusService: @local::pdsp_channel_status
+services.DetectorPropertiesService: @local::protodunesp_detproperties
+services.RecoDrawingOptions.CluserModuleLabels: "[pandoraBoxBeam]"
+services.RecoDrawingOptions.PFParticleModuleLabels: ["pandoraBoxBeam"]
+services.RecoDrawingOptions.ShowerModuleLabels: ["pandoraShowerBoxBeam"]
+services.RecoDrawingOptions.TrackModuleLabels: ["pandoraTrackBoxBeam"]
+services.RecoDrawingOptions.VertexModuleLabels: ["pandoraBoxBeam"]

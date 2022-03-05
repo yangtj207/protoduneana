@@ -1,0 +1,2 @@
+#include "truncation_nominal_10cm.fcl"
+physics.producers.hitpdune.TruncationLength: 50.

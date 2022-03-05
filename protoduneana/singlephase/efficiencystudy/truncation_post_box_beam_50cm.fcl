@@ -1,0 +1,2 @@
+#include "truncation_post_box_beam_10cm.fcl"
+physics.producers.hitpdune.TruncationLength: 50.
