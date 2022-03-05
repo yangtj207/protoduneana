@@ -332,7 +332,7 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         
         std::vector< art::Ptr< recob::Hit > > remove_hits;
         std::vector< art::Ptr< recob::Hit > > tag_hits;
-        art::Ptr< recob::SpacePoint > SpPtr;
+        //art::Ptr< recob::SpacePoint > SpPtr;
         std::vector< recob::SpacePoint > spv;
         recob::SpacePoint sp;
         spv.push_back(sp);
