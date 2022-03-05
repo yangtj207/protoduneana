@@ -157,6 +157,13 @@ physics.analyzers.pduneana.ParameterSet: [
     Range: [0., 2000.]
     Nominal: 1.0 
     Sigma: .2
+  },
+  {
+    Cut: "elast"
+    Name: "fElast"
+    Range: [0., 9000.]
+    Nominal: 1.0 
+    Sigma: .2
   }
 ]
 
