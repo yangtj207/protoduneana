@@ -76,7 +76,7 @@ physics.analyzers.pduneana.CalorimetryTagNoSCE: "pandoracalonosce" ##For no-SCE 
 physics.analyzers.pduneana.Pandora2CaloSCE: "pandora2cali"
 physics.analyzers.pduneana.Verbose: false 
 physics.analyzers.pduneana.DoReweight: true
-physics.analyzers.pduneana.FracsFile: "Geant4ReweightInput/LAr_PiPlus_cascade.root"
+physics.analyzers.pduneana.FracsFile: "Geant4ReweightInput/LAr_PiPlus_cascade_0_9000.root"
 physics.analyzers.pduneana.ProtFracsFile: "Geant4ReweightInput/proton.root"
 physics.analyzers.pduneana.ParameterSet: [
   {
