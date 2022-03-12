@@ -7,12 +7,12 @@ cet_build_plugin(MichelHitCounter art::module
               lardataobj::RecoBase
               lardata::ArtDataHelper
               nusimdata::SimulationBase
-              ART_FRAMEWORK_CORE
-              ART_FRAMEWORK_PRINCIPAL
-              ART_FRAMEWORK_SERVICES_REGISTRY
-              ART_ROOT_IO_TFILE_SUPPORT
-	      ROOT::Core
-              ART_ROOT_IO_TFILESERVICE_SERVICE
+              art::Framework_Core
+              art::Framework_Principal
+              art::Framework_Services_Registry
+              art_root_io::tfile_support
+              ROOT::Core
+              art_root_io::TFileService_service
               art::Persistency_Provenance
               messagefacility::MF_MessageLogger
               cetlib::cetlib
@@ -29,12 +29,12 @@ cet_build_plugin(VtxScore art::module
               lardataobj::RecoBase
               lardata::ArtDataHelper
               nusimdata::SimulationBase
-              ART_FRAMEWORK_CORE
-              ART_FRAMEWORK_PRINCIPAL
-              ART_FRAMEWORK_SERVICES_REGISTRY
-              ART_ROOT_IO_TFILE_SUPPORT
-	      ROOT::Core
-              ART_ROOT_IO_TFILESERVICE_SERVICE
+              art::Framework_Core
+              art::Framework_Principal
+              art::Framework_Services_Registry
+              art_root_io::tfile_support
+              ROOT::Core
+              art_root_io::TFileService_service
               art::Persistency_Provenance
               messagefacility::MF_MessageLogger
               cetlib::cetlib
@@ -52,12 +52,12 @@ cet_build_plugin(MichelEventSelection art::module
               lardataobj::RecoBase
               lardata::ArtDataHelper
               nusimdata::SimulationBase
-              ART_FRAMEWORK_CORE
-              ART_FRAMEWORK_PRINCIPAL
-              ART_FRAMEWORK_SERVICES_REGISTRY
-              ART_ROOT_IO_TFILE_SUPPORT
-	      ROOT::Core
-              ART_ROOT_IO_TFILESERVICE_SERVICE
+              art::Framework_Core
+              art::Framework_Principal
+              art::Framework_Services_Registry
+              art_root_io::tfile_support
+              ROOT::Core
+              art_root_io::TFileService_service
               art::Persistency_Provenance
               messagefacility::MF_MessageLogger
               cetlib::cetlib
