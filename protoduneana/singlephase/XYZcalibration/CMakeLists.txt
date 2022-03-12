@@ -10,20 +10,20 @@ art_make(
   larana::OpticalDetector_OpDigiProperties_service
   lardata::Utilities
   nusimdata::SimulationBase
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  ART_ROOT_IO_TFILE_SUPPORT
+  art::Framework_Core
+  art::Framework_Principal
+  art::Framework_Services_Registry
+  art_root_io::tfile_support
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
-  ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE
+  art_root_io::TFileService_service
   art::Persistency_Common
+  canvas::canvas
+  art::Persistency_Provenance
   art::Utilities
-  canvas
   messagefacility::MF_MessageLogger
-  fhiclcpp
-  cetlib 
-  cetlib_except
+  cetlib::cetlib 
+  cetlib_except::cetlib_except
+  fhiclcpp::fhiclcpp
   ROOT_BASIC_LIB_LIST
   MODULE_LIBRARIES larana::OpticalDetector_OpDigiProperties_service
   larana::OpticalDetector_OpHitFinder
@@ -45,38 +45,24 @@ art_make(
   lardataobj::AnalysisBase
   nurandom::RandomUtils_NuRandomService_service
   nusimdata::SimulationBase
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  ART_ROOT_IO_TFILE_SUPPORT 
+  art::Framework_Core
+  art::Framework_Principal
+  art::Framework_Services_Registry
+  art_root_io::tfile_support
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
-  ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE
-  art::Persistency_Provenance
+  art_root_io::TFileService_service
   art::Persistency_Common
+  canvas::canvas
+  art::Persistency_Provenance
   art::Utilities
-  canvas
   messagefacility::MF_MessageLogger
-  fhiclcpp
-  cetlib 
-  cetlib_except
+  cetlib::cetlib 
+  cetlib_except::cetlib_except
+  fhiclcpp::fhiclcpp
   ROOT_BASIC_LIB_LIST
   SERVICE_LIBRARIES
   larcorealg::Geometry
   larcore::Geometry_Geometry_service
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  ART_ROOT_IO_TFILE_SUPPORT 
-  ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
-  art::Persistency_Common
-  art::Utilities
-  canvas
-  messagefacility::MF_MessageLogger
-  fhiclcpp
-  cetlib 
-  cetlib_except
   CLHEP
   ROOT_BASIC_LIB_LIST
   )

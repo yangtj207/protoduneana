@@ -31,7 +31,7 @@ cet_make_exec( murecombfit
                ROOT_BASIC_LIB_LIST
                ROOT_LIBRARIES
 	       ROOT::Minuit
-	       cetlib cetlib_except
+	       cetlib::cetlib cetlib_except::cetlib_except
 	       FHICLCPP
                MF_MESSAGELOGGER
                CaloTools
@@ -43,7 +43,7 @@ cet_make_exec( plotmurecombfitresult
                ROOT_BASIC_LIB_LIST
                ROOT_LIBRARIES
                ROOT::Minuit
-               cetlib cetlib_except
+               cetlib::cetlib cetlib_except::cetlib_except
                FHICLCPP
                MF_MESSAGELOGGER
                CaloTools
@@ -55,7 +55,7 @@ cet_make_exec( resrangefit
                ROOT_BASIC_LIB_LIST
                ROOT_LIBRARIES
 	       ROOT::Minuit
-               cetlib cetlib_except
+               cetlib::cetlib cetlib_except::cetlib_except
 	       FHICLCPP
                MF_MESSAGELOGGER
                CaloTools
