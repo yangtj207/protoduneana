@@ -11,19 +11,19 @@ art_make( BASENAME_ONLY
           larsim::Simulation lardataobj_Simulation
 	  lardataobj::RecoBase
           nusimdata_SimulationBase
-          ART_FRAMEWORK_CORE
-          ART_FRAMEWORK_PRINCIPAL
-          ART_FRAMEWORK_SERVICES_REGISTRY
-          ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE
+          art::Framework_Core
+          art::Framework_Principal
+          art::Framework_Services_Registry
+          art::Framework_Services_Optional_RandomNumberGenerator_service
           art::Persistency_Common
           art::Persistency_Provenance
           art::Utilities 
-	  canvas
+	  canvas::canvas
           messagefacility::MF_MessageLogger
           hep_concurrency
-          fhiclcpp
-          cetlib 
-	  cetlib_except
+          fhiclcpp::fhiclcpp
+          cetlib::cetlib 
+	  cetlib_except::cetlib_except
           ${CLHEP}
           ROOT_BASIC_LIB_LIST
           ${SQLITE3}
@@ -31,9 +31,9 @@ art_make( BASENAME_ONLY
           ifdh::ifdh 
 	  duneprototypes::ProtoDUNEDataUtils
           ProtoDUNEUtilities
-          ART_ROOT_IO_TFILE_SUPPORT
+          art_root_io::tfile_support
 	  ROOT::Core
-          ART_ROOT_IO_TFILESERVICE_SERVICE
+          art_root_io::TFileService_service
  )
 
 
