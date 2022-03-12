@@ -1,15 +1,12 @@
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  ART_FRAMEWORK_SERVICES_BASIC
-  ART_ROOT_IO_TFILE_SUPPORT
+  art::Framework_Core
+  art::Framework_Principal
+  art::Framework_Services_Registry
+  art::Persistency_Common
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
-  ART_PERSISTENCY_COMMON
-  canvas
-  art_Persistency_Provenance
+  canvas::canvas
+  art::Persistency_Provenance
   art::Utilities
   messagefacility::MF_MessageLogger
   cetlib 
@@ -24,7 +21,7 @@ art_make(BASENAME_ONLY
   larreco::RecoAlg
   ROOT_BASIC_LIB_LIST
   ProtoDUNEAnaUtils
-  ProtoDUNEDataUtils
+  duneprototypes::ProtoDUNEDataUtils
   )
 install_headers()
 install_fhicl()
