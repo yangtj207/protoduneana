@@ -15,20 +15,19 @@ art_make(BASENAME_ONLY
   larsim::Simulation
   lardataobj::Simulation
   lardataobj::RawData
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  art_root_io
-  ART_ROOT_IO_TFILE_SUPPORT
+  art::Framework_Core
+  art::Framework_Principal
+  art::Framework_Services_Registry
+  art_root_io::tfile_support
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
+  art_root_io::TFileService_service
   art::Persistency_Common
+  canvas::canvas
   art::Persistency_Provenance
-  art::Utilities 
-  canvas
+  art::Utilities
   messagefacility::MF_MessageLogger
-  cetlib 
-  cetlib_except
+  cetlib::cetlib 
+  cetlib_except::cetlib_except
   )
 
 cet_remove_compiler_flags(CXX -pedantic)

@@ -8,15 +8,19 @@ cet_build_plugin(PDSPmatch art::module
                         dune_raw_data::dune-raw-data_Overlays
                         artdaq_core::artdaq-core_Data
                         dunecore::Geometry
-                        ART_FRAMEWORK_CORE
-                        ART_FRAMEWORK_PRINCIPAL
-                        ART_FRAMEWORK_SERVICES_REGISTRY
-                        ART_ROOT_IO_TFILE_SUPPORT 
-			ROOT::Core
-                        ART_ROOT_IO_TFILESERVICE_SERVICE
+                        art::Framework_Core
+                        art::Framework_Principal
+                        art::Framework_Services_Registry
+                        art_root_io::tfile_support
+                        ROOT::Core
+                        art_root_io::TFileService_service
+                        art::Persistency_Common
+                        canvas::canvas
                         art::Persistency_Provenance
+                        art::Utilities
                         messagefacility::MF_MessageLogger
-                        cetlib
+                        cetlib::cetlib 
+                        cetlib_except::cetlib_except
                         ROOT_BASIC_LIB_LIST
                         RCEDAMLIB
                         BASENAME_ONLY
@@ -32,15 +36,19 @@ cet_build_plugin(PDSPmatchmc art::module
                         nusimdata::SimulationBase
                         larsim::MCCheater_PhotonBackTrackerService_service
                         larsim::MCCheater_ParticleInventoryService_service
-                        ART_FRAMEWORK_CORE
-                        ART_FRAMEWORK_PRINCIPAL
-                        ART_FRAMEWORK_SERVICES_REGISTRY
-                        ART_ROOT_IO_TFILE_SUPPORT
-			ROOT::Core
-			ART_ROOT_IO_TFILESERVICE_SERVICE
-			ART_PERSISTENCY_PROVENANCE
+                        art::Framework_Core
+                        art::Framework_Principal
+                        art::Framework_Services_Registry
+                        art_root_io::tfile_support
+                        ROOT::Core
+                        art_root_io::TFileService_service
+                        art::Persistency_Common
+                        canvas::canvas
+                        art::Persistency_Provenance
+                        art::Utilities
                         messagefacility::MF_MessageLogger
-                        cetlib
+                        cetlib::cetlib 
+                        cetlib_except::cetlib_except
                         ROOT_BASIC_LIB_LIST
                         RCEDAMLIB
                         BASENAME_ONLY
