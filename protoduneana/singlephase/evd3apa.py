@@ -16,6 +16,7 @@ def main(argv):
         w1 = 480*3
         sc = 50
         do_save_image = 0
+        no_title = False
 
         args = argv[1:]
         while len(args) > 0:
@@ -40,6 +41,9 @@ def main(argv):
                 elif args[0] == '-save':
                         do_save_image = 1
                         del args[0]
+                elif args[0] == '--notitle':
+                  no_title = True
+                  del args[0]
                 else:
                         print('Unknown option %s' % args[0])
                         return 1
@@ -112,7 +116,10 @@ def main(argv):
         #fig.set_size_inches((w1-w0+1)*0.479/20, (t1-t0+1)*0.5*0.16/20)
         ax.set_xlabel("Wire number")
         ax.set_ylabel("Ticks (0.5 $\mu$s)")
-        ax.set_title("ProtoDUNE-SP Run {} Event {} @{} UTC".format(run[0][0], run[0][2], dt_object))
+        if no_title:
+          ax.set_title('')
+        else:
+          ax.set_title("ProtoDUNE-SP Run {} Event {} @{} UTC".format(run[0][0], run[0][2], dt_object))
         #plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         plt.tight_layout()
         if do_save_image:
