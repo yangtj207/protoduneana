@@ -195,6 +195,9 @@ SystsToFix: [
   ["beam_shift", 0.]
   #,["low_p_weight", 1.]
 ]
+FixSystsPostFit: [
+  ["beam_shift", 0.]
+]
 
 
 AddDiffInQuadrature:  false 
@@ -282,8 +285,8 @@ Samples: [
     ID: 1
     IsSignal: true
     #SignalBins: [400., 500., 600., 700., 800., 1000.] 
-    #SignalBins: [500., 600., 700., 800., 900.]
-    SignalBins: [400., 500., 600., 700., 800., 900.] 
+    SignalBins: [500., 600., 700., 800., 900.]
+    #SignalBins: [400., 500., 600., 700., 800., 900.] 
     #SignalBins: [400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900.] 
     FluxType: 1
   },
@@ -367,12 +370,12 @@ DrawXSecUnderflow: false
 ## Validation
 RandomStart: false 
 SplitMC:  false 
-MaxEntries: 30000
-MaxDataEntries: 100000 #10000 #68685
+MaxEntries: -1 #20000
+MaxDataEntries: 20000 #10000 #68685
 DoFakeData: true 
 FluctuateStats: false 
-DoThrows: false 
-NThrows: 400 #00
+DoThrows: true 
+NThrows: 100 #00
 DoScans: false 
 RunHesse: true
 Do1DShifts: false

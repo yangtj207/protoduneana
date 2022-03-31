@@ -305,6 +305,9 @@ class ThinSliceEvent {
   int GetSubrunID() const {return subrun_ID;};
   int GetRunID() const {return run_ID;};
 
+  int GetTrueID() const {return true_beam_ID;};
+  int GetRecoToTrueID() const {return reco_beam_true_byHits_ID;};
+
  private:
   int event_ID, subrun_ID, run_ID;
   int sample_ID;
@@ -333,6 +336,8 @@ class ThinSliceEvent {
   std::map<std::string, std::vector<double>> g4rw_weights;
   std::map<std::string, std::vector<double>> g4rw_coeffs;
   std::map<std::string, TSpline3*> g4rw_splines;
+  int true_beam_ID;
+  int reco_beam_true_byHits_ID;
 };
 }
 #endif

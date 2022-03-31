@@ -740,6 +740,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
 
     weight *= GetSystWeight_EndZNoTrack(event, signal_index, syst_pars);
     weight *= GetSystWeight_UpstreamInt(event, syst_pars);
+    weight *= GetSystWeight_BeamMatch(event, syst_pars);
 
     this_sample->FillSelectionHist(new_selection, val, weight);
 
@@ -843,6 +844,7 @@ void protoana::AbsCexDriver::SetupSysts(
   SetupSyst_LowP(pars);
   SetupSyst_NPi0(pars);
   SetupSyst_EndZNoTrackWeight(pars);
+  SetupSyst_BeamMatch(pars);
 
 }
 
@@ -1004,6 +1006,58 @@ double protoana::AbsCexDriver::GetSystWeight_UpstreamInt(
   return ((event.GetSampleID() == 4) ?
           pars.at("upstream_int_weight").GetValue() :
           1.);
+}
+
+void protoana::AbsCexDriver::SetupSyst_BeamMatch(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("beam_match_weight") == pars.end()) return; 
+
+  fBeamMatchLimits = pars.at("beam_match_weight")
+      .GetOption<std::vector<double>>("Limits");
+  fBeamMatchFractions = pars.at("beam_match_weight")
+      .GetOption<std::vector<double>>("Fractions");
+  if (fBeamMatchFractions.size() != fBeamMatchLimits.size() + 1) {
+    std::cout << "Error in Beam Match Syst Setup: Limits and Fractions don't line up" << std::endl;
+    std::exception e;
+    throw e;
+  }
+}
+
+double protoana::AbsCexDriver::GetSystWeight_BeamMatch(
+    const ThinSliceEvent & event,
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("beam_match_weight") == pars.end())
+    return 1.;
+
+  //Upstream Interactions
+  if (event.GetSampleID() == 4) return 1.;
+
+  //No reco track
+  if (event.GetSelectionID() == 6) return 1.;
+
+  bool matched = (event.GetTrueID() == event.GetRecoToTrueID());
+  double variation = pars.at("beam_match_weight").GetValue();
+
+  double endz = event.GetTrueEndZ();
+
+  int bin = -1;
+  if (endz < fBeamMatchLimits[0]) {
+    bin = 0;
+  }
+  else if (endz > fBeamMatchLimits.back()) {
+    bin = fBeamMatchFractions.size() - 1;
+  }
+  else {
+    for (size_t i = 1; i < fBeamMatchLimits.size(); ++i) {
+      if (fBeamMatchLimits[i-1] < endz && endz < fBeamMatchLimits[i]) {
+        bin = i;
+        break;
+      }
+    }
+  }
+
+  double fraction = fBeamMatchFractions[bin];
+  return (matched ? variation : (1. - variation*fraction)/(1. - fraction));
 }
 
 double protoana::AbsCexDriver::GetSystWeight_BoxBeam(

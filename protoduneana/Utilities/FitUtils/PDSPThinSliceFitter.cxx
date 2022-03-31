@@ -148,6 +148,7 @@ void protoana::PDSPThinSliceFitter::MakeMinimizer() {
       fMinimizer->FixVariable(n_par);
     }
 
+    fSystParameterIndices[it->first] = n_par;
 
     fParLimits.push_back(it->second.GetThrowLimit());
     fParLimitsUp.push_back(it->second.GetThrowLimitUp());
@@ -1659,8 +1660,13 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
           std::cout << "Rethrowing " << j-1 << " " << vals.back()[j-1] << " " << fParLimitsUp[j-1] << std::endl;
         }
         rethrow = !all_pos;
-
       }
+
+      for (auto it = fFixSystsPostFit.begin(); it != fFixSystsPostFit.end();
+           ++it) {
+        vals.back()[fSystParameterIndices[it->first]] = it->second;
+      }
+
       //std::cout << std::endl;
       ++nRethrows;
     }
@@ -1849,7 +1855,8 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
              it != fFluxesBySample.end(); ++it) {
           int sample_ID = it->first;
           std::vector<std::vector<ThinSliceSample>> & samples_2D
-              = fSamples[sample_ID];
+              = (!fUseFakeSamples ? fSamples[sample_ID] :
+                                   fFakeSamples[sample_ID]);
           for (size_t i = 0; i < samples_2D.size(); ++i) {
             std::vector<ThinSliceSample> & samples = samples_2D[i];
             for (size_t j = 0; j < samples.size(); ++j) {
@@ -2025,7 +2032,12 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
     std::vector<std::pair<std::string, double>> temp_vec
         = pset.get<std::vector<std::pair<std::string, double>>>("SystsToFix");
     fSystsToFix = std::map<std::string, double>(temp_vec.begin(), temp_vec.end());
+    temp_vec
+        = pset.get<std::vector<std::pair<std::string, double>>>(
+            "FixSystsPostFit", std::vector<std::pair<std::string, double>>());
+    fFixSystsPostFit = std::map<std::string, double>(temp_vec.begin(), temp_vec.end());
   }
+
   fDoFluctuateStats = pset.get<bool>("FluctuateStats");
 
   fNThrows = pset.get<size_t>("NThrows");
