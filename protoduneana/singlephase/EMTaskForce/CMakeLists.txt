@@ -1,16 +1,16 @@
 
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  ART_FRAMEWORK_SERVICES_REGISTRY
+  art::Framework_Core
+  art::Framework_Principal
+  art::Framework_Services_Registry
   art::Persistency_Common
-  canvas
+  canvas::canvas
   art::Persistency_Provenance
   art::Utilities
   messagefacility::MF_MessageLogger
-  cetlib 
-  cetlib_except
+  cetlib::cetlib 
+  cetlib_except::cetlib_except
   larreco::Calorimetry
   lardataobj::RecoBase
   lardataalg::DetectorInfo
@@ -25,9 +25,9 @@ art_make(BASENAME_ONLY
   ROOT_BASIC_LIB_LIST
   duneprototypes::ProtoDUNEDataUtils
   ProtoDUNEUtilities
-  ART_ROOT_IO_TFILE_SUPPORT
+  art_root_io::tfile_support
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
+  art_root_io::TFileService_service
   )
 install_headers()
 install_fhicl()

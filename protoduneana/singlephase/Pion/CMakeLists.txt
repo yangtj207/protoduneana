@@ -1,8 +1,6 @@
 
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
-  cetlib 
-  cetlib_except
   larsim::Simulation
   lardataobj::Simulation
   lardataobj::RecoBase
@@ -18,18 +16,19 @@ art_make(BASENAME_ONLY
   ProtoDUNEUtilities
   geant4reweight::ReweightBaseLib
   geant4reweight::PropBaseLib
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  art::Persistency_Common
-  canvas
-  art::Persistency_Provenance
-  art_root_io
-  ART_ROOT_IO_TFILE_SUPPORT
+  art::Framework_Core
+  art::Framework_Principal
+  art::Framework_Services_Registry
+  art_root_io::tfile_support
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
+  art_root_io::TFileService_service
+  art::Persistency_Common
+  canvas::canvas
+  art::Persistency_Provenance
   art::Utilities
   messagefacility::MF_MessageLogger
+  cetlib::cetlib 
+  cetlib_except::cetlib_except
   )
 install_headers()
 install_fhicl()
