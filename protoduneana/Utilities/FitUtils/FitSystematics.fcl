@@ -550,6 +550,26 @@ SystematicsList: {
       ]
     }
   }
+
+  beam_match_weight: {
+    Name: "beam_match_weight"
+    Central: 1.
+    LowerLimit: 0.01
+    UpperLimit: 1.1440
+    ThrowLimit: 0.01
+    ThrowLimitUp: 1.1440
+    GenThrowLimit: 0.01
+    GenThrowLimitUp: 1.1440
+    Sigma: .1
+    Options: {
+      Fractions: [
+        .2444, .5717, .698, .764, .8735
+      ]
+      Limits: [
+        10., 20., 30., 50.
+      ]
+    }
+  }
 }
 
 END_PROLOG

@@ -218,6 +218,8 @@ class AbsCexDriver : public ThinSliceDriver {
       TFile & output_file);
   void SetupSyst_EndZNoTrackWeight(
       const std::map<std::string, ThinSliceSystematic> & pars);
+  void SetupSyst_BeamMatch(
+      const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_LowP(
     const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_NPi0(
@@ -272,6 +274,9 @@ class AbsCexDriver : public ThinSliceDriver {
   double GetSystWeight_EndZNoTrack(
       const ThinSliceEvent & event,
       int signal_index,
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_BeamMatch(
+      const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_EDiv(
       const ThinSliceEvent & event,
@@ -364,6 +369,8 @@ class AbsCexDriver : public ThinSliceDriver {
    std::map<std::string, std::string> fG4RWCoeffBranches;
    std::vector<std::pair<double, double>> fBoxBeamRegions;
    double fBoxBeamFraction;
+
+   std::vector<double> fBeamMatchLimits, fBeamMatchFractions;
 };
 }
 #endif
