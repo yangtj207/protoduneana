@@ -137,7 +137,11 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
   mc = mc.Define("selection_ID", selection_ID(pset.get<bool>("DoMichel")),
                  {"primary_isBeamType", "primary_ends_inAPA3",
                   "has_noPion_daughter", "passBeamCut",
-                  "has_shower_dist_energy", "vertex_cut"});
+                  "has_shower_dist_energy", "vertex_cut"}) 
+         .Define("selection_ID_inclusive",
+                 selection_ID_inclusive(pset.get<bool>("DoMichel")),
+                 {"primary_isBeamType", "primary_ends_inAPA3",
+                  "passBeamCut", "vertex_cut"});
   std::cout << "Filtering MC" << std::endl;
   auto filtered = mc.Filter("true_beam_PDG == 211 || true_beam_PDG == -13");
   return filtered;
@@ -231,7 +235,11 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
   data = data*/.Define("selection_ID", selection_ID(pset.get<bool>("DoMichel")),
                  {"primary_isBeamType", "primary_ends_inAPA3",
                   "has_noPion_daughter", "passBeamCut",
-                  "has_shower_dist_energy", "vertex_cut"});
+                  "has_shower_dist_energy", "vertex_cut"})
+                .Define("selection_ID_inclusive",
+                        selection_ID_inclusive(pset.get<bool>("DoMichel")),
+                        {"primary_isBeamType", "primary_ends_inAPA3",
+                         "passBeamCut", "vertex_cut"});
   auto filtered = data.Filter("beamPID == true");
   return filtered;
 }

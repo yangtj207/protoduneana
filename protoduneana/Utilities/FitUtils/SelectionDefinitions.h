@@ -64,6 +64,21 @@ class new_interaction_topology {
   }
 };
 
+class inclusive_topology {
+ private:
+ public: 
+  inclusive_topology() {}
+
+  int operator()(int exclusive_topology) {
+    if (exclusive_topology < 4) {
+      return 1;
+    }
+    else {
+      return (exclusive_topology - 2);
+    }
+  }
+};
+
 /*auto selection_ID = [](bool beam_is_track, bool ends_in_APA3,
                        bool no_pion_daughter,
                        bool beam_cuts, bool has_shower) {
@@ -127,6 +142,35 @@ class selection_ID {
     else {
       return 1;
     }
+  }
+};
+
+class selection_ID_inclusive {
+ private:
+  bool fDoMichel;
+ public:
+  selection_ID_inclusive(bool do_michel) : fDoMichel(do_michel) {};
+
+  int operator()(bool beam_is_track, bool ends_in_APA3,
+                 bool beam_cuts, bool michel_cut) {
+
+    if (!beam_is_track) {
+      return 4;
+    }
+
+    if (!beam_cuts) {
+      return 3;
+    }
+    
+    if (!ends_in_APA3) {
+      return 2;
+    }
+
+    if (fDoMichel && michel_cut) {
+      return 5;
+    }
+
+    return 1;
   }
 };
 
