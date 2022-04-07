@@ -1,0 +1,6 @@
+infile: "input_run10418.txt"
+outfile: "run10418.root"
+x0: 25
+x1: 75
+y0: 150
+y1: 250
