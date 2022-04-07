@@ -12,7 +12,7 @@ filelisting.py ${USER}_michelremoving_10418
 It will creates a text file input_run####.txt, where #### is the run number
 
 ## Create a fcl file
-There is an example run10418.fcl
+There is an example [run10418.fcl](https://github.com/DUNE/protoduneana/blob/develop/protoduneana/singlephase/SCEAna/run10418.fcl)
 
 ## Run it
 ```bash
