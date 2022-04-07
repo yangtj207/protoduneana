@@ -21,4 +21,5 @@ plotdeltaz -c run10418.fcl
 
 ## Result
 This plot shows the distribution of reconstructed starting z position in a region where SCE is large. The region is specified in the fcl file (25<x<75, 150<y<250 by default). The peak of this z distribution gives a measurement of spatial distotion in the z direction, which is around 27 cm.
-!(figures/deltaz.png?raw=true "Distribution of z distortion")
+
+![image](figures/deltaz.png?raw=true "Distribution of z distortion")
