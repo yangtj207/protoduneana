@@ -10,6 +10,7 @@
 #include "TRandom3.h"
 #include <map>
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
+#include "PDSPSystematics.h"
 
 namespace protoana {
 class AbsCexDriver : public ThinSliceDriver {
@@ -25,6 +26,8 @@ class AbsCexDriver : public ThinSliceDriver {
 
   void BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,
+    const std::vector<double> & beam_energy_bins,
+    std::vector<double> & beam_fluxes,
     int split_val = 0) override;
   void BuildFakeData(
     TTree * tree, const std::vector<ThinSliceEvent> & events,
@@ -371,6 +374,10 @@ class AbsCexDriver : public ThinSliceDriver {
    double fBoxBeamFraction;
 
    std::vector<double> fBeamMatchLimits, fBeamMatchFractions;
+   PDSPSystematics * fSystematics;
+
+   bool fInclusive;
+   std::vector<int> fERecoSelections, fEndZSelections, fOneBinSelections;
 };
 }
 #endif

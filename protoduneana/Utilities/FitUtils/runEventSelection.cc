@@ -66,6 +66,8 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                    {"true_beam_PDG",
                     "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
                     "true_beam_daughter_PDG", "true_beam_daughter_startP"})
+           .Define("inclusive_topology", inclusive_topology(),
+                   {"new_interaction_topology"})
            .Define("beam_backtrack", backtrack_beam,
                    {"reco_beam_true_byHits_process", "reco_beam_true_byHits_matched",
                     "reco_beam_true_byHits_origin", "reco_beam_true_byHits_PDG"})
@@ -137,7 +139,11 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
   mc = mc.Define("selection_ID", selection_ID(pset.get<bool>("DoMichel")),
                  {"primary_isBeamType", "primary_ends_inAPA3",
                   "has_noPion_daughter", "passBeamCut",
-                  "has_shower_dist_energy", "vertex_cut"});
+                  "has_shower_dist_energy", "vertex_cut"}) 
+         .Define("selection_ID_inclusive",
+                 selection_ID_inclusive(pset.get<bool>("DoMichel")),
+                 {"primary_isBeamType", "primary_ends_inAPA3",
+                  "passBeamCut", "vertex_cut"});
   std::cout << "Filtering MC" << std::endl;
   auto filtered = mc.Filter("true_beam_PDG == 211 || true_beam_PDG == -13");
   return filtered;
@@ -231,7 +237,11 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
   data = data*/.Define("selection_ID", selection_ID(pset.get<bool>("DoMichel")),
                  {"primary_isBeamType", "primary_ends_inAPA3",
                   "has_noPion_daughter", "passBeamCut",
-                  "has_shower_dist_energy", "vertex_cut"});
+                  "has_shower_dist_energy", "vertex_cut"})
+                .Define("selection_ID_inclusive",
+                        selection_ID_inclusive(pset.get<bool>("DoMichel")),
+                        {"primary_isBeamType", "primary_ends_inAPA3",
+                         "passBeamCut", "vertex_cut"});
   auto filtered = data.Filter("beamPID == true");
   return filtered;
 }

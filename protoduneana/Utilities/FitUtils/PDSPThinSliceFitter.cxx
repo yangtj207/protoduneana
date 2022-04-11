@@ -214,6 +214,9 @@ void protoana::PDSPThinSliceFitter::InitializeMCSamples() {
         = sample_set.get<std::vector<double>>("SignalBins");
     fSignalBins[sample_ID] = bins;
 
+    bool single_signal_bin = sample_set.get<bool>("SingleSignalBin", false);
+    //
+
     for (size_t j = 1; j < fBeamEnergyBins.size(); ++j) {
       fSamples[sample_ID].push_back(std::vector<ThinSliceSample>());
       fFakeSamples[sample_ID].push_back(std::vector<ThinSliceSample>());
@@ -226,28 +229,30 @@ void protoana::PDSPThinSliceFitter::InitializeMCSamples() {
           fSignalParameterNames[sample_ID] = std::vector<std::string>();
         }
 
-        ThinSliceSample underflow_sample(
-            sample_name + "Underflow",
-            flux_type, fSelectionSets,
-            fIncidentRecoBins, fTrueIncidentBins, j);
-        fSamples[sample_ID].back().push_back(underflow_sample);
+        if (!single_signal_bin) {
+          ThinSliceSample underflow_sample(
+              sample_name + "Underflow",
+              flux_type, fSelectionSets,
+              fIncidentRecoBins, fTrueIncidentBins, j);
+          fSamples[sample_ID].back().push_back(underflow_sample);
 
-        ThinSliceSample fake_underflow_sample(
-            sample_name + "FakeUnderflow",
-            flux_type, fSelectionSets,
-            fIncidentRecoBins, fTrueIncidentBins, j);
-        fFakeSamples[sample_ID].back().push_back(fake_underflow_sample);
+          ThinSliceSample fake_underflow_sample(
+              sample_name + "FakeUnderflow",
+              flux_type, fSelectionSets,
+              fIncidentRecoBins, fTrueIncidentBins, j);
+          fFakeSamples[sample_ID].back().push_back(fake_underflow_sample);
 
-        if (j == 1 && fFitUnderOverflow) {
-          fSignalParameters[sample_ID].push_back(1.);
+          if (j == 1 && fFitUnderOverflow) {
+            fSignalParameters[sample_ID].push_back(1.);
 
-          std::string par_name = "par_" + sample_name + "_underflow";
-          fSignalParameterNames[sample_ID].push_back(par_name);
-          ++fTotalSignalParameters;
+            std::string par_name = "par_" + sample_name + "_underflow";
+            fSignalParameterNames[sample_ID].push_back(par_name);
+            ++fTotalSignalParameters;
+          }
+
+          fFluxesBySample[sample_ID].back().push_back(0.);
+          fFakeFluxesBySample[sample_ID].back().push_back(0.);
         }
-
-        fFluxesBySample[sample_ID].back().push_back(0.);
-        fFakeFluxesBySample[sample_ID].back().push_back(0.);
 
         for (size_t k = 1; k < bins.size(); ++k) {
           ThinSliceSample sample(sample_name, flux_type, fSelectionSets,
@@ -276,6 +281,7 @@ void protoana::PDSPThinSliceFitter::InitializeMCSamples() {
           fFakeFluxesBySample[sample_ID].back().push_back(0.);
         }
 
+        if (!single_signal_bin) {
         ThinSliceSample overflow_sample(sample_name + "Overflow",
                                flux_type, fSelectionSets,
                                fIncidentRecoBins, fTrueIncidentBins, j);
@@ -295,6 +301,7 @@ void protoana::PDSPThinSliceFitter::InitializeMCSamples() {
         fFakeSamples[sample_ID].back().push_back(fake_overflow_sample);
         fFluxesBySample[sample_ID].back().push_back(0.);
         fFakeFluxesBySample[sample_ID].back().push_back(0.);
+        }
       }
       else {
         ThinSliceSample sample(sample_name, flux_type, fSelectionSets,
@@ -590,11 +597,6 @@ void protoana::PDSPThinSliceFitter::ScaleMCToData() {
     }
   }
 
-  /*
-  for (auto it = fNominalFluxes.begin(); it != fNominalFluxes.end(); ++it) {
-    total_nominal += it->second;
-  }*/
-
   fMCDataScale = fDataFlux/total_nominal;
   for (auto it = fNominalFluxes.begin(); it != fNominalFluxes.end(); ++it) {
     it->second *= fMCDataScale;
@@ -610,6 +612,36 @@ void protoana::PDSPThinSliceFitter::ScaleMCToData() {
   }
 
   std::cout << "MC Data Scale: " << fMCDataScale << std::endl;
+
+
+  if (fScaleToDataBeamProfile) {
+    std::vector<double> factors_by_beam_bin(fDataBeamFluxes.size(), 0.);
+    for (auto it = fFluxesBySample.begin();
+         it != fFluxesBySample.end(); ++it) {
+      for (size_t i = 0; i < it->second.size(); ++i) {//beam bins
+        for (size_t j = 0; j < it->second[i].size(); ++j) {//sample bins
+          factors_by_beam_bin[i] += it->second[i][j];
+        }
+      }
+    }
+
+    double total_mc_by_beam = 0.;
+    std::cout << "Scaled MC by beam bin: ";
+    for (const auto & f : factors_by_beam_bin) {
+      std::cout << f << " ";
+      total_mc_by_beam += f;
+    }
+
+    double total_data_by_beam = 0.;
+    std::cout << std::endl << " Data by beam bin: ";
+    for (const auto & f : fDataBeamFluxes) {
+      std::cout << f << " ";
+      total_data_by_beam += f;
+    }
+    std::cout << "Total (mc, data): " << total_mc_by_beam << " " <<
+                 total_data_by_beam << std::endl;
+
+  }
 
   double new_total_mc = 0., new_total_data = 0., mc_flux = 0.;
   double data_bins = 0., mc_bins = 0.;
@@ -638,7 +670,7 @@ void protoana::PDSPThinSliceFitter::ScaleMCToData() {
     }
   }
 
-  /*
+  if (fDebugMCDataScale) {
   std::cout << "Data: " << std::setprecision(20) << fDataFlux << std::endl;
   std::cout << "MC: " << mc_flux << std::endl;
   std::cout << "MC hists: " << new_total_mc << std::endl;
@@ -646,7 +678,8 @@ void protoana::PDSPThinSliceFitter::ScaleMCToData() {
   std::cout << "MC bins: " << mc_bins << std::endl;
   std::cout << "Data bins: " << data_bins << std::endl;
 
-  std::cout << "Data/MC: " << data_bins/mc_bins << std::endl;*/
+  std::cout << "Data/MC: " << data_bins/mc_bins << std::endl;
+  }
   double new_factor = data_bins/mc_bins;
 
   //mc_bins = 0.;
@@ -656,6 +689,7 @@ void protoana::PDSPThinSliceFitter::ScaleMCToData() {
 
         it->second[i][j].ExtraFactor(new_factor);
 
+        
         /*
         const std::map<int, TH1 *> & hists
             = it->second[i][j].GetSelectionHists();
@@ -686,7 +720,14 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
   if (!fDoFakeData) {
     fThinSliceDriver->BuildDataHists(
         tree, fDataSet, fDataFlux,
+        fBeamEnergyBins,
+        fDataBeamFluxes,
         fMaxDataEntries);
+    std::cout << "Data Beam fluxes: ";
+    for (const auto & f : fDataBeamFluxes) {
+      std::cout << f << " ";
+    }
+    std::cout << std::endl;
   }
   else if (fFakeDataRoutine == "Toy") {
     BuildDataFromToy();
@@ -2039,6 +2080,8 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   }
 
   fDoFluctuateStats = pset.get<bool>("FluctuateStats");
+  fDebugMCDataScale = pset.get<bool>("DebugMCDataScale", false);
+  fScaleToDataBeamProfile = pset.get<bool>("ScaleToDataBeamProfile", false);
 
   fNThrows = pset.get<size_t>("NThrows");
   fMaxRethrows = pset.get<size_t>("MaxRethrows");

@@ -99,6 +99,8 @@ cet_build_plugin(ReadBeamInfo art::module
       BASENAME_ONLY
 )
 
+add_subdirectory(MoreExamples)
+
 install_headers()
 install_fhicl()
 install_source()

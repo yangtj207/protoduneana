@@ -29,6 +29,8 @@ class ThinSliceDriver {
 
   virtual void BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,
+    const std::vector<double> & beam_energy_bins,
+    std::vector<double> & beam_fluxes,
     int split_val = 0) = 0;
 
   virtual void BuildFakeData(

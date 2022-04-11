@@ -15,6 +15,7 @@ add_subdirectory(MDMAna)
 add_subdirectory(PhotonDetectors)
 add_subdirectory(diffusion)
 add_subdirectory(efficiencystudy)
+add_subdirectory(SCEAna)
 
 #install(PROGRAMS evd3apa.py DESTINATION ${product}/${version}/python)
 install_scripts()
