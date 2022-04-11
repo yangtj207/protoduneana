@@ -1,0 +1,66 @@
+TreeName: "pduneana/beamana"
+MCFile: "mc_try.root"
+DataFile: "data_try.root"
+UseMT: false
+
+DoReconstructable: false 
+
+
+CheckCalo: true 
+EndZHigh: 222.10561
+EndZLow: -.49375
+Threshold: .150
+CexNPi0: true
+TrackScoreCut: 0.3
+Limit: 0.16
+
+Chi2Cut: 70.
+dEdXLow: 0.5
+dEdXMed: 2.8
+dEdXHigh: 3.4
+
+UseBI: false 
+DoNTracks: false
+
+DoMichel: true 
+MichelCut: 0.6
+
+####Using BI
+MCXLow: -3.
+MCXHigh: 7.
+MCYLow: -8.
+MCYHigh: 7.
+MCZLow: 27.5
+MCZHigh: 32.5
+MCCosLow: .93
+DataXLow: 0.
+DataXHigh: 10.
+DataYLow: -5.
+DataYHigh: 10.
+DataZLow: 30.
+DataZHigh: 35.
+DataCosLow: .93
+
+###Using TPC Info
+DoAngle: true 
+XYZCut: 3.
+CosCut: 0.95
+MCMeanX: -30.65
+MCMeanY: 422.30
+MCMeanZ: 0.103
+MCSigmaX: 4.11
+MCSigmaY: 3.70
+MCSigmaZ: 0.193
+MCMeanThetaX: 101.90
+MCMeanThetaY: 101.06
+MCMeanThetaZ: 16.39
+
+DataMeanX: -27.77
+DataMeanY: 424.45
+DataMeanZ: 4.04
+DataSigmaX: 4.27
+DataSigmaY: 4.40
+DataSigmaZ: 1.05
+DataMeanThetaX: 101.73
+DataMeanThetaY: 104.64
+DataMeanThetaZ: 19.20
