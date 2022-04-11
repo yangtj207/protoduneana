@@ -27,7 +27,11 @@ protoana::AbsCexDriver::AbsCexDriver(
       fZ0(extra_options.get<double>("Z0")),
       fMultinomial(extra_options.get<bool>("Multinomial", true)),
       fEndZCut(extra_options.get<double>("EndZCut")),
-      fSliceMethod(extra_options.get<std::string>("SliceMethod")) {
+      fSliceMethod(extra_options.get<std::string>("SliceMethod")),
+      fInclusive(extra_options.get<bool>("Inclusive", false)),
+      fERecoSelections(extra_options.get<std::vector<int>>("ERecoSelections", {})),
+      fEndZSelections(extra_options.get<std::vector<int>>("EndZSelections", {})),
+      fOneBinSelections(extra_options.get<std::vector<int>>("OneBinSelections", {})) {
   if (fSliceMethod == "Alt") {
     fIn = new TFile("end_slices.root", "OPEN");
     fEndSlices = (TH2D*)fIn->Get("h2D")->Clone();
@@ -42,6 +46,25 @@ protoana::AbsCexDriver::AbsCexDriver(
   else {
     fSliceCut = std::floor((fEndZCut - (fZ0 - fPitch/2.))/fPitch);
   }
+
+
+  std::cout << "EReco Selections: ";
+  for (const auto & s : fERecoSelections) {
+    std::cout << s << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "EndZ Selections: ";
+  for (const auto & s : fEndZSelections) {
+    std::cout << s << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "OneBin Selections: ";
+  for (const auto & s : fOneBinSelections) {
+    std::cout << s << " ";
+  }
+  std::cout << std::endl;
 
   fSkipFirstLast = extra_options.get<bool>("SkipFirstLast", false);
 }
@@ -72,8 +95,14 @@ void protoana::AbsCexDriver::FillMCEvents(
 
   tree->SetBranchAddress("true_beam_PDG", &true_beam_PDG);
 
-  tree->SetBranchAddress("new_interaction_topology", &sample_ID);
-  tree->SetBranchAddress("selection_ID", &selection_ID);
+  if (!fInclusive) {
+    tree->SetBranchAddress("new_interaction_topology", &sample_ID);
+    tree->SetBranchAddress("selection_ID", &selection_ID);
+  }
+  else {
+    tree->SetBranchAddress("inclusive_topology", &sample_ID);
+    tree->SetBranchAddress("selection_ID_inclusive", &selection_ID);
+  }
   tree->SetBranchAddress("true_beam_interactingEnergy",
                          &true_beam_interactingEnergy);
   tree->SetBranchAddress("true_beam_endP", &true_beam_endP);
@@ -394,7 +423,9 @@ void protoana::AbsCexDriver::BuildMCSamples(
     nominal_fluxes[flux_type] += 1.;
     this_sample->AddFlux();
     double val[1] = {0};
-    if (selection_ID == 4) {
+    //if (selection_ID == 4) {
+    if (std::find(fEndZSelections.begin(), fEndZSelections.end(), selection_ID)
+        != fEndZSelections.end()) {
       TH1D * selected_hist
           = (TH1D*)this_sample->GetSelectionHists().at(selection_ID);
       if (selected_hist->FindBin(reco_beam_endZ) == 0) {
@@ -408,7 +439,10 @@ void protoana::AbsCexDriver::BuildMCSamples(
         val[0] = reco_beam_endZ;
       }
     }
-    else if (selection_ID > 4) {
+    //else if (selection_ID > 4) {
+    else if (
+        std::find(fOneBinSelections.begin(), fOneBinSelections.end(), selection_ID)
+        != fOneBinSelections.end()) {
       val[0] = .5;
     }
     else if (reco_beam_incidentEnergies./*->*/size()) {
@@ -602,7 +636,9 @@ void protoana::AbsCexDriver::RefillMCSamples(
     int new_selection = selection_ID;
     TH1D * selected_hist
         = (TH1D*)this_sample->GetSelectionHists().at(new_selection);
-    if (new_selection == 4) {
+    //if (new_selection == 4) {
+    if (std::find(fEndZSelections.begin(), fEndZSelections.end(), new_selection)
+        != fEndZSelections.end()) {
       if (selected_hist->FindBin(reco_beam_endZ) == 0) {
         val[0] = selected_hist->GetBinCenter(1);
       }
@@ -614,7 +650,10 @@ void protoana::AbsCexDriver::RefillMCSamples(
         val[0] = reco_beam_endZ;
       }
     }
-    else if (new_selection > 4) {
+    //else if (new_selection > 4) {
+    else if (
+        std::find(fOneBinSelections.begin(), fOneBinSelections.end(), new_selection)
+        != fOneBinSelections.end()) {
       val[0] = .5;
     }
     else if (reco_beam_incidentEnergies.size()) {
@@ -667,6 +706,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
       val[0] = selected_hist->GetBinCenter(1);
     }
 
+    //Systematics
     if (syst_pars.find("dEdX_Cal_Spline") != syst_pars.end()) {
       int bin = selected_hist->FindBin(val[0]);
       TSpline3 * spline
@@ -709,27 +749,24 @@ void protoana::AbsCexDriver::RefillMCSamples(
       std::cout << "Weight went negative after beam shift spline" << std::endl;
     }
 
-    weight *= GetSystWeight_G4RW(event, syst_pars, *this_sample, new_selection/*selection_ID*/,
-                                 val[0]);
-    weight *= GetSystWeight_G4RWCoeff(event, syst_pars);
+    //weight *= GetSystWeight_G4RW(event, syst_pars, *this_sample, new_selection/*selection_ID*/,
+    //                             val[0]);
+    //double coeff_1 = GetSystWeight_G4RWCoeff(event, syst_pars);
+    //weight *= coeff_1;
 
-    weight *= GetSystWeight_BeamShift(event, syst_pars);
-    if (weight < 0.) {
-      std::cout << "Weight went negative after beam shift" << std::endl;
-    }
-    //weight *= GetSystWeight_BeamShift2D(event, syst_pars);
+    //weight *= GetSystWeight_BeamShift(event, syst_pars);
     //if (weight < 0.) {
-    //  std::cout << "Weight went negative after beam shift 2D" << std::endl;
+    //  std::cout << "Weight went negative after beam shift" << std::endl;
     //}
     weight *= GetSystWeight_EffVar(event, syst_pars);
     if (weight < 0.) {
       std::cout << "Weight went negative after eff" << std::endl;
     }
-    weight *= GetSystWeight_EDiv(event, syst_pars);
-    if (weight < 0.) {
-      std::cout << "Weight went negative after ediv" << std::endl;
-    }
-    //weight *= GetSystWeight_NoTrack(event, syst_pars);
+    //weight *= GetSystWeight_EDiv(event, syst_pars);
+    //if (weight < 0.) {
+    //  std::cout << "Weight went negative after ediv" << std::endl;
+    //}
+    weight *= GetSystWeight_NoTrack(event, syst_pars);
     weight *= GetSystWeight_BeamEffs(event, syst_pars);
     if (weight < 0.) {
       std::cout << "Weight went negative after beam effs" << std::endl;
@@ -738,9 +775,32 @@ void protoana::AbsCexDriver::RefillMCSamples(
     weight *= GetSystWeight_LowP(event, signal_index, syst_pars);
     weight *= GetSystWeight_NPi0(event, signal_index, syst_pars);
 
-    weight *= GetSystWeight_EndZNoTrack(event, signal_index, syst_pars);
-    weight *= GetSystWeight_UpstreamInt(event, syst_pars);
-    weight *= GetSystWeight_BeamMatch(event, syst_pars);
+    //weight *= GetSystWeight_EndZNoTrack(event, signal_index, syst_pars);
+    //weight *= GetSystWeight_UpstreamInt(event, syst_pars);
+    //weight *= GetSystWeight_BeamMatch(event, syst_pars);
+    //weight *= GetSystWeight_BoxBeam(event, syst_pars);
+    //weight *= coeff_1;
+
+    if (weight < 1.e-5) std::cout << "Warning: negative weight!" << std::endl;
+
+    //if (GetSystWeight_G4RWCoeff(event, syst_pars) != fSystematics->GetSystWeight_G4RWCoeff(event, syst_pars)) {
+    //  std::cout << "g4rw differs" << std::endl;
+    //}
+
+    weight *= fSystematics->GetSystWeight_G4RWCoeff(event, syst_pars);
+    weight *= fSystematics->GetSystWeight_BeamShift(event, syst_pars);
+    weight *= fSystematics->GetSystWeight_EDiv(event, syst_pars,
+                                               (!fInclusive ? 4 : 2));
+    weight *= fSystematics->GetSystWeight_EndZNoTrack(
+        event, signal_index, syst_pars, (!fInclusive ? 4 : 2),
+        (!fInclusive ? 6 : 4));
+    weight *= fSystematics->GetSystWeight_UpstreamInt(
+        event, syst_pars, (!fInclusive ? 4 : 2));
+    weight *= fSystematics->GetSystWeight_BeamMatch(
+        event, syst_pars, (!fInclusive ? 4 : 2), (!fInclusive ? 6 : 4));
+    weight *= fSystematics->GetSystWeight_BoxBeam(
+        event, syst_pars, (!fInclusive? 5 : 3));
+    //weight *= fSystematics->GetSystWeight_G4RWCoeff(event, syst_pars);
 
     this_sample->FillSelectionHist(new_selection, val, weight);
 
@@ -845,7 +905,10 @@ void protoana::AbsCexDriver::SetupSysts(
   SetupSyst_NPi0(pars);
   SetupSyst_EndZNoTrackWeight(pars);
   SetupSyst_BeamMatch(pars);
+  SetupSyst_BoxBeam(pars);
 
+  fSystematics = new PDSPSystematics(events, samples, signal_sample_checks,
+                                     beam_energy_bins, pars, output_file);
 }
 
 void protoana::AbsCexDriver::SetupSyst_BoxBeam(
@@ -991,8 +1054,10 @@ double protoana::AbsCexDriver::GetSystWeight_EndZNoTrack(
                      fEndZFractions[event.GetSampleID()][signal_index] :
                      fEndZFractions[event.GetSampleID()].back());
 
-  return (event.GetSelectionID() == 6 ? variation :
-          (1. - variation*fraction)/(1. - fraction));
+  double val = (event.GetSelectionID() == 6 ? variation :
+                (1. - variation*fraction)/(1. - fraction));
+  if (val < 0.) std::cout << "endznotrack < 0: " << val << std::endl;
+  return val;
 
   //return pars.at("end_z_no_track_weight").GetValue();
 }
@@ -2043,10 +2108,12 @@ void protoana::AbsCexDriver::SetupSyst_dEdX_Cal(
     std::vector<int> new_selection_IDs;
     for (double c : C_cal_vars) {
 
-      int new_selection_ID = RecalculateSelectionID(
-          event,
-          (fix_dQdX ? 1.e3/c : 1./c),
-          prot_template);
+      int new_selection_ID
+          = (!fInclusive ? RecalculateSelectionID(
+                               event,
+                               (fix_dQdX ? 1.e3/c : 1./c),
+                               prot_template) :
+                               event.GetSelectionID());
       new_selection_IDs.push_back(new_selection_ID);
     }
     double reco_beam_endZ = event.GetRecoEndZ();
@@ -2566,11 +2633,18 @@ double protoana::AbsCexDriver::GetSystWeight_BeamShift2D(
 
 void protoana::AbsCexDriver::BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,
+    const std::vector<double> & beam_energy_bins,
+    std::vector<double> & beam_fluxes,
     int split_val) {
   int selection_ID; 
   double reco_beam_interactingEnergy, reco_beam_endZ;
   std::vector<double> * reco_beam_incidentEnergies = 0x0;
-  tree->SetBranchAddress("selection_ID", &selection_ID);
+  if (!fInclusive) {
+    tree->SetBranchAddress("selection_ID", &selection_ID);
+  }
+  else {
+    tree->SetBranchAddress("selection_ID_inclusive", &selection_ID);
+  }
   tree->SetBranchAddress("reco_beam_interactingEnergy",
                         &reco_beam_interactingEnergy);
   tree->SetBranchAddress("reco_beam_endZ", &reco_beam_endZ);
@@ -2589,11 +2663,18 @@ void protoana::AbsCexDriver::BuildDataHists(
     flux = split_val;
   }
 
+  for (size_t i = 0; i < beam_energy_bins.size()-1; ++i) {beam_fluxes.push_back(0.);}
   for (int i = 0/*split_val*/; i < flux/*tree->GetEntries()*/; ++i) {
     tree->GetEntry(i);
+
+    int beam_bin = GetBeamBin(beam_energy_bins, beam_inst_P);
+    beam_fluxes[beam_bin] += 1.;
+
     //if (beam_fluxes) beam
     double val = 0.;
-    if (selection_ID == 4) {
+    //if (selection_ID == 4) {
+    if (std::find(fEndZSelections.begin(), fEndZSelections.end(), selection_ID)
+        != fEndZSelections.end()) {
       if (selected_hists[selection_ID]->FindBin(reco_beam_endZ) == 0) {
         val = selected_hists[selection_ID]->GetBinCenter(1);
       }
@@ -2606,7 +2687,10 @@ void protoana::AbsCexDriver::BuildDataHists(
         val = reco_beam_endZ;
       }
     }
-    else if (selection_ID > 4) {
+    //else if (selection_ID > 4) {
+    else if (
+        std::find(fOneBinSelections.begin(), fOneBinSelections.end(), selection_ID)
+        != fOneBinSelections.end()) {
       val = .5;
     }
     else if (reco_beam_incidentEnergies->size()) {

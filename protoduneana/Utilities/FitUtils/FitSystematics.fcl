@@ -544,7 +544,7 @@ SystematicsList: {
     GenThrowLimitUp: 5.0
     Sigma: .1
     Options: {
-      Fraction: .413
+      Fraction: .15469
       Regions: [
         [440, 460], [470, 480], [580, 610], [270, 340]
       ]

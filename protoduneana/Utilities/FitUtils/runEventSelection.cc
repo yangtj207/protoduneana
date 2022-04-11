@@ -66,6 +66,8 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                    {"true_beam_PDG",
                     "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
                     "true_beam_daughter_PDG", "true_beam_daughter_startP"})
+           .Define("inclusive_topology", inclusive_topology(),
+                   {"new_interaction_topology"})
            .Define("beam_backtrack", backtrack_beam,
                    {"reco_beam_true_byHits_process", "reco_beam_true_byHits_matched",
                     "reco_beam_true_byHits_origin", "reco_beam_true_byHits_PDG"})
