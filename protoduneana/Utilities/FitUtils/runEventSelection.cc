@@ -24,6 +24,10 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
   testing testing2(2);
   auto mc = frame.Define("testing1", testing(1)/*testing1*/)
            .Define("testing2", testing(2)/*testing2*/)
+           .Define("beam_P_range",
+                   beam_P_range(pset.get<double>("BeamPLow", 0.),
+                                pset.get<double>("BeamPHigh", 1.e6)),
+                   {"beam_inst_P"})
            .Define("primary_isBeamType", isBeamType(pset.get<bool>("CheckCalo")),
                    {"reco_beam_type", "reco_beam_incidentEnergies"})
            .Define("primary_ends_inAPA3",
@@ -155,6 +159,10 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
   auto data = frame.Define("testing1", testing(1)/*testing1*/)
            .Define("testing2", testing(2)/*testing2*/)
            .Define("beamPID", data_beam_PID, {"beam_inst_PDG_candidates", "MC", "true_beam_PDG"})
+           .Define("beam_P_range",
+                   beam_P_range(pset.get<double>("BeamPLow", 0.),
+                                pset.get<double>("BeamPHigh", 1.e6)),
+                   {"beam_inst_P"})
            .Define("passBeamQuality",
                    data_BI_quality(pset.get<bool>("DoNTracks")),
                    {"beam_inst_nMomenta", "beam_inst_nTracks"})
@@ -194,7 +202,8 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                     "reco_daughter_allTrack_ID", 
                     "reco_daughter_allTrack_truncLibo_dEdX_pos",
                     "reco_daughter_allTrack_Chi2_proton",
-                    "reco_daughter_allTrack_Chi2_ndof"});
+                    "reco_daughter_allTrack_Chi2_ndof"})
+           /*.Define("beam_inst_P_scaled", beam_inst_P_scaled())*/;
 
   if(pset.get<bool>("UseBI")) {
     data = data.Define(
@@ -301,6 +310,9 @@ int main(int argc, char ** argv){
     std::cout << "Snapshotting" << std::endl;
     if (pset.get<bool>("DoReconstructable"))
       mc = mc.Filter("reco_reconstructable_beam_event");
+    if (pset.get<bool>("RestrictBeamP")) {
+      mc = mc.Filter("beam_P_range");
+    }
     auto time0 = std::chrono::high_resolution_clock::now();
     mc.Snapshot(tree_name, "eventSelection_mc_all.root");
     //mc.Snapshot(tree_name, "eventSelection_mc_reconstructable.root");
@@ -322,6 +334,9 @@ int main(int argc, char ** argv){
     //asdf
     if (pset.get<bool>("DoReconstructable"))
       data = data.Filter("reco_reconstructable_beam_event");
+    if (pset.get<bool>("RestrictBeamP")) {
+      data = data.Filter("beam_P_range");
+    }
 
     auto time0 = std::chrono::high_resolution_clock::now();
     data.Snapshot(tree_name, "eventSelection_data_BeamQuality.root");

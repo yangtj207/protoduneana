@@ -98,7 +98,7 @@ class AbsCexDriver : public ThinSliceDriver {
     std::map<int, std::vector<double>> & sample_scales,
     int split_val = 0);
   void FakeDataBeamWeight(
-    TTree * tree,
+    const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
     const std::map<int, bool> & signal_sample_checks,
     ThinSliceDataSet & data_set, double & flux,
@@ -111,7 +111,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<int, bool> & signal_sample_checks,
       std::map<int, double> & nominal_fluxes,
       std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
-      std::vector<double> & beam_energy_bins) override;
+      std::vector<double> & beam_energy_bins, bool use_beam_inst_P) override;
 
   void RefillMCSamples(
       //TTree * tree,
@@ -123,6 +123,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
       bool fit_under_over, bool tie_under_over,
+      bool use_beam_inst_P,
       bool fill_incident = false) override;
 
   /*void BuildSystSamples(
@@ -365,7 +366,7 @@ class AbsCexDriver : public ThinSliceDriver {
   
    int GetBeamBin(
      const std::vector<double> & beam_energy_bins,
-     const double & true_beam_startP);
+     const double & true_beam_startP, bool restrict_P=false);
 
    TH1D fBeamShiftRatioNomHist;
    std::vector<TSpline3*> fBeamShiftRatioSplines;
@@ -378,6 +379,8 @@ class AbsCexDriver : public ThinSliceDriver {
 
    bool fInclusive;
    std::vector<int> fERecoSelections, fEndZSelections, fOneBinSelections;
+   double fBeamInstPScale;
+   bool fRestrictBeamInstP, fDebugRestrictBeamP;
 };
 }
 #endif
