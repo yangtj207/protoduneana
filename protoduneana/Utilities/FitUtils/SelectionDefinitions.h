@@ -726,3 +726,25 @@ class fixed_interacting_energy {
      return energy;
    }
 };
+
+class beam_P_range {
+  private:
+    double fRangeLow, fRangeHigh;
+  public:
+    beam_P_range(double range_low, double range_high)
+     : fRangeLow(range_low), fRangeHigh(range_high) {}
+    bool operator()(double beam_inst_P) {
+      return (fRangeLow < beam_inst_P*1.e3 && beam_inst_P*1.e3 < fRangeHigh);
+    }
+};
+
+/*
+class beam_inst_P_scaled {
+  private:
+    double fScale;
+  public:
+    beam_inst_P(double scale) : fScale(scale) {}
+    double operator()(double beam_inst_P) {
+      return fScale*beam_inst_P;
+    }
+};*/
