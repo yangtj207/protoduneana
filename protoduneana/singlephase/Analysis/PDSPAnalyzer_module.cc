@@ -585,6 +585,10 @@ private:
       const art::Event & evt, protoana::ProtoDUNEPFParticleUtils & pfpUtil,
       const recob::Track * thisTrack/*,
       std::vector<int> & crossing_cosmic_candidates*/);
+  void FindTrueCrossingCosmics(
+      const art::Event & evt,
+      const simb::MCParticle* true_beam_particle,
+      detinfo::DetectorClocksData const& clockData);
   void G4RWGridWeights(
       std::vector<std::vector<G4ReweightTraj *>> & hierarchy,
       std::vector<fhicl::ParameterSet> & pars,
@@ -767,6 +771,8 @@ private:
 
   std::vector<int> crossing_cosmic_candidates, crossing_cosmic_candidate_trackIDs;
   bool has_crossing_cosmic_candidate;
+  int n_cosmic_ides_in_beam_hits, n_beam_ides_in_beam_hits;
+  double n_cosmic_electrons_in_beam_hits, n_beam_electrons_in_beam_hits;
   //GeantReweight stuff
   // -- Maybe think of new naming scheme?
   std::vector<double> g4rw_primary_weights;
@@ -1431,6 +1437,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
   //If MC, attempt to match to some MCParticle
   if( !evt.isRealData() ){
     TrueBeamInfo(evt, true_beam_particle, clockData, plist, trueToPFPs, hitResults);
+    FindTrueCrossingCosmics(evt, true_beam_particle, clockData);
   }
 
   //New geant4reweight stuff
@@ -1853,6 +1860,10 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("crossing_cosmic_candidates", &crossing_cosmic_candidates);
   fTree->Branch("crossing_cosmic_candidate_trackIDs", &crossing_cosmic_candidate_trackIDs);
   fTree->Branch("has_crossing_cosmic_candidate", &has_crossing_cosmic_candidate);
+  fTree->Branch("n_beam_ides_in_beam_hits", &n_beam_ides_in_beam_hits);
+  fTree->Branch("n_cosmic_ides_in_beam_hits", &n_cosmic_ides_in_beam_hits);
+  fTree->Branch("n_beam_electrons_in_beam_hits", &n_beam_electrons_in_beam_hits);
+  fTree->Branch("n_cosmic_electrons_in_beam_hits", &n_cosmic_electrons_in_beam_hits);
 
   fTree->Branch("true_beam_PDG", &true_beam_PDG);
   fTree->Branch("true_beam_mass", &true_beam_mass);
@@ -2421,6 +2432,12 @@ void pduneana::PDSPAnalyzer::reset()
   crossing_cosmic_candidates.clear();
   crossing_cosmic_candidate_trackIDs.clear();
   has_crossing_cosmic_candidate = false;
+
+  n_cosmic_ides_in_beam_hits = 0;
+  n_beam_ides_in_beam_hits = 0;
+  n_cosmic_electrons_in_beam_hits = 0;
+  n_beam_electrons_in_beam_hits = 0;
+
   reco_daughter_PFP_nHits.clear();
   reco_daughter_PFP_nHits_collection.clear();
   reco_daughter_PFP_trackScore.clear();
@@ -5548,4 +5565,35 @@ void pduneana::PDSPAnalyzer::CheckForCrossingCosmics(
     }
   }
 }
+
+void pduneana::PDSPAnalyzer::FindTrueCrossingCosmics(
+    const art::Event & evt,
+    const simb::MCParticle* true_beam_particle,
+    detinfo::DetectorClocksData const& clockData) {
+  //Get hits from true beam particle
+  auto beam_hits = truthUtil.GetMCParticleHits(
+      clockData, *true_beam_particle, evt, fHitTag);
+
+  //Loop over hits
+  for (const auto * hit: beam_hits) {
+    //Get the IDEs from the hit
+    for (const auto & ide : bt_serv->HitToEveTrackIDEs(clockData, *hit)) {
+      //Get the true particle info from the IDE ID
+      int track_ID = ide.trackID;
+      //const auto * other_particle = pi_serv->TrackIdToParticle_P(track_ID);
+      //std::cout << track_ID << " " << other_particle->PdgCode() << " " <<
+      //             pi_serv->TrackIdToMCTruth_P(track_ID)->Origin() << std::endl;
+      int origin = pi_serv->TrackIdToMCTruth_P(track_ID)->Origin();
+      if (origin == 4) {
+        ++n_beam_ides_in_beam_hits;
+        n_beam_electrons_in_beam_hits += ide.numElectrons;
+      }
+      else if (origin == 2) {
+        ++n_cosmic_ides_in_beam_hits;
+        n_cosmic_electrons_in_beam_hits += ide.numElectrons;
+      }
+    }
+  }
+}
+
 DEFINE_ART_MODULE(pduneana::PDSPAnalyzer)
