@@ -5,6 +5,7 @@
 #include "ThinSliceDriver.h"
 #include "TFile.h"
 #include "TGraph2D.h"
+#include "TSpline.h"
 
 namespace protoana {
 
@@ -65,6 +66,12 @@ class PDSPSystematics {
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars,
       int beam_cut_ID);
+
+  void SetupSyst_TrueBeamShift(
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_TrueBeamShift(
+      const ThinSliceEvent & event,
+      const std::map<std::string, ThinSliceSystematic> & pars);
  private:
   //G4RW Coeff
   std::map<std::string, std::string> fG4RWCoeffBranches;
@@ -85,8 +92,13 @@ class PDSPSystematics {
   //Beam Match
   std::vector<double> fBeamMatchLimits, fBeamMatchFractions;
 
+  //Box Beam
   std::vector<std::pair<double, double>> fBoxBeamRegions;
   double fBoxBeamFraction;
+
+  //TrueBeamShift
+  std::vector<double> fTrueBeamBins;
+  std::vector<TSpline3 *> fTrueBeamSplines;
 };
 }
 #endif

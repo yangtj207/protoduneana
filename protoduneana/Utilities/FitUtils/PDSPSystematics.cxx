@@ -296,3 +296,37 @@ double protoana::PDSPSystematics::GetSystWeight_BoxBeam(
           (1. - variation*fBoxBeamFraction)/(1. - fBoxBeamFraction));
   //return (near_box_beam ? variation : 1.);
 }
+
+void protoana::PDSPSystematics::SetupSyst_TrueBeamShift(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("true_beam_shift") == pars.end()) {return;}
+
+  fTrueBeamBins = pars.at("true_beam_shift").GetOption<std::vector<double>>(
+      "Bins");
+
+  TFile file(
+      pars.at("true_beam_shift").GetOption<std::string>("File").c_str(), "open");
+  for (size_t i = 1; i < fTrueBeamBins.size(); ++i) {
+    std::string spline_name = "spline_" + std::to_string(i);
+    fTrueBeamSplines.push_back((TSpline3*)file.Get(spline_name.c_str()));
+  }
+}
+
+double protoana::PDSPSystematics::GetSystWeight_TrueBeamShift(
+    const ThinSliceEvent & event,
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("true_beam_shift") == pars.end()) return 1.;
+  if (event.GetPDG() != 211) return 1.;
+
+  double true_startP = event.GetTrueStartP();
+  int bin = 0;
+  for (size_t i = 1; i < fTrueBeamBins.size(); ++i) {
+    if (fTrueBeamBins[i-1] <= true_startP && true_startP <= fTrueBeamBins[i]) {
+      bin = i-1;
+      break;
+    }
+  }
+
+  TSpline3 * spline = fTrueBeamSplines[bin];
+  return spline->Eval(pars.at("true_beam_shift").GetValue());
+}
