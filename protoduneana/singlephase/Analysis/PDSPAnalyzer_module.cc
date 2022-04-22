@@ -427,6 +427,15 @@ namespace pduneana {
     int tpc;
     double EField;
     double x, y, z;
+
+    std::vector<double> IDE_electrons, IDE_energies;
+    std::vector<int> IDE_IDs;
+    std::vector<int> IDE_origins;
+
+    void SetIDE_electrons(std::vector<double> input) {IDE_electrons = input;};
+    void SetIDE_energies(std::vector<double> input) {IDE_energies = input;};
+    void SetIDE_IDs(std::vector<int> input) {IDE_IDs = input;};
+    void SetIDE_origins(std::vector<int> input) {IDE_origins = input;};
   };
 
   //Util to get CNN output
@@ -738,6 +747,11 @@ private:
   std::vector<double> reco_beam_dEdX_SCE, reco_beam_dQdX_SCE, reco_beam_EField_SCE, reco_beam_resRange_SCE, reco_beam_TrkPitch_SCE;
   std::vector<double> reco_beam_TrkPitch_SCE_allTrack;
   std::vector<double> reco_beam_calibrated_dEdX_SCE, reco_beam_calibrated_dQdX_SCE, reco_beam_dQ;
+
+  std::vector<std::vector<int>> reco_beam_hit_IDE_IDs, reco_beam_hit_IDE_origins;
+  std::vector<std::vector<double>> reco_beam_hit_IDE_electrons, reco_beam_hit_IDE_energies;
+  std::vector<double> reco_beam_hit_IDE_cosmic_electrons, reco_beam_hit_IDE_beam_electrons;
+  std::vector<double> reco_beam_hit_IDE_cosmic_energies, reco_beam_hit_IDE_beam_energies;
 
   std::vector<double> reco_beam_dEdX_NoSCE, reco_beam_dQdX_NoSCE, reco_beam_resRange_NoSCE, reco_beam_TrkPitch_NoSCE;
   std::vector<double> reco_beam_calibrated_dEdX_NoSCE;
@@ -1674,6 +1688,15 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_TrkPitch_SCE", &reco_beam_TrkPitch_SCE);
   fTree->Branch("reco_beam_TrkPitch_SCE_allTrack", &reco_beam_TrkPitch_SCE_allTrack);
 
+  fTree->Branch("reco_beam_hit_IDE_IDs", &reco_beam_hit_IDE_IDs);
+  fTree->Branch("reco_beam_hit_IDE_electrons", &reco_beam_hit_IDE_electrons);
+  fTree->Branch("reco_beam_hit_IDE_energies", &reco_beam_hit_IDE_energies);
+  fTree->Branch("reco_beam_hit_IDE_origins", &reco_beam_hit_IDE_origins);
+  fTree->Branch("reco_beam_hit_IDE_cosmic_electrons", &reco_beam_hit_IDE_cosmic_electrons);
+  fTree->Branch("reco_beam_hit_IDE_beam_electrons", &reco_beam_hit_IDE_beam_electrons);
+  fTree->Branch("reco_beam_hit_IDE_cosmic_energies", &reco_beam_hit_IDE_cosmic_energies);
+  fTree->Branch("reco_beam_hit_IDE_beam_energies", &reco_beam_hit_IDE_beam_energies);
+
   fTree->Branch("reco_beam_dQdX_NoSCE", &reco_beam_dQdX_NoSCE);
   fTree->Branch("reco_beam_dQ_NoSCE", &reco_beam_dQ_NoSCE);
   fTree->Branch("reco_beam_dEdX_NoSCE", &reco_beam_dEdX_NoSCE);
@@ -2520,6 +2543,14 @@ void pduneana::PDSPAnalyzer::reset()
   reco_beam_calo_tick.clear();
   reco_beam_calo_TPC.clear();
   reco_beam_calo_TPC_NoSCE.clear();
+  reco_beam_hit_IDE_IDs.clear();
+  reco_beam_hit_IDE_electrons.clear();
+  reco_beam_hit_IDE_energies.clear();
+  reco_beam_hit_IDE_origins.clear();
+  reco_beam_hit_IDE_cosmic_electrons.clear();
+  reco_beam_hit_IDE_beam_electrons.clear();
+  reco_beam_hit_IDE_cosmic_energies.clear();
+  reco_beam_hit_IDE_beam_energies.clear();
 
   reco_beam_trackID = -999;
 
@@ -2905,6 +2936,10 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
 
     auto theXYZPoints = calo[index].XYZ();
     std::vector< size_t > calo_hit_indices;
+    std::vector<std::vector<int>> reco_hit_IDE_IDs;
+    std::vector<std::vector<int>> reco_hit_IDE_origins;
+    std::vector<std::vector<double>> reco_hit_IDE_electrons;
+    std::vector<std::vector<double>> reco_hit_IDE_energies;
     for( size_t i = 0; i < calo_dQdX.size(); ++i ){
       if (fVerbose) std::cout << i << std::endl;
       reco_beam_dQdX_SCE.push_back( calo_dQdX[i] );
@@ -2938,6 +2973,24 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
                      theXYZPoints[i].Z() << " " << theHit.WireID().Wire << " " <<
                      geom->Wire(theHit.WireID()).GetCenter().Z() << " " <<
                      theHit.WireID().TPC << " " << std::endl;
+
+      //truth infos
+      if (!evt.isRealData()) {
+        reco_hit_IDE_IDs.push_back(std::vector<int>());
+        reco_hit_IDE_origins.push_back(std::vector<int>());
+        reco_hit_IDE_electrons.push_back(std::vector<double>());
+        reco_hit_IDE_energies.push_back(std::vector<double>());
+        for (const auto & ide : bt_serv->HitToEveTrackIDEs(clockData, theHit)) {
+          int track_ID = ide.trackID;
+          int origin = pi_serv->TrackIdToMCTruth_P(track_ID)->Origin();
+          float n_electrons = ide.numElectrons;
+
+          reco_hit_IDE_IDs.back().push_back(track_ID);
+          reco_hit_IDE_origins.back().push_back(origin);
+          reco_hit_IDE_electrons.back().push_back(n_electrons);
+          reco_hit_IDE_energies.back().push_back(ide.energy);
+        }
+      }
     }
 
     //Getting the SCE corrected start/end positions & directions
@@ -3154,6 +3207,12 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
                      reco_beam_calo_wire_z[i], reco_beam_calo_TPC[i],
                      reco_beam_EField_SCE[i], reco_beam_calo_X[i],
                      reco_beam_calo_Y[i], reco_beam_calo_Z[i]));
+        if (!evt.isRealData()) {
+          reco_beam_calo_points.back().SetIDE_IDs(reco_hit_IDE_IDs[i]);
+          reco_beam_calo_points.back().SetIDE_origins(reco_hit_IDE_origins[i]);
+          reco_beam_calo_points.back().SetIDE_electrons(reco_hit_IDE_electrons[i]);
+          reco_beam_calo_points.back().SetIDE_energies(reco_hit_IDE_energies[i]);
+        }
       }
 
       //std::cout << "N Calo points: " << reco_beam_calo_points.size() << std::endl;
@@ -3180,6 +3239,34 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
         reco_beam_calo_Y[i] = thePoint.y;
         reco_beam_calo_Z[i] = thePoint.z;
         //reco_beam_calo_x[i]
+        if (!evt.isRealData()) {
+          reco_beam_hit_IDE_IDs.push_back(std::vector<int>());
+          reco_beam_hit_IDE_origins.push_back(std::vector<int>());
+          reco_beam_hit_IDE_electrons.push_back(std::vector<double>());
+          reco_beam_hit_IDE_energies.push_back(std::vector<double>());
+          double total_cosmic = 0.;
+          double total_beam = 0.;
+          double total_cosmic_energy = 0.;
+          double total_beam_energy = 0.;
+          for (size_t j = 0; j < thePoint.IDE_IDs.size(); ++j) {
+            reco_beam_hit_IDE_IDs.back().push_back(thePoint.IDE_IDs[j]);
+            reco_beam_hit_IDE_electrons.back().push_back(thePoint.IDE_electrons[j]);
+            reco_beam_hit_IDE_energies.back().push_back(thePoint.IDE_energies[j]);
+            reco_beam_hit_IDE_origins.back().push_back(thePoint.IDE_origins[j]);
+            if (thePoint.IDE_origins[j] == 2) {
+              total_cosmic += thePoint.IDE_electrons[j];
+              total_cosmic_energy += thePoint.IDE_energies[j];
+            }
+            else if (thePoint.IDE_origins[j] == 4) {
+              total_beam += thePoint.IDE_electrons[j];
+              total_beam_energy += thePoint.IDE_energies[j];
+            }
+          }
+          reco_beam_hit_IDE_cosmic_electrons.push_back(total_cosmic);
+          reco_beam_hit_IDE_beam_electrons.push_back(total_beam);
+          reco_beam_hit_IDE_cosmic_energies.push_back(total_cosmic_energy);
+          reco_beam_hit_IDE_beam_energies.push_back(total_beam_energy);
+        }
       }
 
       //Get the initial Energy KE
