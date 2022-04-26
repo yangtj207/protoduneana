@@ -815,6 +815,9 @@ private:
   std::vector<std::vector<double>> g4rw_full_grid_kplus_weights,
                                    g4rw_full_grid_kplus_coeffs;
 
+  std::vector<std::vector<double>> g4rw_downstream_grid_piplus_weights,
+                                   g4rw_downstream_grid_piplus_coeffs;
+
   //EDIT: STANDARDIZE
   //EndProcess --> endProcess ?
   std::string reco_beam_true_byE_endProcess, reco_beam_true_byHits_endProcess; //What process ended the reco beam particle
@@ -1601,6 +1604,16 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       g4rw_full_grid_kplus_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_kplus_coeffs.back());
     }
+
+    std::vector<std::vector<G4ReweightTraj *>> downstream_piplus_hierarchy 
+        = BuildHierarchy(true_beam_ID, 211, plist, fGeometryService,
+                         event, "LAr", true);
+    G4RWGridWeights(downstream_piplus_hierarchy, ParSet,
+                    g4rw_downstream_grid_piplus_weights, MultiRW);
+    for (auto weights : g4rw_downstream_grid_piplus_weights) {
+      g4rw_downstream_grid_piplus_coeffs.push_back(std::vector<double>());
+      GetG4RWCoeffs(weights, g4rw_downstream_grid_piplus_coeffs.back());
+    }
   }
 
   fTree->Fill();
@@ -2137,6 +2150,8 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("g4rw_full_grid_piplus_weights",  &g4rw_full_grid_piplus_weights);
   fTree->Branch("g4rw_full_grid_piplus_coeffs",  &g4rw_full_grid_piplus_coeffs);
   fTree->Branch("g4rw_full_grid_piplus_weights_fake_data",  &g4rw_full_grid_piplus_weights_fake_data);
+  fTree->Branch("g4rw_downstream_grid_piplus_weights",  &g4rw_downstream_grid_piplus_weights);
+  fTree->Branch("g4rw_downstream_grid_piplus_coeffs",  &g4rw_downstream_grid_piplus_coeffs);
   fTree->Branch("g4rw_full_grid_piminus_weights", &g4rw_full_grid_piminus_weights);
   fTree->Branch("g4rw_full_grid_proton_weights",  &g4rw_full_grid_proton_weights);
   fTree->Branch("g4rw_full_grid_proton_coeffs", &g4rw_full_grid_proton_coeffs);
@@ -2718,6 +2733,8 @@ void pduneana::PDSPAnalyzer::reset()
   g4rw_full_grid_piplus_weights.clear();
   g4rw_full_grid_piplus_coeffs.clear();
   g4rw_full_grid_piplus_weights_fake_data.clear();
+  g4rw_downstream_grid_piplus_weights.clear();
+  g4rw_downstream_grid_piplus_coeffs.clear();
   g4rw_full_grid_piminus_weights.clear();
   g4rw_full_grid_proton_weights.clear();
   g4rw_full_grid_proton_coeffs.clear();
@@ -5298,6 +5315,9 @@ void pduneana::PDSPAnalyzer::G4RWGridWeights(
             weights.back().back()
                 *= GetNTrajWeightFromSetPars(temp_trajs, *multi_rw);
           }
+        }
+        else {
+          weights.back().push_back(1.);
         }
       }
       else {

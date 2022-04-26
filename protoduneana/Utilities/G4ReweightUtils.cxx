@@ -312,21 +312,22 @@ std::vector<std::vector<G4ReweightTraj *>>
     protoana::G4ReweightUtils::BuildHierarchy(
         int ID, int PDG, const sim::ParticleList & plist,
         art::ServiceHandle<geo::Geometry> geo_serv, int event,
-        std::string material_name, bool verbose) {
+        std::string material_name, bool skip_first, bool verbose) {
 
   std::deque<int> to_create = {ID};
   std::vector<std::vector<G4ReweightTraj *>> full_created;
 
+  if (skip_first && verbose) {
+    std::cout << "Skipping first" << std::endl;
+  }
+
   while (to_create.size()) {
     auto part = plist[to_create[0]];
-    std::vector<G4ReweightTraj *> temp_trajs =
-        CreateNRWTrajs(*part, plist, geo_serv,
-                       event, material_name, verbose);
     for (int i = 0; i < part->NumberDaughters(); ++i) {
       int daughter_ID = part->Daughter(i);
       auto d_part = plist[daughter_ID];
       if ((d_part->PdgCode() == 2212) || (d_part->PdgCode() == 2112) ||
-          (abs(d_part->PdgCode()) == 211)) {
+          (abs(d_part->PdgCode()) == 211) || (abs(d_part->PdgCode()) == 321)) {
         to_create.push_back(daughter_ID);
         if (verbose)
           std::cout << "Adding daughter " << to_create.back() << std::endl;
@@ -334,14 +335,27 @@ std::vector<std::vector<G4ReweightTraj *>>
     }
   
   
-    if (temp_trajs.size()) {
-      auto last_traj = temp_trajs.back();
-      if (verbose) 
-        std::cout << "created " << last_traj->GetTrackID() << " " <<
-                     last_traj->GetPDG() << std::endl;
+    if (skip_first && verbose) {
+      std::cout << "Skipping " << ID << std::endl;
+    }
+
+    if (!skip_first || (skip_first && ID != part->TrackId())) {
+      if (skip_first && verbose) {
+        std::cout << "Not skipping " << part->TrackId() << std::endl;
+      }
+      std::vector<G4ReweightTraj *> temp_trajs =
+          CreateNRWTrajs(*part, plist, geo_serv,
+                         event, material_name, verbose);
+    
+      if (temp_trajs.size()) {
+        auto last_traj = temp_trajs.back();
+        if (verbose) 
+          std::cout << "created " << last_traj->GetTrackID() << " " <<
+                       last_traj->GetPDG() << std::endl;
   
-      if (temp_trajs[0]->GetPDG() == PDG) {
-        full_created.push_back(temp_trajs);
+        if (temp_trajs[0]->GetPDG() == PDG) {
+          full_created.push_back(temp_trajs);
+        }
       }
     }
     to_create.pop_front();

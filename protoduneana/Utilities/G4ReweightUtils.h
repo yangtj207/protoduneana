@@ -27,7 +27,7 @@ namespace protoana {
       int ID, int PDG,
       const sim::ParticleList & plist,
       art::ServiceHandle<geo::Geometry> geo_serv, int event,
-      std::string material_name = "LAr",
+      std::string material_name = "LAr", bool skip_first=false,
       bool fVerbose=false);
 
   double GetNTrajWeightFromSetPars(
