@@ -381,6 +381,7 @@ class AbsCexDriver : public ThinSliceDriver {
    std::vector<int> fERecoSelections, fEndZSelections, fOneBinSelections;
    double fBeamInstPScale;
    bool fRestrictBeamInstP, fDebugRestrictBeamP;
+   bool fBarlowBeeston;
 };
 }
 #endif
