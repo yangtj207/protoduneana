@@ -427,6 +427,15 @@ namespace pduneana {
     int tpc;
     double EField;
     double x, y, z;
+
+    std::vector<double> IDE_electrons, IDE_energies;
+    std::vector<int> IDE_IDs;
+    std::vector<int> IDE_origins;
+
+    void SetIDE_electrons(std::vector<double> input) {IDE_electrons = input;};
+    void SetIDE_energies(std::vector<double> input) {IDE_energies = input;};
+    void SetIDE_IDs(std::vector<int> input) {IDE_IDs = input;};
+    void SetIDE_origins(std::vector<int> input) {IDE_origins = input;};
   };
 
   //Util to get CNN output
@@ -581,6 +590,14 @@ private:
                      detinfo::DetectorClocksData const& clockData);
   void BeamForcedTrackInfo();
   void GetG4RWCoeffs(std::vector<double> & weights, std::vector<double> & coeffs);
+  void CheckForCrossingCosmics(
+      const art::Event & evt, protoana::ProtoDUNEPFParticleUtils & pfpUtil,
+      const recob::Track * thisTrack/*,
+      std::vector<int> & crossing_cosmic_candidates*/);
+  void FindTrueCrossingCosmics(
+      const art::Event & evt,
+      const simb::MCParticle* true_beam_particle,
+      detinfo::DetectorClocksData const& clockData);
   void G4RWGridWeights(
       std::vector<std::vector<G4ReweightTraj *>> & hierarchy,
       std::vector<fhicl::ParameterSet> & pars,
@@ -731,6 +748,11 @@ private:
   std::vector<double> reco_beam_TrkPitch_SCE_allTrack;
   std::vector<double> reco_beam_calibrated_dEdX_SCE, reco_beam_calibrated_dQdX_SCE, reco_beam_dQ;
 
+  std::vector<std::vector<int>> reco_beam_hit_IDE_IDs, reco_beam_hit_IDE_origins;
+  std::vector<std::vector<double>> reco_beam_hit_IDE_electrons, reco_beam_hit_IDE_energies;
+  std::vector<double> reco_beam_hit_IDE_cosmic_electrons, reco_beam_hit_IDE_beam_electrons;
+  std::vector<double> reco_beam_hit_IDE_cosmic_energies, reco_beam_hit_IDE_beam_energies;
+
   std::vector<double> reco_beam_dEdX_NoSCE, reco_beam_dQdX_NoSCE, reco_beam_resRange_NoSCE, reco_beam_TrkPitch_NoSCE;
   std::vector<double> reco_beam_calibrated_dEdX_NoSCE;
 
@@ -761,6 +783,10 @@ private:
   std::vector<int> reco_track_ID, reco_track_nHits;
 
 
+  std::vector<int> crossing_cosmic_candidates, crossing_cosmic_candidate_trackIDs;
+  bool has_crossing_cosmic_candidate;
+  int n_cosmic_ides_in_beam_hits, n_beam_ides_in_beam_hits;
+  double n_cosmic_electrons_in_beam_hits, n_beam_electrons_in_beam_hits;
   //GeantReweight stuff
   // -- Maybe think of new naming scheme?
   std::vector<double> g4rw_primary_weights;
@@ -788,6 +814,9 @@ private:
                                    g4rw_full_grid_neutron_coeffs;
   std::vector<std::vector<double>> g4rw_full_grid_kplus_weights,
                                    g4rw_full_grid_kplus_coeffs;
+
+  std::vector<std::vector<double>> g4rw_downstream_grid_piplus_weights,
+                                   g4rw_downstream_grid_piplus_coeffs;
 
   //EDIT: STANDARDIZE
   //EndProcess --> endProcess ?
@@ -1403,6 +1432,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     if( thisTrack ){
       //Get reconstructed beam track info
       BeamTrackInfo(evt, thisTrack, clockData);
+      CheckForCrossingCosmics(evt, pfpUtil, thisTrack);
       rightTrackID = thisTrack->ID();
     }
     else if( thisShower ){
@@ -1417,12 +1447,14 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     //of the BDT score
     BeamForcedTrackInfo(evt, particle);
     //To do: BeamForcedShowerInfo?
+
   }
 
   if (fCheckTruncation) CheckEff(evt, rightTrackID);
   //If MC, attempt to match to some MCParticle
   if( !evt.isRealData() ){
     TrueBeamInfo(evt, true_beam_particle, clockData, plist, trueToPFPs, hitResults);
+    FindTrueCrossingCosmics(evt, true_beam_particle, clockData);
   }
 
   //New geant4reweight stuff
@@ -1572,6 +1604,16 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       g4rw_full_grid_kplus_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_kplus_coeffs.back());
     }
+
+    std::vector<std::vector<G4ReweightTraj *>> downstream_piplus_hierarchy 
+        = BuildHierarchy(true_beam_ID, 211, plist, fGeometryService,
+                         event, "LAr", true);
+    G4RWGridWeights(downstream_piplus_hierarchy, ParSet,
+                    g4rw_downstream_grid_piplus_weights, MultiRW);
+    for (auto weights : g4rw_downstream_grid_piplus_weights) {
+      g4rw_downstream_grid_piplus_coeffs.push_back(std::vector<double>());
+      GetG4RWCoeffs(weights, g4rw_downstream_grid_piplus_coeffs.back());
+    }
   }
 
   fTree->Fill();
@@ -1658,6 +1700,15 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_resRange_SCE", &reco_beam_resRange_SCE);
   fTree->Branch("reco_beam_TrkPitch_SCE", &reco_beam_TrkPitch_SCE);
   fTree->Branch("reco_beam_TrkPitch_SCE_allTrack", &reco_beam_TrkPitch_SCE_allTrack);
+
+  fTree->Branch("reco_beam_hit_IDE_IDs", &reco_beam_hit_IDE_IDs);
+  fTree->Branch("reco_beam_hit_IDE_electrons", &reco_beam_hit_IDE_electrons);
+  fTree->Branch("reco_beam_hit_IDE_energies", &reco_beam_hit_IDE_energies);
+  fTree->Branch("reco_beam_hit_IDE_origins", &reco_beam_hit_IDE_origins);
+  fTree->Branch("reco_beam_hit_IDE_cosmic_electrons", &reco_beam_hit_IDE_cosmic_electrons);
+  fTree->Branch("reco_beam_hit_IDE_beam_electrons", &reco_beam_hit_IDE_beam_electrons);
+  fTree->Branch("reco_beam_hit_IDE_cosmic_energies", &reco_beam_hit_IDE_cosmic_energies);
+  fTree->Branch("reco_beam_hit_IDE_beam_energies", &reco_beam_hit_IDE_beam_energies);
 
   fTree->Branch("reco_beam_dQdX_NoSCE", &reco_beam_dQdX_NoSCE);
   fTree->Branch("reco_beam_dQ_NoSCE", &reco_beam_dQ_NoSCE);
@@ -1842,6 +1893,13 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_daughter_PFP_michelScore_collection", &reco_daughter_PFP_michelScore_collection);
   fTree->Branch("reco_daughter_pandora_type", &reco_daughter_pandora_type);
 
+  fTree->Branch("crossing_cosmic_candidates", &crossing_cosmic_candidates);
+  fTree->Branch("crossing_cosmic_candidate_trackIDs", &crossing_cosmic_candidate_trackIDs);
+  fTree->Branch("has_crossing_cosmic_candidate", &has_crossing_cosmic_candidate);
+  fTree->Branch("n_beam_ides_in_beam_hits", &n_beam_ides_in_beam_hits);
+  fTree->Branch("n_cosmic_ides_in_beam_hits", &n_cosmic_ides_in_beam_hits);
+  fTree->Branch("n_beam_electrons_in_beam_hits", &n_beam_electrons_in_beam_hits);
+  fTree->Branch("n_cosmic_electrons_in_beam_hits", &n_cosmic_electrons_in_beam_hits);
 
   fTree->Branch("true_beam_PDG", &true_beam_PDG);
   fTree->Branch("true_beam_mass", &true_beam_mass);
@@ -2092,6 +2150,8 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("g4rw_full_grid_piplus_weights",  &g4rw_full_grid_piplus_weights);
   fTree->Branch("g4rw_full_grid_piplus_coeffs",  &g4rw_full_grid_piplus_coeffs);
   fTree->Branch("g4rw_full_grid_piplus_weights_fake_data",  &g4rw_full_grid_piplus_weights_fake_data);
+  fTree->Branch("g4rw_downstream_grid_piplus_weights",  &g4rw_downstream_grid_piplus_weights);
+  fTree->Branch("g4rw_downstream_grid_piplus_coeffs",  &g4rw_downstream_grid_piplus_coeffs);
   fTree->Branch("g4rw_full_grid_piminus_weights", &g4rw_full_grid_piminus_weights);
   fTree->Branch("g4rw_full_grid_proton_weights",  &g4rw_full_grid_proton_weights);
   fTree->Branch("g4rw_full_grid_proton_coeffs", &g4rw_full_grid_proton_coeffs);
@@ -2407,6 +2467,15 @@ void pduneana::PDSPAnalyzer::reset()
 
   reco_daughter_PFP_ID.clear();
   reco_daughter_pandora_type.clear();
+  crossing_cosmic_candidates.clear();
+  crossing_cosmic_candidate_trackIDs.clear();
+  has_crossing_cosmic_candidate = false;
+
+  n_cosmic_ides_in_beam_hits = 0;
+  n_beam_ides_in_beam_hits = 0;
+  n_cosmic_electrons_in_beam_hits = 0;
+  n_beam_electrons_in_beam_hits = 0;
+
   reco_daughter_PFP_nHits.clear();
   reco_daughter_PFP_nHits_collection.clear();
   reco_daughter_PFP_trackScore.clear();
@@ -2489,6 +2558,14 @@ void pduneana::PDSPAnalyzer::reset()
   reco_beam_calo_tick.clear();
   reco_beam_calo_TPC.clear();
   reco_beam_calo_TPC_NoSCE.clear();
+  reco_beam_hit_IDE_IDs.clear();
+  reco_beam_hit_IDE_electrons.clear();
+  reco_beam_hit_IDE_energies.clear();
+  reco_beam_hit_IDE_origins.clear();
+  reco_beam_hit_IDE_cosmic_electrons.clear();
+  reco_beam_hit_IDE_beam_electrons.clear();
+  reco_beam_hit_IDE_cosmic_energies.clear();
+  reco_beam_hit_IDE_beam_energies.clear();
 
   reco_beam_trackID = -999;
 
@@ -2656,6 +2733,8 @@ void pduneana::PDSPAnalyzer::reset()
   g4rw_full_grid_piplus_weights.clear();
   g4rw_full_grid_piplus_coeffs.clear();
   g4rw_full_grid_piplus_weights_fake_data.clear();
+  g4rw_downstream_grid_piplus_weights.clear();
+  g4rw_downstream_grid_piplus_coeffs.clear();
   g4rw_full_grid_piminus_weights.clear();
   g4rw_full_grid_proton_weights.clear();
   g4rw_full_grid_proton_coeffs.clear();
@@ -2874,6 +2953,10 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
 
     auto theXYZPoints = calo[index].XYZ();
     std::vector< size_t > calo_hit_indices;
+    std::vector<std::vector<int>> reco_hit_IDE_IDs;
+    std::vector<std::vector<int>> reco_hit_IDE_origins;
+    std::vector<std::vector<double>> reco_hit_IDE_electrons;
+    std::vector<std::vector<double>> reco_hit_IDE_energies;
     for( size_t i = 0; i < calo_dQdX.size(); ++i ){
       if (fVerbose) std::cout << i << std::endl;
       reco_beam_dQdX_SCE.push_back( calo_dQdX[i] );
@@ -2907,6 +2990,24 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
                      theXYZPoints[i].Z() << " " << theHit.WireID().Wire << " " <<
                      geom->Wire(theHit.WireID()).GetCenter().Z() << " " <<
                      theHit.WireID().TPC << " " << std::endl;
+
+      //truth infos
+      if (!evt.isRealData()) {
+        reco_hit_IDE_IDs.push_back(std::vector<int>());
+        reco_hit_IDE_origins.push_back(std::vector<int>());
+        reco_hit_IDE_electrons.push_back(std::vector<double>());
+        reco_hit_IDE_energies.push_back(std::vector<double>());
+        for (const auto & ide : bt_serv->HitToEveTrackIDEs(clockData, theHit)) {
+          int track_ID = ide.trackID;
+          int origin = pi_serv->TrackIdToMCTruth_P(track_ID)->Origin();
+          float n_electrons = ide.numElectrons;
+
+          reco_hit_IDE_IDs.back().push_back(track_ID);
+          reco_hit_IDE_origins.back().push_back(origin);
+          reco_hit_IDE_electrons.back().push_back(n_electrons);
+          reco_hit_IDE_energies.back().push_back(ide.energy);
+        }
+      }
     }
 
     //Getting the SCE corrected start/end positions & directions
@@ -3123,6 +3224,12 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
                      reco_beam_calo_wire_z[i], reco_beam_calo_TPC[i],
                      reco_beam_EField_SCE[i], reco_beam_calo_X[i],
                      reco_beam_calo_Y[i], reco_beam_calo_Z[i]));
+        if (!evt.isRealData()) {
+          reco_beam_calo_points.back().SetIDE_IDs(reco_hit_IDE_IDs[i]);
+          reco_beam_calo_points.back().SetIDE_origins(reco_hit_IDE_origins[i]);
+          reco_beam_calo_points.back().SetIDE_electrons(reco_hit_IDE_electrons[i]);
+          reco_beam_calo_points.back().SetIDE_energies(reco_hit_IDE_energies[i]);
+        }
       }
 
       //std::cout << "N Calo points: " << reco_beam_calo_points.size() << std::endl;
@@ -3149,6 +3256,34 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
         reco_beam_calo_Y[i] = thePoint.y;
         reco_beam_calo_Z[i] = thePoint.z;
         //reco_beam_calo_x[i]
+        if (!evt.isRealData()) {
+          reco_beam_hit_IDE_IDs.push_back(std::vector<int>());
+          reco_beam_hit_IDE_origins.push_back(std::vector<int>());
+          reco_beam_hit_IDE_electrons.push_back(std::vector<double>());
+          reco_beam_hit_IDE_energies.push_back(std::vector<double>());
+          double total_cosmic = 0.;
+          double total_beam = 0.;
+          double total_cosmic_energy = 0.;
+          double total_beam_energy = 0.;
+          for (size_t j = 0; j < thePoint.IDE_IDs.size(); ++j) {
+            reco_beam_hit_IDE_IDs.back().push_back(thePoint.IDE_IDs[j]);
+            reco_beam_hit_IDE_electrons.back().push_back(thePoint.IDE_electrons[j]);
+            reco_beam_hit_IDE_energies.back().push_back(thePoint.IDE_energies[j]);
+            reco_beam_hit_IDE_origins.back().push_back(thePoint.IDE_origins[j]);
+            if (thePoint.IDE_origins[j] == 2) {
+              total_cosmic += thePoint.IDE_electrons[j];
+              total_cosmic_energy += thePoint.IDE_energies[j];
+            }
+            else if (thePoint.IDE_origins[j] == 4) {
+              total_beam += thePoint.IDE_electrons[j];
+              total_beam_energy += thePoint.IDE_energies[j];
+            }
+          }
+          reco_beam_hit_IDE_cosmic_electrons.push_back(total_cosmic);
+          reco_beam_hit_IDE_beam_electrons.push_back(total_beam);
+          reco_beam_hit_IDE_cosmic_energies.push_back(total_cosmic_energy);
+          reco_beam_hit_IDE_beam_energies.push_back(total_beam_energy);
+        }
       }
 
       //Get the initial Energy KE
@@ -5181,6 +5316,9 @@ void pduneana::PDSPAnalyzer::G4RWGridWeights(
                 *= GetNTrajWeightFromSetPars(temp_trajs, *multi_rw);
           }
         }
+        else {
+          weights.back().push_back(1.);
+        }
       }
       else {
         std::string message = "Could not Get N Traj Weight from set pars";
@@ -5289,4 +5427,280 @@ void pduneana::PDSPAnalyzer::GetG4RWCoeffs(std::vector<double> & weights, std::v
     coeffs.push_back(fit_func->GetParameter(j));
   }
 }
+
+void pduneana::PDSPAnalyzer::CheckForCrossingCosmics(
+    const art::Event & evt, protoana::ProtoDUNEPFParticleUtils & pfpUtil,
+    const recob::Track * thisTrack/*,
+    std::vector<int> & crossing_cosmic_candidates*/) {
+  const auto cosmics = pfpUtil.GetClearCosmicPFParticles(evt, fPFParticleTag);
+  std::vector<const recob::PFParticle*> cosmics_in_apa3;
+
+  for (const auto * c : cosmics) {
+    //std::cout << c->Self() << std::endl;
+
+    const auto hits = pfpUtil.GetPFParticleHits(*c, evt, fPFParticleTag);
+    //std::cout << "Got " << hits.size() << " in plane 2" << std::endl;
+    //bool in_apa3 = false;
+    for (const auto * h : hits) {
+      int tpc = h->WireID().TPC;
+      int plane = h->WireID().planeID().Plane;
+      if (tpc == 1 && plane == 2) {
+        //in_apa3 = true;
+        cosmics_in_apa3.push_back(c);
+        break;
+      }
+    }
+    //std::cout << "in apa3? " << in_apa3 << std::endl;
+  }
+  if (fVerbose) std::cout << "Got " << cosmics_in_apa3.size() << " potential crossing cosmics" <<std::endl;
+
+  if (cosmics_in_apa3.empty()) return;
+
+
+  auto allHits = evt.getValidHandle<std::vector<recob::Hit> >(fHitTag);
+
+  //const auto beam_hits = pfpUtil.GetPFParticleHits(*particle, evt, fPFParticleTag); 
+  std::vector<int> good_beam_wires;
+  std::vector<double> good_beam_ticks;
+  /*for (const auto * h : beam_hits) {
+    int tpc = h->WireID().TPC;
+    int plane = h->WireID().planeID().Plane;
+    if (tpc == 1 && plane == 2) {
+      good_beam_wires.push_back(h->WireID().Wire);
+      good_beam_ticks.push_back(h->PeakTime());
+    }
+  }*/
+
+  //const recob::Track* thisTrack = pfpUtil.GetPFParticleTrack(*particle,evt,fPFParticleTag,fTrackerTag);
+  auto beam_calo = trackUtil.GetRecoTrackCalorimetry(*thisTrack, evt, fTrackerTag,
+                                                     fCalorimetryTagSCE);
+  bool found_beam_calo = false;
+  size_t beam_index = 0;
+  for ( beam_index = 0; beam_index < beam_calo.size(); ++beam_index) {
+    if (beam_calo[beam_index].PlaneID().Plane == 2) {
+      found_beam_calo = true;
+      break; 
+    }
+  }
+
+  if (found_beam_calo) {
+    auto TpIndices = beam_calo[beam_index].TpIndices();
+    for (size_t i = 0; i < TpIndices.size(); ++i) {
+      const recob::Hit & theHit = (*allHits)[TpIndices[i]];
+      int tpc = theHit.WireID().TPC;
+      int plane = theHit.WireID().planeID().Plane;
+      if (tpc == 1 && plane == 2) {
+        //std::cout << theHit.WireID().Wire << " " << theHit.PeakTime() <<
+        //             std::endl;
+        good_beam_wires.push_back(theHit.WireID().Wire);
+        good_beam_ticks.push_back(theHit.PeakTime());
+      }
+    }
+  }
+
+  for (const auto * c : cosmics_in_apa3) {
+    //const auto hits = pfpUtil.GetPFParticleHits(*c, evt, fPFParticleTag);
+
+    std::vector<int> cosmic_wires;
+    std::vector<double> cosmic_ticks;
+    /*
+    for (const auto * h : hits) {
+      int tpc = h->WireID().TPC;
+      int plane = h->WireID().planeID().Plane;
+      //std::cout << "Skipping" << std::endl;
+      if (tpc == 1 && plane == 2) {
+        //std::cout << h->WireID().Wire << " " << h->PeakTime() <<
+        //             std::endl;
+        //cosmic_wires.push_back(h->WireID().Wire);
+        //cosmic_ticks.push_back(h->PeakTime());
+      }
+    }*/
+
+    const auto * cosmic_track = pfpUtil.GetPFParticleTrack(*c,evt,fPFParticleTag,fTrackerTag);
+
+    if (cosmic_track) {
+      auto calo = trackUtil.GetRecoTrackCalorimetry(*cosmic_track, evt, fTrackerTag,
+                                                    fCalorimetryTagSCE);
+      //Get the correct plane (collection) because it's not always the same
+      bool found_calo = false;
+      size_t index = 0;
+      for ( index = 0; index < calo.size(); ++index) {
+        if (calo[index].PlaneID().Plane == 2) {
+          found_calo = true;
+          break; 
+        }
+      }
+
+      if (found_calo) {
+        auto TpIndices = calo[index].TpIndices();
+        for (size_t i = 0; i < TpIndices.size(); ++i) {
+          const recob::Hit & theHit = (*allHits)[TpIndices[i]];
+          int tpc = theHit.WireID().TPC;
+          int plane = theHit.WireID().planeID().Plane;
+          if (tpc == 1 && plane == 2) {
+            //std::cout << theHit.WireID().Wire << " " << theHit.PeakTime() <<
+            //             std::endl;
+            cosmic_wires.push_back(theHit.WireID().Wire);
+            cosmic_ticks.push_back(theHit.PeakTime());
+          }
+        }
+      }
+    }
+
+    bool is_crossing = false;
+    for (size_t i = 1; i < cosmic_wires.size(); ++i) {
+      int c_wire_0 = cosmic_wires[i-1];
+      int c_wire_1 = cosmic_wires[i];
+      double c_tick_0 = cosmic_ticks[i-1];
+      double c_tick_1 = cosmic_ticks[i];
+
+      bool c_same_wire = (c_wire_0 == c_wire_1);
+      bool c_same_tick = (c_tick_0 == c_tick_1);
+
+      double c_slope = (c_same_wire ? -1. : (c_tick_0 - c_tick_1)/(c_wire_0 - c_wire_1));
+      double c_intercept = (c_same_wire ? -1. : (c_tick_0 - c_slope*c_wire_0));
+
+      for (size_t j = 1; j < good_beam_wires.size(); ++j) {
+        int b_wire_0 = good_beam_wires[j-1];
+        int b_wire_1 = good_beam_wires[j];
+        double b_tick_0 = good_beam_ticks[j-1];
+        double b_tick_1 = good_beam_ticks[j];
+
+        bool b_same_wire = (b_wire_0 == b_wire_1);
+        bool b_same_tick = (b_tick_0 == b_tick_1);
+
+        double b_slope = (b_same_wire ? -1. : (b_tick_0 - b_tick_1)/(b_wire_0 - b_wire_1));
+        double b_intercept = (b_same_wire ? -1. : (b_tick_0 - b_slope*b_wire_0));
+
+        //std::cout << "Beam points: (" << b_wire_0 << ", " << b_tick_0 << ") (" <<
+        //              b_wire_1 << ", " << b_tick_1 << ")" << std::endl;
+        //std::cout << b_slope << " " << b_intercept << std::endl;
+        //std::cout << "Cosmic points: (" << c_wire_0 << ", " << c_tick_0 << ") (" <<
+        //              c_wire_1 << ", " << c_tick_1 << ")" << std::endl;
+        //std::cout << c_slope << " " << c_intercept << std::endl;
+
+        if (b_same_wire && c_same_wire && (b_wire_0 == c_wire_0)) {
+          if ((b_tick_0 <= c_tick_0 && c_tick_0 <= b_tick_1) ||
+              (b_tick_0 >= c_tick_0 && c_tick_0 >= b_tick_1) ||
+              (b_tick_0 <= c_tick_1 && c_tick_1 <= b_tick_1) ||
+              (b_tick_0 >= c_tick_1 && c_tick_1 >= b_tick_1)) {
+            is_crossing = true;
+            if (fVerbose) std::cout << "Beam: (" << b_wire_0 << ", " << b_tick_0 << ") (" << b_wire_1 << ", " << b_tick_1 << ")" << std::endl;
+            if (fVerbose) std::cout << "Cosmic: (" << c_wire_0 << ", " << c_tick_0 << ") (" << c_wire_1 << ", " << c_tick_1 << ")" << 
+                         (cosmic_track ? cosmic_track->ID() : -1) << std::endl;
+            break;
+          }
+        }
+        else if (b_same_tick && c_same_tick && (b_tick_0 == c_tick_0)) {
+          if ((b_wire_0 <= c_wire_0 && c_wire_0 <= b_wire_1) ||
+              (b_wire_0 >= c_wire_0 && c_wire_0 >= b_wire_1) ||
+              (b_wire_0 <= c_wire_1 && c_wire_1 <= b_wire_1) ||
+              (b_wire_0 >= c_wire_1 && c_wire_1 >= b_wire_1)) {
+            is_crossing = true;
+            if (fVerbose) std::cout << "Beam: (" << b_wire_0 << ", " << b_tick_0 << ") (" << b_wire_1 << ", " << b_tick_1 << ")" << std::endl;
+            if (fVerbose) std::cout << "Cosmic: (" << c_wire_0 << ", " << c_tick_0 << ") (" << c_wire_1 << ", " << c_tick_1 << ")" << 
+                         (cosmic_track ? cosmic_track->ID() : -1) << std::endl;
+            break;
+          }
+        }
+        else if (b_same_tick && c_same_tick && (b_tick_0 != c_tick_0)) {
+          continue;
+        }
+        else if (b_same_wire && c_same_wire && (b_wire_0 != c_wire_0)) {
+          continue;
+        }
+        else if (b_same_wire && !c_same_wire) {
+          if (!(c_wire_0 <= b_wire_0 && b_wire_0 <= c_wire_1) &&
+              !(c_wire_0 >= b_wire_0 && b_wire_0 >= c_wire_1)) {
+            continue;
+          }
+          double check_tick = b_wire_0*c_slope + c_intercept;
+          if ((b_tick_0 <= check_tick && check_tick <= b_tick_1) ||
+              (b_tick_0 >= check_tick && check_tick >= b_tick_1)) {
+            if (fVerbose) std::cout << "Beam: (" << b_wire_0 << ", " << b_tick_0 << ") (" << b_wire_1 << ", " << b_tick_1 << ")" << std::endl;
+            if (fVerbose) std::cout << "Cosmic: (" << c_wire_0 << ", " << c_tick_0 << ") (" << c_wire_1 << ", " << c_tick_1 << ")" << 
+                         (cosmic_track ? cosmic_track->ID() : -1) << std::endl;
+            is_crossing = true;
+            break;
+          }
+        }
+        else if (!b_same_wire && c_same_wire) {
+          if (!((b_wire_0 <= c_wire_0 && c_wire_0 <= b_wire_1) ||
+              (b_wire_0 >= c_wire_0 && c_wire_0 >= b_wire_1))) {
+            continue;
+          }
+          double check_tick = c_wire_0*b_slope + b_intercept;
+          if ((c_tick_0 <= check_tick && check_tick <= c_tick_1) ||
+              (c_tick_0 >= check_tick && check_tick >= c_tick_1)) {
+            if (fVerbose) std::cout << "Beam: (" << b_wire_0 << ", " << b_tick_0 << ") (" << b_wire_1 << ", " << b_tick_1 << ")" << std::endl;
+            if (fVerbose) std::cout << "Cosmic: (" << c_wire_0 << ", " << c_tick_0 << ") (" << c_wire_1 << ", " << c_tick_1 << ")" << 
+                         (cosmic_track ? cosmic_track->ID() : -1) << std::endl;
+            is_crossing = true;
+            break;
+          }
+        }
+        else {
+          double common_wire = (c_intercept - b_intercept)/(b_slope - c_slope);
+          if (((c_wire_0 <= common_wire && common_wire <= c_wire_1) ||
+               (c_wire_0 >= common_wire && common_wire >= c_wire_1)) &&
+              ((b_wire_0 <= common_wire && common_wire <= b_wire_1) ||
+               (b_wire_0 >= common_wire && common_wire >= b_wire_1))) {
+            if (fVerbose) std::cout << "Beam: (" << b_wire_0 << ", " << b_tick_0 << ") (" << b_wire_1 << ", " << b_tick_1 << ")" << std::endl;
+            if (fVerbose) std::cout << "Cosmic: (" << c_wire_0 << ", " << c_tick_0 << ") (" << c_wire_1 << ", " << c_tick_1 << ")" << 
+                         (cosmic_track ? cosmic_track->ID() : -1) << std::endl;
+            is_crossing = true;
+            break;
+          }
+        }
+      }
+
+      if (is_crossing) {
+        break;
+      }
+    }
+    if (fVerbose) std::cout << "Crossing? " << is_crossing << std::endl;
+    if (is_crossing) {
+       crossing_cosmic_candidates.push_back(c->Self());
+       has_crossing_cosmic_candidate = true;
+       if (cosmic_track) {
+         crossing_cosmic_candidate_trackIDs.push_back(cosmic_track->ID());
+         if (fVerbose) std::cout << "Crossing ID: " << cosmic_track->ID() << std::endl;
+       }
+       else {
+         crossing_cosmic_candidate_trackIDs.push_back(-1);
+       }
+    }
+  }
+}
+
+void pduneana::PDSPAnalyzer::FindTrueCrossingCosmics(
+    const art::Event & evt,
+    const simb::MCParticle* true_beam_particle,
+    detinfo::DetectorClocksData const& clockData) {
+  //Get hits from true beam particle
+  auto beam_hits = truthUtil.GetMCParticleHits(
+      clockData, *true_beam_particle, evt, fHitTag);
+
+  //Loop over hits
+  for (const auto * hit: beam_hits) {
+    //Get the IDEs from the hit
+    for (const auto & ide : bt_serv->HitToEveTrackIDEs(clockData, *hit)) {
+      //Get the true particle info from the IDE ID
+      int track_ID = ide.trackID;
+      //const auto * other_particle = pi_serv->TrackIdToParticle_P(track_ID);
+      //std::cout << track_ID << " " << other_particle->PdgCode() << " " <<
+      //             pi_serv->TrackIdToMCTruth_P(track_ID)->Origin() << std::endl;
+      int origin = pi_serv->TrackIdToMCTruth_P(track_ID)->Origin();
+      if (origin == 4) {
+        ++n_beam_ides_in_beam_hits;
+        n_beam_electrons_in_beam_hits += ide.numElectrons;
+      }
+      else if (origin == 2) {
+        ++n_cosmic_ides_in_beam_hits;
+        n_cosmic_electrons_in_beam_hits += ide.numElectrons;
+      }
+    }
+  }
+}
+
 DEFINE_ART_MODULE(pduneana::PDSPAnalyzer)

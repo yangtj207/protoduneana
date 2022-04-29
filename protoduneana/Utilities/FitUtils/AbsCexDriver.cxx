@@ -70,6 +70,7 @@ protoana::AbsCexDriver::AbsCexDriver(
   std::cout << std::endl;
 
   fSkipFirstLast = extra_options.get<bool>("SkipFirstLast", false);
+  fBarlowBeeston = extra_options.get<bool>("BarlowBeeston", false);
 }
 
 void protoana::AbsCexDriver::FillMCEvents(
@@ -911,7 +912,7 @@ void protoana::AbsCexDriver::SetupSysts(
   SetupSyst_LowP(pars);
   SetupSyst_NPi0(pars);
   SetupSyst_EndZNoTrackWeight(pars);
-  SetupSyst_BeamMatch(pars);
+  //SetupSyst_BeamMatch(pars);
   SetupSyst_BoxBeam(pars);
 
   fSystematics = new PDSPSystematics(events, samples, signal_sample_checks,
@@ -4727,6 +4728,7 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
       //double data_err = data_hist->GetBinError(i);
 
       double mc_val = 0.;
+      double mc_sumw2 = 0.;
       //Go through all the samples and get the values from mc
       for (auto it2 = samples.begin(); it2 != samples.end(); ++it2) {
         std::vector<std::vector<ThinSliceSample>> & samples_vec_2D = it2->second;
@@ -4735,6 +4737,8 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
           for (size_t k = 0; k < samples_vec.size(); ++k) {
             ThinSliceSample & sample = samples_vec[k];
             mc_val += sample.GetSelectionHist(selection_ID)->GetBinContent(i);
+            mc_sumw2 += std::pow(
+                sample.GetSelectionHist(selection_ID)->GetBinError(i), 2);
 
             TH1D * mc_hist = (TH1D*)sample.GetSelectionHist(selection_ID);
             if (mc_hist->GetBinContent(0) > 0.) {
@@ -4760,6 +4764,11 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
       }
 
 
+      double sigma_squared = (mc_val > 1.e-7 ? mc_sumw2/(mc_val*mc_val) : 1.);
+      double beta = .5*((1. - mc_val*sigma_squared) +
+                        sqrt(std::pow((1. - mc_val*sigma_squared), 2) +
+                             4.*data_val*sigma_squared));
+
       /// Skip any bins with data == 0
       //
       //See PDG Stat Review:
@@ -4767,7 +4776,12 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
       //Page 6
       //
       if (data_val > 1.e-7)
-        chi2 += 2*data_val*std::log(data_val/mc_val);
+        chi2 += 2*data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.))) +
+                  (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.);
+
+     // std::cout << sigma_squared << " " << mc_val << " " << data_val << " " <<
+     //              beta << " " << 2*data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.))) <<
+     //              " " << ((beta - 1.)*(beta - 1.)/sigma_squared) << " " << chi2 << std::endl;
 
       //if (std::isnan(chi2) && fMultinomial) {
       //  std::cout << "Warning: " << selection_ID << " " << i << " data_val " <<
@@ -4777,6 +4791,7 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
       total_mc += mc_val;
       total_data += data_val;
     }
+    //std::cout << "Totals: " << total_data << " " << total_mc << std::endl;
   }
 
   //if (total_data != total_mc) {
