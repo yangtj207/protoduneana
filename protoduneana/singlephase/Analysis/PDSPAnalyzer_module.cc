@@ -29,6 +29,7 @@
 #include "lardataobj/AnalysisBase/T0.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
+#include "larcore/CoreUtils/ServiceUtil.h"
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 

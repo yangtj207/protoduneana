@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+
 #include "ProtoDUNEDPCRPGeo.h"
 
 using std::string;
