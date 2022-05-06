@@ -249,22 +249,26 @@ void protoana::ThinSliceDataSet::GenerateStatFluctuation() {
 
 void protoana::ThinSliceDataSet::FillHistsFromSamples(
     const std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
-    double & flux) {
+    double & flux, std::vector<double> & fluxes_by_beam) {
 
   flux = 0.;
   for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
     it->second->Reset();
   }
 
+  int a = 0;
   for (auto it = samples.begin(); it != samples.end(); ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
+      if (a == 0) fluxes_by_beam.push_back(0.);
       for (size_t j = 0; j < it->second[i].size(); ++j) {
         const auto & hists = it->second[i][j].GetSelectionHists();
         for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
           fSelectionHists[it2->first]->Add(it2->second);
           flux += it2->second->Integral();
+          fluxes_by_beam[i] += it2->second->Integral();
         }
       }
     }
+    ++a;
   }
 }

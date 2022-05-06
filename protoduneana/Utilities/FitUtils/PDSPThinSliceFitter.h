@@ -67,6 +67,7 @@ class PDSPThinSliceFitter {
   void BuildFakeDataXSecs(bool use_scales = true);
   void BuildDataFromToy();
   double CalcChi2SystTerm(), CalcRegTerm();
+  void GetFixFactors();
   void MakeThrowsTree(TTree & tree, std::vector<double> & branches);
   //void MakeThrowsArrays(std::vector<TVectorD *> & arrays);
 
@@ -76,6 +77,7 @@ class PDSPThinSliceFitter {
   std::map<int, std::vector<std::vector<ThinSliceSample>>> fSamples,
                                                            fFakeSamples;
   ThinSliceDataSet fDataSet;
+  std::map<int, TH1 *> fFixFactorHists;
   std::map<int, bool> fIsSignalSample;
   TFile fMCFile;
   //std::string fMCXSecFileName = "";
@@ -179,6 +181,7 @@ class PDSPThinSliceFitter {
   int fMaxEntries = -1, fMaxDataEntries = -1;
   int fSplitVal = 0;
   bool fFillIncidentInFunction = false;
+  bool fFixSamplesInFunction = false;
   bool fFitUnderOverflow = false;
   bool fGetMeanXSec = false;
   bool fTieUnderOver = false;

@@ -119,7 +119,7 @@ class ThinSliceDataSet {
 
   void FillHistsFromSamples(
       const std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
-      double & flux);
+      double & flux, std::vector<double> & fluxes_by_beam);
 
  private:
   void Rebin1D(TH1 * sel_hist, TH1 * rebinned);
