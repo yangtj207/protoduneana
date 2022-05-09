@@ -22,7 +22,6 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
-#include "larcore/CoreUtils/ServiceUtil.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"

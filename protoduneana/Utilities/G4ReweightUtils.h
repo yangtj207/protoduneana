@@ -2,7 +2,6 @@
 #define G4REWEIGHTUTILS_h
 
 #include <vector>
-#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "geant4reweight/src/ReweightBase/G4ReweightTraj.hh"

@@ -5,7 +5,6 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "art/Framework/Principal/Event.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "dunecore/DuneObj/ProtoDUNEBeamEvent.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
