@@ -22,11 +22,12 @@ make_yz_correction input_run0.txt 2
 ### X calibration
 
 ```
-make_x_correction input_run0.txt 2
+make_x_correction input_run0.txt 2 1
 ```
 
 - The first argument is the input file list created in the first step.
 - The second argument is the ID of the TTree. The number `2` takes the TTree `michelremoving2/Event`, which is after SCE and lifetime calibration.
+- The third argument is the flag for SCE. 1 means SCE on. 0 means SCE off.
 - This should be run after YZ calibration and it takes the YZ calibration root file as an input.
 - This will creates two root files `Xcalo_mich2_r####.root` and `globalmedians_cathanode_r####.root` and three txt files `global_median_{0,1,2}_r####.txt`.
 
