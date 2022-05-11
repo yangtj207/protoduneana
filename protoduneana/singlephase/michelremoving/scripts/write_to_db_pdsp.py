@@ -8,6 +8,7 @@ from argparse import ArgumentParser as ap
 parser = ap()
 
 parser.add_argument( "-p", type=str, help='Path to files', default='./')
+parser.add_argument( "-u", type=str, help='Username', default='tjyang')
 args = parser.parse_args()
 
 #print(ls(args.p))
@@ -25,7 +26,7 @@ for p in all_files:
             print (run)
             if run != "0":
                 data_type = "data"
-            command = "python $CONDB_DIR/bin/write_data.py -h ifdbprod2.fnal.gov -p 5451 -U tjyang -c {} -d {} pdunesp_prod pdunesp.distcorrnorm norm,norm_err".format(p, data_type)
+            command = "python $CONDB_DIR/bin/write_data.py -h ifdbprod2.fnal.gov -p 5451 -U {} -c {} -d {} pdunesp_prod pdunesp.distcorrnorm norm,norm_err".format(args.u, p, data_type)
         else:
             pattern = "\_(.*?)\_"
             run = re.search(pattern,p).group(1)
@@ -33,8 +34,8 @@ for p in all_files:
             if run != "0":
                 data_type = "data"
             if 'xcorr' in p:
-                command = "python $CONDB_DIR/bin/write_data.py -h ifdbprod2.fnal.gov -p 5451 -U tjyang -c {} -d {} pdunesp_prod pdunesp.distcorrx x,dx,shape,shape_err".format(p, data_type)
+                command = "python $CONDB_DIR/bin/write_data.py -h ifdbprod2.fnal.gov -p 5451 -U {} -c {} -d {} pdunesp_prod pdunesp.distcorrx x,dx,shape,shape_err".format(args.u, p, data_type)
             elif 'yzcorr' in p:
-                command = "python $CONDB_DIR/bin/write_data.py -h ifdbprod2.fnal.gov -p 5451 -U tjyang -c {} -d {} pdunesp_prod pdunesp.distcorryz y,dy,z,dz,corr,corr_err".format(p, data_type)
+                command = "python $CONDB_DIR/bin/write_data.py -h ifdbprod2.fnal.gov -p 5451 -U {} -c {} -d {} pdunesp_prod pdunesp.distcorryz y,dy,z,dz,corr,corr_err".format(args.u, p, data_type)
         print (command)
         os.system(command)
