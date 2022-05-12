@@ -34,7 +34,9 @@ protoana::AbsCexDriver::AbsCexDriver(
       fOneBinSelections(extra_options.get<std::vector<int>>("OneBinSelections", {})),
       fBeamInstPScale(extra_options.get<double>("BeamInstPScale", 1.)),
       fRestrictBeamInstP(extra_options.get<bool>("RestrictBeamInstP", false)),
-      fDebugRestrictBeamP(extra_options.get<bool>("DebugRestrictBeamP", false)) {
+      fDebugRestrictBeamP(extra_options.get<bool>("DebugRestrictBeamP", false)),
+      fVaryDataCalibration(extra_options.get<bool>("VaryDataCalibration", false)),
+      fDataCalibrationFactor(extra_options.get<double>("DataCalibrationFactor", 1.)) {
   if (fSliceMethod == "Alt") {
     fIn = new TFile("end_slices.root", "OPEN");
     fEndSlices = (TH2D*)fIn->Get("h2D")->Clone();
@@ -252,6 +254,26 @@ void protoana::AbsCexDriver::FillMCEvents(
                                   (*g4rw_full_grid_proton_weights)[0]);
     events.back().MakeG4RWCoeff("g4rw_full_grid_proton_coeffs",
                                 (*g4rw_full_grid_proton_coeffs)[0]);
+
+    bool found_start = false;
+    for (size_t j = 1; j < true_beam_traj_Z->size(); ++j) {
+      //std::cout << std::setprecision(20) << (*true_beam_traj_Z)[j-1] << " " <<
+      //             (*true_beam_traj_Z)[j] << " " << (*true_beam_traj_Z)[j+1] <<
+      //             std::endl;
+       
+      if ((*true_beam_traj_Z)[j] < fTrajZStart) continue;
+
+      double delta = (*true_beam_traj_KE)[0] - (*true_beam_traj_KE)[j];
+      events.back().SetDeltaEToTPC(delta);
+      //std::cout << "\tSetting: " << fTrajZStart << " " <<
+      //             (*true_beam_traj_Z)[j] << " " << delta << std::endl;
+      found_start = true;
+      break;
+    }
+    if (!found_start) {
+      //std::cout << "Not found " << events.back().GetSampleID() << std::endl;
+      events.back().SetDeltaEToTPC(-999.);
+    }
   }
 
   if (do_fake_data) {
@@ -318,6 +340,17 @@ void protoana::AbsCexDriver::FillMCEvents(
                                     (*g4rw_full_grid_proton_weights)[0]);
       fake_data_events.back().MakeG4RWCoeff("g4rw_full_grid_proton_coeffs",
                                             (*g4rw_full_grid_proton_coeffs)[0]);
+      bool found_start = false;
+      for (size_t j = 1; j < true_beam_traj_Z->size(); ++j) {
+        if ((*true_beam_traj_Z)[j-1] < fTrajZStart &&
+            fTrajZStart < (*true_beam_traj_Z)[j+1]) {
+          double delta = (*true_beam_traj_KE)[0] - (*true_beam_traj_KE)[j];
+          fake_data_events.back().SetDeltaEToTPC(delta);
+          found_start = true;
+          break;
+        }
+      }
+      if (!found_start) fake_data_events.back().SetDeltaEToTPC(-999.);
     }
   }
 
@@ -505,7 +538,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
     const std::map<int, double> & flux_pars,
     const std::map<std::string, ThinSliceSystematic> & syst_pars,
     bool fit_under_over, bool tie_under_over, bool use_beam_inst_P,
-    bool fill_incident) {
+    bool fill_incident, std::map<int, TH1 *> * fix_factors) {
 
   //Reset all samples
   for (auto it = samples.begin(); it != samples.end(); ++it) {
@@ -719,12 +752,16 @@ void protoana::AbsCexDriver::RefillMCSamples(
       int bin = selected_hist->FindBin(val[0]);
       TSpline3 * spline
           = fFullSelectionSplines["dEdX_Cal_Spline"][new_selection][bin-1];
+      //TF1 * spline
+      //    = fFullSelectionFuncs["dEdX_Cal_Spline"][new_selection][bin-1];
       weight *= spline->Eval(syst_pars.at("dEdX_Cal_Spline").GetValue());
       if (weight < 0.) {
         std::cout << syst_pars.at("dEdX_Cal_Spline").GetValue() <<
                      " " <<
                      spline->Eval(syst_pars.at("dEdX_Cal_Spline").GetValue()) <<
                      std::endl;
+        std::string message = "negative dedx cal weight";
+        throw std::runtime_error(message);
       }
     }
     if (weight < 0.) {
@@ -804,11 +841,28 @@ void protoana::AbsCexDriver::RefillMCSamples(
         (!fInclusive ? 6 : 4));
     weight *= fSystematics->GetSystWeight_UpstreamInt(
         event, syst_pars, (!fInclusive ? 4 : 2));
+    weight *= fSystematics->GetSystWeight_BGPions(
+        event, syst_pars, (!fInclusive ? 6 : 4), (!fInclusive ? 7 : 5));
     weight *= fSystematics->GetSystWeight_BeamMatch(
         event, syst_pars, (!fInclusive ? 4 : 2), (!fInclusive ? 6 : 4));
     weight *= fSystematics->GetSystWeight_BoxBeam(
         event, syst_pars, (!fInclusive? 5 : 3));
+    if (weight < 0.) {
+      std::cout << "Weight negative before eloss " << weight << std::endl;
+    }
+    weight *= fSystematics->GetSystWeight_ELoss(
+        event, syst_pars, (!fInclusive? 4 : 2));
+    if (weight < 0.) {
+      std::cout << "Weight negative after eloss " << weight << std::endl;
+    }
+    weight *= fSystematics->GetSystWeight_ELossMuon(
+        event, syst_pars, (!fInclusive? 4 : 2));
     //weight *= fSystematics->GetSystWeight_G4RWCoeff(event, syst_pars);
+
+    if (fix_factors != 0x0) {
+      int bin = fix_factors->at(new_selection)->FindBin(val[0]);
+      weight *= fix_factors->at(new_selection)->GetBinContent(bin);
+    }
 
     this_sample->FillSelectionHist(new_selection, val, weight);
 
@@ -2229,6 +2283,10 @@ void protoana::AbsCexDriver::SetupSyst_dEdX_Cal(
     }
     
     fFullSelectionSplines["dEdX_Cal_Spline"][selection_ID] = std::vector<TSpline3*>();
+    //fFullSelectionFuncs["dEdX_Cal_Spline"][selection_ID] = std::vector<TF1*>();
+    //std::string form;
+    //for (size_t i = 0; i < 25; ++i) {form += "[" + std::to_string(i) + "]*x^" + std::to_string(i) + " + ";}
+    //form += "[25]*x^25";
     for (int i = 1; i <= full_hists[selection_ID]->GetNbinsX(); ++i) {
       std::vector<double> vals;
       for (size_t j = 0; j < it->second.size(); ++j) {
@@ -2246,6 +2304,16 @@ void protoana::AbsCexDriver::SetupSyst_dEdX_Cal(
       fFullSelectionSplines["dEdX_Cal_Spline"][selection_ID].back()->Draw("P");
       c.Write();
       fFullSelectionSplines["dEdX_Cal_Spline"][selection_ID].back()->Write(spline_name.c_str());
+
+
+      //TGraph gr(vals.size(), &C_cal_vars[0], &vals[0]);
+      //TF1 * f = new TF1(("f" + spline_name).c_str(), form.c_str(), vals[0], vals.back());
+      //gr.Fit("pol9", "Q");
+      //gr.Fit(("f" + spline_name).c_str());
+      //fFullSelectionFuncs["dEdX_Cal_Spline"][selection_ID]
+      //    .push_back((TF1*)gr.GetFunction(("f" + spline_name).c_str()));
+      //fFullSelectionFuncs["dEdX_Cal_Spline"][selection_ID]
+      //    .back()->Write(("f" + spline_name).c_str());
     }
   }
 }
@@ -2725,8 +2793,16 @@ void protoana::AbsCexDriver::BuildDataHists(
             for (size_t k = 1; k < reco_beam_incidentEnergies->size(); ++k) {
               double deltaE = ((*reco_beam_incidentEnergies)[k-1] -
                                (*reco_beam_incidentEnergies)[k]);
-              if (deltaE > fEnergyFix) {
-                energy += deltaE; 
+              if (fVaryDataCalibration) {
+                energy += deltaE;
+                if (deltaE*fDataCalibrationFactor < fEnergyFix) {
+                  energy -= deltaE*fDataCalibrationFactor;
+                }
+              }
+              else {
+                if (deltaE > fEnergyFix) {
+                  energy += deltaE; 
+                }
               }
             }
           }
@@ -2763,7 +2839,8 @@ void protoana::AbsCexDriver::BuildFakeData(
     ThinSliceDataSet & data_set, double & flux,
     std::map<int, std::vector<double>> & sample_scales,
     std::vector<double> & beam_energy_bins,
-    int split_val) {
+    std::vector<double> & beam_fluxes,
+    int split_val, bool scale_to_data_beam_p) {
   std::string routine = fExtraOptions.get<std::string>("FakeDataRoutine");
   if (routine == "SampleScales") {
     FakeDataSampleScales(events, samples, signal_sample_checks, data_set, flux,
@@ -2801,6 +2878,12 @@ void protoana::AbsCexDriver::BuildFakeData(
   else if (routine == "BeamWeight") {
     FakeDataBeamWeight(events, samples, signal_sample_checks, data_set, flux,
                       sample_scales, split_val);
+  }
+  else if (routine == "BeamScale") {
+    std::cout << "Beam scale" << std::endl;
+    FakeDataBeamScale(events, samples, signal_sample_checks, data_set, flux,
+                      beam_energy_bins, beam_fluxes,
+                      sample_scales, split_val, scale_to_data_beam_p);
   }
 }
 
@@ -4689,6 +4772,210 @@ void protoana::AbsCexDriver::FakeDataLowP(
   }
 }
 
+void protoana::AbsCexDriver::FakeDataBeamScale(
+    const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    const std::map<int, bool> & signal_sample_checks,
+    ThinSliceDataSet & data_set, double & flux,
+    const std::vector<double> & beam_energy_bins,
+    std::vector<double> & beam_fluxes,
+    std::map<int, std::vector<double>> & sample_scales, int split_val,
+    bool norm_to_data_beam_P) {
+
+  //Build the map for fake data scales
+  fhicl::ParameterSet options 
+      = fExtraOptions.get<fhicl::ParameterSet>("FakeDataBeamScale");
+
+  std::vector<double> variations = options.get<std::vector<double>>("Scales");
+  for (const auto & v: variations) std::cout << v << " ";
+  std::cout << std::endl;
+  std::vector<double> bin_edges = options.get<std::vector<double>>("Bins");
+  for (size_t i = 0; i < beam_energy_bins.size()-1; ++i) {beam_fluxes.push_back(0.);}
+
+  TH1D & incident_hist = data_set.GetIncidentHist();
+  std::map<int, TH1 *> & selected_hists = data_set.GetSelectionHists();
+
+  double new_flux = 0.;
+  flux = events.size();
+  
+
+  std::map<int, std::vector<double>> nominal_samples;
+  for (auto it = sample_scales.begin(); it != sample_scales.end(); ++it) {
+    nominal_samples[it->first] = std::vector<double>(it->second.size(), 0.);
+  }
+
+  std::vector<double> all_scales;
+  for (size_t i = 0; i < events.size(); ++i) {
+    const ThinSliceEvent & event = events.at(i);
+
+    int sample_ID = event.GetSampleID();
+    int selection_ID = event.GetSelectionID();
+    double true_beam_interactingEnergy = event.GetTrueInteractingEnergy();
+    double reco_beam_interactingEnergy = event.GetRecoInteractingEnergy();
+    double true_beam_endP = event.GetTrueEndP();
+    //const std::vector<double> & true_beam_daughter_startP
+    //    = event.GetTrueDaughterStartPs();
+    const std::vector<double> & reco_beam_incidentEnergies
+        = event.GetRecoIncidentEnergies();
+    double reco_beam_endZ = event.GetRecoEndZ();
+    //const std::vector<int> & true_beam_daughter_PDG
+    //    = event.GetTrueDaughterPDGs();
+    const std::vector<double> & true_beam_traj_Z = event.GetTrueTrajZ();
+    const std::vector<double> & true_beam_traj_KE = event.GetTrueTrajKE();
+    const std::vector<int>    & true_beam_slices = event.GetTrueSlices();
+    const std::vector<double> & true_beam_incidentEnergies
+        = event.GetTrueIncidentEnergies();
+
+    if (samples.find(sample_ID) == samples.end())
+      continue;
+
+    double end_energy = true_beam_interactingEnergy;
+    if (fSliceMethod == "Traj") {
+      end_energy = sqrt(true_beam_endP*true_beam_endP*1.e6 + 139.57*139.57) - 139.57;
+    }
+    else if (fSliceMethod == "E") {
+      end_energy = sqrt(true_beam_endP*true_beam_endP*1.e6 + 139.57*139.57) - 139.57;
+    }
+    else if (fSliceMethod == "Alt") {
+      int bin = fEndSlices->GetXaxis()->FindBin(true_beam_traj_Z.back());
+      if (bin > 0) {
+        end_energy = fMeans.at(bin);
+      }
+    }
+
+    double beam_P = event.GetBeamInstP();
+    int scale_bin = GetBeamBin(bin_edges, beam_P);
+    //std::cout << beam_P*1.e3 << " " << scale_bin << std::endl;
+    double scale = variations[scale_bin];
+
+    bool is_signal = signal_sample_checks.at(sample_ID);
+    ThinSliceSample * this_sample = 0x0;
+    if (is_signal) {
+      std::vector<ThinSliceSample> & samples_vec = samples[sample_ID][0];
+      //Get the samples vec from the first beam energy bin
+      bool found = false;
+      for (size_t j = 1; j < samples_vec.size()-1; ++j) {
+        ThinSliceSample & sample = samples_vec.at(j);
+        if (sample.CheckInSignalRange(end_energy)) {
+
+          all_scales.push_back(scale);
+          found = true;
+          sample_scales[sample_ID][j] += scale;
+          nominal_samples[sample_ID][j] += 1.;
+          this_sample = &sample;
+          break;
+        }
+      }
+      if (!found) {
+        if (end_energy < samples_vec[1].RangeLowEnd()) {
+
+          all_scales.push_back(scale);
+          sample_scales[sample_ID][0] += scale;
+          nominal_samples[sample_ID][0] += 1.;
+          this_sample = &samples_vec[0];
+        }
+        else {
+          all_scales.push_back(scale);
+          this_sample = &samples_vec.back();
+          sample_scales[sample_ID].back() += scale;
+          nominal_samples[sample_ID].back() += 1.;
+        }
+      }
+    }
+    else {
+      this_sample = &samples[sample_ID][0][0];
+      sample_scales[sample_ID][0] += scale;
+      nominal_samples[sample_ID][0] += 1.;
+    }
+
+    new_flux += scale; //1 or scaled
+    double val = 0.;
+    if (selection_ID == 4) {
+      if (selected_hists[selection_ID]->FindBin(reco_beam_endZ) == 0) {
+        val = selected_hists[selection_ID]->GetBinCenter(1);
+      }
+      else if (selected_hists[selection_ID]->FindBin(reco_beam_endZ) >
+               selected_hists[selection_ID]->GetNbinsX()) {
+        val = selected_hists[selection_ID]->GetBinCenter(
+            selected_hists[selection_ID]->GetNbinsX());
+      }
+      else {
+        val = reco_beam_endZ;
+      }
+    }
+    else if (selection_ID > 4) {
+      val = .5;
+    }
+    else if (reco_beam_incidentEnergies.size()) {
+      for (size_t j = 0; j < reco_beam_incidentEnergies.size(); ++j) {
+        incident_hist.Fill(reco_beam_incidentEnergies[j]);
+      }
+      if (selected_hists.find(selection_ID) != selected_hists.end()) {
+        //if (selection_ID != 4 && selection_ID != 5 && selection_ID != 6) {
+        if (selection_ID < 4) {
+          double energy = reco_beam_interactingEnergy;
+          if (fDoEnergyFix) {
+            for (size_t k = 1; k < reco_beam_incidentEnergies.size(); ++k) {
+              double deltaE = (reco_beam_incidentEnergies[k-1] -
+                               reco_beam_incidentEnergies[k]);
+              if (deltaE > fEnergyFix) {
+                energy += deltaE; 
+              }
+            }
+          }
+          if (selected_hists[selection_ID]->FindBin(energy) == 0) {
+            val = selected_hists[selection_ID]->GetBinCenter(1);
+          }
+          else if (selected_hists[selection_ID]->FindBin(energy) >
+                   selected_hists[selection_ID]->GetNbinsX()) {
+            val = selected_hists[selection_ID]->GetBinCenter(
+                selected_hists[selection_ID]->GetNbinsX());
+          }
+          else {
+            val = energy;
+          }
+        }
+      }
+    }
+    else {
+      val = selected_hists[selection_ID]->GetBinCenter(1);
+    }
+
+    selected_hists[selection_ID]->Fill(val, scale);
+    this_sample->AddVariedFlux(scale);
+    std::vector<double> good_true_incEnergies = MakeTrueIncidentEnergies(
+        true_beam_traj_Z, true_beam_traj_KE, true_beam_slices,
+        true_beam_incidentEnergies);
+    this_sample->AddIncidentEnergies(good_true_incEnergies, scale);
+    if (norm_to_data_beam_P) {
+      beam_fluxes[GetBeamBin(beam_energy_bins, beam_P)] += scale;
+    }
+  }
+
+  double mean = 0.;
+  for (auto s : all_scales) mean += s;
+  mean /= all_scales.size();
+  std::cout << "Mean scale: " << mean << std::endl;
+
+  if (!norm_to_data_beam_P) {
+    for (auto it = sample_scales.begin(); it != sample_scales.end(); ++it) {
+      for (size_t i = 0; i < it->second.size(); ++i) {
+        if (it->second[i] > 0.) {
+          it->second[i] /= nominal_samples[it->first][i];
+        }
+        else {
+          it->second[i] = 1.;
+        }
+        it->second[i] *= (flux/new_flux);
+      }
+    }
+
+    incident_hist.Scale(flux/new_flux);
+    for (auto it = selected_hists.begin(); it != selected_hists.end(); ++it) {
+      it->second->Scale(flux/new_flux);
+    }
+  }
+}
 
 std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -4764,10 +5051,10 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
       }
 
 
-      double sigma_squared = (mc_val > 1.e-7 ? mc_sumw2/(mc_val*mc_val) : 1.);
-      double beta = .5*((1. - mc_val*sigma_squared) +
-                        sqrt(std::pow((1. - mc_val*sigma_squared), 2) +
-                             4.*data_val*sigma_squared));
+      //double sigma_squared = (mc_val > 1.e-7 ? mc_sumw2/(mc_val*mc_val) : 1.);
+      //double beta = .5*((1. - mc_val*sigma_squared) +
+      //                  sqrt(std::pow((1. - mc_val*sigma_squared), 2) +
+      //                       4.*data_val*sigma_squared));
 
       /// Skip any bins with data == 0
       //
@@ -4775,9 +5062,12 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
       //https://pdg.lbl.gov/2018/reviews/rpp2018-rev-statistics.pdf
       //Page 6
       //
+      //std::cout << mc_val << " " << data_val << " " << 2*data_val*std::log(data_val/mc_val) << std::endl;
       if (data_val > 1.e-7)
-        chi2 += 2*data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.))) +
-                  (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.);
+        chi2 += 2*data_val*std::log(data_val/mc_val)/* +
+                  (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.)*/;
+        //chi2 += 2*data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.))) +
+        //          (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.);
 
      // std::cout << sigma_squared << " " << mc_val << " " << data_val << " " <<
      //              beta << " " << 2*data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.))) <<
@@ -4793,6 +5083,7 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
     }
     //std::cout << "Totals: " << total_data << " " << total_mc << std::endl;
   }
+  //std::cout << std::endl;
 
   //if (total_data != total_mc) {
   //  std::cout << "WARNING: data does not match mc " << total_data << " " << total_mc << std::endl;
@@ -5647,3 +5938,4 @@ int protoana::AbsCexDriver::GetBeamBin(
   }
   return bin;
 }
+

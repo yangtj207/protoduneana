@@ -9,6 +9,7 @@
 #include "TGraph.h"
 #include "TRandom3.h"
 #include <map>
+#include "TF1.h"
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
 #include "PDSPSystematics.h"
 
@@ -36,7 +37,8 @@ class AbsCexDriver : public ThinSliceDriver {
     ThinSliceDataSet & data_set, double & flux,
     std::map<int, std::vector<double>> & sample_scales,
     std::vector<double> & beam_energy_bins,
-    int split_val = 0) override;
+    std::vector<double> & beam_fluxes,
+    int split_val = 0, bool scale_to_data_beam_p = false) override;
   void FakeDataSampleScales(
     const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -104,6 +106,14 @@ class AbsCexDriver : public ThinSliceDriver {
     ThinSliceDataSet & data_set, double & flux,
     std::map<int, std::vector<double>> & sample_scales,
     int split_val = 0);
+  void FakeDataBeamScale(
+    const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    const std::map<int, bool> & signal_sample_checks,
+    ThinSliceDataSet & data_set, double & flux,
+    const std::vector<double> & beam_energy_bins, std::vector<double> & beam_fluxes,
+    std::map<int, std::vector<double>> & sample_scales, int split_val = 0,
+    bool norm_to_data_beam_P = false);
   void BuildMCSamples(
       //TTree * tree,
       const std::vector<ThinSliceEvent> & events,
@@ -123,8 +133,8 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
       bool fit_under_over, bool tie_under_over,
-      bool use_beam_inst_P,
-      bool fill_incident = false) override;
+      bool use_beam_inst_P, bool fill_incident = false,
+      std::map<int, TH1*> * fix_factors = 0x0) override;
 
   /*void BuildSystSamples(
       TTree * tree,
@@ -345,6 +355,7 @@ class AbsCexDriver : public ThinSliceDriver {
 
    std::map<std::string, std::map<int, std::vector<TH1D*>>> fFullSelectionVars;
    std::map<std::string, std::map<int, std::vector<TSpline3*>>> fFullSelectionSplines;
+   std::map<std::string, std::map<int, std::vector<TF1*>>> fFullSelectionFuncs;
 
    std::map<std::string, std::map<int, std::vector<TH1D*>>> fG4RWSelectionVarsPlus;
    std::map<std::string, std::map<int, std::vector<TH1D*>>> fG4RWSelectionVarsMinus;
@@ -381,6 +392,8 @@ class AbsCexDriver : public ThinSliceDriver {
    std::vector<int> fERecoSelections, fEndZSelections, fOneBinSelections;
    double fBeamInstPScale;
    bool fRestrictBeamInstP, fDebugRestrictBeamP;
+   bool fVaryDataCalibration;
+   double fDataCalibrationFactor;
    bool fBarlowBeeston;
 };
 }

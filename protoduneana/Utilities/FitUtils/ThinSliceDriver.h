@@ -40,7 +40,8 @@ class ThinSliceDriver {
     ThinSliceDataSet & data_set, double & flux,
     std::map<int, std::vector<double>> & sample_scales,
     std::vector<double> & beam_energy_bins,
-    int split_val = 0) = 0;
+    std::vector<double> & beam_fluxes,
+    int split_val = 0, bool scale_to_data_beam_p = false) = 0;
 
   virtual void BuildMCSamples(
       //TTree * tree,
@@ -59,7 +60,8 @@ class ThinSliceDriver {
       const std::map<int, std::vector<double>> & signal_pars,
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
-      bool fit_under_over, bool tie_under_over, bool use_beam_inst_P, bool fill_incident = false) = 0;
+      bool fit_under_over, bool tie_under_over, bool use_beam_inst_P,
+      bool fill_incident = false, std::map<int, TH1*> * fix_factors = 0x0) = 0;
 
   /*
   virtual void BuildSystSamples(

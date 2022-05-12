@@ -29,6 +29,7 @@
 #include "lardataobj/AnalysisBase/T0.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
+#include "larcore/CoreUtils/ServiceUtil.h"
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
@@ -801,7 +802,8 @@ private:
 
   std::vector<std::vector<double>> g4rw_full_grid_weights,
                                    g4rw_full_grid_coeffs;
-  std::vector<std::vector<double>> g4rw_primary_grid_weights;
+  std::vector<std::vector<double>> g4rw_primary_grid_weights,
+                                   g4rw_primary_grid_coeffs;
   std::vector<double> g4rw_primary_grid_pair_weights;
 
   std::vector<std::vector<double>> g4rw_full_grid_piplus_weights,
@@ -1614,6 +1616,36 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       g4rw_downstream_grid_piplus_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_downstream_grid_piplus_coeffs.back());
     }
+
+
+    std::cout << "Making trajs " << std::endl;
+    std::vector<G4ReweightTraj *> trajs = CreateNRWTrajs(
+        *true_beam_particle, plist,
+        fGeometryService, event);
+    std::cout << trajs.size() << std::endl;
+
+    std::vector<std::vector<G4ReweightTraj *>> temp_hierarchy = {trajs};
+    G4MultiReweighter * primary_rw = 0x0;
+    if (true_beam_PDG == 211) {
+      primary_rw = MultiRW;
+    }
+    else if (true_beam_PDG == 2212) {
+      primary_rw = ProtMultiRW;
+    }
+    else if (true_beam_PDG == 321) {
+      primary_rw = KPlusMultiRW;
+    }
+
+    G4RWGridWeights(
+        temp_hierarchy, (true_beam_PDG == 211 ? ParSet : ProtParSet),
+        g4rw_primary_grid_weights, primary_rw);
+    std::cout << "Weights; " << g4rw_primary_grid_weights.size() << std::endl;
+    for (auto weights : g4rw_primary_grid_weights) {
+      g4rw_primary_grid_coeffs.push_back(std::vector<double>());
+      GetG4RWCoeffs(weights, g4rw_primary_grid_coeffs.back());
+    }
+
+
   }
 
   fTree->Fill();
@@ -2160,6 +2192,7 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("g4rw_full_grid_kplus_weights",  &g4rw_full_grid_kplus_weights);
   fTree->Branch("g4rw_full_grid_kplus_coeffs", &g4rw_full_grid_kplus_coeffs);
   fTree->Branch("g4rw_primary_grid_weights", &g4rw_primary_grid_weights);
+  fTree->Branch("g4rw_primary_grid_coeffs", &g4rw_primary_grid_coeffs);
   fTree->Branch("g4rw_primary_grid_pair_weights", &g4rw_primary_grid_pair_weights);
 
   if( fSaveHits ){
@@ -2743,6 +2776,7 @@ void pduneana::PDSPAnalyzer::reset()
   g4rw_full_grid_kplus_weights.clear();
   g4rw_full_grid_kplus_coeffs.clear();
   g4rw_primary_grid_weights.clear();
+  g4rw_primary_grid_coeffs.clear();
   g4rw_primary_grid_pair_weights.clear();
 }
 

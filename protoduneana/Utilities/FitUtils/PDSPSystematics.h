@@ -60,6 +60,11 @@ class PDSPSystematics {
       const std::map<std::string, ThinSliceSystematic> & pars,
       int upstream_ID);
 
+  double GetSystWeight_BGPions(
+      const ThinSliceEvent & event,
+      const std::map<std::string, ThinSliceSystematic> & pars,
+      int past_FV_ID, int decay_ID);
+
   void SetupSyst_BoxBeam(
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_BoxBeam(
@@ -72,6 +77,21 @@ class PDSPSystematics {
   double GetSystWeight_TrueBeamShift(
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
+
+  void SetupSyst_ELoss(
+    const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_ELoss(
+    const ThinSliceEvent & event,
+    const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID);
+
+  void SetupSyst_ELossMuon(
+    const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_ELossMuon(
+    const ThinSliceEvent & event,
+    const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID);
+
+  double CheckAndReturn(double weight, std::string name);
+
  private:
   //G4RW Coeff
   std::map<std::string, std::string> fG4RWCoeffBranches;
@@ -99,6 +119,12 @@ class PDSPSystematics {
   //TrueBeamShift
   std::vector<double> fTrueBeamBins;
   std::vector<TSpline3 *> fTrueBeamSplines;
+
+  //ELoss
+  double fELossCut;
+  std::map<int, double> fELossFractions;
+  double fELossMuonCut;
+  std::map<int, double> fELossMuonFractions;
 };
 }
 #endif

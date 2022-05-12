@@ -15,6 +15,8 @@ protoana::PDSPSystematics::PDSPSystematics(
   SetupSyst_EndZNoTrackWeight(pars);
   SetupSyst_BeamMatch(pars);
   SetupSyst_BoxBeam(pars);
+  SetupSyst_ELoss(pars);
+  SetupSyst_ELossMuon(pars);
 
 }
 
@@ -47,7 +49,8 @@ double protoana::PDSPSystematics::GetSystWeight_G4RWCoeff(
     //             event.GetRunID() << " " <<
     //             pars.at(it->first).GetValue() << " " << weight << std::endl;
   }
-  return weight;
+  //return weight;
+  return CheckAndReturn(weight, "G4RWCoeff");
 }
 
 void protoana::PDSPSystematics::SetupSyst_BeamShift(
@@ -121,7 +124,8 @@ double protoana::PDSPSystematics::GetSystWeight_BeamShift(
     fSystBeamShiftR = y_val;
     fSystBeamShiftTree->Fill();
   }*/
-  return weight;
+  //return weight;
+  return CheckAndReturn(weight, "BeamShift");
 }
 
 void protoana::PDSPSystematics::SetupSyst_EDivWeight(
@@ -154,7 +158,8 @@ double protoana::PDSPSystematics::GetSystWeight_EDiv(
     weight = (1. - var*fEDivF)/(1. - fEDivF);
   }
 
-  return weight;
+  //return weight;
+  return CheckAndReturn(weight, "EDivWeight");
 }
 
 void protoana::PDSPSystematics::SetupSyst_EndZNoTrackWeight(
@@ -166,6 +171,14 @@ void protoana::PDSPSystematics::SetupSyst_EndZNoTrackWeight(
         = pars.at("end_z_no_track_weight").GetOption
             <std::vector<std::pair<int, std::vector<double>>>>("Fractions");
     fEndZFractions = std::map<int, std::vector<double>>(temp.begin(), temp.end());
+    std::cout << "EndZ Fracs" << std::endl;
+    for (auto it = fEndZFractions.begin(); it != fEndZFractions.end(); ++it) {
+      std::cout << it->first << " ";
+      for (const auto & f : it->second) {
+        std::cout << f << " "; 
+      }
+      std::cout << std::endl;
+    }
 
   }
 }
@@ -191,8 +204,27 @@ double protoana::PDSPSystematics::GetSystWeight_EndZNoTrack(
                      fEndZFractions[event.GetSampleID()][signal_index] :
                      fEndZFractions[event.GetSampleID()].back());
 
-  return (event.GetSelectionID() == no_track_ID ? variation :
+  if (fraction < 0.) {
+    //std::cout << "neg fraction: " << fraction << std::endl;
+    return 1.;
+  }
+
+  double weight = 
+  /*return*/ (event.GetSelectionID() == no_track_ID ? variation :
           (1. - variation*fraction)/(1. - fraction));
+  //for (auto it = fEndZFractions.begin(); it != fEndZFractions.end(); ++it) {
+  //  std::cout << it->first << " ";
+  //  for (const auto & f : it->second) {
+  //    std::cout << f << " "; 
+  //  }
+  //  std::cout << std::endl;
+  //}
+  if (weight < 0.) {
+    std::cout << event.GetSelectionID() << " " << event.GetSampleID() << " " <<
+                 signal_index << " " << variation << " " <<
+                 fraction << std::endl;
+  }
+  return CheckAndReturn(weight, "EndZNoTrack");
 
   //return pars.at("end_z_no_track_weight").GetValue();
 }
@@ -247,7 +279,11 @@ double protoana::PDSPSystematics::GetSystWeight_BeamMatch(
   }
 
   double fraction = fBeamMatchFractions[bin];
-  return (matched ? variation : (1. - variation*fraction)/(1. - fraction));
+  //return (matched ? variation : (1. - variation*fraction)/(1. - fraction));
+  double weight = (matched ?
+                   variation : (1. - variation*fraction)/(1. - fraction));
+  //return (matched ? variation : (1. - variation*fraction)/(1. - fraction));
+  return CheckAndReturn(weight, "BeamMatch");
 }
 
 double protoana::PDSPSystematics::GetSystWeight_UpstreamInt(
@@ -259,6 +295,20 @@ double protoana::PDSPSystematics::GetSystWeight_UpstreamInt(
 
   return ((event.GetSampleID() == upstream_ID) ?
           pars.at("upstream_int_weight").GetValue() :
+          1.);
+}
+
+double protoana::PDSPSystematics::GetSystWeight_BGPions(
+    const ThinSliceEvent & event,
+    const std::map<std::string, ThinSliceSystematic> & pars,
+    int past_FV_ID, int decay_ID) {
+  if (pars.find("BG_pions_weight") == pars.end())
+    return 1.;
+
+  bool match = (event.GetSampleID() == past_FV_ID ||
+                event.GetSampleID() == decay_ID);
+  return (match ?
+          pars.at("BG_pions_weight").GetValue() :
           1.);
 }
 
@@ -292,9 +342,10 @@ double protoana::PDSPSystematics::GetSystWeight_BoxBeam(
   }
 
   double variation = pars.at("box_beam_weight").GetValue();
-  return (near_box_beam ? variation :
-          (1. - variation*fBoxBeamFraction)/(1. - fBoxBeamFraction));
-  //return (near_box_beam ? variation : 1.);
+ // std::cout << "near/var: " << near_box_beam << "/" << variation << std::endl;
+  //return (near_box_beam ? variation :
+  //        (1. - variation*fBoxBeamFraction)/(1. - fBoxBeamFraction));
+  return (near_box_beam ? variation : 1.);
 }
 
 void protoana::PDSPSystematics::SetupSyst_TrueBeamShift(
@@ -329,4 +380,62 @@ double protoana::PDSPSystematics::GetSystWeight_TrueBeamShift(
 
   TSpline3 * spline = fTrueBeamSplines[bin];
   return spline->Eval(pars.at("true_beam_shift").GetValue());
+}
+
+double protoana::PDSPSystematics::GetSystWeight_ELoss(
+    const ThinSliceEvent & event,
+    const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID) {
+  if (pars.find("eloss_weight") == pars.end()) return 1.;
+  if (event.GetSampleID() == upstream_ID) return 1.;
+  if (abs(event.GetPDG()) == 13) return 1.;
+
+  double var = pars.at("eloss_weight").GetValue();
+  double frac = fELossFractions[event.GetSampleID()];
+
+  //return ((event.GetDeltaEToTPC() > fELossCut) ?
+  //        var : (1. - var*frac)/(1. - frac));
+  double weight = ((event.GetDeltaEToTPC() > fELossCut) ?
+                   var : (1. - var*frac)/(1. - frac));
+  return CheckAndReturn(weight, "ELoss");
+}
+
+void protoana::PDSPSystematics::SetupSyst_ELoss(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("eloss_weight") == pars.end()) {return;}
+  fELossCut = pars.at("eloss_weight").GetOption<double>("Cut");
+  auto temp = pars.at("eloss_weight")
+      .GetOption<std::vector<std::pair<int, double>>>("Fractions");
+  fELossFractions = std::map<int, double>(temp.begin(), temp.end());
+}
+
+double protoana::PDSPSystematics::GetSystWeight_ELossMuon(
+    const ThinSliceEvent & event,
+    const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID) {
+  if (pars.find("eloss_muon_weight") == pars.end()) return 1.;
+  if (event.GetSampleID() == upstream_ID) return 1.;
+  if (abs(event.GetPDG()) != 13) return 1.;
+
+  double var = pars.at("eloss_muon_weight").GetValue();
+  double frac = fELossFractions[event.GetSampleID()];
+
+  return ((event.GetDeltaEToTPC() > fELossCut) ?
+          var : (1. - var*frac)/(1. - frac));
+}
+
+void protoana::PDSPSystematics::SetupSyst_ELossMuon(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("eloss_muon_weight") == pars.end()) {return;}
+  fELossMuonCut = pars.at("eloss_muon_weight").GetOption<double>("Cut");
+  auto temp = pars.at("eloss_muon_weight")
+      .GetOption<std::vector<std::pair<int, double>>>("Fractions");
+  fELossMuonFractions = std::map<int, double>(temp.begin(), temp.end());
+}
+
+double protoana::PDSPSystematics::CheckAndReturn(double weight,
+                                                 std::string name) {
+  if (weight < 0.) {
+    std::cout << "Returning negative weight " << weight << " for syst " <<
+                 name << std::endl;
+  }
+  return weight;
 }
