@@ -28,7 +28,7 @@ class ProtoDUNEdEdXFitter {
   void HandScans();
  private:
 
-  double fCcal = 1.e-3;
+  //double fCcal = 1.e-3;
 
   double fDensity;
   double fWion;
