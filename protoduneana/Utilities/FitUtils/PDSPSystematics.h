@@ -125,6 +125,8 @@ class PDSPSystematics {
   std::map<int, double> fELossFractions;
   double fELossMuonCut;
   std::map<int, double> fELossMuonFractions;
+
+  //std::vector<std::string> fActiveSysts;
 };
 }
 #endif

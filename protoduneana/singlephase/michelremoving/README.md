@@ -95,12 +95,21 @@ calculate_calibration_constants output.root
 ### Validate calibration
 
 ```
-validate_calibration ../input_run5387.txt 2 1
+validate_calibration -c data.fcl
 ```
-
-- The first argument is input file list.
-- The second argument is the number of michelremoving tree.
-- The third argument determines whether to reapply dQdx calibration.
+An example fcl file:
+```
+infile: "./input_run5387.txt"
+outfile: "Validate_mich2_r5387.root"
+michelnumber: 2
+recalib: true
+sceon: true
+corr_end: false
+xbins: 144
+xmin: -360
+xmax: 360
+rroffset: [0., 0., 0.]
+```
 
 ### Landau Gaussian fit
 

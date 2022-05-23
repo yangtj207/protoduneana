@@ -1626,6 +1626,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
 
     std::vector<std::vector<G4ReweightTraj *>> temp_hierarchy = {trajs};
     G4MultiReweighter * primary_rw = 0x0;
+    std::cout << true_beam_PDG << std::endl;
     if (true_beam_PDG == 211) {
       primary_rw = MultiRW;
     }
@@ -1635,9 +1636,13 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     else if (true_beam_PDG == 321) {
       primary_rw = KPlusMultiRW;
     }
+    else {
+      primary_rw = MultiRW;
+    }
 
     G4RWGridWeights(
-        temp_hierarchy, (true_beam_PDG == 211 ? ParSet : ProtParSet),
+        temp_hierarchy, ((true_beam_PDG == 211 || true_beam_PDG == -13) ?
+                         ParSet : ProtParSet),
         g4rw_primary_grid_weights, primary_rw);
     std::cout << "Weights; " << g4rw_primary_grid_weights.size() << std::endl;
     for (auto weights : g4rw_primary_grid_weights) {

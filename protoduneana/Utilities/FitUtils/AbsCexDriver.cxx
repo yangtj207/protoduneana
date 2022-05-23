@@ -541,6 +541,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
     bool fill_incident, std::map<int, TH1 *> * fix_factors) {
 
   //Reset all samples
+  //Base class
   for (auto it = samples.begin(); it != samples.end(); ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
       for (size_t j = 0; j < it->second[i].size(); ++j) {
@@ -614,6 +615,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
     //Possibly affected by signal, flux, and syst parameters
     double weight = 1.;
 
+    //Base class
     std::vector<ThinSliceSample> & samples_vec = samples.at(sample_ID)[bin];
     bool is_signal = signal_sample_checks.at(sample_ID);
 
