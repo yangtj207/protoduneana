@@ -5,11 +5,12 @@ UseMT: false
 
 DoReconstructable: false 
 
+
 CheckCalo: true 
 EndZHigh: 222.10561
 EndZLow: -.49375
-Threshold: .0 #.150
-CexNPi0: false #true
+Threshold: .150
+CexNPi0: true
 TrackScoreCut: 0.3
 Limit: 0.16
 
@@ -23,6 +24,13 @@ DoNTracks: false
 
 DoMichel: true
 MichelCut: 0.6
+
+RestrictBeamP: true
+BeamPLow: 750.
+BeamPHigh: 1250.
+
+#DataBeamInstPScale: 1.007
+#DataBeamInstPScale: 0.993
 
 ####Using BI
 MCXLow: -3.
@@ -44,21 +52,33 @@ DataCosLow: .93
 DoAngle: true 
 XYZCut: 3.
 CosCut: 0.95
-MCMeanX: -30.83
-MCMeanY: 422.41
-MCMeanZ: 0.35
-MCSigmaX: 5.13
-MCSigmaY: 4.55
-MCSigmaZ: 0.08
-MCMeanThetaX: 101.00
-MCMeanThetaY: 101.20
-MCMeanThetaZ: 17.87
-DataMeanX: -27.16
-DataMeanY: 424.70
-DataMeanZ: -2.58
-DataSigmaX: 5.00
-DataSigmaY: 4.89
-DataSigmaZ: 0.38
+#MCMeanX: -30.83
+#MCMeanY: 422.41
+#MCMeanZ: 0.35
+#MCSigmaX: 5.13
+#MCSigmaY: 4.55
+#MCSigmaZ: 0.08
+#MCMeanThetaX: 101.00
+#MCMeanThetaY: 101.20
+#MCMeanThetaZ: 17.87
+# 
+   
+MCMeanX: -26.8568
+MCMeanY: 424.566
+MCMeanZ: -2.63 
+MCSigmaX: 5.03615
+MCSigmaY: 4.37875
+MCSigmaZ: 0.367037
+MCMeanThetaX: 101.6
+MCMeanThetaY: 104.04
+MCMeanThetaZ: 18.05
+
+DataMeanX: -26.8568
+DataMeanY: 424.566
+DataMeanZ: -2.63 
+DataSigmaX: 5.03615
+DataSigmaY: 4.37875
+DataSigmaZ: 0.367037
 DataMeanThetaX: 101.6
-DataMeanThetaY: 102.1
-DataMeanThetaZ: 18.90
+DataMeanThetaY: 104.04
+DataMeanThetaZ: 18.05
