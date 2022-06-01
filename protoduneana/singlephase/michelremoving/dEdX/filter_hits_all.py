@@ -1,6 +1,7 @@
 import ROOT as RT
 from array import array
 from argparse import ArgumentParser as ap
+from statistics import median
 from math import sqrt
 parser = ap()
 
@@ -9,7 +10,32 @@ parser.add_argument('-i', type=str, required=True)
 parser.add_argument('-e', type=str, required=True)
 parser.add_argument('-n', type=int, default=100)
 parser.add_argument('--nskip', type=int, default=0)
+parser.add_argument('--ymax', type=float, default=600.)
+parser.add_argument('--zmax', type=float, default=695.)
+parser.add_argument('--ywidth', type=float, default=5.)
+parser.add_argument('--zwidth', type=float, default=5.)
 args = parser.parse_args()
+
+nbins_y = int(args.ymax/args.ywidth)
+nbins_z = int(args.zmax/args.zwidth)
+
+'''
+dqdx_neg = []
+dqdx_pos = []
+all_dqdx_pos = []
+all_dqdx_neg = []
+for i in range(3):
+  dqdx_neg.append([])
+  dqdx_pos.append([])
+  all_dqdx_neg.append([])
+  all_dqdx_pos.append([])
+  for j in range(nbins_z):
+    dqdx_neg[-1].append([])
+    dqdx_pos[-1].append([])
+    for k in range(nbins_y):
+      dqdx_neg[-1][-1].append(RT.vector('double')())
+      dqdx_pos[-1][-1].append(RT.vector('double')())
+'''
 
 
 efield_file = RT.TFile(args.e, 'open')
@@ -84,7 +110,7 @@ spline_range = [0.70437, 1.27937, 2.37894, 4.72636, 7.5788, 22.0917, 30.4441, 48
 spline_ke = [10, 14, 20, 30, 40, 80, 100, 140, 200, 300, 400, 800, 1000]
 ke_spline = RT.TSpline3("Cubic Spline", array('d', spline_range), array('d', spline_ke), 13, "b2e2", 0, 0)
 
-fOut = RT.TFile(args.o, 'recreate')
+fOut = RT.TFile.Open(args.o, 'recreate')
 out_tree = RT.TTree('tree', '')
 corrected_dq_dx = array('d', [0])
 dq_dx = array('d', [0])
@@ -119,6 +145,41 @@ out_tree.Branch('x_corr_filter', x_corr_filter, 'x_corr_filter/I')
 out_tree.Branch('Cx', Cx, 'Cx/I')
 out_tree.Branch('Cyz', Cyz, 'Cyz/I')
 
+#yz_tree = RT.TTree('yz_tree', '')
+yz_trees = [RT.TTree('yz_tree_%i'%i, '') for i in range(3)]
+for yz_tree in yz_trees:
+  yz_tree.Branch('dq_dx', dq_dx, 'dq_dx/D')
+  yz_tree.Branch('hit_plane', hit_plane_out, 'hit_plane/I')
+  yz_tree.Branch('hit_x', hit_x, 'hit_x/D')
+  yz_tree.Branch('hit_y', hit_y, 'hit_y/D')
+  yz_tree.Branch('hit_z', hit_z, 'hit_z/D')
+  yz_tree.Branch('efield', efield_out, 'efield/D')
+  yz_tree.Branch('resrange', resrange_out, 'resrange/D')
+  yz_tree.Branch('range_bin', range_bin, 'range_bin/I')
+  yz_tree.Branch('ke', ke, 'ke/D')
+#x_tree = RT.TTree('x_tree', '')
+x_trees = [RT.TTree('x_tree_%i'%i, '') for i in range(3)]
+for x_tree in x_trees:
+  x_tree.Branch('dq_dx', dq_dx, 'dq_dx/D')
+  x_tree.Branch('hit_plane', hit_plane_out, 'hit_plane/I')
+  x_tree.Branch('hit_x', hit_x, 'hit_x/D')
+  x_tree.Branch('hit_y', hit_y, 'hit_y/D')
+  x_tree.Branch('hit_z', hit_z, 'hit_z/D')
+  x_tree.Branch('efield', efield_out, 'efield/D')
+  x_tree.Branch('resrange', resrange_out, 'resrange/D')
+  x_tree.Branch('range_bin', range_bin, 'range_bin/I')
+  x_tree.Branch('ke', ke, 'ke/D')
+
+dedx_tree = RT.TTree('dedx_tree', '')
+dedx_tree.Branch('dq_dx', dq_dx, 'dq_dx/D')
+dedx_tree.Branch('hit_plane', hit_plane_out, 'hit_plane/I')
+dedx_tree.Branch('hit_x', hit_x, 'hit_x/D')
+dedx_tree.Branch('hit_y', hit_y, 'hit_y/D')
+dedx_tree.Branch('hit_z', hit_z, 'hit_z/D')
+dedx_tree.Branch('efield', efield_out, 'efield/D')
+dedx_tree.Branch('resrange', resrange_out, 'resrange/D')
+dedx_tree.Branch('range_bin', range_bin, 'range_bin/I')
+dedx_tree.Branch('ke', ke, 'ke/D')
 
 nevent = 0
 for e in tree:
@@ -202,9 +263,55 @@ for e in tree:
         x_corr_filter[0] = good_x_hit and x_cross_filter
 
         if (not dedx_filter[0]) and (not yz_corr_filter[0]) and (not x_corr_filter[0]): continue
-           
 
+        if dedx_filter[0]: dedx_tree.Fill()
+        if yz_corr_filter[0]:
+          #yz_tree.Fill()
+          yz_trees[hit_plane].Fill()
+          y_bin = int(hit_y[0]/args.ywidth)
+          z_bin = int(hit_z[0]/args.zwidth)
+          #if y_bin < nbins_y and z_bin < nbins_z:
+          #  if hit_x[0] < 0.:
+          #    dqdx_neg[hit_plane][z_bin][y_bin].push_back(dq_dx[0])
+          #    all_dqdx_neg[hit_plane].append(dq_dx[0])
+          #  else:
+          #    dqdx_pos[hit_plane][z_bin][y_bin].push_back(dq_dx[0])
+          #    all_dqdx_pos[hit_plane].append(dq_dx[0])
+        #if x_corr_filter[0]: x_tree.Fill()
+        if x_corr_filter[0]: x_trees[hit_plane].Fill()
         out_tree.Fill()
+
 fOut.cd()
 out_tree.Write()
+for t in yz_trees: t.Write()
+for t in x_trees: t.Write()
+#yz_tree.Write()
+#x_tree.Write()
+dedx_tree.Write()
+
+'''
+for i in range(len(dqdx_pos)):
+  for j in range(len(dqdx_pos[i])):
+    for k in range(len(dqdx_pos[i][j])):
+      fOut.WriteObject(dqdx_pos[i][j][k], 'dqdx_pos_%i_%i_%i'%(i, j, k))
+      fOut.WriteObject(dqdx_neg[i][j][k], 'dqdx_neg_%i_%i_%i'%(i, j, k))
+
+median_dqdx_pos = RT.TVectorD(3*nbins_y*nbins_z)
+median_dqdx_neg = RT.TVectorD(3*nbins_y*nbins_z)
+
+for i in range(3):
+  global_median_dqdx_pos = RT.TVectorD(1)
+  global_median_dqdx_neg = RT.TVectorD(1)
+  global_median_dqdx_pos[0] = median(all_dqdx_pos[i])
+  global_median_dqdx_neg[0] = median(all_dqdx_neg[i])
+
+  global_median_dqdx_pos.Write('global_median_dqdx_pos_%i'%i)
+  global_median_dqdx_neg.Write('global_median_dqdx_neg_%i'%i)
+  for j in range(len(dqdx_pos[i])):
+    for k in range(len(dqdx_pos[i][j])):
+      median_dqdx_pos[i*nbins_y*nbins_z + j*nbins_y + k] = median(dqdx_pos[i][j][k]) if len(dqdx_pos) >= 5 else -999.
+median_dqdx_pos.Write('median_dqdx_pos')
+median_dqdx_neg.Write('median_dqdx_neg')
+'''
+
 fOut.Close()
