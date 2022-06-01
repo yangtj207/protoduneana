@@ -3,3 +3,4 @@ cet_make_exec( make_x_correction
                LIBRARIES
                ROOT_BASIC_LIB_LIST
                )
+install_scripts()
