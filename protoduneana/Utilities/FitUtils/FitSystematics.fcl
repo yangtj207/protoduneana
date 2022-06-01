@@ -11,9 +11,46 @@ g4rw_proton_coeff: {
   GenThrowLimit: 0.25
   GenThrowLimitUp: 1.75
   Sigma: .2
+  IsG4RWCoeff: true
 
   Options: {
     Branch: "g4rw_full_grid_proton_coeffs"
+  }
+}
+
+g4rw_downstream_piplus_low_coeff: {
+  Name: "g4rw_downstream_piplus_low_coeff"
+  Central: 1.
+  LowerLimit: 0.1
+  LowerLimit: 0.1
+  UpperLimit: 2.0
+  ThrowLimit: 0.1
+  ThrowLimitUp: 2.0
+  GenThrowLimit: 0.25
+  GenThrowLimitUp: 1.75
+  Sigma: .2
+  IsG4RWCoeff: true
+
+  Options: {
+    Branch: "g4rw_downstream_grid_piplus_coeffs_7"
+  }
+}
+
+g4rw_downstream_piplus_high_coeff: {
+  Name: "g4rw_downstream_piplus_high_coeff"
+  Central: 1.
+  LowerLimit: 0.1
+  LowerLimit: 0.1
+  UpperLimit: 2.0
+  ThrowLimit: 0.1
+  ThrowLimitUp: 2.0
+  GenThrowLimit: 0.25
+  GenThrowLimitUp: 1.75
+  Sigma: .2
+  IsG4RWCoeff: true
+
+  Options: {
+    Branch: "g4rw_downstream_grid_piplus_coeffs_8"
   }
 }
 
@@ -619,14 +656,20 @@ SystematicsList: {
     Options: {
       Cut: 70.
        
-      Fractions: [
-        [1, 0.08407665304713127 ],
-        [2, 0.060991829754892646],
-        [3, 0.05575954231064811 ],
-        [5, 0.46045908340539266 ],
-        [6, 0.05291508238276299 ],
-        [7, 0.08047690014903129 ]
-      ]
+      ##Fractions: [
+      ##  [1, 0.08407665304713127 ],
+      ##  [2, 0.060991829754892646],
+      ##  [3, 0.05575954231064811 ],
+      ##  [5, 0.46045908340539266 ],
+      ##  [6, 0.05291508238276299 ],
+      ##  [7, 0.08047690014903129 ]
+      ##]
+
+      Fractions: [ [ 1 , [0.29321, 0.13314, 0.14764, 0.12441, 0.11934, 0.11955, 0.09195, 0.06120, 0.02947, 0.01143, 0.00732, 0.00647]],
+      [ 2 , [0.19602, 0.14081, 0.13867, 0.11444, 0.08846, 0.05674, 0.03311, 0.01310, 0.00321, 0.00181]],
+      [ 3 , [0.16979, 0.12500, 0.13072, 0.11704, 0.08512, 0.05526, 0.02945, 0.01397, 0.00576, 0.00253]],
+      [ 6 , [0.05379]],
+      [ 7 , [0.08013]]]
       
     }
   }

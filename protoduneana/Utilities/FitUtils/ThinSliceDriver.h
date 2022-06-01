@@ -143,6 +143,9 @@ class ThinSliceDriver {
   virtual void WrapUpSysts(TFile & output_file) = 0;
  protected:
   fhicl::ParameterSet fExtraOptions;
+
+  void ResetSamples(
+      std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples);
  private:
 };
 }

@@ -264,13 +264,14 @@ class ThinSliceEvent {
 
   //Get Weight from the polynomial defined by the coeffs
   double GetG4RWCoeffWeight(const std::string & br, double input) const {
-    if (g4rw_coeffs.at(br).size() == 0) {
+    auto & coeffs = g4rw_coeffs.at(br);
+    if (coeffs.size() == 0) {
       return 1.;
     }
 
     double results = 0.;
-    for (size_t i = 0; i < g4rw_coeffs.at(br).size(); ++i) {
-      results += g4rw_coeffs.at(br)[i]*std::pow(input, i); 
+    for (size_t i = 0; i < coeffs.size(); ++i) {
+      results += coeffs[i]*std::pow(input, i); 
     }
     return results;
   };

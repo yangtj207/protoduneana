@@ -45,3 +45,14 @@ std::pair<int, int> protoana::ThinSliceDriver::GetColorAndStyle(
   return {plot_style.at(i % plot_style.size()).first,
           (i < plot_style.size() ? 1001: 3244)};
 }
+
+void protoana::ThinSliceDriver::ResetSamples(
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples) {
+  for (auto it = samples.begin(); it != samples.end(); ++it) {
+    for (size_t i = 0; i < it->second.size(); ++i) {
+      for (size_t j = 0; j < it->second[i].size(); ++j) {
+        it->second[i][j].Reset();
+      }
+    }
+  }
+}
