@@ -45,6 +45,7 @@ class ProtoDUNEdEdXFitter {
 
   TFile fOutputFile, fInputFile;
   TTree * fInputTree;
+  std::string fTreeName;
   std::vector<TH1D *> fHists;
   std::vector<TF1 *> fFitOutput;
   void Configure(std::string fcl_file);
