@@ -14,7 +14,9 @@ protoana::ProtoDUNECalibration::ProtoDUNECalibration(const fhicl::ParameterSet &
       //calib_factor(pset.get<double>("calib_factor")),
       X_correction_name(pset.get<std::string>("X_correction")),
       YZ_correction_name(pset.get<std::string>("YZ_correction")),
-      E_field_correction_name(pset.get<std::string>("E_field_correction")) {
+      E_field_correction_name(pset.get<std::string>("E_field_correction")),
+      fStreamX(pset.get<bool>("StreamXCorrection", false)),
+      fStreamYZ(pset.get<bool>("StreamYZCorrection", false)) {
 
   
   /*
@@ -22,8 +24,10 @@ protoana::ProtoDUNECalibration::ProtoDUNECalibration(const fhicl::ParameterSet &
   YZ_correction_file = new TFile(YZ_correction_name.c_str(), "OPEN");
   E_field_file = new TFile(E_field_correction_name.c_str(), "OPEN");
   */
-  X_correction_file = OpenFile(X_correction_name);
-  YZ_correction_file = OpenFile(YZ_correction_name);
+  X_correction_file = (fStreamX ? TFile::Open(X_correction_name.c_str()) :
+                       OpenFile(X_correction_name));
+  YZ_correction_file = (fStreamYZ ? TFile::Open(YZ_correction_name.c_str()) :
+                        OpenFile(YZ_correction_name));;
   E_field_file = OpenFile(E_field_correction_name);
 
   std::vector<fhicl::ParameterSet> PlaneParameters =
