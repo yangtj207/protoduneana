@@ -7,4 +7,7 @@
 *.log
 *.root
 *.pdf
+*ACLiC*
+*.so
+*.d
 protoduneana/singlephase/efficiencystudy/fife_cfgs/*list
