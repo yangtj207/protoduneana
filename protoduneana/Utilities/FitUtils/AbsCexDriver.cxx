@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <iostream> 
 #include <numeric>
+#include "valgrind/callgrind.h"
 
 #include "ThinSliceDriverFactory.h"
 DECLARE_THINSLICEDRIVER_FACTORY_NS(protoana::AbsCexDriver, protoana, AbsCexDriver)
@@ -142,14 +143,17 @@ void protoana::AbsCexDriver::FillMCEvents(
   std::vector<std::vector<double>> * g4rw_primary_grid_weights = 0x0,
                                    * g4rw_full_grid_weights = 0x0,
                                    * g4rw_full_grid_proton_weights = 0x0,
-                                   * g4rw_full_grid_proton_coeffs = 0x0;
+                                   * g4rw_full_grid_proton_coeffs = 0x0,
+                                   * g4rw_downstream_grid_piplus_coeffs = 0x0;
   tree->SetBranchAddress("g4rw_full_grid_weights", &g4rw_full_grid_weights);
   tree->SetBranchAddress("g4rw_full_grid_proton_weights",
                          &g4rw_full_grid_proton_weights);
   tree->SetBranchAddress("g4rw_full_grid_proton_coeffs",
                          &g4rw_full_grid_proton_coeffs);
   tree->SetBranchAddress("g4rw_primary_grid_weights",
-                            &g4rw_primary_grid_weights);
+                         &g4rw_primary_grid_weights);
+  tree->SetBranchAddress("g4rw_downstream_grid_piplus_coeffs",
+                         &g4rw_downstream_grid_piplus_coeffs);
 
   std::vector<std::vector<double>> * daughter_dQdXs = 0x0,
                                    * daughter_resRanges = 0x0,
@@ -249,6 +253,11 @@ void protoana::AbsCexDriver::FillMCEvents(
       //  std::cout << "Adding empty branch " << event << " " << run << " " << subrun << std::endl;
       events.back().MakeG4RWBranch(name_primary,
                                     (*g4rw_primary_grid_weights)[j]);
+
+      std::string name_downstream = "g4rw_downstream_grid_piplus_coeffs_" +
+                                   std::to_string(j);
+      events.back().MakeG4RWCoeff(name_downstream,
+                                  (*g4rw_downstream_grid_piplus_coeffs)[j]);
     }
     events.back().MakeG4RWBranch("g4rw_full_grid_proton_weights",
                                   (*g4rw_full_grid_proton_weights)[0]);
@@ -335,6 +344,10 @@ void protoana::AbsCexDriver::FillMCEvents(
         //  std::cout << "Adding empty branch " << event << " " << run << " " << subrun << std::endl;
         fake_data_events.back().MakeG4RWBranch(name_primary,
                                       (*g4rw_primary_grid_weights)[j]);
+        std::string name_downstream = "g4rw_downstream_grid_piplus_coeffs_" +
+                                     std::to_string(j);
+        fake_data_events.back().MakeG4RWCoeff(name_downstream,
+                                    (*g4rw_downstream_grid_piplus_coeffs)[j]);
       }
       fake_data_events.back().MakeG4RWBranch("g4rw_full_grid_proton_weights",
                                     (*g4rw_full_grid_proton_weights)[0]);
@@ -540,6 +553,8 @@ void protoana::AbsCexDriver::RefillMCSamples(
     bool fit_under_over, bool tie_under_over, bool use_beam_inst_P,
     bool fill_incident, std::map<int, TH1 *> * fix_factors) {
 
+  CALLGRIND_TOGGLE_COLLECT;
+
   //Reset all samples
   //Base class
   for (auto it = samples.begin(); it != samples.end(); ++it) {
@@ -702,7 +717,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
     else if (reco_beam_incidentEnergies.size()) {
 
       double energy[1] = {0.};
-      if (syst_pars.find("dEdX_Cal") != syst_pars.end()) {
+      /*if (syst_pars.find("dEdX_Cal") != syst_pars.end()) {
         energy[0] = sqrt(beam_inst_P*beam_inst_P*1.e6 + 139.57*139.57) -
                         139.57;
         //limits?
@@ -722,7 +737,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
         }
       }
 
-      else {
+      else {*/
         energy[0] = {reco_beam_interactingEnergy};
         if (fDoEnergyFix) {
           for (size_t k = 1; k < reco_beam_incidentEnergies.size(); ++k) {
@@ -733,7 +748,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
             }
           }
         }
-      }
+      //}
 
       if (selected_hist->FindBin(energy[0]) == 0) {
         val[0] = selected_hist->GetBinCenter(1);
@@ -750,6 +765,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
     }
 
     //Systematics
+    /*
     if (syst_pars.find("dEdX_Cal_Spline") != syst_pars.end()) {
       int bin = selected_hist->FindBin(val[0]);
       TSpline3 * spline
@@ -773,13 +789,13 @@ void protoana::AbsCexDriver::RefillMCSamples(
     if (syst_pars.find("beam_shift_spline") != syst_pars.end()) {
       int bin = selected_hist->FindBin(val[0]);
       TSpline3 * spline
-          = fFullSelectionSplines["Beam_Shift_Spline"][new_selection/*selection_ID*/][bin-1];
+          = fFullSelectionSplines["Beam_Shift_Spline"][new_selection][bin-1];
       weight *= spline->Eval(syst_pars.at("beam_shift_spline").GetValue());
     }
     if (syst_pars.find("eff_var") != syst_pars.end()) {
       int bin = selected_hist->FindBin(val[0]);
       TSpline3 * spline
-          = fFullSelectionSplines["EffVar_Spline"][new_selection/*selection_ID*/][bin-1];
+          = fFullSelectionSplines["EffVar_Spline"][new_selection][bin-1];
       weight *= spline->Eval(syst_pars.at("eff_var").GetValue());
     }
     if (weight < 0.) {
@@ -796,23 +812,10 @@ void protoana::AbsCexDriver::RefillMCSamples(
       std::cout << "Weight went negative after beam shift spline" << std::endl;
     }
 
-    //weight *= GetSystWeight_G4RW(event, syst_pars, *this_sample, new_selection/*selection_ID*/,
-    //                             val[0]);
-    //double coeff_1 = GetSystWeight_G4RWCoeff(event, syst_pars);
-    //weight *= coeff_1;
-
-    //weight *= GetSystWeight_BeamShift(event, syst_pars);
-    //if (weight < 0.) {
-    //  std::cout << "Weight went negative after beam shift" << std::endl;
-    //}
     weight *= GetSystWeight_EffVar(event, syst_pars);
     if (weight < 0.) {
       std::cout << "Weight went negative after eff" << std::endl;
     }
-    //weight *= GetSystWeight_EDiv(event, syst_pars);
-    //if (weight < 0.) {
-    //  std::cout << "Weight went negative after ediv" << std::endl;
-    //}
     weight *= GetSystWeight_NoTrack(event, syst_pars);
     weight *= GetSystWeight_BeamEffs(event, syst_pars);
     if (weight < 0.) {
@@ -822,18 +825,10 @@ void protoana::AbsCexDriver::RefillMCSamples(
     weight *= GetSystWeight_LowP(event, signal_index, syst_pars);
     weight *= GetSystWeight_NPi0(event, signal_index, syst_pars);
 
-    //weight *= GetSystWeight_EndZNoTrack(event, signal_index, syst_pars);
-    //weight *= GetSystWeight_UpstreamInt(event, syst_pars);
-    //weight *= GetSystWeight_BeamMatch(event, syst_pars);
-    //weight *= GetSystWeight_BoxBeam(event, syst_pars);
-    //weight *= coeff_1;
-
     if (weight < 0.) std::cout << "Warning: negative weight! " << weight << std::endl;
+    */
 
-    //if (GetSystWeight_G4RWCoeff(event, syst_pars) != fSystematics->GetSystWeight_G4RWCoeff(event, syst_pars)) {
-    //  std::cout << "g4rw differs" << std::endl;
-    //}
-
+    /*
     weight *= fSystematics->GetSystWeight_G4RWCoeff(event, syst_pars);
     weight *= fSystematics->GetSystWeight_BeamShift(event, syst_pars);
     weight *= fSystematics->GetSystWeight_EDiv(event, syst_pars,
@@ -859,7 +854,8 @@ void protoana::AbsCexDriver::RefillMCSamples(
     }
     weight *= fSystematics->GetSystWeight_ELossMuon(
         event, syst_pars, (!fInclusive? 4 : 2));
-    //weight *= fSystematics->GetSystWeight_G4RWCoeff(event, syst_pars);
+        */
+    weight *= fSystematics->GetEventWeight(event, signal_index, syst_pars);
 
     if (fix_factors != 0x0) {
       int bin = fix_factors->at(new_selection)->FindBin(val[0]);
@@ -881,7 +877,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
 
     this_sample->AddVariedFlux(weight);
   }
-
+  CALLGRIND_TOGGLE_COLLECT;
 }
 
 void protoana::AbsCexDriver::WrapUpSysts(TFile & output_file) {
@@ -899,6 +895,7 @@ void protoana::AbsCexDriver::SetupSysts(
     const std::map<std::string, ThinSliceSystematic> & pars,
     TFile & output_file) {
 
+  /*
   if (pars.find("dEdX_Cal") != pars.end()) {
     //std::cout << "Found par dEdX_Cal" << std::endl;
     fhicl::ParameterSet cal_set
@@ -970,9 +967,15 @@ void protoana::AbsCexDriver::SetupSysts(
   SetupSyst_EndZNoTrackWeight(pars);
   //SetupSyst_BeamMatch(pars);
   SetupSyst_BoxBeam(pars);
+  */
 
   fSystematics = new PDSPSystematics(events, samples, signal_sample_checks,
-                                     beam_energy_bins, pars, output_file);
+                                     beam_energy_bins, pars, output_file,
+                                     (!fInclusive ? 4 : 2), //Upstream
+                                     (!fInclusive ? 6 : 4), (!fInclusive ? 7 : 5), //NoTrack, Decay 
+                                     (!fInclusive ? 6 : 4), (!fInclusive? 5 : 3), //Past FV, BeamCut
+                                     (!fInclusive ? 4 : 2));//Past FV Selection ID
+ 
 }
 
 void protoana::AbsCexDriver::SetupSyst_BoxBeam(

@@ -17,7 +17,7 @@ ProtoDUNEdEdXFitter::ProtoDUNEdEdXFitter(
 
   Configure(fcl_file);
 
-  fInputTree = (TTree*)fInputFile.Get("tree");
+  fInputTree = (TTree*)fInputFile.Get(fTreeName.c_str());
   //fInputTree->SetDirectory(0);
 
   for (int i = 0; i < 40; ++i) {
@@ -138,7 +138,7 @@ void ProtoDUNEdEdXFitter::Configure(std::string fcl_file) {
   fBetaP = pset.get<double>("BetaP");
   fAlpha = pset.get<double>("Alpha");
   fBinSize = pset.get<double>("BinSize", 5.);
-
+  fTreeName = pset.get<std::string>("TreeName", "tree");
   std::vector<double> kinetic_energies = pset.get<std::vector<double>>("KE");
   std::vector<double> ranges = pset.get<std::vector<double>>("Range");
   fKESpline = new TSpline3("Cubic Spline", &ranges[0], &kinetic_energies[0],

@@ -1,0 +1,20 @@
+#include "standard_data_fit.fcl"
+
+FixVariables: true 
+SystsToFix: [
+  ["ediv_weight", 0.543319],
+  ["end_z_no_track_weight", 1.18515],
+  #["g4rw_proton_coeff", 1.14524],
+  ["beam_match_weight", 1.03388],
+  ["g4rw_downstream_piplus_low_coeff", 0.782454],
+  ["g4rw_downstream_piplus_high_coeff", 0.596244]
+]
+
+FixSystsPostFit: [
+  ["ediv_weight", 0.543319],
+  ["end_z_no_track_weight", 1.18515],
+  #["g4rw_proton_coeff", 1.14524],
+  ["beam_match_weight", 1.03388],
+  ["g4rw_downstream_piplus_low_coeff", 0.782454],
+  ["g4rw_downstream_piplus_high_coeff", 0.596244]
+]

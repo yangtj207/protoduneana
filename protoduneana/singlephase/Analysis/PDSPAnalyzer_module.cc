@@ -790,25 +790,25 @@ private:
   double n_cosmic_electrons_in_beam_hits, n_beam_electrons_in_beam_hits;
   //GeantReweight stuff
   // -- Maybe think of new naming scheme?
-  std::vector<double> g4rw_primary_weights;
-  std::vector<double> g4rw_primary_plus_sigma_weight;
-  std::vector<double> g4rw_primary_minus_sigma_weight;
-  std::vector<std::string> g4rw_primary_var;
+  //std::vector<double> g4rw_primary_plus_sigma_weight;
+  //std::vector<double> g4rw_primary_minus_sigma_weight;
+  //std::vector<std::string> g4rw_primary_var;
 
-  std::vector<double> g4rw_alt_primary_plus_sigma_weight;
-  std::vector<double> g4rw_alt_primary_minus_sigma_weight;
-  std::vector<double> g4rw_full_primary_plus_sigma_weight;
-  std::vector<double> g4rw_full_primary_minus_sigma_weight;
+  //std::vector<double> g4rw_alt_primary_plus_sigma_weight;
+  //std::vector<double> g4rw_alt_primary_minus_sigma_weight;
+  //std::vector<double> g4rw_full_primary_plus_sigma_weight;
+  //std::vector<double> g4rw_full_primary_minus_sigma_weight;
 
   std::vector<std::vector<double>> g4rw_full_grid_weights,
                                    g4rw_full_grid_coeffs;
   std::vector<std::vector<double>> g4rw_primary_grid_weights,
                                    g4rw_primary_grid_coeffs;
-  std::vector<double> g4rw_primary_grid_pair_weights;
+  //std::vector<double> g4rw_primary_grid_pair_weights;
 
   std::vector<std::vector<double>> g4rw_full_grid_piplus_weights,
                                    g4rw_full_grid_piplus_coeffs;
-  std::vector<std::vector<double>> g4rw_full_grid_piplus_weights_fake_data;
+  std::vector<std::vector<double>> g4rw_full_grid_piplus_weights_fake_data,
+                                   g4rw_full_grid_piplus_coeffs_fake_data;
   std::vector<std::vector<double>> g4rw_full_grid_piminus_weights;
   std::vector<std::vector<double>> g4rw_full_grid_proton_weights,
                                    g4rw_full_grid_proton_coeffs;
@@ -1066,9 +1066,11 @@ private:
   protoana::ProtoDUNECalibration calibration_SCE;
   protoana::ProtoDUNECalibration calibration_NoSCE;
   bool fSaveHits;
+  bool fSaveHitIDEInfo;
   bool fSkipMVA;
   bool fTrueToReco;
   bool fDoReweight;
+  bool fSaveG4RWWeights;
   bool fDoProtReweight;
   bool fGetTrackMichel;
   bool fMCHasBI;
@@ -1124,9 +1126,11 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   calibration_SCE(p.get<fhicl::ParameterSet>("CalibrationParsSCE")),
   calibration_NoSCE(p.get<fhicl::ParameterSet>("CalibrationParsNoSCE")),
   fSaveHits( p.get<bool>( "SaveHits" ) ),
+  fSaveHitIDEInfo(p.get<bool>( "SaveHitIDEInfo", false)),
   fSkipMVA( p.get<bool>( "SkipMVA" ) ),
   fTrueToReco( p.get<bool>( "TrueToReco" ) ),
   fDoReweight(p.get<bool>("DoReweight")),
+  fSaveG4RWWeights(p.get<bool>("SaveG4RWWeights", true)),
   fDoProtReweight(p.get<bool>("DoProtReweight")),
   fGetTrackMichel(p.get<bool>("GetTrackMichel")),
   fRecalibrate(p.get<bool>("Recalibrate", true)),
@@ -1466,6 +1470,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
 
     //Doing reweighting if the primary is a piplus
     if (true_beam_PDG == 211) {
+      /*
       std::vector<G4ReweightTraj *> trajs = CreateNRWTrajs(
           *true_beam_particle, plist,
           fGeometryService, event);
@@ -1488,7 +1493,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
           }
           added = true;
         }
-      }
+      }*/
 
       //Weighting according to the full heirarchy
       std::vector<std::vector<G4ReweightTraj *>> new_full_created
@@ -1499,6 +1504,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
                   << std::endl;
       }
 
+      /*
       bool new_added = false;
       for (size_t i = 0; i < new_full_created.size(); ++i) {
         std::vector<G4ReweightTraj *> temp_trajs = new_full_created[i];
@@ -1522,7 +1528,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
             new_added = true;
           }
         }
-      }
+      }*/
 
       G4RWGridWeights(new_full_created, ParSet, g4rw_full_grid_weights,
                       MultiRW);
@@ -1547,6 +1553,16 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       GetG4RWCoeffs(weights, g4rw_full_grid_piplus_coeffs.back());
     }
 
+
+    G4RWGridWeights(piplus_hierarchy, FakeDataParSet,
+                    g4rw_full_grid_piplus_weights_fake_data,
+                    FakeDataMultiRW);
+    for (auto weights : g4rw_full_grid_piplus_weights_fake_data) {
+      g4rw_full_grid_piplus_coeffs_fake_data.push_back(std::vector<double>());
+      GetG4RWCoeffs(weights, g4rw_full_grid_piplus_coeffs_fake_data.back());
+    }
+
+    /*
     std::vector<double> fake_data_input(FakeDataParSet.size(), 1.);
     for (size_t i = 0; i < FakeDataParSet.size(); ++i) {
       g4rw_full_grid_piplus_weights_fake_data.push_back(std::vector<double>());
@@ -1575,7 +1591,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
 
       //Reset to 1.
       fake_data_input[i] = 1.;
-    }
+    }*/
 
     std::vector<std::vector<G4ReweightTraj *>> proton_hierarchy 
         = BuildHierarchy(true_beam_ID, 2212, plist, fGeometryService,
@@ -1738,14 +1754,16 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_TrkPitch_SCE", &reco_beam_TrkPitch_SCE);
   fTree->Branch("reco_beam_TrkPitch_SCE_allTrack", &reco_beam_TrkPitch_SCE_allTrack);
 
-  fTree->Branch("reco_beam_hit_IDE_IDs", &reco_beam_hit_IDE_IDs);
-  fTree->Branch("reco_beam_hit_IDE_electrons", &reco_beam_hit_IDE_electrons);
-  fTree->Branch("reco_beam_hit_IDE_energies", &reco_beam_hit_IDE_energies);
-  fTree->Branch("reco_beam_hit_IDE_origins", &reco_beam_hit_IDE_origins);
-  fTree->Branch("reco_beam_hit_IDE_cosmic_electrons", &reco_beam_hit_IDE_cosmic_electrons);
-  fTree->Branch("reco_beam_hit_IDE_beam_electrons", &reco_beam_hit_IDE_beam_electrons);
-  fTree->Branch("reco_beam_hit_IDE_cosmic_energies", &reco_beam_hit_IDE_cosmic_energies);
-  fTree->Branch("reco_beam_hit_IDE_beam_energies", &reco_beam_hit_IDE_beam_energies);
+  if (fSaveHitIDEInfo) {
+    fTree->Branch("reco_beam_hit_IDE_IDs", &reco_beam_hit_IDE_IDs);
+    fTree->Branch("reco_beam_hit_IDE_electrons", &reco_beam_hit_IDE_electrons);
+    fTree->Branch("reco_beam_hit_IDE_energies", &reco_beam_hit_IDE_energies);
+    fTree->Branch("reco_beam_hit_IDE_origins", &reco_beam_hit_IDE_origins);
+    fTree->Branch("reco_beam_hit_IDE_cosmic_electrons", &reco_beam_hit_IDE_cosmic_electrons);
+    fTree->Branch("reco_beam_hit_IDE_beam_electrons", &reco_beam_hit_IDE_beam_electrons);
+    fTree->Branch("reco_beam_hit_IDE_cosmic_energies", &reco_beam_hit_IDE_cosmic_energies);
+    fTree->Branch("reco_beam_hit_IDE_beam_energies", &reco_beam_hit_IDE_beam_energies);
+  }
 
   fTree->Branch("reco_beam_dQdX_NoSCE", &reco_beam_dQdX_NoSCE);
   fTree->Branch("reco_beam_dQ_NoSCE", &reco_beam_dQ_NoSCE);
@@ -2149,7 +2167,7 @@ void pduneana::PDSPAnalyzer::beginJob() {
 
   fTree->Branch("reco_beam_incidentEnergies", &reco_beam_incidentEnergies);
   fTree->Branch("reco_beam_interactingEnergy", &reco_beam_interactingEnergy);
-  fTree->Branch("reco_beam_incidentEnergies_allTrack", &reco_beam_incidentEnergies_allTrack);
+  //fTree->Branch("reco_beam_incidentEnergies_allTrack", &reco_beam_incidentEnergies_allTrack);
   fTree->Branch("reco_beam_interactingEnergy_allTrack", &reco_beam_interactingEnergy_allTrack);
   fTree->Branch("true_beam_incidentEnergies", &true_beam_incidentEnergies);
   fTree->Branch("true_beam_interactingEnergy", &true_beam_interactingEnergy);
@@ -2168,11 +2186,11 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("true_beam_traj_Y_SCE", &true_beam_traj_Y_SCE);
   fTree->Branch("true_beam_traj_Z_SCE", &true_beam_traj_Z_SCE);
 
-  fTree->Branch("g4rw_primary_weights", &g4rw_primary_weights);
-  fTree->Branch("g4rw_primary_plus_sigma_weight", &g4rw_primary_plus_sigma_weight);
-  fTree->Branch("g4rw_primary_minus_sigma_weight", &g4rw_primary_minus_sigma_weight);
-  fTree->Branch("g4rw_primary_var", &g4rw_primary_var);
+  //fTree->Branch("g4rw_primary_plus_sigma_weight", &g4rw_primary_plus_sigma_weight);
+  //fTree->Branch("g4rw_primary_minus_sigma_weight", &g4rw_primary_minus_sigma_weight);
+  //fTree->Branch("g4rw_primary_var", &g4rw_primary_var);
 
+  /*
   fTree->Branch("g4rw_alt_primary_plus_sigma_weight",
                 &g4rw_alt_primary_plus_sigma_weight);
   fTree->Branch("g4rw_alt_primary_minus_sigma_weight",
@@ -2181,24 +2199,28 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("g4rw_full_primary_plus_sigma_weight",
                 &g4rw_full_primary_plus_sigma_weight);
   fTree->Branch("g4rw_full_primary_minus_sigma_weight",
-                &g4rw_full_primary_minus_sigma_weight);
-  fTree->Branch("g4rw_full_grid_weights", &g4rw_full_grid_weights);
+                &g4rw_full_primary_minus_sigma_weight);*/
+  if (fSaveG4RWWeights) {
+    fTree->Branch("g4rw_full_grid_weights", &g4rw_full_grid_weights);
+    fTree->Branch("g4rw_full_grid_piplus_weights",  &g4rw_full_grid_piplus_weights);
+    fTree->Branch("g4rw_full_grid_piplus_weights_fake_data",  &g4rw_full_grid_piplus_weights_fake_data);
+    fTree->Branch("g4rw_downstream_grid_piplus_weights",  &g4rw_downstream_grid_piplus_weights);
+    fTree->Branch("g4rw_full_grid_piminus_weights", &g4rw_full_grid_piminus_weights);
+    fTree->Branch("g4rw_full_grid_proton_weights",  &g4rw_full_grid_proton_weights);
+    fTree->Branch("g4rw_full_grid_neutron_weights",  &g4rw_full_grid_neutron_weights);
+    fTree->Branch("g4rw_full_grid_kplus_weights",  &g4rw_full_grid_kplus_weights);
+    fTree->Branch("g4rw_primary_grid_weights", &g4rw_primary_grid_weights);
+  }
+
   fTree->Branch("g4rw_full_grid_coeffs", &g4rw_full_grid_coeffs);
-  fTree->Branch("g4rw_full_grid_piplus_weights",  &g4rw_full_grid_piplus_weights);
   fTree->Branch("g4rw_full_grid_piplus_coeffs",  &g4rw_full_grid_piplus_coeffs);
-  fTree->Branch("g4rw_full_grid_piplus_weights_fake_data",  &g4rw_full_grid_piplus_weights_fake_data);
-  fTree->Branch("g4rw_downstream_grid_piplus_weights",  &g4rw_downstream_grid_piplus_weights);
+  fTree->Branch("g4rw_full_grid_piplus_coeffs_fake_data",  &g4rw_full_grid_piplus_coeffs_fake_data);
   fTree->Branch("g4rw_downstream_grid_piplus_coeffs",  &g4rw_downstream_grid_piplus_coeffs);
-  fTree->Branch("g4rw_full_grid_piminus_weights", &g4rw_full_grid_piminus_weights);
-  fTree->Branch("g4rw_full_grid_proton_weights",  &g4rw_full_grid_proton_weights);
   fTree->Branch("g4rw_full_grid_proton_coeffs", &g4rw_full_grid_proton_coeffs);
-  fTree->Branch("g4rw_full_grid_neutron_weights",  &g4rw_full_grid_neutron_weights);
   fTree->Branch("g4rw_full_grid_neutron_coeffs", &g4rw_full_grid_neutron_coeffs);
-  fTree->Branch("g4rw_full_grid_kplus_weights",  &g4rw_full_grid_kplus_weights);
   fTree->Branch("g4rw_full_grid_kplus_coeffs", &g4rw_full_grid_kplus_coeffs);
-  fTree->Branch("g4rw_primary_grid_weights", &g4rw_primary_grid_weights);
   fTree->Branch("g4rw_primary_grid_coeffs", &g4rw_primary_grid_coeffs);
-  fTree->Branch("g4rw_primary_grid_pair_weights", &g4rw_primary_grid_pair_weights);
+  //fTree->Branch("g4rw_primary_grid_pair_weights", &g4rw_primary_grid_pair_weights);
 
   if( fSaveHits ){
     fTree->Branch( "reco_beam_spacePts_X", &reco_beam_spacePts_X );
@@ -2758,19 +2780,19 @@ void pduneana::PDSPAnalyzer::reset()
   sparsenet_features_charge_distance_30.clear();
   //
 
-  g4rw_primary_weights.clear();
-  g4rw_primary_plus_sigma_weight.clear();
-  g4rw_primary_minus_sigma_weight.clear();
-  g4rw_primary_var.clear();
-  g4rw_alt_primary_plus_sigma_weight.clear();
-  g4rw_alt_primary_minus_sigma_weight.clear();
-  g4rw_full_primary_plus_sigma_weight.clear();
-  g4rw_full_primary_minus_sigma_weight.clear();
+  //g4rw_primary_plus_sigma_weight.clear();
+  //g4rw_primary_minus_sigma_weight.clear();
+  //g4rw_primary_var.clear();
+  //g4rw_alt_primary_plus_sigma_weight.clear();
+  //g4rw_alt_primary_minus_sigma_weight.clear();
+  //g4rw_full_primary_plus_sigma_weight.clear();
+  //g4rw_full_primary_minus_sigma_weight.clear();
   g4rw_full_grid_weights.clear();
   g4rw_full_grid_coeffs.clear();
   g4rw_full_grid_piplus_weights.clear();
   g4rw_full_grid_piplus_coeffs.clear();
   g4rw_full_grid_piplus_weights_fake_data.clear();
+  g4rw_full_grid_piplus_coeffs_fake_data.clear();
   g4rw_downstream_grid_piplus_weights.clear();
   g4rw_downstream_grid_piplus_coeffs.clear();
   g4rw_full_grid_piminus_weights.clear();
@@ -2782,7 +2804,7 @@ void pduneana::PDSPAnalyzer::reset()
   g4rw_full_grid_kplus_coeffs.clear();
   g4rw_primary_grid_weights.clear();
   g4rw_primary_grid_coeffs.clear();
-  g4rw_primary_grid_pair_weights.clear();
+  //g4rw_primary_grid_pair_weights.clear();
 }
 
 
@@ -3295,7 +3317,7 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
         reco_beam_calo_Y[i] = thePoint.y;
         reco_beam_calo_Z[i] = thePoint.z;
         //reco_beam_calo_x[i]
-        if (!evt.isRealData()) {
+        if (!evt.isRealData() && fSaveHitIDEInfo) {
           reco_beam_hit_IDE_IDs.push_back(std::vector<int>());
           reco_beam_hit_IDE_origins.push_back(std::vector<int>());
           reco_beam_hit_IDE_electrons.push_back(std::vector<double>());
@@ -4579,6 +4601,10 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
                  calibration_SCE.GetCalibratedCalorimetry(
                     *pandora2Track, evt, "pandora2Track", fPandora2CaloSCE, 0) :
                  dummy_caloSCE[plane0_index].dEdx());
+          for (auto & dedx : dEdX_plane0) {
+            reco_daughter_allTrack_calibrated_dEdX_SCE_plane0.back().push_back(
+                dedx);
+          }
           /*
           if (fRecalibrate){
             std::vector<float> dEdX_plane0 = calibration_SCE.GetCalibratedCalorimetry(
@@ -5279,6 +5305,7 @@ void pduneana::PDSPAnalyzer::BeamForcedTrackInfo(
           
           //Get the initial Energy KE
           //double mass = 0.;
+          /*
           double init_KE = 0.;
           //std::cout << "Has BI? " << fMCHasBI << " " << evt.isRealData() << std::endl;
           if (evt.isRealData() || fMCHasBI) {
@@ -5299,6 +5326,7 @@ void pduneana::PDSPAnalyzer::BeamForcedTrackInfo(
             reco_beam_incidentEnergies_allTrack.push_back( this_energy );
           }
           if( reco_beam_incidentEnergies_allTrack.size() ) reco_beam_interactingEnergy_allTrack = reco_beam_incidentEnergies_allTrack.back();
+          */
         }
 
       }

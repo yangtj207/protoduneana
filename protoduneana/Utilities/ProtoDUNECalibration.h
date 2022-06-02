@@ -63,6 +63,7 @@ namespace protoana{
       std::string E_field_correction_name;
       TFile * E_field_file;
 
+      bool fStreamX, fStreamYZ;
 
       TH3F * ex_neg;
       TH3F * ey_neg;

@@ -331,7 +331,7 @@ class AbsCexDriver : public ThinSliceDriver {
    std::string fSliceMethod;
    int fSliceCut;
 
-   double fBetaP, fRho, fWion, fAlpha, fNominalCCal;
+   double fBetaP, fRho, fWion, fAlpha/*, fNominalCCal*/;
 
    //bool fStaticBeamResWidth = false;
    //bool fStaticBeamResMean = false;

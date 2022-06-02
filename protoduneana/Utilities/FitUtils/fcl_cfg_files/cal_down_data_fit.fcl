@@ -1,0 +1,4 @@
+#include "standard_data_fit.fcl"
+
+AnalysisOptions.VaryDataCalibration: true
+AnalysisOptions.DataCalibrationFactor: 0.97

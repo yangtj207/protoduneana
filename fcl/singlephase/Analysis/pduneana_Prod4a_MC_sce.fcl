@@ -228,6 +228,8 @@ physics.analyzers.pduneana.Recalibrate: false
 physics.analyzers.pduneana.GetCalibratedShowerEnergy: true 
 physics.analyzers.pduneana.SCE: true
 physics.analyzers.pduneana.SaveHits: false 
+physics.analyzers.pduneana.SaveHitIDEInfo: false 
+physics.analyzers.pduneana.SaveG4RWWeights: false 
 
 services.ParticleInventoryService.ParticleInventory.EveIdCalculator: "EmEveIdCalculator"
 

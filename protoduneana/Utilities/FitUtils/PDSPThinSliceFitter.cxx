@@ -1600,9 +1600,13 @@ void protoana::PDSPThinSliceFitter::ParameterScans() {
   size_t total_parameters = fTotalSignalParameters + fTotalFluxParameters + fTotalSystParameters;
   std::cout << "Total parameters " << total_parameters << std::endl;
 
+  size_t start = (fOnlySystScans ?
+                  fTotalSignalParameters + fTotalFluxParameters :
+                  0);
+
   double * x = new double[fNScanSteps] {};
   double * y = new double[fNScanSteps] {};
-  for (size_t i = 0; i < total_parameters; ++i) {
+  for (size_t i = start; i < total_parameters; ++i) {
     std::cout << "\tParameter " << fMinimizer->VariableName(i) << std::endl;
     bool scanned = fMinimizer->Scan(i, fNScanSteps, x, y);
     if (scanned) {
@@ -2134,6 +2138,7 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fSplitMC = pset.get<bool>("SplitMC");
   fDoThrows = pset.get<bool>("DoThrows");
   fDoScans = pset.get<bool>("DoScans");
+  fOnlySystScans = pset.get<bool>("OnlySystScans", false);
   fRunHesse = pset.get<bool>("RunHesse");
   fDo1DShifts = pset.get<bool>("Do1DShifts");
   fDoSysts = pset.get<bool>("DoSysts");

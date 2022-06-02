@@ -2,13 +2,7 @@
 #include "ProtoDUNECalibration.fcl"
 #include "FitSystematics.fcl"
 
-#MCFileName:   "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
-#DataFileName: "/dune/data/users/calcuttj/Prod4a_6_8_21_with_data/eventSelection_mc_all.root"
-#MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_22_21/eventSelection_mc_all.root"
-#DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/12_22_21/eventSelection_mc_all.root"
-#MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_4_22/AltSCE/eventSelection_mc_all.root"
 MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_31_22/eventSelection_mc_all.root"
-#MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_28_22/eventSelection_mc_all.root"
 DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_4_22/AltSCE/eventSelection_data_BeamQuality.root"
 
 TreeName: "pduneana/beamana"
