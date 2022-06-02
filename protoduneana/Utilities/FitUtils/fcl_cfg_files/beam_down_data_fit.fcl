@@ -1,0 +1,3 @@
+#include "standard_data_fit.fcl"
+
+AnalysisOptions.BeamInstPScale: 0.988

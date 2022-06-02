@@ -17,78 +17,96 @@ class PDSPSystematics {
       const std::map<int, bool> & signal_sample_checks,
       std::vector<double> & beam_energy_bins,
       const std::map<std::string, ThinSliceSystematic> & pars,
-      TFile & output_file);
+      TFile & output_file, int upstream_ID, int no_track_ID, int decay_ID,
+      int past_FV_ID, int beam_cut_ID, int past_FV_sel_ID);
   virtual ~PDSPSystematics(){};
+
+  double GetEventWeight(
+      const ThinSliceEvent & event,
+      int signal_index,
+      const std::map<std::string, ThinSliceSystematic> & pars);
 
   void SetupSyst_G4RWCoeff(
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_G4RWCoeff(
       const ThinSliceEvent & event,
-      const std::map<std::string, ThinSliceSystematic> & pars);
+      const ThinSliceSystematic & par);
+      //const std::map<std::string, ThinSliceSystematic> & pars);
 
   void SetupSyst_BeamShift(
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);
   double GetSystWeight_BeamShift(
       const ThinSliceEvent & event,
-      const std::map<std::string, ThinSliceSystematic> & pars);
+      const ThinSliceSystematic & par);
+      //const std::map<std::string, ThinSliceSystematic> & pars);
 
   void SetupSyst_EDivWeight(
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_EDiv(
       const ThinSliceEvent & event,
-      const std::map<std::string, ThinSliceSystematic> & pars,
-      int ediv_selection_ID);
+      const ThinSliceSystematic & par/*,
+      //const std::map<std::string, ThinSliceSystematic> & pars);
+      int ediv_selection_ID*/);
 
   void SetupSyst_EndZNoTrackWeight(
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_EndZNoTrack(
       const ThinSliceEvent & event,
       int signal_index,
-      const std::map<std::string, ThinSliceSystematic> & pars,
-      int upstream_ID, int no_track_ID);
+      const ThinSliceSystematic & par/*,
+      //const std::map<std::string, ThinSliceSystematic> & pars,
+      int upstream_ID, int no_track_ID*/);
 
   void SetupSyst_BeamMatch(
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_BeamMatch(
       const ThinSliceEvent & event,
-      const std::map<std::string, ThinSliceSystematic> & pars,
-      int upstream_ID, int no_track_ID);
+      const ThinSliceSystematic & par/*,
+      //const std::map<std::string, ThinSliceSystematic> & pars,
+      int upstream_ID, int no_track_ID*/);
 
   double GetSystWeight_UpstreamInt(
       const ThinSliceEvent & event,
-      const std::map<std::string, ThinSliceSystematic> & pars,
-      int upstream_ID);
+      const ThinSliceSystematic & par/*,
+      //const std::map<std::string, ThinSliceSystematic> & pars,
+      int upstream_ID*/);
 
   double GetSystWeight_BGPions(
       const ThinSliceEvent & event,
-      const std::map<std::string, ThinSliceSystematic> & pars,
-      int past_FV_ID, int decay_ID);
+      const ThinSliceSystematic & par/*,
+      //const std::map<std::string, ThinSliceSystematic> & pars,
+      int past_FV_ID, int decay_ID*/);
 
   void SetupSyst_BoxBeam(
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_BoxBeam(
       const ThinSliceEvent & event,
-      const std::map<std::string, ThinSliceSystematic> & pars,
-      int beam_cut_ID);
+      const ThinSliceSystematic & par/*,
+      //const std::map<std::string, ThinSliceSystematic> & pars,
+      int beam_cut_ID*/);
 
   void SetupSyst_TrueBeamShift(
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_TrueBeamShift(
       const ThinSliceEvent & event,
-      const std::map<std::string, ThinSliceSystematic> & pars);
+      const ThinSliceSystematic & par);
+      //const std::map<std::string, ThinSliceSystematic> & pars);
 
   void SetupSyst_ELoss(
-    const std::map<std::string, ThinSliceSystematic> & pars);
+      const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_ELoss(
-    const ThinSliceEvent & event,
-    const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID);
+      const ThinSliceEvent & event,
+      int signal_index,
+      const ThinSliceSystematic & par/*,
+      const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID*/);
 
   void SetupSyst_ELossMuon(
-    const std::map<std::string, ThinSliceSystematic> & pars);
+      const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_ELossMuon(
-    const ThinSliceEvent & event,
-    const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID);
+      const ThinSliceEvent & event,
+      const ThinSliceSystematic & par/*,
+      const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID*/);
 
   double CheckAndReturn(double weight, std::string name);
 
@@ -122,11 +140,13 @@ class PDSPSystematics {
 
   //ELoss
   double fELossCut;
-  std::map<int, double> fELossFractions;
+  //std::map<int, double> fELossFractions;
+  std::map<int, std::vector<double>> fELossFractions;
   double fELossMuonCut;
   std::map<int, double> fELossMuonFractions;
 
   //std::vector<std::string> fActiveSysts;
+  int fUpstreamID, fNoTrackID, fDecayID, fPastFVID, fBeamCutID, fPastFVSelectionID;
 };
 }
 #endif

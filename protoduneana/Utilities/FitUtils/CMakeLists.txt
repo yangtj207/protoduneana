@@ -1,4 +1,5 @@
 include_directories ( ${CMAKE_CURRENT_SOURCE_DIR} )
+include_directories(AFTER $ENV{VALGRIND_INC})
 
 FILE (GLOB src_files *.cxx)
 
@@ -60,3 +61,5 @@ art_make_exec( NAME runPDSPThinSliceFit
 install_headers()
 install_fhicl()
 install_source()
+
+add_subdirectory(fcl_cfg_files)

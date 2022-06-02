@@ -171,7 +171,8 @@ class PDSPThinSliceFitter {
   double fPitch;
   std::string fSliceMethod;
   bool fMultinomial;
-  bool fDoFakeData, fDoThrows, fDoScans, fDo1DShifts, fDoSysts, fRunHesse;
+  bool fDoFakeData, fDoThrows, fDoScans, fOnlySystScans, fDo1DShifts, fDoSysts,
+       fRunHesse;
   bool fFixVariables;
   std::map<std::string, double> fSystsToFix, fFixSystsPostFit;
   std::map<std::string, int> fSystParameterIndices;
