@@ -31,7 +31,7 @@
 #include "duneprototypes/Protodune/singlephase/CRT/data/CRTTrigger.h"
 //#include "dunecore/Geometry/ProtoDUNESPCRTSorter.h"                                                                                                                                                    
 
-#include "dune-raw-data/Overlays/CRTFragment.hh"
+#include "dunepdlegacy/Overlays/CRTFragment.hh"
 #include "artdaq-core/Data/ContainerFragment.hh"
 
 #include "lardataobj/RawData/RDTimeStamp.h"
