@@ -18,7 +18,7 @@ art_make( LIBRARY_NAME ProtoDUNEUtilities
                         geant4reweight::ReweightBaseLib
                         geant4reweight::PropBaseLib
                         dunecore::DuneObj
-                        dune_raw_data::dune-raw-data_Services_ChannelMap_PdspChannelMapService_service
+                        dunepdlegacy_Services_ChannelMap_PdspChannelMapService_service
                         larsim::MCCheater_PhotonBackTrackerService_service
                         larsim::MCCheater_BackTrackerService_service
                         larsim::MCCheater_ParticleInventoryService_service
