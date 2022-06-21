@@ -11,6 +11,7 @@ parser.add_argument('-o', type=str, required=True)
 parser.add_argument('-i', type=str, required=True)
 parser.add_argument('--add_files', nargs='+', default=[])
 parser.add_argument('--add_covs', nargs='+', default=[])
+parser.add_argument('--fixed', action='store_true')
 args = parser.parse_args()
 
 
@@ -395,9 +396,19 @@ if len(args.add_files) > 0:
     for j in range(1, cov.GetNbinsX()+1):
       corr.SetBinContent(i, j, cov.GetBinContent(i, j)/math.sqrt(cov.GetBinContent(i, i)*cov.GetBinContent(j, j)))
 
+if args.fixed:
+  hs = [fIn.Get('FixedPlots/FixedXSec/Fixed%sXSec'%n) for n in ['Abs', 'Cex', 'OtherInel']]
+  vals = [[h.GetBinContent(i) for i in range(1, h.GetNbinsX()+1)] for h in hs]
+  bins = [[h.GetBinCenter(i) for i in range(1, h.GetNbinsX()+1)] for h in hs]
+
+  grs = [RT.TGraph(len(vs), array('d', bs), array('d', vs)) for vs, bs in zip(vals, bins)]
+
+
 fOut.cd()
 corr.Write()
 cov.Write()
-
+if args.fixed:
+  for i in range(3):
+    grs[i].Write('gr_fixed_%s'%['Abs', 'Cex', 'OtherInel'][i])
 fOut.Close();
 

@@ -62,9 +62,21 @@ class PDSPSystematics {
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_BeamMatch(
       const ThinSliceEvent & event,
-      const ThinSliceSystematic & par/*,
-      //const std::map<std::string, ThinSliceSystematic> & pars,
-      int upstream_ID, int no_track_ID*/);
+      const ThinSliceSystematic & par);
+
+  void SetupSyst_BeamMatchLow(
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_BeamMatchLow(
+      const ThinSliceEvent & event,
+      int signal_index,
+      const ThinSliceSystematic & par);
+
+  void SetupSyst_BeamMatchHigh(
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_BeamMatchHigh(
+      const ThinSliceEvent & event,
+      int signal_index,
+      const ThinSliceSystematic & par);
 
   double GetSystWeight_UpstreamInt(
       const ThinSliceEvent & event,
@@ -111,6 +123,11 @@ class PDSPSystematics {
   double CheckAndReturn(double weight, std::string name);
 
  private:
+
+  double GetFractionBySample(
+    const std::map<int, std::vector<double>> & fractions, int sample_ID,
+    int signal_index);
+
   //G4RW Coeff
   std::map<std::string, std::string> fG4RWCoeffBranches;
 
@@ -129,6 +146,16 @@ class PDSPSystematics {
 
   //Beam Match
   std::vector<double> fBeamMatchLimits, fBeamMatchFractions;
+
+  //Beam Match Low
+  double fBeamMatchLowLimit, fBeamMatchLowFraction;
+  std::map<int, std::vector<double>> fBeamMatchLowFractions;
+  bool fBeamMatchLowUseSingleFrac;
+
+  //Beam Match High
+  double fBeamMatchHighLimit, fBeamMatchHighFraction;
+  std::map<int, std::vector<double>> fBeamMatchHighFractions;
+  bool fBeamMatchHighUseSingleFrac;
 
   //Box Beam
   std::vector<std::pair<double, double>> fBoxBeamRegions;

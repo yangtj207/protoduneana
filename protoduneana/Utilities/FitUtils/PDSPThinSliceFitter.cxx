@@ -2203,8 +2203,9 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
       fCovarianceBins
           = std::map<std::string, size_t>(temp_vec.begin(), temp_vec.end());
 
-      TFile cov_file(pset.get<std::string>("CovarianceFile").c_str());
-      fCovMatrix = (TMatrixD*)cov_file.Get(
+      //TFile cov_file(pset.get<std::string>("CovarianceFile").c_str());
+      TFile * cov_file = TFile::Open(pset.get<std::string>("CovarianceFile").c_str());
+      fCovMatrix = (TMatrixD*)cov_file->/*.*/Get(
           pset.get<std::string>("CovarianceMatrix").c_str());
       fCovMatrixDisplay = (TMatrixD*)fCovMatrix->Clone();
       if (!fCovMatrix->IsSymmetric()) {
@@ -2218,6 +2219,7 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
       fInputChol->Decompose();
 
       fCovMatrix->Invert();
+      cov_file->Close();
     }
   }
 }

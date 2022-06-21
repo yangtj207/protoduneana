@@ -20,6 +20,7 @@ parser = ap()
 parser.add_argument('-o', type=str, required=True)
 parser.add_argument('-f', type=str, required=True)
 parser.add_argument('-x', type=str, required=True)
+parser.add_argument('--xt', type=str, default=None)
 parser.add_argument('--al', type=int, default=0)
 parser.add_argument('--ah', type=int, default=-1)
 parser.add_argument('--cl', type=int, default=0)
@@ -28,8 +29,10 @@ parser.add_argument('--ol', type=int, default=0)
 parser.add_argument('--oh', type=int, default=-1)
 parser.add_argument('-t', action='store_true')
 parser.add_argument('-p', action='store_true')
+parser.add_argument('-m', action='store_true', help='Set max to ultimate max of xsec')
 parser.add_argument('--LADS', type=int, help='0: Use results from Kotlinski. 1: Use results from Rowntree. 2: Both', default = 0)
 parser.add_argument('--add', action='store_true', help='Set error bars to cov') 
+parser.add_argument('--fixed', action='store_true')
 
 args = parser.parse_args()
 
@@ -60,6 +63,10 @@ if args.add:
       x.SetPointEYlow(i, sqrt(cov_hist.GetBinContent(count, count)))
       count += 1
 
+#if args.fixed:
+#  fixed_xsecs = []
+#  for n in ['Abs', 'Cex', 'OtherInel']:
+
 fG4 = RT.TFile(args.x, 'open')
 
 n_abs = gr_abs.GetN()
@@ -75,6 +82,15 @@ g4_xsecs.append(RT.TGraph(len(xs), array('d', xs), array('d', total)))
 g4_maxes = [max([y for y in g.GetY()]) for g in g4_xsecs]
 print(g4_maxes)
 
+if args.xt:
+  fG4Thresh = RT.TFile(args.xt, 'open')
+  g4_xsecs_thresh = [fG4Thresh.Get('abs_KE').Clone(), fG4Thresh.Get('cex_KE').Clone()]
+  other_grs_thresh = [fG4Thresh.Get('dcex_KE'), fG4Thresh.Get('inel_KE'), fG4Thresh.Get('prod_KE')]
+  total_thresh = [other_grs_thresh[0].GetY()[i] + other_grs_thresh[1].GetY()[i] + other_grs_thresh[2].GetY()[i] for i in range(0, other_grs_thresh[0].GetN())]
+  xs_thresh = [x for x in other_grs_thresh[0].GetX()]
+  g4_xsecs_thresh.append(RT.TGraph(len(xs), array('d', xs_thresh), array('d', total_thresh)))
+
+
 result_maxes = []
 for i in range(0, len(result_xsecs)):
   g = result_xsecs[i]
@@ -86,6 +102,7 @@ for i in range(0, len(result_xsecs)):
 names = ['abs', 'cex', 'other']
 titles = ['Absorption', 'Charge Exchange', 'Other']
 
+the_max = max([i for i in g4_maxes] + [i for i in result_maxes])
 fOut = RT.TFile(args.o, 'recreate')
 for i in [0, 1, 2]:
   c = RT.TCanvas('c%s'%names[i], '')
@@ -94,7 +111,10 @@ for i in [0, 1, 2]:
   result_xsecs[i].SetMinimum(0.)
   result_xsecs[i].SetLineWidth(2)
 
-  g4_xsecs[i].SetMaximum(1.05*max([g4_maxes[i], result_maxes[i]]))
+  if args.m:
+    g4_xsecs[i].SetMaximum(1.05*the_max)
+  else:
+    g4_xsecs[i].SetMaximum(1.05*max([g4_maxes[i], result_maxes[i]]))
 
   g4_xsecs[i].SetLineColor(RT.kRed)
   g4_xsecs[i].SetTitle('%s;Kinetic Energy [MeV];#sigma [mb]'%titles[i])
@@ -103,12 +123,21 @@ for i in [0, 1, 2]:
   g4_xsecs[i].GetXaxis().SetRangeUser(0., 999.)
   g4_xsecs[i].Draw('AC')
   g4_xsecs[i].SetLineWidth(2)
+
+  if args.xt:
+    g4_xsecs_thresh[i].SetLineColor(RT.kRed)
+    g4_xsecs_thresh[i].SetLineWidth(2)
+    g4_xsecs_thresh[i].SetLineStyle(9)
+    g4_xsecs_thresh[i].Draw('C same')
+
   result_xsecs[i].Draw('pez same')
   result_xsecs[i].SetMarkerStyle(20)
   result_xsecs[i].SetMarkerColor(RT.kBlack)
   if i == 0:
     leg = RT.TLegend()
-    leg.AddEntry(g4_xsecs[i], 'Geant4 10.6', 'l')
+    leg.AddEntry(g4_xsecs[i], 'Geant4 10.6' if not args.xt else 'Geant4 10.6 Thresholds', 'l')
+    if args.xt:
+      leg.AddEntry(g4_xsecs_thresh[i], 'Geant4 10.6 No Thresholds', 'l')
     leg.AddEntry(result_xsecs[i], 'ProtoDUNE-SP', 'pez')
     leg.Draw()
   tt.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
@@ -267,6 +296,11 @@ c = RT.TCanvas("cabs_lads")
 c.SetTicks()
 g4_xsecs[0].Draw('AC')
 g4_xsecs[0].SetLineWidth(2)
+if args.xt:
+  g4_xsecs_thresh[0].SetLineColor(RT.kRed)
+  g4_xsecs_thresh[0].SetLineWidth(2)
+  g4_xsecs_thresh[0].SetLineStyle(9)
+  g4_xsecs_thresh[0].Draw('C same')
 result_xsecs[0].Draw('pez same')
 tt.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
 
@@ -287,7 +321,9 @@ if args.LADS in [1, 2]:
   LADS_1.Draw('pez same')
 
 leg = RT.TLegend()
-leg.AddEntry(g4_xsecs[0], 'Geant4 10.6', 'l')
+leg.AddEntry(g4_xsecs[0], 'Geant4 10.6' if not args.xt else 'Geant4 10.6 Thresholds', 'l')
+if args.xt:
+  leg.AddEntry(g4_xsecs_thresh[0], 'Geant4 10.6 No Thresholds', 'l')
 leg.AddEntry(result_xsecs[0], 'ProtoDUNE-SP', 'pez')
 if args.LADS in [0, 2]:
   leg.AddEntry(LADS_0, "Kotlinski et al. (2000)", 'pez')

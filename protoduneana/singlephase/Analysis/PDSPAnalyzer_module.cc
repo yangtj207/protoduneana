@@ -1067,6 +1067,7 @@ private:
   protoana::ProtoDUNECalibration calibration_NoSCE;
   bool fSaveHits;
   bool fSaveHitIDEInfo;
+  bool fSaveRecoBeamAllTrack;
   bool fSkipMVA;
   bool fTrueToReco;
   bool fDoReweight;
@@ -1127,6 +1128,7 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   calibration_NoSCE(p.get<fhicl::ParameterSet>("CalibrationParsNoSCE")),
   fSaveHits( p.get<bool>( "SaveHits" ) ),
   fSaveHitIDEInfo(p.get<bool>( "SaveHitIDEInfo", false)),
+  fSaveRecoBeamAllTrack(p.get<bool>("SaveRecoBeamAllTrack", false)),
   fSkipMVA( p.get<bool>( "SkipMVA" ) ),
   fTrueToReco( p.get<bool>( "TrueToReco" ) ),
   fDoReweight(p.get<bool>("DoReweight")),
@@ -1700,19 +1702,12 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("test_branch", &test_branch);
   fTree->Branch("reco_beam_alt_len", &reco_beam_alt_len);
   fTree->Branch("for_truncation_method", &for_truncation_method);
-  fTree->Branch("reco_beam_alt_len_allTrack", &reco_beam_alt_len_allTrack);
   fTree->Branch("reco_beam_calo_startX", &reco_beam_calo_startX);
   fTree->Branch("reco_beam_calo_startY", &reco_beam_calo_startY);
   fTree->Branch("reco_beam_calo_startZ", &reco_beam_calo_startZ);
   fTree->Branch("reco_beam_calo_endX", &reco_beam_calo_endX);
   fTree->Branch("reco_beam_calo_endY", &reco_beam_calo_endY);
   fTree->Branch("reco_beam_calo_endZ", &reco_beam_calo_endZ);
-  fTree->Branch("reco_beam_calo_startX_allTrack", &reco_beam_calo_startX_allTrack);
-  fTree->Branch("reco_beam_calo_startY_allTrack", &reco_beam_calo_startY_allTrack);
-  fTree->Branch("reco_beam_calo_startZ_allTrack", &reco_beam_calo_startZ_allTrack);
-  fTree->Branch("reco_beam_calo_endX_allTrack", &reco_beam_calo_endX_allTrack);
-  fTree->Branch("reco_beam_calo_endY_allTrack", &reco_beam_calo_endY_allTrack);
-  fTree->Branch("reco_beam_calo_endZ_allTrack", &reco_beam_calo_endZ_allTrack);
   fTree->Branch("reco_beam_calo_startDirX", &reco_beam_calo_startDirX);
   fTree->Branch("reco_beam_calo_startDirY", &reco_beam_calo_startDirY);
   fTree->Branch("reco_beam_calo_startDirZ", &reco_beam_calo_startDirZ);
@@ -1728,10 +1723,7 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_trackEndDirZ", &reco_beam_trackEndDirZ);
   fTree->Branch("reco_beam_vertex_nHits", &reco_beam_vertex_nHits);
   fTree->Branch("reco_beam_vertex_michel_score", &reco_beam_vertex_michel_score);
-  fTree->Branch("reco_beam_vertex_nHits_allTrack", &reco_beam_vertex_nHits_allTrack);
-  fTree->Branch("reco_beam_vertex_michel_score_allTrack", &reco_beam_vertex_michel_score_allTrack);
   fTree->Branch("reco_beam_vertex_michel_score_weight_by_charge", &reco_beam_vertex_michel_score_weight_by_charge);
-  fTree->Branch("reco_beam_vertex_michel_score_weight_by_charge_allTrack", &reco_beam_vertex_michel_score_weight_by_charge_allTrack);
   fTree->Branch("reco_beam_trackID", &reco_beam_trackID);
   fTree->Branch("n_beam_slices", &n_beam_slices);
   fTree->Branch("n_beam_particles", &n_beam_particles);
@@ -1743,16 +1735,12 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_calo_X", &reco_beam_calo_X);
   fTree->Branch("reco_beam_calo_Y", &reco_beam_calo_Y);
   fTree->Branch("reco_beam_calo_Z", &reco_beam_calo_Z);
-  fTree->Branch("reco_beam_calo_X_allTrack", &reco_beam_calo_X_allTrack);
-  fTree->Branch("reco_beam_calo_Y_allTrack", &reco_beam_calo_Y_allTrack);
-  fTree->Branch("reco_beam_calo_Z_allTrack", &reco_beam_calo_Z_allTrack);
   fTree->Branch("reco_beam_dQ", &reco_beam_dQ);
   fTree->Branch("reco_beam_dEdX_SCE", &reco_beam_dEdX_SCE);
   fTree->Branch("reco_beam_calibrated_dEdX_SCE", &reco_beam_calibrated_dEdX_SCE);
   fTree->Branch("reco_beam_calibrated_dQdX_SCE", &reco_beam_calibrated_dQdX_SCE);
   fTree->Branch("reco_beam_resRange_SCE", &reco_beam_resRange_SCE);
   fTree->Branch("reco_beam_TrkPitch_SCE", &reco_beam_TrkPitch_SCE);
-  fTree->Branch("reco_beam_TrkPitch_SCE_allTrack", &reco_beam_TrkPitch_SCE_allTrack);
 
   if (fSaveHitIDEInfo) {
     fTree->Branch("reco_beam_hit_IDE_IDs", &reco_beam_hit_IDE_IDs);
@@ -1773,7 +1761,6 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_TrkPitch_NoSCE", &reco_beam_TrkPitch_NoSCE);
 
   fTree->Branch("reco_beam_calo_wire", &reco_beam_calo_wire);
-  fTree->Branch("reco_beam_calo_wire_allTrack", &reco_beam_calo_wire_allTrack);
   fTree->Branch("reco_beam_calo_wire_z", &reco_beam_calo_wire_z);
   fTree->Branch("reco_beam_calo_wire_NoSCE", &reco_beam_calo_wire_NoSCE);
   fTree->Branch("reco_beam_calo_wire_z_NoSCE", &reco_beam_calo_wire_z_NoSCE);
@@ -1799,26 +1786,44 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_PFP_emScore_collection_weight_by_charge", &reco_beam_PFP_emScore_collection_weight_by_charge);
   fTree->Branch("reco_beam_PFP_michelScore_collection_weight_by_charge", &reco_beam_PFP_michelScore_collection_weight_by_charge);
 
-  fTree->Branch("reco_beam_allTrack_ID",              &reco_beam_allTrack_ID);
-  fTree->Branch("reco_beam_allTrack_beam_cuts",       &reco_beam_allTrack_beam_cuts);
-  fTree->Branch("reco_beam_allTrack_flipped",         &reco_beam_allTrack_flipped);
-  fTree->Branch("reco_beam_allTrack_len",             &reco_beam_allTrack_len);
-  fTree->Branch("reco_beam_allTrack_startX",          &reco_beam_allTrack_startX);
-  fTree->Branch("reco_beam_allTrack_startY",          &reco_beam_allTrack_startY);
-  fTree->Branch("reco_beam_allTrack_startZ",          &reco_beam_allTrack_startZ);
-  fTree->Branch("reco_beam_allTrack_endX",            &reco_beam_allTrack_endX);
-  fTree->Branch("reco_beam_allTrack_endY",            &reco_beam_allTrack_endY);
-  fTree->Branch("reco_beam_allTrack_endZ",            &reco_beam_allTrack_endZ);
-  fTree->Branch("reco_beam_allTrack_trackDirX",       &reco_beam_allTrack_trackDirX);
-  fTree->Branch("reco_beam_allTrack_trackDirY",       &reco_beam_allTrack_trackDirY);
-  fTree->Branch("reco_beam_allTrack_trackDirZ",       &reco_beam_allTrack_trackDirZ);
-  fTree->Branch("reco_beam_allTrack_trackEndDirX",    &reco_beam_allTrack_trackEndDirX);
-  fTree->Branch("reco_beam_allTrack_trackEndDirY",    &reco_beam_allTrack_trackEndDirY);
-  fTree->Branch("reco_beam_allTrack_trackEndDirZ",    &reco_beam_allTrack_trackEndDirZ);
-  fTree->Branch("reco_beam_allTrack_resRange",        &reco_beam_allTrack_resRange);
-  fTree->Branch("reco_beam_allTrack_calibrated_dEdX", &reco_beam_allTrack_calibrated_dEdX);
-  fTree->Branch("reco_beam_allTrack_Chi2_proton",     &reco_beam_allTrack_Chi2_proton);
-  fTree->Branch("reco_beam_allTrack_Chi2_ndof",       &reco_beam_allTrack_Chi2_ndof);
+  if (fSaveRecoBeamAllTrack) {
+    fTree->Branch("reco_beam_allTrack_ID",              &reco_beam_allTrack_ID);
+    fTree->Branch("reco_beam_allTrack_beam_cuts",       &reco_beam_allTrack_beam_cuts);
+    fTree->Branch("reco_beam_allTrack_flipped",         &reco_beam_allTrack_flipped);
+    fTree->Branch("reco_beam_allTrack_len",             &reco_beam_allTrack_len);
+    fTree->Branch("reco_beam_allTrack_startX",          &reco_beam_allTrack_startX);
+    fTree->Branch("reco_beam_allTrack_startY",          &reco_beam_allTrack_startY);
+    fTree->Branch("reco_beam_allTrack_startZ",          &reco_beam_allTrack_startZ);
+    fTree->Branch("reco_beam_allTrack_endX",            &reco_beam_allTrack_endX);
+    fTree->Branch("reco_beam_allTrack_endY",            &reco_beam_allTrack_endY);
+    fTree->Branch("reco_beam_allTrack_endZ",            &reco_beam_allTrack_endZ);
+    fTree->Branch("reco_beam_allTrack_trackDirX",       &reco_beam_allTrack_trackDirX);
+    fTree->Branch("reco_beam_allTrack_trackDirY",       &reco_beam_allTrack_trackDirY);
+    fTree->Branch("reco_beam_allTrack_trackDirZ",       &reco_beam_allTrack_trackDirZ);
+    fTree->Branch("reco_beam_allTrack_trackEndDirX",    &reco_beam_allTrack_trackEndDirX);
+    fTree->Branch("reco_beam_allTrack_trackEndDirY",    &reco_beam_allTrack_trackEndDirY);
+    fTree->Branch("reco_beam_allTrack_trackEndDirZ",    &reco_beam_allTrack_trackEndDirZ);
+    fTree->Branch("reco_beam_allTrack_resRange",        &reco_beam_allTrack_resRange);
+    fTree->Branch("reco_beam_allTrack_calibrated_dEdX", &reco_beam_allTrack_calibrated_dEdX);
+    fTree->Branch("reco_beam_allTrack_Chi2_proton",     &reco_beam_allTrack_Chi2_proton);
+    fTree->Branch("reco_beam_allTrack_Chi2_ndof",       &reco_beam_allTrack_Chi2_ndof);
+    fTree->Branch("reco_beam_alt_len_allTrack", &reco_beam_alt_len_allTrack);
+    fTree->Branch("reco_beam_calo_startX_allTrack", &reco_beam_calo_startX_allTrack);
+    fTree->Branch("reco_beam_calo_startY_allTrack", &reco_beam_calo_startY_allTrack);
+    fTree->Branch("reco_beam_calo_startZ_allTrack", &reco_beam_calo_startZ_allTrack);
+    fTree->Branch("reco_beam_calo_endX_allTrack", &reco_beam_calo_endX_allTrack);
+    fTree->Branch("reco_beam_calo_endY_allTrack", &reco_beam_calo_endY_allTrack);
+    fTree->Branch("reco_beam_calo_endZ_allTrack", &reco_beam_calo_endZ_allTrack);
+    fTree->Branch("reco_beam_interactingEnergy_allTrack", &reco_beam_interactingEnergy_allTrack);
+    fTree->Branch("reco_beam_calo_wire_allTrack", &reco_beam_calo_wire_allTrack);
+    fTree->Branch("reco_beam_calo_X_allTrack", &reco_beam_calo_X_allTrack);
+    fTree->Branch("reco_beam_calo_Y_allTrack", &reco_beam_calo_Y_allTrack);
+    fTree->Branch("reco_beam_calo_Z_allTrack", &reco_beam_calo_Z_allTrack);
+    fTree->Branch("reco_beam_TrkPitch_SCE_allTrack", &reco_beam_TrkPitch_SCE_allTrack);
+    fTree->Branch("reco_beam_vertex_michel_score_weight_by_charge_allTrack", &reco_beam_vertex_michel_score_weight_by_charge_allTrack);
+    fTree->Branch("reco_beam_vertex_nHits_allTrack", &reco_beam_vertex_nHits_allTrack);
+    fTree->Branch("reco_beam_vertex_michel_score_allTrack", &reco_beam_vertex_michel_score_allTrack);
+  }
 
   fTree->Branch("reco_track_startX", &reco_track_startX);
   fTree->Branch("reco_track_startY", &reco_track_startY);
@@ -2168,7 +2173,6 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_beam_incidentEnergies", &reco_beam_incidentEnergies);
   fTree->Branch("reco_beam_interactingEnergy", &reco_beam_interactingEnergy);
   //fTree->Branch("reco_beam_incidentEnergies_allTrack", &reco_beam_incidentEnergies_allTrack);
-  fTree->Branch("reco_beam_interactingEnergy_allTrack", &reco_beam_interactingEnergy_allTrack);
   fTree->Branch("true_beam_incidentEnergies", &true_beam_incidentEnergies);
   fTree->Branch("true_beam_interactingEnergy", &true_beam_interactingEnergy);
   fTree->Branch("true_beam_slices", &true_beam_slices);
