@@ -15,7 +15,7 @@
 cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
 project(protoduneana LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.53.00d00)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.53.02d00)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
@@ -67,8 +67,7 @@ find_ups_product( clhep )
 find_ups_product( messagefacility )
 find_ups_product( cetbuildtools )
 find_ups_product( postgresql )
-find_ups_product( dune_raw_data )
-find_ups_product( dunepdsprce )
+find_ups_product( dunepdlegacy )
 find_ups_product( artdaq_core )
 find_ups_product( ifdh_art )
 find_ups_product( ifdhc )

@@ -1,11 +1,11 @@
 
-cet_find_library( RCEDAMLIB NAMES protodune-dam PATHS ENV DUNEPDSPRCE_LIB NO_DEFAULT_PATH )
+#cet_find_library( RCEDAMLIB NAMES protodune-dam PATHS ENV DUNEPDSPRCE_LIB NO_DEFAULT_PATH )
 
 cet_build_plugin(PDSPmatch art::module
                         lardataobj::RawData
                         lardataobj::RecoBase
                         larcorealg::Geometry
-                        dune_raw_data::dune-raw-data_Overlays
+                        dunepdlegacy_Overlays
                         artdaq_core::artdaq-core_Data
                         dunecore::Geometry
                         art::Framework_Core
@@ -22,7 +22,7 @@ cet_build_plugin(PDSPmatch art::module
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
                         ROOT_BASIC_LIB_LIST
-                        RCEDAMLIB
+                        dunepdlegacy_rce_dataaccess
                         BASENAME_ONLY
 )
 
@@ -30,7 +30,7 @@ cet_build_plugin(PDSPmatchmc art::module
                         lardataobj::RawData
                         lardataobj::RecoBase
                         larcorealg::Geometry
-                        dune_raw_data::dune-raw-data_Overlays
+                        dunepdlegacy_Overlays
                         artdaq_core::artdaq-core_Data
                         dunecore::Geometry
                         nusimdata::SimulationBase
@@ -50,7 +50,7 @@ cet_build_plugin(PDSPmatchmc art::module
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
                         ROOT_BASIC_LIB_LIST
-                        RCEDAMLIB
+                        dunepdlegacy_rce_dataaccess
                         BASENAME_ONLY
 )
 
