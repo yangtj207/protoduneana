@@ -4784,6 +4784,10 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         reco_daughter_allTrack_endX.push_back(   -999. );
         reco_daughter_allTrack_endY.push_back(   -999. );
         reco_daughter_allTrack_endZ.push_back(   -999. );
+
+        reco_daughter_allTrack_startDirX.push_back(-999.); 
+        reco_daughter_allTrack_startDirY.push_back(-999.); 
+        reco_daughter_allTrack_startDirZ.push_back(-999.); 
         reco_daughter_allTrack_momByRange_proton.push_back(-999.);
         reco_daughter_allTrack_momByRange_muon.push_back(-999.);
 
