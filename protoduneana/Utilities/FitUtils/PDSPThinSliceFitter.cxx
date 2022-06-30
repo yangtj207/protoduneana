@@ -1349,14 +1349,16 @@ void protoana::PDSPThinSliceFitter::NormalFit() {
 
 
     //Make 'fixed' 
-    GetFixFactors();
-    fFixSamplesInFunction = true;
-    fFitFunction(&vals[0]);
-    TDirectory * fixed_plot_dir = fOutputFile.mkdir("FixedPlots");
-    TDirectory * fixed_xsec_dir = fixed_plot_dir->mkdir("FixedXSec");
-    extra_name = "Fixed";
-    CompareDataMC(extra_name, fixed_xsec_dir, fixed_plot_dir, true);
-    fFixSamplesInFunction = false;
+    if (fFixPostFit) {
+      GetFixFactors();
+      fFixSamplesInFunction = true;
+      fFitFunction(&vals[0]);
+      TDirectory * fixed_plot_dir = fOutputFile.mkdir("FixedPlots");
+      TDirectory * fixed_xsec_dir = fixed_plot_dir->mkdir("FixedXSec");
+      extra_name = "Fixed";
+      CompareDataMC(extra_name, fixed_xsec_dir, fixed_plot_dir, true);
+      fFixSamplesInFunction = false;
+    }
 
 
     if (fDoThrows) 
@@ -1509,6 +1511,7 @@ void protoana::PDSPThinSliceFitter::BuildDataFromToy() {
       TVectorD rand(fTotalSystParameters);
       for (size_t i = 0; i < fTotalSystParameters; ++i) {
         rand[i] = fRNG.Gaus();
+        //std::cout << i << " " << rand[i] << std::endl;
       }
       TVectorD rand_times_chol = fInputChol->GetU()*rand;
 
@@ -1538,6 +1541,10 @@ void protoana::PDSPThinSliceFitter::BuildDataFromToy() {
           double val = (fSystsToFix.find(names[i]) == fSystsToFix.end() ?
                         rand_times_chol[bins[i]] + init_vals[base_par + i] :
                         fSystsToFix[names[i]]);
+          //std::cout << (fSystsToFix.find(names[i]) == fSystsToFix.end()) << std::endl;
+          //std::cout << names[i] << " " << val << " " <<
+          //             rand_times_chol[bins[i]] << " " << bins[i] << " " <<
+          //             init_vals[base_par + i] << " " << base_par << " " << i << std::endl;
 
           vals.push_back(val);
           fToyValues[names[i]] = val;
@@ -2026,7 +2033,8 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
           std::cout << chi2_points.first << " " << syst_chi2 << std::endl;
         //if (chi2_points.first < 0.) {
         if (chi2_points.first < -1.*FLT_EPSILON) {
-          std::string message = "Chi2 went negative\n";
+          std::string message = "Chi2 went negative " +
+                                std::to_string(chi2_points.first) + "\n";
 
 
           size_t a = 0;
@@ -2160,6 +2168,7 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fDebugMCDataScale = pset.get<bool>("DebugMCDataScale", false);
   fDebugChi2 = pset.get<bool>("DebugChi2", false);
   fScaleToDataBeamProfile = pset.get<bool>("ScaleToDataBeamProfile", false);
+  fFixPostFit = pset.get<bool>("FixPostFit", false);
 
   fNThrows = pset.get<size_t>("NThrows");
   fMaxRethrows = pset.get<size_t>("MaxRethrows");
