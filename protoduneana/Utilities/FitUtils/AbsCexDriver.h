@@ -60,7 +60,8 @@ class AbsCexDriver : public ThinSliceDriver {
     ThinSliceDataSet & data_set, double & flux,
     std::map<int, std::vector<double>> & sample_scales,
     std::vector<double> & beam_energy_bins,
-    int split_val = 0);
+    std::vector<double> & beam_fluxes,
+    int split_val = 0, bool norm_to_data_beam_P = false);
   void FakeDataEffVar(
     const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -93,12 +94,16 @@ class AbsCexDriver : public ThinSliceDriver {
     int split_val = 0);
 
   void FakeDataAngleVar(
-    TTree * tree,
+    //TTree * tree,
+    const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
     const std::map<int, bool> & signal_sample_checks,
     ThinSliceDataSet & data_set, double & flux,
+    const std::vector<double> & beam_energy_bins,
+    std::vector<double> & beam_fluxes,
     std::map<int, std::vector<double>> & sample_scales,
-    int split_val = 0);
+    int split_val = 0,
+    bool norm_to_data_beam_P = false);
   void FakeDataBeamWeight(
     const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,

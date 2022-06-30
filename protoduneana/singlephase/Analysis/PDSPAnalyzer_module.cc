@@ -1172,6 +1172,12 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
     FakeDataMultiRW = new G4MultiReweighter(211, *FracsFile, FakeDataParSet,
                                             p.get<fhicl::ParameterSet>("Material"),
                                             RWManager);
+    //Piminus Reweighter
+    //PiMinusFracsFile = OpenFile(p.get< std::string >("PiMinusFracsFile"));
+    //PiMinusMultiRW = new G4MultiReweighter(-211, *PiMinusFracsFile, ParSet,
+    //                                p.get<fhicl::ParameterSet>("Material"),
+    //                                RWManager);
+    
     //Proton Reweighter
     ProtFracsFile = OpenFile(p.get< std::string >("ProtFracsFile"));
     ProtParSet = p.get<std::vector<fhicl::ParameterSet>>("ProtParameterSet");
