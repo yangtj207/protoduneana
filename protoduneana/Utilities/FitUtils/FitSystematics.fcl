@@ -650,11 +650,11 @@ SystematicsList: {
     Name: "beam_match_high_weight"
     Central: 1.
     LowerLimit: 0.01
-    UpperLimit: 1.0916 
+    UpperLimit: 1.0910 
     ThrowLimit: 0.01
-    ThrowLimitUp: 1.0916 
+    ThrowLimitUp: 1.0910 
     GenThrowLimit: 0.01
-    GenThrowLimitUp: 1.0916 
+    GenThrowLimitUp: 1.0910 
     Sigma: .1
     Options: {
       Fraction: 0.85399365 
