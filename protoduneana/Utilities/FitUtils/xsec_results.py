@@ -320,21 +320,6 @@ if args.LADS in [0, 2]:
 if args.LADS in [1, 2]:
   LADS_1.Draw('pez same')
 
-leg = RT.TLegend()
-leg.AddEntry(g4_xsecs[0], 'Geant4 10.6' if not args.xt else 'Geant4 10.6 Thresholds', 'l')
-if args.xt:
-  leg.AddEntry(g4_xsecs_thresh[0], 'Geant4 10.6 No Thresholds', 'l')
-leg.AddEntry(result_xsecs[0], 'ProtoDUNE-SP', 'pez')
-if args.LADS in [0, 2]:
-  leg.AddEntry(LADS_0, "Kotlinski et al. (2000)", 'pez')
-if args.LADS in [1, 2]:
-  leg.AddEntry(LADS_1, "Rowntree et al. (1999)", 'pez')
-leg.Draw('same')
-if args.p:
-  t_prelim.DrawLatex(0.33, .5, 'Preliminary')
-RT.gPad.RedrawAxis()
-c.Write()
-
 KEs = [450, 550, 650, 750, 850]
 lines = []
 for i in range(0, len(KEs)):
@@ -359,4 +344,20 @@ for i in range(0, len(all_xs)):
   for j in range(0, len(all_xs)):
     xsec_chi2 += (all_ys[i] - all_g4s[i])*xsec_cov_mat[i][j]*(all_ys[j] - all_g4s[j])
 print('cross section chi2: %.2f'%xsec_chi2)
+leg = RT.TLegend()
+leg.AddEntry(g4_xsecs[0], 'Geant4 10.6' if not args.xt else 'Geant4 10.6 Thresholds', 'l')
+if args.xt:
+  leg.AddEntry(g4_xsecs_thresh[0], 'Geant4 10.6 No Thresholds', 'l')
+leg.AddEntry(result_xsecs[0], 'ProtoDUNE-SP', 'pez')
+if args.LADS in [0, 2]:
+  leg.AddEntry(LADS_0, "Kotlinski et al. (2000)", 'pez')
+if args.LADS in [1, 2]:
+  leg.AddEntry(LADS_1, "Rowntree et al. (1999)", 'pez')
+leg.AddEntry('', '#chi^{2} = %.2f'%xsec_chi2, '')
+leg.Draw('same')
+if args.p:
+  t_prelim.DrawLatex(0.33, .5, 'Preliminary')
+RT.gPad.RedrawAxis()
+c.Write()
+
 fOut.Close()
