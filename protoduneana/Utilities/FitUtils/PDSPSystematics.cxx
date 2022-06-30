@@ -409,6 +409,10 @@ double protoana::PDSPSystematics::GetSystWeight_BeamMatchHigh(
                          signal_index));
   double weight = (matched ?
                    variation : (1. - variation*fraction)/(1. - fraction));
+  if (weight < 0.) {
+    std::cout << variation << " " << fraction << " " << event.GetSampleID() <<
+                 " " << signal_index << std::endl;
+  }
   return CheckAndReturn(weight, "BeamMatchHigh");
 }
 
