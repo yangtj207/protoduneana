@@ -23,7 +23,7 @@ art_make(BASENAME_ONLY
   larreco::RecoAlg
   ROOT_BASIC_LIB_LIST
   hep_hpc_hdf5
-  HDF5
+  ${HDF5_LIBRARIES}
   )
 
 install_headers()
