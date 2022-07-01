@@ -17,6 +17,8 @@ protoana::PDSPSystematics::PDSPSystematics(
   SetupSyst_EDivWeight(pars);
   SetupSyst_EndZNoTrackWeight(pars);
   SetupSyst_BeamMatch(pars);
+  SetupSyst_BeamMatchHigh(pars);
+  SetupSyst_BeamMatchLow(pars);
   SetupSyst_BoxBeam(pars);
   SetupSyst_ELoss(pars);
   SetupSyst_ELossMuon(pars);
@@ -40,6 +42,12 @@ double protoana::PDSPSystematics::GetEventWeight(
     }
     else if (it->first == "beam_match_weight") {
       weight *= GetSystWeight_BeamMatch(event, it->second);
+    }
+    else if (it->first == "beam_match_low_weight") {
+      weight *= GetSystWeight_BeamMatchLow(event, signal_index, it->second);
+    }
+    else if (it->first == "beam_match_high_weight") {
+      weight *= GetSystWeight_BeamMatchHigh(event, signal_index, it->second);
     }
     else if (it->first == "eloss_weight") {
       weight *= GetSystWeight_ELoss(event, signal_index, it->second);
@@ -226,10 +234,6 @@ double protoana::PDSPSystematics::GetSystWeight_EndZNoTrack(
     const ThinSliceEvent & event,
     int signal_index,
     const ThinSliceSystematic & par) {
-    //const std::map<std::string, ThinSliceSystematic> & pars,
-    //int upstream_ID, int no_track_ID) {
-  //if (pars.find("end_z_no_track_weight") == pars.end())
-  //  return 1.;
 
   //Upstream Interactions
   if (event.GetSampleID() == fUpstreamID) return 1.;
@@ -238,27 +242,21 @@ double protoana::PDSPSystematics::GetSystWeight_EndZNoTrack(
 
   if (event.GetTrueEndZ() > fEndZNoTrackCut) return 1.;
 
-  double variation = par/*s.at("end_z_no_track_weight")*/.GetValue();
+  double variation = par.GetValue();
 
-  double fraction = (signal_index > -1 ?
-                     fEndZFractions[event.GetSampleID()][signal_index] :
-                     fEndZFractions[event.GetSampleID()].back());
+  double fraction = GetFractionBySample(fEndZFractions, event.GetSampleID(),
+                                        signal_index);
+  //double fraction = (signal_index > -1 ?
+  //                   fEndZFractions[event.GetSampleID()][signal_index] :
+  //                   fEndZFractions[event.GetSampleID()].back());
 
   if (fraction < 0.) {
-    //std::cout << "neg fraction: " << fraction << std::endl;
     return 1.;
   }
 
   double weight = 
-  /*return*/ (event.GetSelectionID() == fNoTrackID ? variation :
-          (1. - variation*fraction)/(1. - fraction));
-  //for (auto it = fEndZFractions.begin(); it != fEndZFractions.end(); ++it) {
-  //  std::cout << it->first << " ";
-  //  for (const auto & f : it->second) {
-  //    std::cout << f << " "; 
-  //  }
-  //  std::cout << std::endl;
-  //}
+      (event.GetSelectionID() == fNoTrackID ? variation :
+       (1. - variation*fraction)/(1. - fraction));
   if (weight < 0.) {
     std::cout << event.GetSelectionID() << " " << event.GetSampleID() << " " <<
                  signal_index << " " << variation << " " <<
@@ -266,7 +264,6 @@ double protoana::PDSPSystematics::GetSystWeight_EndZNoTrack(
   }
   return CheckAndReturn(weight, "EndZNoTrack");
 
-  //return pars.at("end_z_no_track_weight").GetValue();
 }
 
 void protoana::PDSPSystematics::SetupSyst_BeamMatch(
@@ -326,6 +323,100 @@ double protoana::PDSPSystematics::GetSystWeight_BeamMatch(
   //return (matched ? variation : (1. - variation*fraction)/(1. - fraction));
   return CheckAndReturn(weight, "BeamMatch");
 }
+
+void protoana::PDSPSystematics::SetupSyst_BeamMatchLow(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("beam_match_low_weight") == pars.end()) return; 
+
+  fBeamMatchLowLimit = pars.at("beam_match_low_weight")
+      .GetOption<double>("Limit");
+  fBeamMatchLowFraction = pars.at("beam_match_low_weight")
+      .GetOption<double>("Fraction");
+  auto temp = pars.at("beam_match_low_weight")
+      .GetOption<std::vector<std::pair<int, std::vector<double>>>>("Fractions");
+  fBeamMatchLowFractions
+      = std::map<int, std::vector<double>>(temp.begin(), temp.end()); 
+  fBeamMatchLowUseSingleFrac = pars.at("beam_match_low_weight")
+      .GetOption<bool>("UseSingleFrac");
+}
+
+void protoana::PDSPSystematics::SetupSyst_BeamMatchHigh(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("beam_match_high_weight") == pars.end()) return; 
+
+  fBeamMatchHighLimit = pars.at("beam_match_high_weight")
+      .GetOption<double>("Limit");
+  fBeamMatchHighFraction = pars.at("beam_match_high_weight")
+      .GetOption<double>("Fraction");
+  auto temp = pars.at("beam_match_high_weight")
+      .GetOption<std::vector<std::pair<int, std::vector<double>>>>("Fractions");
+  fBeamMatchHighFractions
+      = std::map<int, std::vector<double>>(temp.begin(), temp.end()); 
+  fBeamMatchHighUseSingleFrac = pars.at("beam_match_high_weight")
+      .GetOption<bool>("UseSingleFrac");
+}
+
+double protoana::PDSPSystematics::GetSystWeight_BeamMatchLow(
+    const ThinSliceEvent & event,
+    int signal_index,
+    const ThinSliceSystematic & par) {
+
+  //Upstream Interactions
+  if (event.GetSampleID() == fUpstreamID) return 1.;
+
+  //No reco track
+  if (event.GetSelectionID() == fNoTrackID) return 1.;
+
+  //upper limit
+  if (event.GetTrueEndZ() > fBeamMatchLowLimit) return 1.;
+
+  bool matched = (event.GetTrueID() == event.GetRecoToTrueID());
+  double variation = par.GetValue();
+
+  double fraction = (fBeamMatchLowUseSingleFrac ?
+                     fBeamMatchLowFraction :
+                     GetFractionBySample(
+                         fBeamMatchLowFractions, event.GetSampleID(),
+                         signal_index));
+  //std::cout << event.GetSampleID() << " " << signal_index << " " << fraction <<
+  //             std::endl;
+  double weight = (matched ?
+                   variation : (1. - variation*fraction)/(1. - fraction));
+  return CheckAndReturn(weight, "BeamMatchLow");
+}
+
+double protoana::PDSPSystematics::GetSystWeight_BeamMatchHigh(
+    const ThinSliceEvent & event,
+    int signal_index,
+    const ThinSliceSystematic & par) {
+
+  //Upstream Interactions
+  if (event.GetSampleID() == fUpstreamID) return 1.;
+
+  //No reco track
+  if (event.GetSelectionID() == fNoTrackID) return 1.;
+
+  //upper limit
+  if (event.GetTrueEndZ() < fBeamMatchHighLimit) return 1.;
+
+  bool matched = (event.GetTrueID() == event.GetRecoToTrueID());
+  double variation = par.GetValue();
+
+  double fraction = (fBeamMatchHighUseSingleFrac ?
+                     fBeamMatchHighFraction :
+                     GetFractionBySample(
+                         fBeamMatchHighFractions, event.GetSampleID(),
+                         signal_index));
+  double weight = (matched ?
+                   variation : (1. - variation*fraction)/(1. - fraction));
+  if (weight < 0.) {
+    std::cout << variation << " " << fraction << " " << event.GetSampleID() <<
+                 " " << signal_index << std::endl;
+  }
+  return CheckAndReturn(weight, "BeamMatchHigh");
+}
+
+
 
 double protoana::PDSPSystematics::GetSystWeight_UpstreamInt(
     const ThinSliceEvent & event,
@@ -498,4 +589,12 @@ double protoana::PDSPSystematics::CheckAndReturn(double weight,
                  name << std::endl;
   }
   return weight;
+}
+
+double protoana::PDSPSystematics::GetFractionBySample(
+    const std::map<int, std::vector<double>> & fractions, int sample_ID,
+    int signal_index) {
+  return (signal_index > -1 ?
+          fractions.at(sample_ID)[signal_index] :
+          fractions.at(sample_ID).back());
 }

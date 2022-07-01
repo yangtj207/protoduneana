@@ -44,7 +44,8 @@ Systematics: [
   @local::SystematicsList.ediv_weight
   ,@local::g4rw_proton_coeff
   ,@local::SystematicsList.end_z_no_track_weight
-  ,@local::SystematicsList.beam_match_weight
+  ,@local::SystematicsList.beam_match_low_weight
+  ,@local::SystematicsList.beam_match_high_weight
   ,@local::g4rw_downstream_piplus_low_coeff
   ,@local::g4rw_downstream_piplus_high_coeff
 ]
@@ -53,18 +54,6 @@ Systematics[2].Central: 1.46
 Systematics[0].Options.F: .65078 #restricted P
 Systematics[0].ThrowLimitUp: 1.536
 Systematics[0].UpperLimit: 1.536
-
-
-####Restricted p
-#Systematics[2].Options.Fractions: [
-#  [1, [-1., -1., -1., 0.4210526315789474, 0.19672131147540983, 0.2558139534883721, 0.21951219512195125, 0.1559432933478735, 0.17641597028783657, 0.1984870317002882, 0.22136297728371193, 0.2766179540709812] ],
-#  [2, [0.0, 0.25, 0.19444444444444442, 0.2602739726027397, 0.29081632653061223, 0.22764227642276424, 0.2382089552238806, 0.2652816620055933, 0.2844129554655871, 0.3269617706237425] ],
-#  [3, [0.33333333333333337, 0.16, 0.21518987341772153, 0.18009478672985782, 0.18683651804670912, 0.14241676942046858, 0.14069026159595516, 0.15239873599540363, 0.1731623088307844, 0.19074778200253487] ],
-#  [4, [] ],
-#  [5, [0.5555555555555556] ],
-#  [6, [] ],
-#  [7, [0.0707070707070707] ]
-#]
 
 Systematics[2].Options.Fractions: [
 [1, [-1., -1., -1., 0.4,  0.2028985507246377, 0.24324324324324323, 0.22010869565217392, 0.15562248995983935, 0.17752234993614305, 0.19827299900365325, 0.22109443954104147, 0.2775628626692457] ],
@@ -79,7 +68,7 @@ Systematics[2].UpperLimit: 1.7391304347826089
 Systematics[2].ThrowLimitUp: 1.7391304347826089
 Systematics[2].GenThrowLimitUp: 1.7391304347826089
 
-Systematics[3].Options.Fractions: [0.24389853564855565, 0.5704915377763382, 0.6986620630125162, 0.7641277641277642, 0.873414146435148]
+#Systematics[3].Options.Fractions: [0.24389853564855565, 0.5704915377763382, 0.6986620630125162, 0.7641277641277642, 0.873414146435148]
 
 
 
@@ -89,12 +78,14 @@ CovarianceBins: [
   ["ediv_weight", 1] #, #20%
  ,["end_z_no_track_weight", 4] #10%
  ,["g4rw_proton_coeff", 6] #33%
- ,["beam_match_weight", 7] #10%
+ ,["beam_match_low_weight", 1] #20%
+ ,["beam_match_high_weight", 1] #20%
  ,["g4rw_downstream_piplus_low_coeff", 6] #33%
  ,["g4rw_downstream_piplus_high_coeff", 6] #33%
 ]
 
 CovarianceFile: "full_2_28_22_thresholds_10pct_endz_box_beam.root"
+CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/full_2_28_22_thresholds_10pct_endz_box_beam.root"
 CovarianceMatrix: "m"
 
 FixVariables: false 

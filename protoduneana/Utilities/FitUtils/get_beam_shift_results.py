@@ -1,5 +1,7 @@
 import ROOT as RT
 from argparse import ArgumentParser as ap
+gROOT.SetBatch()
+
 parser = ap()
 
 parser.add_argument("-i", type=str, help='Input file', default = "")

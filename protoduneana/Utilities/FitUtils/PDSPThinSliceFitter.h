@@ -193,7 +193,7 @@ class PDSPThinSliceFitter {
   size_t fNPulls;
   bool fDoScaleDataToNorm;
   double fDataNorm;
-  bool fDebugMCDataScale, fScaleToDataBeamProfile;
+  bool fDebugMCDataScale, fScaleToDataBeamProfile, fFixPostFit;
   bool fDebugChi2;
 
   std::vector<double> fIncidentRecoBins, fTrueIncidentBins, fBeamEnergyBins;

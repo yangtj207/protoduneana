@@ -15,7 +15,7 @@
 cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
 project(protoduneana LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.53.02d00)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.54.00d00)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
@@ -74,18 +74,10 @@ find_ups_product( ifdhc )
 find_ups_product( systematicstools )
 find_ups_product( nusystematics )
 find_ups_product( geant4reweight )
+find_ups_product( valgrind )
 if(DEFINED ENV{HEP_HPC_DIR} )
   find_ups_product( hdf5 )
   find_ups_product( hep_hpc )
-endif()
-
-if(DEFINED ENV{HDF5_DIR} )
-  string(TOUPPER ${CMAKE_BUILD_TYPE} BTYPE_UC )
-  if( ${BTYPE_UC} MATCHES "DEBUG" )
-    cet_find_library( HDF5 NAMES hdf5_debug PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
-  else()
-    cet_find_library( HDF5 NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
-  endif()
 endif()
 
 # macros for dictionary and cet_build_plugin

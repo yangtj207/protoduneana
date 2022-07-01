@@ -1,6 +1,4 @@
 
-#cet_find_library( RCEDAMLIB NAMES protodune-dam PATHS ENV DUNEPDSPRCE_LIB NO_DEFAULT_PATH )
-
 cet_build_plugin(PDSPmatch art::module
                         lardataobj::RawData
                         lardataobj::RecoBase

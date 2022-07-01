@@ -61,5 +61,6 @@ art_make_exec( NAME runPDSPThinSliceFit
 install_headers()
 install_fhicl()
 install_source()
+install_scripts()
 
 add_subdirectory(fcl_cfg_files)

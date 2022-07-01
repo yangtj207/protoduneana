@@ -7,7 +7,8 @@ from glob import glob as ls
 
 parser = argparse.ArgumentParser(description = 'Submission script for fits')
 parser.add_argument('--config', type=str, help='Which config',
-                    default='/dune/app/users/calcuttj/larsoft-protoduneana/srcs/protoduneana/protoduneana/Utilities/FitUtils/fcl_cfg_files/asimov.cfg')
+                    #default='/dune/app/users/calcuttj/larsoft-protoduneana/srcs/protoduneana/protoduneana/Utilities/FitUtils/fcl_cfg_files/asimov.cfg')
+                    default='%s/cfg_files/asimov.cfg'%(os.environ['PROTODUNEANA_DIR']))
 parser.add_argument('--type', type=str, help='Which type', default='asimov')
 
 parser.add_argument('--output_dir', type=str, help='Output top dir', default=None)
@@ -15,10 +16,10 @@ parser.add_argument('--config_dump', action='store_true', help='Tell fife_launch
 parser.add_argument('--dry_run', action='store_true', help='Tell fife_launch to do a dry_run')
 #parser.add_argument('--fcl', type=str, required=True)
 parser.add_argument('--output_name', type=str, default='hadd_wrapper_test.root')
-parser.add_argument('--lifetime', type=str, default='3h')
+parser.add_argument('--lifetime', type=str, default='6h')
 parser.add_argument('--input_file', type=str, required=True)
 parser.add_argument('--copy-input', action='store_true')
-parser.add_argument('--cov', type=str, default='')
+#parser.add_argument('--cov', type=str, default='')
 parser.add_argument('--data_input', type=str, default='')
 parser.add_argument('-N', type=int, default=1000)
 parser.add_argument('--sites', type=str, nargs='+')
@@ -54,9 +55,9 @@ if args.config_dump:
 ##Choose ntupleprod version
 cmd += ['-Oglobal.protoduneana_version=%s'%os.getenv('PROTODUNEANA_VERSION')]
 
-if args.cov != '':
-  cmd += ['-Oglobal.cov_file=%s'%args.cov]
-  cmd += ['-Oglobal.cov_name=%s'%args.cov.split('/')[-1]]
+#if args.cov != '':
+#  cmd += ['-Oglobal.cov_file=%s'%args.cov]
+#  cmd += ['-Oglobal.cov_name=%s'%args.cov.split('/')[-1]]
 
 ##Miscellanea
 cmd += ['-Oglobal.output_name=%(process)s_' + '%s.root'%args.type]
