@@ -188,7 +188,7 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
           ++nsigwfs;
         }
         c2numpy_uint8(&npywriter, issignal);
-        for (size_t j = 0; j<waveformden.size(); ++j){//changed to waveformma but don't think this should make difference
+        for (size_t j = 0; j<waveform.size(); ++j){//changed to waveformma but don't think this should make difference
           c2numpy_float32(&npywriter, waveform[j]);//changed to waveform
         }
       }
