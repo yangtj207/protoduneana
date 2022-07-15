@@ -8,7 +8,7 @@
 // Save waveforms in numpy format for CNN training
 //
 ////////////////////////////////////////////////////////////////////////
-
+//THIS IS THE VERSION I AM EDITING
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
@@ -107,10 +107,10 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
       }
 
       //========= Moving average  ============================================================
-      float avg=0.;
-      int c0=0, c1=0,  c2=0;
-      for(size_t n=0; n<waveform.size() ; ++n){
-        if(n>=mobileAVG && n<waveform.size()-mobileAVG){
+       float avg=0.;
+       int c0=0, c1=0,  c2=0;
+       for(size_t n=0; n<waveform.size() ; ++n){
+       if(n>=mobileAVG && n<waveform.size()-mobileAVG){
           for(size_t k=n-mobileAVG; k<=n+mobileAVG; ++k){
             avg=avg+waveform[k];
             ++c0;
@@ -146,14 +146,14 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
 
       //========= Denoising ============================================================
     
-      for(size_t j=0; j<waveform.size(); ++j){
-        input[j]=waveformma[j];
-        output[j]=input[j];
-      }
-      TV1D_denoise(input,output,2000,10);
-      for(size_t j=0; j<waveform.size(); ++j){
-        waveformden[j]=output[j];
-      }
+       for(size_t j=0; j<waveform.size(); ++j){
+	 input[j]=waveformma[j];
+	 output[j]=input[j];
+       }
+       TV1D_denoise(input,output,2000,10);
+       for(size_t j=0; j<waveform.size(); ++j){
+         waveformden[j]=output[j];
+       }
       
       //===========================BASELINE Histo========================================
       float base=0;
@@ -188,8 +188,8 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
           ++nsigwfs;
         }
         c2numpy_uint8(&npywriter, issignal);
-        for (size_t j = 0; j<waveformden.size(); ++j){
-          c2numpy_float32(&npywriter, waveformden[j]);
+        for (size_t j = 0; j<waveformden.size(); ++j){//changed to waveformma but don't think this should make difference
+          c2numpy_float32(&npywriter, waveform[j]);//changed to waveform
         }
       }
     }
