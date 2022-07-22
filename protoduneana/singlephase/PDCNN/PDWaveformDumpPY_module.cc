@@ -189,7 +189,7 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
         }
         c2numpy_uint8(&npywriter, issignal);
         for (size_t j = 0; j<waveform.size(); ++j){//changed to waveformma but don't think this should make difference
-          c2numpy_float32(&npywriter, waveformden[j]);//changed to waveform
+          c2numpy_float32(&npywriter, waveform[j]);//changed to waveform
         }
       }
     }
@@ -268,7 +268,7 @@ void PDWaveformDumpPY::beginJob()
   c2numpy_addcolumn(&npywriter, "channel", C2NUMPY_UINT8);  
   c2numpy_addcolumn(&npywriter, "signal", C2NUMPY_UINT8);  
   for (int i = 0; i<2000; ++i){
-    c2numpy_addcolumn(&npywriter, Form("x%d",i), C2NUMPY_FLOAT32);
+    c2numpy_addcolumn(&npywriter, Form("x%d",i), C2NUMPY_FLOAT64);
   }
   nsigwfs = 0;
   nnoisewfs = 0;
