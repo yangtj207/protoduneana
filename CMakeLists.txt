@@ -15,7 +15,7 @@
 cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
 project(protoduneana LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.54.00d00)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.55.01d00)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
@@ -55,6 +55,7 @@ find_ups_product( larsim )
 find_ups_product( larpandora  )
 find_ups_product( pandora )
 find_ups_product( larreco )
+find_ups_product( larrecodnn )
 find_ups_product( larana )
 find_ups_product( nutools )
 find_ups_product( nug4 )
