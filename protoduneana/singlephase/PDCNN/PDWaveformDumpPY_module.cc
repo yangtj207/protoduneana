@@ -100,7 +100,7 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
 
     int daqch = wf->ChannelNumber();
 
-    if (daqch == 143){
+    if (daqch>=96 && daqch<=107){
 
       for (unsigned short i = 0; i<wf->Waveform().size(); ++i){
         waveform[i] = wf->Waveform()[i];
@@ -182,7 +182,6 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
       for (size_t j = 0; j<waveform.size(); ++j){//changed to waveformma but don't think this should make difference
         c2numpy_float64(&npywriter, waveform[j]);//changed to waveform
       }
-      
     }
   }    
 }
