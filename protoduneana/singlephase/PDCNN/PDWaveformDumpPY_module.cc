@@ -100,7 +100,7 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
 
     int daqch = wf->ChannelNumber();
 
-    if (daqch == 143){
+    if (daqch>=96 && daqch<=107){
 
       for (unsigned short i = 0; i<wf->Waveform().size(); ++i){
         waveform[i] = wf->Waveform()[i];
@@ -174,23 +174,13 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
         waveformden[j] = waveformden[j]-base;
         if (j>=1000 && j<1500) sum += waveformden[j];
       }
-      if ((sum > -300 && sum < 300) || (sum > 600 && sum < 1000)){
-        c2numpy_uint32(&npywriter, e.id().run());
-        c2numpy_uint32(&npywriter, e.id().subRun());
-        c2numpy_uint32(&npywriter, e.id().event());
-        c2numpy_uint8(&npywriter, daqch);
-        int issignal = 1;
-        if (sum > -300 && sum < 300){
-          issignal = 0;
-          ++nnoisewfs;
-        }
-        else{
-          ++nsigwfs;
-        }
-        c2numpy_uint8(&npywriter, issignal);
-        for (size_t j = 0; j<waveform.size(); ++j){//changed to waveformma but don't think this should make difference
-          c2numpy_float64(&npywriter, waveform[j]);//changed to waveform
-        }
+    
+      c2numpy_uint32(&npywriter, e.id().run());
+      c2numpy_uint32(&npywriter, e.id().subRun());
+      c2numpy_uint32(&npywriter, e.id().event());
+      c2numpy_uint8(&npywriter, daqch);
+      for (size_t j = 0; j<waveform.size(); ++j){//changed to waveformma but don't think this should make difference
+        c2numpy_float64(&npywriter, waveform[j]);//changed to waveform
       }
     }
   }    
@@ -265,8 +255,7 @@ void PDWaveformDumpPY::beginJob()
   c2numpy_addcolumn(&npywriter, "run", C2NUMPY_UINT32);
   c2numpy_addcolumn(&npywriter, "subrun", C2NUMPY_UINT32);
   c2numpy_addcolumn(&npywriter, "evt", C2NUMPY_UINT32);
-  c2numpy_addcolumn(&npywriter, "channel", C2NUMPY_UINT8);  
-  c2numpy_addcolumn(&npywriter, "signal", C2NUMPY_UINT8);  
+  c2numpy_addcolumn(&npywriter, "channel", C2NUMPY_UINT8);    
   for (int i = 0; i<2000; ++i){
     c2numpy_addcolumn(&npywriter, Form("x%d",i), C2NUMPY_FLOAT64);
   }
