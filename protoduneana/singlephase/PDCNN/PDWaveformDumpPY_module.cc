@@ -100,7 +100,7 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
 
     int daqch = wf->ChannelNumber();
 
-    if (daqch>=96 && daqch<=107){
+    if ((daqch>=132 && daqch<=143) || (daqch>=96 && daqch<=107)){
 
       for (unsigned short i = 0; i<wf->Waveform().size(); ++i){
         waveform[i] = wf->Waveform()[i];
