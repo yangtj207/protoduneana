@@ -33,6 +33,10 @@ class PDSPSystematics {
       const ThinSliceSystematic & par);
       //const std::map<std::string, ThinSliceSystematic> & pars);
 
+  double GetSystWeight_TiedG4RWCoeff(
+      const ThinSliceEvent & event,
+      const ThinSliceSystematic & par);
+
   void SetupSyst_BeamShift(
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);
@@ -62,6 +66,7 @@ class PDSPSystematics {
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_BeamMatch(
       const ThinSliceEvent & event,
+      int signal_index,
       const ThinSliceSystematic & par);
 
   void SetupSyst_BeamMatchLow(
@@ -120,7 +125,8 @@ class PDSPSystematics {
       const ThinSliceSystematic & par/*,
       const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID*/);
 
-  double CheckAndReturn(double weight, std::string name);
+  double CheckAndReturn(double weight, std::string name,
+                        const ThinSliceSystematic & par);
 
  private:
 
@@ -145,7 +151,8 @@ class PDSPSystematics {
   double fEndZNoTrackCut;
 
   //Beam Match
-  std::vector<double> fBeamMatchLimits, fBeamMatchFractions;
+  std::vector<double> fBeamMatchLimits;
+  std::map<int, std::vector<double>> fBeamMatchFractions;
 
   //Beam Match Low
   double fBeamMatchLowLimit, fBeamMatchLowFraction;

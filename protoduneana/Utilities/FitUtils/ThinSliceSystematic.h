@@ -16,10 +16,15 @@ class ThinSliceSystematic {
       fGenThrowLimitUp(pset.get<double>("GenThrowLimitUp")),
       fSigma(pset.get<double>("Sigma", 1.)),
       fIsG4RWCoeff(pset.get<bool>("IsG4RWCoeff", false)),
+      fIsTiedG4RWCoeff(pset.get<bool>("IsTiedG4RWCoeff", false)),
       fOptions(pset.get<fhicl::ParameterSet>("Options")) {
     fName = "par_" + fType + "_syst";
     if (fIsG4RWCoeff) {
       fG4RWCoeffBranch = fOptions.get<std::string>("Branch");
+    }
+    if (fIsTiedG4RWCoeff) {
+      fTiedG4RWCoeffBranches
+          = fOptions.get<std::vector<std::string>>("Branches");
     }
   };
 
@@ -33,6 +38,10 @@ class ThinSliceSystematic {
 
   const std::string & GetG4RWCoeffBranch() const {
     return fG4RWCoeffBranch;
+  };
+
+  const std::vector<std::string> & GetTiedG4RWBranches() const {
+    return fTiedG4RWCoeffBranches;
   };
 
   const double GetCentral() const {
@@ -85,6 +94,9 @@ class ThinSliceSystematic {
     return fIsG4RWCoeff;
   }
 
+  const bool GetIsTiedG4RWCoeff() const {
+    return fIsTiedG4RWCoeff;
+  }
  private:
 
   std::string fType;
@@ -98,8 +110,9 @@ class ThinSliceSystematic {
   double fGenThrowLimitUp; 
   double fSigma;
 
-  bool fIsG4RWCoeff;
+  bool fIsG4RWCoeff, fIsTiedG4RWCoeff;
   std::string fG4RWCoeffBranch = "";
+  std::vector<std::string> fTiedG4RWCoeffBranches;
 
   fhicl::ParameterSet fOptions;
 

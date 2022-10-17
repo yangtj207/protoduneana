@@ -305,10 +305,32 @@ class leading_costheta {
 
       double dP = sqrt(dPx[i]*dPx[i] + dPy[i]*dPy[i] + dPz[i]*dPz[i]);
       if (dP > max_p) {
+        max_p = dP;
         costheta = (dPx[i]*Px + dPy[i]*Py + dPz[i]*Pz)/(dP*P);
       }
     }
     return costheta;
+  }
+};
+
+class leading_momentum {
+ private:
+  int fPDG;
+ public:
+  leading_momentum(int pdg) : fPDG(pdg) {}
+
+  double operator()(const std::vector<int> & dPDGs,
+                    const std::vector<double> & dP) {
+    double max_p = -999.;
+    //double P = sqrt(Px*Px + Py*Py + Pz*Pz);
+    for (size_t i = 0; i < dPDGs.size(); ++i) {
+      if (dPDGs[i] != fPDG) continue;
+
+      if (dP[i] > max_p) {
+        max_p = dP[i];
+      }
+    }
+    return max_p;
   }
 };
 

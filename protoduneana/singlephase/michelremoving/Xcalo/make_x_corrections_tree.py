@@ -18,6 +18,7 @@ parser.add_argument('-n', type=int, default=-1)
 #parser.add_argument('--nx', type=int, default=70)
 parser.add_argument('--nx', type=int, default=144)
 parser.add_argument('--xmax', type=float, default=350.)
+parser.add_argument('--run', type=int, default=0)
 args = parser.parse_args()
 
 
@@ -147,10 +148,10 @@ for i in range(3):
     #print(i, j, k, med_neg, med_pos, (global_median_neg[i]/med_neg), (global_median_pos[i]/med_pos))
 
 
-with open('globalmedians_run0.csv', 'w') as fcsv:
+with open('globalmedians_run%i.csv'%args.run, 'w') as fcsv:
   fcsv.write('channel,tv,norm,norm_err\n')
   for i in range(3): 
-    fcsv.write('%i,0,%f,%f\n'%(i, global_median[i], global_median[i]/10.))
+    fcsv.write('%i,%i,%f,%f\n'%(i, args.run, global_median[i], global_median[i]/10.))
 
 fOut = RT.TFile(args.o, 'recreate')
 for h in correction_hists: h.Write()

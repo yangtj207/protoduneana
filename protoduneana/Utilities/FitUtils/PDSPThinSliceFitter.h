@@ -47,6 +47,8 @@ class PDSPThinSliceFitter {
 
  private:
   void NormalFit();
+  void SetupTree();
+  void WrapUpTree();
   void Pulls();
   void Configure(std::string fcl_file);
   void DefineFitFunction();
@@ -85,6 +87,10 @@ class PDSPThinSliceFitter {
   TFile fDataFile;
   TTree * fDataTree;
   TFile fOutputFile;
+  TTree * fOutputTree;
+  double fOutputChi2Stat, fOutputChi2Syst;
+  std::vector<double> fOutputParVals;
+  bool fSaveFitTree;
   ROOT::Math::Functor fFitFunction;
   std::unique_ptr<ROOT::Math::Minimizer> fMinimizer;
   std::vector<double> fMinimizerInitVals;
@@ -158,7 +164,7 @@ class PDSPThinSliceFitter {
   std::vector<fhicl::ParameterSet> fSelectionSets;
   std::vector<fhicl::ParameterSet> fSampleSets;
   std::map<int, std::string> fFluxTypes;
-  int fMaxCalls, fMaxIterations;
+  int fMaxCalls, fMaxIterations, fPrintLevel;
   size_t fNFitSteps = 0;
   unsigned int fNScanSteps;
   double fTolerance, fLowerLimit, fUpperLimit;
@@ -168,12 +174,14 @@ class PDSPThinSliceFitter {
   std::string fDriverName;
   std::string fAnalysis;
   fhicl::ParameterSet fAnalysisOptions;
-  double fPitch;
+  double fPitch, fPitchCorrection;
   std::string fSliceMethod;
   bool fMultinomial;
   bool fDoFakeData, fDoThrows, fDoScans, fOnlySystScans, fDo1DShifts, fDoSysts,
-       fRunHesse;
+       fRunHesse, fSetLimits;
   bool fFixVariables;
+  bool fSetValsPreFit;
+  std::vector<double> fPreFitVals;
   std::map<std::string, double> fSystsToFix, fFixSystsPostFit;
   std::map<std::string, int> fSystParameterIndices;
   std::string fFakeDataRoutine;

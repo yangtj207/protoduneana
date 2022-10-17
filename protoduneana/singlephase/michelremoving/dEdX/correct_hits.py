@@ -16,8 +16,8 @@ args = parser.parse_args()
 
 x_corr_file = RT.TFile(args.x, 'open')
 yz_corr_file = RT.TFile(args.yz, 'open')
-#x_corr_hists = [x_corr_file.Get('dqdx_X_correction_hist_%i'%i) for i in range(0, 3)]
-x_corr_hists = [x_corr_file.Get('correction_dqdx_hist_%i'%i) for i in range(0, 3)]
+x_corr_hists = [x_corr_file.Get('dqdx_X_correction_hist_%i'%i) for i in range(0, 3)]
+#x_corr_hists = [x_corr_file.Get('correction_dqdx_hist_%i'%i) for i in range(0, 3)]
 yz_corr_hists_neg = [yz_corr_file.Get('correction_dqdx_ZvsY_negativeX_hist_%i'%i) for i in range(0, 3)]
 yz_corr_hists_pos = [yz_corr_file.Get('correction_dqdx_ZvsY_positiveX_hist_%i'%i) for i in range(0, 3)]
 

@@ -18,6 +18,27 @@ g4rw_proton_coeff: {
   }
 }
 
+g4rw_downstream_piplus_tied_coeff: {
+  Name: "g4rw_downstream_piplus_tied_coeff"
+  Central: 1.
+  LowerLimit: 0.1
+  LowerLimit: 0.1
+  UpperLimit: 2.0
+  ThrowLimit: 0.1
+  ThrowLimitUp: 2.0
+  GenThrowLimit: 0.25
+  GenThrowLimitUp: 1.75
+  Sigma: .2
+  IsTiedG4RWCoeff: true
+
+  Options: {
+    Branches: [
+      "g4rw_downstream_grid_piplus_coeffs_7",
+      "g4rw_downstream_grid_piplus_coeffs_8"
+    ]
+  }
+}
+
 g4rw_downstream_piplus_low_coeff: {
   Name: "g4rw_downstream_piplus_low_coeff"
   Central: 1.
@@ -40,7 +61,6 @@ g4rw_downstream_piplus_high_coeff: {
   Name: "g4rw_downstream_piplus_high_coeff"
   Central: 1.
   LowerLimit: 0.1
-  LowerLimit: 0.1
   UpperLimit: 2.0
   ThrowLimit: 0.1
   ThrowLimitUp: 2.0
@@ -51,6 +71,41 @@ g4rw_downstream_piplus_high_coeff: {
 
   Options: {
     Branch: "g4rw_downstream_grid_piplus_coeffs_8"
+  }
+}
+
+g4rw_full_piplus_low_coeff: {
+  Name: "g4rw_full_piplus_low_coeff"
+  Central: 1.
+  LowerLimit: 0.1
+  LowerLimit: 0.1
+  UpperLimit: 2.0
+  ThrowLimit: 0.1
+  ThrowLimitUp: 2.0
+  GenThrowLimit: 0.25
+  GenThrowLimitUp: 1.75
+  Sigma: .2
+  IsG4RWCoeff: true
+
+  Options: {
+    Branch: "g4rw_full_grid_piplus_coeffs_7"
+  }
+}
+
+g4rw_full_piplus_high_coeff: {
+  Name: "g4rw_full_piplus_high_coeff"
+  Central: 1.
+  LowerLimit: 0.1
+  UpperLimit: 2.0
+  ThrowLimit: 0.1
+  ThrowLimitUp: 2.0
+  GenThrowLimit: 0.25
+  GenThrowLimitUp: 1.75
+  Sigma: .2
+  IsG4RWCoeff: true
+
+  Options: {
+    Branch: "g4rw_full_grid_piplus_coeffs_8"
   }
 }
 
@@ -606,15 +661,21 @@ SystematicsList: {
     Name: "beam_match_weight"
     Central: 1.
     LowerLimit: 0.01
-    UpperLimit: 1.1440
+    UpperLimit: 7.000
     ThrowLimit: 0.01
-    ThrowLimitUp: 1.1440
+    ThrowLimitUp: 7.000
     GenThrowLimit: 0.01
-    GenThrowLimitUp: 1.1440
+    GenThrowLimitUp: 7.000
     Sigma: .1
     Options: {
       Fractions: [
-        .2444, .5717, .698, .764, .8735
+        [1, [0.10061145080600334, 0.09203980099502487, 0.07565470417070805, 0.08508880627839735, 0.08678102926337034, 0.09477590636597202, 0.09182174338883448, 0.09882455376578145, 0.09813874788494077, 0.10864393338620143, 0.1293269230769231, 0.1421383647798742]],
+        [2, [0.07894736842105263, 0.09787735849056604, 0.09774436090225563, 0.09059434506635891, 0.09943551888840643, 0.10181311018131102, 0.1003771395416304, 0.11287653095001655, 0.1294885745375408, 0.13164893617021275]],
+        [3, [0.08483853311439518, 0.09777015437392796, 0.09600997506234414, 0.09658448314860892, 0.09789057350032959, 0.10410662824207492, 0.10805189660295138, 0.10970035551041138, 0.11806098514464425, 0.12413314840499307]],
+        [4, [0.07957847261373]],
+        [5, [0.08524484072769109]],
+        [6, [0.09554878932869364]],
+        [7, [0.08918062471706655]]
       ]
       Limits: [
         10., 20., 30., 50.

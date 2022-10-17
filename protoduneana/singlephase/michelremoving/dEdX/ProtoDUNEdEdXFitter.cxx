@@ -30,6 +30,7 @@ ProtoDUNEdEdXFitter::ProtoDUNEdEdXFitter(
   DefineFitFunction();
   MakeMinimizer();
 
+  /*
   double init = 1.e-3;
   std::cout << fFitFunction(&init) << " " << fDOF << std::endl;
   fOutputFile.cd();
@@ -50,7 +51,7 @@ ProtoDUNEdEdXFitter::ProtoDUNEdEdXFitter(
   for (int i = 0; i < 40; ++i) {
     if (fFitOutput[i] != 0x0)
       fFitOutput[i]->Write(("fit_" + std::to_string(i)).c_str());
-  }
+  }*/
 }
 
 

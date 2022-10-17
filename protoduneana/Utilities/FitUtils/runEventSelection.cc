@@ -81,11 +81,11 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                     "reco_daughter_PFP_true_byHits_parID", "reco_daughter_PFP_true_byHits_parPDG",
                     "true_beam_daughter_ID",
                     "true_beam_grand_daughter_ID"})
-           .Define("leading_p_costheta", leading_p_costheta,
-                   {"true_beam_endPx", "true_beam_endPy", "true_beam_endPz",
-                    "true_beam_daughter_PDG", "true_beam_daughter_startPx", 
-                    "true_beam_daughter_startPy", "true_beam_daughter_startPz"})
-           .Define("leading_p_costheta2", leading_costheta(2212),
+           //.Define("leading_p_costheta", leading_p_costheta,
+           //        {"true_beam_endPx", "true_beam_endPy", "true_beam_endPz",
+           //         "true_beam_daughter_PDG", "true_beam_daughter_startPx", 
+           //         "true_beam_daughter_startPy", "true_beam_daughter_startPz"})
+           .Define("leading_p_costheta", leading_costheta(2212),
                    {"true_beam_endPx", "true_beam_endPy", "true_beam_endPz",
                     "true_beam_daughter_PDG", "true_beam_daughter_startPx", 
                     "true_beam_daughter_startPy", "true_beam_daughter_startPz"})
@@ -97,6 +97,12 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                    {"true_beam_endPx", "true_beam_endPy", "true_beam_endPz",
                     "true_beam_daughter_PDG", "true_beam_daughter_startPx", 
                     "true_beam_daughter_startPy", "true_beam_daughter_startPz"})
+           .Define("leading_p_momentum", leading_momentum(2212),
+                   {"true_beam_daughter_PDG", "true_beam_daughter_startP"})
+           .Define("leading_piplus_momentum", leading_momentum(211),
+                   {"true_beam_daughter_PDG", "true_beam_daughter_startP"})
+           .Define("leading_pi0_momentum", leading_momentum(111),
+                   {"true_beam_daughter_PDG", "true_beam_daughter_startP"})
            .Define("reco_beam_fixed_interactingEnergy",
                    fixed_interacting_energy(80.),
                    {"reco_beam_incidentEnergies", "reco_beam_interactingEnergy"})

@@ -1,6 +1,6 @@
 import ROOT as RT
 from argparse import ArgumentParser as ap
-gROOT.SetBatch()
+RT.gROOT.SetBatch()
 
 parser = ap()
 

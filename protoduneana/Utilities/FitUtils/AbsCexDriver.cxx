@@ -141,6 +141,10 @@ void protoana::AbsCexDriver::FillMCEvents(
   std::vector<int> * true_beam_daughter_PDG = 0x0;
   tree->SetBranchAddress("true_beam_daughter_PDG", &true_beam_daughter_PDG);
 
+  int true_beam_ID, reco_beam_true_byHits_ID;
+  tree->SetBranchAddress("true_beam_ID", &true_beam_ID);
+  tree->SetBranchAddress("reco_beam_true_byHits_ID", &reco_beam_true_byHits_ID);
+
   std::vector<std::vector<double>> * g4rw_primary_grid_weights = 0x0,
                                    * g4rw_full_grid_weights = 0x0,
                                    * g4rw_full_grid_proton_weights = 0x0,
@@ -220,6 +224,9 @@ void protoana::AbsCexDriver::FillMCEvents(
     events.back().SetTrueMass(true_beam_mass);
     events.back().SetRecoEndZ(reco_beam_endZ);
     events.back().SetRecoStartY(reco_beam_startY);
+
+    events.back().SetTrueID(true_beam_ID);
+    events.back().SetRecoToTrueID(reco_beam_true_byHits_ID);
 
     events.back().SetRecoIncidentEnergies(*reco_beam_incidentEnergies);
     events.back().SetTrueIncidentEnergies(*true_beam_incidentEnergies);
@@ -332,6 +339,10 @@ void protoana::AbsCexDriver::FillMCEvents(
       fake_data_events.back().SetLeadingPCostheta(leading_p_costheta);
       fake_data_events.back().SetLeadingPiPlusCostheta(leading_piplus_costheta);
       fake_data_events.back().SetLeadingPi0Costheta(leading_pi0_costheta);
+
+      fake_data_events.back().SetTrueID(true_beam_ID);
+      fake_data_events.back().SetRecoToTrueID(reco_beam_true_byHits_ID);
+
       //fake_data_events.back().MakeG4RWBranch("g4rw_alt_primary_plus_sigma_weight",
       //                              *g4rw_alt_primary_plus_sigma_weight);
       //fake_data_events.back().MakeG4RWBranch("g4rw_alt_primary_minus_sigma_weight",
@@ -3417,12 +3428,16 @@ void protoana::AbsCexDriver::FakeDataG4RWGrid(
 
     double scale = 1.;
 
+    if (event.GetPDG() == 211) {
+
     for (size_t j = 0; j < g4rw_shift.size(); ++j) {
       scale *= event.GetG4RWWeight(branches[j], g4rw_shift[j]);
       //std::cout << branches[j] << " " << g4rw_shift[j] << " " <<
       //             event.GetG4RWWeight(branches[j], g4rw_shift[j]) << " " <<
       //             event.GetEventID() << " " << event.GetSubrunID() << " " <<
       //             event.GetRunID() << std::endl;
+    }
+
     }
 
     //int bin = GetBeamBin(beam_energy_bins, true_beam_startP);
@@ -5073,16 +5088,17 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
       if (mc_val < 1.e-7) {
         std::cout << "Warning: " << selection_ID << " " << i << " mc_val " << mc_val << std::endl;
       }
-      if (selection_ID < 5) {
+      /*
+      if (selection_ID != 6 && selection_ID != 5) {
         alt_chi2 += (std::pow((data_val - mc_val), 2) / mc_val);
         ++alt_nPoints;
-      }
+      }*/
 
 
-      //double sigma_squared = (mc_val > 1.e-7 ? mc_sumw2/(mc_val*mc_val) : 1.);
-      //double beta = .5*((1. - mc_val*sigma_squared) +
-      //                  sqrt(std::pow((1. - mc_val*sigma_squared), 2) +
-      //                       4.*data_val*sigma_squared));
+      double sigma_squared = (mc_val > 1.e-7 ? mc_sumw2/(mc_val*mc_val) : 1.);
+      double beta = .5*((1. - mc_val*sigma_squared) +
+                        sqrt(std::pow((1. - mc_val*sigma_squared), 2) +
+                             4.*data_val*sigma_squared));
 
       /// Skip any bins with data == 0
       //
@@ -5091,16 +5107,25 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
       //Page 6
       //
       //std::cout << mc_val << " " << data_val << " " << 2*data_val*std::log(data_val/mc_val) << std::endl;
-      if (data_val > 1.e-7)
-        chi2 += 2*data_val*std::log(data_val/mc_val)/* +
-                  (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.)*/;
-        //chi2 += 2*data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.))) +
-        //          (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.);
+      if (data_val > 1.e-7) {
+        //chi2 += 2*data_val*std::log(data_val/mc_val)/* +
+        //          (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.)*/;
+        chi2 += 2*data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.))) +
+                  (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.);
 
-     // std::cout << sigma_squared << " " << mc_val << " " << data_val << " " <<
-     //              beta << " " << 2*data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.))) <<
-     //              " " << ((beta - 1.)*(beta - 1.)/sigma_squared) << " " << chi2 << std::endl;
-
+        if (selection_ID != 6 && selection_ID != 5) {
+          //std::cout << selection_ID << " " << mc_val << " " << beta << " " <<
+          //             beta*mc_val << std::endl;
+          alt_chi2 += 2.*((fBarlowBeeston ? beta : 1.)*mc_val - data_val +
+                      data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.)))) +
+                      (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.);
+          //std::cout << "\t" << 2.*((fBarlowBeeston ? beta : 1.)*mc_val - data_val) << " " <<
+          //             2.*data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.)))
+          //          << " " << (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.)
+          //          << std::endl;
+          ++alt_nPoints;
+        }
+      }
       //if (std::isnan(chi2) && fMultinomial) {
       //  std::cout << "Warning: " << selection_ID << " " << i << " data_val " <<
       //               data_val << " mc_val " << mc_val << " isnan" << std::endl;
