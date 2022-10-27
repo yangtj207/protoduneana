@@ -15,7 +15,7 @@
 cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
 project(protoduneana LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.61.00d00)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.62.00d00)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
@@ -70,12 +70,14 @@ find_ups_product( cetbuildtools )
 find_ups_product( postgresql )
 find_ups_product( dunepdlegacy )
 find_ups_product( artdaq_core )
+find_ups_product( TRACE )
 find_ups_product( ifdh_art )
 find_ups_product( ifdhc )
 find_ups_product( systematicstools )
 find_ups_product( nusystematics )
 find_ups_product( geant4reweight )
 find_ups_product( valgrind )
+
 if(DEFINED ENV{HEP_HPC_DIR} )
   find_ups_product( hdf5 )
   find_ups_product( hep_hpc )
