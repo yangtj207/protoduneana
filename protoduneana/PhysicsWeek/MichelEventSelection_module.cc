@@ -52,7 +52,6 @@
 #include "TCanvas.h"
 
 #include <fstream>
-#include <tuple>
 
 // Maximum number of tracks
 //constexpr int kMaxTrack = 1000; // unused
@@ -85,11 +84,11 @@ public:
   // My functions
 
   // check if a position is inside the fiducial volume
-  bool insideFidVol(geo::Point_t const&);
+  bool insideFidVol(double pos[3]);
   
   // check if a hit is close to the projected 2d end of a track
   bool hitCloseToTrackEnd(detinfo::DetectorPropertiesData const& detProp,
-                          double radius, geo::Point_t const& end,
+                          double radius, double end[3],
                           double end2D[2], recob::Hit hit, 
                           geo::GeometryCore const & geom);  
 
@@ -178,7 +177,7 @@ void MichelReco::analyze(art::Event const & evt)
   auto const & particles = *evt.getValidHandle<std::vector<simb::MCParticle>>( fParticleModuleLabel );
   for ( auto const & particle : particles ) {
     if ( abs(particle.PdgCode()) == 13 ) {
-      geo::Point_t const mcEnd{ particle.EndX(), particle.EndY(), particle.EndZ() };
+      double mcEnd[3] = { particle.EndX(), particle.EndY(), particle.EndZ() };
       if ( isMuonDecaying( particle, particles ) && insideFidVol( mcEnd ) ) {
         fNMichel += 1;
       }
@@ -200,12 +199,14 @@ void MichelReco::analyze(art::Event const & evt)
     //int bestTrackId = trackMatching( &track - &tracks[0], hitsFromTracks );
     
     // find track start and end
-    auto const [start_pt, start] = std::make_tuple(track.Vertex(), track.Vertex<TVector3>());
-    auto const [end_pt, end] = std::make_tuple(track.End(), track.End<TVector3>());
+    auto const & trackStart = track.Vertex<TVector3>();
+    double start[3] = { trackStart.X(), trackStart.Y(), trackStart.Z() };
+    auto const & trackEnd = track.End<TVector3>();
+    double end[3] = { trackEnd.X(), trackEnd.Y(), trackEnd.Z() };
 
     // Check if the track starts or ends in the fiducial volume
-    bool startInFidVol = insideFidVol( start_pt );
-    bool endInFidVol = insideFidVol( end_pt );
+    bool startInFidVol = insideFidVol( start );
+    bool endInFidVol = insideFidVol( end );
     if ( startInFidVol || endInFidVol ) {
 
       // reset hit counts
@@ -235,10 +236,7 @@ void MichelReco::analyze(art::Event const & evt)
               
               // project the track onto the plane
               geo::GeometryCore const & geom = *art::ServiceHandle<geo::Geometry>();
-              auto const & trackStart2D = pma::GetProjectionToPlane(start,
-                                                                    plane,
-                                                                    geom.FindTPCAtPosition(start_pt).TPC,
-                                                                    geom.PositionToCryostatID(start_pt).Cryostat);
+              auto const & trackStart2D = pma::GetProjectionToPlane( trackStart, plane, geom.FindTPCAtPosition( start ).TPC, geom.FindCryostatAtPosition( start ) );
               double start2D[2] = {trackStart2D.X(), trackStart2D.Y()};
 
               // get the hit itself
@@ -247,7 +245,7 @@ void MichelReco::analyze(art::Event const & evt)
 
                 // check that the hit is close to the track endpoint
                 // and add to tagged hits if so
-                if ( hitCloseToTrackEnd( detProp, fRadiusThreshold, start_pt, start2D, hit, geom ) ) {
+                if ( hitCloseToTrackEnd( detProp, fRadiusThreshold, start, start2D, hit, geom ) ) {
                   fNumberCloseHitsStart[ plane ] += 1;
                   if ( plane == 2 ) { taggedHitsStart.push_back( hit ); };
                 }
@@ -264,10 +262,7 @@ void MichelReco::analyze(art::Event const & evt)
              
               // project the track onto the plane 
               geo::GeometryCore const & geom = *art::ServiceHandle<geo::Geometry>();
-              auto const & trackEnd2D = pma::GetProjectionToPlane(end,
-                                                                  plane,
-                                                                  geom.FindTPCAtPosition(end_pt).TPC,
-                                                                  geom.PositionToCryostatID(end_pt).Cryostat);
+              auto const & trackEnd2D = pma::GetProjectionToPlane( trackEnd, plane, geom.FindTPCAtPosition( end ).TPC, geom.FindCryostatAtPosition( end ) );
               double end2D[2] = {trackEnd2D.X(), trackEnd2D.Y()};
 
               // get the hit itself
@@ -276,7 +271,7 @@ void MichelReco::analyze(art::Event const & evt)
 
                 // check that the hit is close to the track endpoint
                 // and add to tagged hits if so
-                if ( hitCloseToTrackEnd( detProp, fRadiusThreshold, end_pt, end2D, hit, geom ) ) {
+                if ( hitCloseToTrackEnd( detProp, fRadiusThreshold, end, end2D, hit, geom ) ) {
                   fNumberCloseHitsEnd[ plane ] += 1;
                   if ( plane == 2 ) { taggedHitsEnd.push_back( hit ); }
                 }
@@ -509,7 +504,7 @@ bool MichelReco::isMuonDecaying ( simb::MCParticle particle, std::vector<simb::M
 }
 
 // checks if a position is inside the fiducial volume
-bool MichelReco::insideFidVol( geo::Point_t const& pos ) {
+bool MichelReco::insideFidVol( double pos[3] ) {
 
   geo::GeometryCore const& geom = *art::ServiceHandle<geo::Geometry>();
   bool inside = false;
@@ -536,20 +531,20 @@ bool MichelReco::insideFidVol( geo::Point_t const& pos ) {
       }
     }
 
-    double dista = fabs(minx - pos.X());
-    double distb = fabs(pos.X() - maxx);
-    if ((pos.X() > minx) && (pos.X() < maxx) &&
+    double dista = fabs(minx - pos[0]);
+    double distb = fabs(pos[0] - maxx); 
+    if ((pos[0] > minx) && (pos[0] < maxx) && 
         (dista > fFidVolCut) && (distb > fFidVolCut)) inside = true;
       
-    dista = fabs(miny - pos.Y());
-    distb = fabs(pos.Y()-maxy);
-    if (inside && (pos.Y() > miny) && (pos.Y() < maxy) &&
+    dista = fabs(miny - pos[1]);
+    distb = fabs(pos[1]-maxy);
+    if (inside && (pos[1] > miny) && (pos[1] < maxy) &&
         (dista > fFidVolCut) && (distb > fFidVolCut)) inside = true;
     else inside = false;
     
-    dista = fabs(minz - pos.Z());
-    distb = fabs(pos.Z() - maxz);
-    if (inside && (pos.Z() > minz) && (pos.Z() < maxz) &&
+    dista = fabs(minz - pos[2]);
+    distb = fabs(pos[2] - maxz);
+    if (inside && (pos[2] > minz) && (pos[2] < maxz) &&
         (dista > fFidVolCut) && (distb > fFidVolCut)) inside = true;
     else inside = false;
 
@@ -559,12 +554,12 @@ bool MichelReco::insideFidVol( geo::Point_t const& pos ) {
 
 // checks if a 2d hit is close to a given position
 bool MichelReco::hitCloseToTrackEnd(detinfo::DetectorPropertiesData const& detProp,
-                                    double radius, geo::Point_t const& end, double end2D[2], recob::Hit hit, geo::GeometryCore const & geom ) {
+                                    double radius, double end[3], double end2D[2], recob::Hit hit, geo::GeometryCore const & geom ) {
 
   bool close = false;
  
   auto const & hitLocation = pma::WireDriftToCm(detProp,
-                                                hit.WireID().Wire, hit.PeakTime(), hit.View(), geom.FindTPCAtPosition(end).TPC, geom.PositionToCryostatID(end).Cryostat);
+                                                hit.WireID().Wire, hit.PeakTime(), hit.View(), geom.FindTPCAtPosition(end).TPC, geom.FindCryostatAtPosition(end));
 
   double deltaXToHit = hitLocation.X() - end2D[0];
   double deltaYToHit = hitLocation.Y() - end2D[1];

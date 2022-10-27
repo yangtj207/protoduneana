@@ -71,12 +71,11 @@ crpgeoinfo protoana::ProtoDUNEDPCRPGeo::GetCRPGeoInfo( Point_t const &pnt ) cons
 
   
   double xyz[3] = {pnt.X(), pnt.Y(), pnt.Z()};
-  auto const plane_center = tpc->Plane(0).GetCenter();
-  crp_geo_info.danode = plane_center[dcoord] - xyz[dcoord];
+  crp_geo_info.danode = tpc->PlaneLocation(0)[dcoord] - xyz[dcoord];
   
   // point coordinate in the plane
-  float planeX = xyz[ tcoord2 ] - plane_center[ tcoord2 ];
-  float planeY = xyz[ tcoord1 ] - plane_center[ tcoord1 ];
+  float planeX = xyz[ tcoord2 ] - tpc->PlaneLocation(0)[ tcoord2 ];
+  float planeY = xyz[ tcoord1 ] - tpc->PlaneLocation(0)[ tcoord1 ];
   
   // cout<<"Input : "<<xyz[0]<<" "<<xyz[1]<<" "<<xyz[2]<<endl;
   // cout<<"Plane : "
