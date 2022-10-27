@@ -94,6 +94,429 @@ pdspanalysis:
     }
   ]
 
+  FineParameterSet: [
+    {
+      Cut: "reac"
+      Name: "fReac1"
+      Range: [0., 128.2848393225014]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac2"
+      Range: [128.2848393225014, 194.7151766041877]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac3"
+      Range: [194.7151766041877, 253.71440637062767]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac4"
+      Range: [253.71440637062767, 309.5609794531604]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac5"
+      Range: [309.5609794531604, 363.7100493525028]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac6"
+      Range: [363.7100493525028, 416.8237037405622]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac7"
+      Range: [416.8237037405622, 469.25366274542813]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac8"
+      Range: [469.25366274542813, 521.2062931316159]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac9"
+      Range: [521.2062931316159, 572.8114873149804]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac10"
+      Range: [572.8114873149804, 624.1554293603476]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac11"
+      Range: [624.1554293603476, 675.2977121240674]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac12"
+      Range: [675.2977121240674, 726.280937378918]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac13"
+      Range: [726.280937378918, 777.1364101623343]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac14"
+      Range: [777.1364101623343, 827.8876735403178]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac15"
+      Range: [827.8876735403178, 878.5527872586825]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac16"
+      Range: [878.5527872586825, 929.1458443107841]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac17"
+      Range: [929.1458443107841, 979.6780083272258]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac18"
+      Range: [979.6780083272258, 1030.1582402718525]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac19"
+      Range: [1030.1582402718525, 1080.5938182314387]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "reac"
+      Name: "fReac20"
+      Range: [1080.5938182314387, 1130.9907161422677]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs1"
+      Range: [0., 128.2848393225014]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs2"
+      Range: [128.2848393225014, 194.7151766041877]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs3"
+      Range: [194.7151766041877, 253.71440637062767]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs4"
+      Range: [253.71440637062767, 309.5609794531604]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs5"
+      Range: [309.5609794531604, 363.7100493525028]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs6"
+      Range: [363.7100493525028, 416.8237037405622]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs7"
+      Range: [416.8237037405622, 469.25366274542813]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs8"
+      Range: [469.25366274542813, 521.2062931316159]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs9"
+      Range: [521.2062931316159, 572.8114873149804]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs10"
+      Range: [572.8114873149804, 624.1554293603476]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs11"
+      Range: [624.1554293603476, 675.2977121240674]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs12"
+      Range: [675.2977121240674, 726.280937378918]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs13"
+      Range: [726.280937378918, 777.1364101623343]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs14"
+      Range: [777.1364101623343, 827.8876735403178]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs15"
+      Range: [827.8876735403178, 878.5527872586825]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs16"
+      Range: [878.5527872586825, 929.1458443107841]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs17"
+      Range: [929.1458443107841, 979.6780083272258]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs18"
+      Range: [979.6780083272258, 1030.1582402718525]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs19"
+      Range: [1030.1582402718525, 1080.5938182314387]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "abs"
+      Name: "fAbs20"
+      Range: [1080.5938182314387, 1130.9907161422677]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex1"
+      Range: [0., 128.2848393225014]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex2"
+      Range: [128.2848393225014, 194.7151766041877]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex3"
+      Range: [194.7151766041877, 253.71440637062767]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex4"
+      Range: [253.71440637062767, 309.5609794531604]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex5"
+      Range: [309.5609794531604, 363.7100493525028]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex6"
+      Range: [363.7100493525028, 416.8237037405622]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex7"
+      Range: [416.8237037405622, 469.25366274542813]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex8"
+      Range: [469.25366274542813, 521.2062931316159]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex9"
+      Range: [521.2062931316159, 572.8114873149804]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex10"
+      Range: [572.8114873149804, 624.1554293603476]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex11"
+      Range: [624.1554293603476, 675.2977121240674]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex12"
+      Range: [675.2977121240674, 726.280937378918]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex13"
+      Range: [726.280937378918, 777.1364101623343]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex14"
+      Range: [777.1364101623343, 827.8876735403178]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex15"
+      Range: [827.8876735403178, 878.5527872586825]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex16"
+      Range: [878.5527872586825, 929.1458443107841]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex17"
+      Range: [929.1458443107841, 979.6780083272258]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex18"
+      Range: [979.6780083272258, 1030.1582402718525]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex19"
+      Range: [1030.1582402718525, 1080.5938182314387]
+      Nominal: 1.0
+      Sigma: .2
+    },
+    {
+      Cut: "cex"
+      Name: "fCex20"
+      Range: [1080.5938182314387, 1130.9907161422677]
+      Nominal: 1.0
+      Sigma: .2
+    }
+  ]
+
   FakeDataParameterSet: [
     { ##0
       Cut:    "reac"

@@ -799,8 +799,8 @@ private:
   //std::vector<double> g4rw_full_primary_plus_sigma_weight;
   //std::vector<double> g4rw_full_primary_minus_sigma_weight;
 
-  std::vector<std::vector<double>> g4rw_full_grid_weights,
-                                   g4rw_full_grid_coeffs;
+  //std::vector<std::vector<double>> g4rw_full_grid_weights,
+  //                                 g4rw_full_grid_coeffs;
   std::vector<std::vector<double>> g4rw_primary_grid_weights,
                                    g4rw_primary_grid_coeffs;
   //std::vector<double> g4rw_primary_grid_pair_weights;
@@ -819,6 +819,9 @@ private:
 
   std::vector<std::vector<double>> g4rw_downstream_grid_piplus_weights,
                                    g4rw_downstream_grid_piplus_coeffs;
+
+  std::vector<std::vector<double>> g4rw_full_fine_piplus_weights,
+                                   g4rw_full_fine_piplus_coeffs;
 
   //EDIT: STANDARDIZE
   //EndProcess --> endProcess ?
@@ -919,6 +922,12 @@ private:
   std::vector< double > reco_daughter_PFP_emScore_collection;
   std::vector< double > reco_daughter_PFP_michelScore_collection;
 
+  std::vector< double > reco_daughter_PFP_trackScore_weight_by_charge;
+  std::vector< double > reco_daughter_PFP_emScore_weight_by_charge;
+  std::vector< double > reco_daughter_PFP_michelScore_weight_by_charge;
+  std::vector< double > reco_daughter_PFP_trackScore_collection_weight_by_charge;
+  std::vector< double > reco_daughter_PFP_emScore_collection_weight_by_charge;
+  std::vector< double > reco_daughter_PFP_michelScore_collection_weight_by_charge;
 
 
   //EDIT: reco_daughter_PFP_true_byY_XXX
@@ -1094,12 +1103,13 @@ private:
   //Geant4Reweight stuff
   TFile * FracsFile/*, * PiMinusFracsFile*/;
   TFile * ProtFracsFile;
-  std::vector<fhicl::ParameterSet> ParSet, FakeDataParSet, ProtParSet;//, PiMinusParSet;
+  std::vector<fhicl::ParameterSet> ParSet, FakeDataParSet, ProtParSet, FineParSet;//, PiMinusParSet;
   std::vector<double> fGridPoints;
   std::pair<double, double> fGridPair;
-  G4ReweightParameterMaker ParMaker, FakeDataParameterMaker, ProtParMaker;//, PiMinusParMaker;
+  //G4ReweightParameterMaker ParMaker, FakeDataParameterMaker, ProtParMaker;//, PiMinusParMaker;
   G4MultiReweighter * MultiRW, * ProtMultiRW, * PiMinusMultiRW,
-                    * KPlusMultiRW, * NeutronMultiRW, * FakeDataMultiRW;
+                    * KPlusMultiRW, * NeutronMultiRW, * FakeDataMultiRW,
+                    * FineMultiRW;
   G4ReweightManager * RWManager;
 };
 
@@ -1164,8 +1174,12 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
     //Pion Reweighter
     FracsFile = OpenFile(p.get< std::string >("FracsFile"));
     ParSet = p.get<std::vector<fhicl::ParameterSet>>("ParameterSet");
-    ParMaker = G4ReweightParameterMaker(ParSet);
+    FineParSet = p.get<std::vector<fhicl::ParameterSet>>("FineParameterSet");
+    //ParMaker = G4ReweightParameterMaker(ParSet);
     MultiRW = new G4MultiReweighter(211, *FracsFile, ParSet,
+                                    p.get<fhicl::ParameterSet>("Material"),
+                                    RWManager);
+    FineMultiRW = new G4MultiReweighter(211, *FracsFile, FineParSet,
                                     p.get<fhicl::ParameterSet>("Material"),
                                     RWManager);
     FakeDataParSet = p.get<std::vector<fhicl::ParameterSet>>("FakeDataParameterSet");
@@ -1181,7 +1195,7 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
     //Proton Reweighter
     ProtFracsFile = OpenFile(p.get< std::string >("ProtFracsFile"));
     ProtParSet = p.get<std::vector<fhicl::ParameterSet>>("ProtParameterSet");
-    ProtParMaker = G4ReweightParameterMaker(ProtParSet);
+    //ProtParMaker = G4ReweightParameterMaker(ProtParSet);
     ProtMultiRW = new G4MultiReweighter(
         2212, *ProtFracsFile, ProtParSet,
         p.get<fhicl::ParameterSet>("Material"),
@@ -1473,12 +1487,13 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
 
   //New geant4reweight stuff
   //To do: put in its own function
+  /*
   if (!evt.isRealData() && fDoReweight) {
     if (fVerbose) std::cout << "Doing reweight" << std::endl;
 
     //Doing reweighting if the primary is a piplus
     if (true_beam_PDG == 211) {
-      /*
+
       std::vector<G4ReweightTraj *> trajs = CreateNRWTrajs(
           *true_beam_particle, plist,
           fGeometryService, event);
@@ -1501,7 +1516,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
           }
           added = true;
         }
-      }*/
+      }
 
       //Weighting according to the full heirarchy
       std::vector<std::vector<G4ReweightTraj *>> new_full_created
@@ -1512,7 +1527,6 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
                   << std::endl;
       }
 
-      /*
       bool new_added = false;
       for (size_t i = 0; i < new_full_created.size(); ++i) {
         std::vector<G4ReweightTraj *> temp_trajs = new_full_created[i];
@@ -1536,7 +1550,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
             new_added = true;
           }
         }
-      }*/
+      }
 
       G4RWGridWeights(new_full_created, ParSet, g4rw_full_grid_weights,
                       MultiRW);
@@ -1545,7 +1559,7 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
         GetG4RWCoeffs(weights, g4rw_full_grid_coeffs.back());
       }
     }
-  }
+  }*/
 
   //New style of weighting to get full hierarchy (i.e. from full event not 
   //just from the primary + downstreams) -- currently for piplus and proton
@@ -1561,6 +1575,14 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       GetG4RWCoeffs(weights, g4rw_full_grid_piplus_coeffs.back());
     }
 
+    //Fine Weights
+    G4RWGridWeights(piplus_hierarchy, FineParSet, g4rw_full_fine_piplus_weights,
+                    FineMultiRW);
+    for (auto weights : g4rw_full_fine_piplus_weights) {
+      g4rw_full_fine_piplus_coeffs.push_back(std::vector<double>());
+      GetG4RWCoeffs(weights, g4rw_full_fine_piplus_coeffs.back());
+    }
+
 
     G4RWGridWeights(piplus_hierarchy, FakeDataParSet,
                     g4rw_full_grid_piplus_weights_fake_data,
@@ -1569,37 +1591,6 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       g4rw_full_grid_piplus_coeffs_fake_data.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_piplus_coeffs_fake_data.back());
     }
-
-    /*
-    std::vector<double> fake_data_input(FakeDataParSet.size(), 1.);
-    for (size_t i = 0; i < FakeDataParSet.size(); ++i) {
-      g4rw_full_grid_piplus_weights_fake_data.push_back(std::vector<double>());
-      for (size_t j = 0; j < fGridPoints.size(); ++j) {
-        fake_data_input[i] = fGridPoints[j];
-        bool set_values = FakeDataMultiRW->SetAllParameterValues(fake_data_input);
-
-        if (set_values) {
-          //Full
-          if (piplus_hierarchy.size()) {
-            std::vector<G4ReweightTraj *> & init_trajs = piplus_hierarchy[0];
-            g4rw_full_grid_piplus_weights_fake_data.back().push_back(
-                GetNTrajWeightFromSetPars(init_trajs, *FakeDataMultiRW)); 
-            for (size_t k = 1; k < piplus_hierarchy.size(); ++k) {
-              std::vector<G4ReweightTraj *> & temp_trajs = piplus_hierarchy[k];
-              g4rw_full_grid_piplus_weights_fake_data.back().back()
-                  *= GetNTrajWeightFromSetPars(temp_trajs, *FakeDataMultiRW);
-            }
-          }
-        }
-        else {
-          std::string message = "Could not Get N Traj Weight from set pars";
-          throw std::runtime_error(message);
-        }
-      }
-
-      //Reset to 1.
-      fake_data_input[i] = 1.;
-    }*/
 
     std::vector<std::vector<G4ReweightTraj *>> proton_hierarchy 
         = BuildHierarchy(true_beam_ID, 2212, plist, fGeometryService,
@@ -1674,6 +1665,9 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
       GetG4RWCoeffs(weights, g4rw_primary_grid_coeffs.back());
     }
 
+
+    //FineWeights
+    //
 
   }
 
@@ -1957,6 +1951,14 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_daughter_PFP_trackScore_collection", &reco_daughter_PFP_trackScore_collection);
   fTree->Branch("reco_daughter_PFP_emScore_collection", &reco_daughter_PFP_emScore_collection);
   fTree->Branch("reco_daughter_PFP_michelScore_collection", &reco_daughter_PFP_michelScore_collection);
+
+  fTree->Branch("reco_daughter_PFP_trackScore_weight_by_charge", &reco_daughter_PFP_trackScore_weight_by_charge);
+  fTree->Branch("reco_daughter_PFP_emScore_weight_by_charge", &reco_daughter_PFP_emScore_weight_by_charge);
+  fTree->Branch("reco_daughter_PFP_michelScore_weight_by_charge", &reco_daughter_PFP_michelScore_weight_by_charge);
+  fTree->Branch("reco_daughter_PFP_trackScore_collection_weight_by_charge", &reco_daughter_PFP_trackScore_collection_weight_by_charge);
+  fTree->Branch("reco_daughter_PFP_emScore_collection_weight_by_charge", &reco_daughter_PFP_emScore_collection_weight_by_charge);
+  fTree->Branch("reco_daughter_PFP_michelScore_collection_weight_by_charge", &reco_daughter_PFP_michelScore_collection_weight_by_charge);
+
   fTree->Branch("reco_daughter_pandora_type", &reco_daughter_pandora_type);
 
   fTree->Branch("crossing_cosmic_candidates", &crossing_cosmic_candidates);
@@ -2211,8 +2213,9 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("g4rw_full_primary_minus_sigma_weight",
                 &g4rw_full_primary_minus_sigma_weight);*/
   if (fSaveG4RWWeights) {
-    fTree->Branch("g4rw_full_grid_weights", &g4rw_full_grid_weights);
+    //fTree->Branch("g4rw_full_grid_weights", &g4rw_full_grid_weights);
     fTree->Branch("g4rw_full_grid_piplus_weights",  &g4rw_full_grid_piplus_weights);
+    fTree->Branch("g4rw_full_fine_piplus_weights",  &g4rw_full_fine_piplus_weights);
     fTree->Branch("g4rw_full_grid_piplus_weights_fake_data",  &g4rw_full_grid_piplus_weights_fake_data);
     fTree->Branch("g4rw_downstream_grid_piplus_weights",  &g4rw_downstream_grid_piplus_weights);
     fTree->Branch("g4rw_full_grid_piminus_weights", &g4rw_full_grid_piminus_weights);
@@ -2222,8 +2225,9 @@ void pduneana::PDSPAnalyzer::beginJob() {
     fTree->Branch("g4rw_primary_grid_weights", &g4rw_primary_grid_weights);
   }
 
-  fTree->Branch("g4rw_full_grid_coeffs", &g4rw_full_grid_coeffs);
+  //fTree->Branch("g4rw_full_grid_coeffs", &g4rw_full_grid_coeffs);
   fTree->Branch("g4rw_full_grid_piplus_coeffs",  &g4rw_full_grid_piplus_coeffs);
+  fTree->Branch("g4rw_full_fine_piplus_coeffs",  &g4rw_full_fine_piplus_coeffs);
   fTree->Branch("g4rw_full_grid_piplus_coeffs_fake_data",  &g4rw_full_grid_piplus_coeffs_fake_data);
   fTree->Branch("g4rw_downstream_grid_piplus_coeffs",  &g4rw_downstream_grid_piplus_coeffs);
   fTree->Branch("g4rw_full_grid_proton_coeffs", &g4rw_full_grid_proton_coeffs);
@@ -2555,6 +2559,13 @@ void pduneana::PDSPAnalyzer::reset()
   reco_daughter_PFP_emScore_collection.clear();
   reco_daughter_PFP_michelScore_collection.clear();
 
+  reco_daughter_PFP_trackScore_weight_by_charge.clear();
+  reco_daughter_PFP_emScore_weight_by_charge.clear();
+  reco_daughter_PFP_michelScore_weight_by_charge.clear();
+  reco_daughter_PFP_trackScore_collection_weight_by_charge.clear();
+  reco_daughter_PFP_emScore_collection_weight_by_charge.clear();
+  reco_daughter_PFP_michelScore_collection_weight_by_charge.clear();
+
   reco_beam_PFP_ID = -999;
   reco_beam_PFP_nHits = -999;
   reco_beam_PFP_trackScore = -999;
@@ -2797,10 +2808,12 @@ void pduneana::PDSPAnalyzer::reset()
   //g4rw_alt_primary_minus_sigma_weight.clear();
   //g4rw_full_primary_plus_sigma_weight.clear();
   //g4rw_full_primary_minus_sigma_weight.clear();
-  g4rw_full_grid_weights.clear();
-  g4rw_full_grid_coeffs.clear();
+  //g4rw_full_grid_weights.clear();
+  //g4rw_full_grid_coeffs.clear();
   g4rw_full_grid_piplus_weights.clear();
   g4rw_full_grid_piplus_coeffs.clear();
+  g4rw_full_fine_piplus_weights.clear();
+  g4rw_full_fine_piplus_coeffs.clear();
   g4rw_full_grid_piplus_weights_fake_data.clear();
   g4rw_full_grid_piplus_coeffs_fake_data.clear();
   g4rw_downstream_grid_piplus_weights.clear();
@@ -4304,6 +4317,15 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
       reco_daughter_PFP_trackScore_collection.push_back(track_score_collection);
       reco_daughter_PFP_emScore_collection.push_back(em_score_collection);
       reco_daughter_PFP_michelScore_collection.push_back(michel_score_collection);
+
+      reco_daughter_PFP_trackScore_weight_by_charge.push_back(theCNNResults.track_weight_by_charge);
+      reco_daughter_PFP_emScore_weight_by_charge.push_back(theCNNResults.em_weight_by_charge);
+      reco_daughter_PFP_michelScore_weight_by_charge.push_back(theCNNResults.michel_weight_by_charge);
+
+      reco_daughter_PFP_trackScore_collection_weight_by_charge.push_back(cnn_collection.track_weight_by_charge);
+      reco_daughter_PFP_emScore_collection_weight_by_charge.push_back(cnn_collection.em_weight_by_charge);
+      reco_daughter_PFP_michelScore_collection_weight_by_charge.push_back(cnn_collection.michel_weight_by_charge);
+
     }
     else{
       reco_daughter_PFP_trackScore.push_back( -999. );
@@ -4312,6 +4334,13 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
       reco_daughter_PFP_trackScore_collection.push_back( -999. );
       reco_daughter_PFP_emScore_collection.push_back( -999. );
       reco_daughter_PFP_michelScore_collection.push_back( -999. );
+
+      reco_daughter_PFP_trackScore_weight_by_charge.push_back( -999. );
+      reco_daughter_PFP_emScore_weight_by_charge.push_back( -999. );
+      reco_daughter_PFP_michelScore_weight_by_charge.push_back( -999. );
+      reco_daughter_PFP_trackScore_collection_weight_by_charge.push_back( -999. );
+      reco_daughter_PFP_emScore_collection_weight_by_charge.push_back( -999. );
+      reco_daughter_PFP_michelScore_collection_weight_by_charge.push_back( -999. );
     }
 
 
