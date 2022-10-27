@@ -919,6 +919,12 @@ private:
   std::vector< double > reco_daughter_PFP_emScore_collection;
   std::vector< double > reco_daughter_PFP_michelScore_collection;
 
+  std::vector< double > reco_daughter_PFP_trackScore_weight_by_charge;
+  std::vector< double > reco_daughter_PFP_emScore_weight_by_charge;
+  std::vector< double > reco_daughter_PFP_michelScore_weight_by_charge;
+  std::vector< double > reco_daughter_PFP_trackScore_collection_weight_by_charge;
+  std::vector< double > reco_daughter_PFP_emScore_collection_weight_by_charge;
+  std::vector< double > reco_daughter_PFP_michelScore_collection_weight_by_charge;
 
 
   //EDIT: reco_daughter_PFP_true_byY_XXX
@@ -1957,6 +1963,14 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("reco_daughter_PFP_trackScore_collection", &reco_daughter_PFP_trackScore_collection);
   fTree->Branch("reco_daughter_PFP_emScore_collection", &reco_daughter_PFP_emScore_collection);
   fTree->Branch("reco_daughter_PFP_michelScore_collection", &reco_daughter_PFP_michelScore_collection);
+
+  fTree->Branch("reco_daughter_PFP_trackScore_weight_by_charge", &reco_daughter_PFP_trackScore_weight_by_charge);
+  fTree->Branch("reco_daughter_PFP_emScore_weight_by_charge", &reco_daughter_PFP_emScore_weight_by_charge);
+  fTree->Branch("reco_daughter_PFP_michelScore_weight_by_charge", &reco_daughter_PFP_michelScore_weight_by_charge);
+  fTree->Branch("reco_daughter_PFP_trackScore_collection_weight_by_charge", &reco_daughter_PFP_trackScore_collection_weight_by_charge);
+  fTree->Branch("reco_daughter_PFP_emScore_collection_weight_by_charge", &reco_daughter_PFP_emScore_collection_weight_by_charge);
+  fTree->Branch("reco_daughter_PFP_michelScore_collection_weight_by_charge", &reco_daughter_PFP_michelScore_collection_weight_by_charge);
+
   fTree->Branch("reco_daughter_pandora_type", &reco_daughter_pandora_type);
 
   fTree->Branch("crossing_cosmic_candidates", &crossing_cosmic_candidates);
@@ -2554,6 +2568,13 @@ void pduneana::PDSPAnalyzer::reset()
   reco_daughter_PFP_trackScore_collection.clear();
   reco_daughter_PFP_emScore_collection.clear();
   reco_daughter_PFP_michelScore_collection.clear();
+
+  reco_daughter_PFP_trackScore_weight_by_charge.clear();
+  reco_daughter_PFP_emScore_weight_by_charge.clear();
+  reco_daughter_PFP_michelScore_weight_by_charge.clear();
+  reco_daughter_PFP_trackScore_collection_weight_by_charge.clear();
+  reco_daughter_PFP_emScore_collection_weight_by_charge.clear();
+  reco_daughter_PFP_michelScore_collection_weight_by_charge.clear();
 
   reco_beam_PFP_ID = -999;
   reco_beam_PFP_nHits = -999;
@@ -4304,6 +4325,15 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
       reco_daughter_PFP_trackScore_collection.push_back(track_score_collection);
       reco_daughter_PFP_emScore_collection.push_back(em_score_collection);
       reco_daughter_PFP_michelScore_collection.push_back(michel_score_collection);
+
+      reco_daughter_PFP_trackScore_weight_by_charge.push_back(theCNNResults.track_weight_by_charge);
+      reco_daughter_PFP_emScore_weight_by_charge.push_back(theCNNResults.em_weight_by_charge);
+      reco_daughter_PFP_michelScore_weight_by_charge.push_back(theCNNResults.michel_weight_by_charge);
+
+      reco_daughter_PFP_trackScore_collection_weight_by_charge.push_back(cnn_collection.track_weight_by_charge);
+      reco_daughter_PFP_emScore_collection_weight_by_charge.push_back(cnn_collection.em_weight_by_charge);
+      reco_daughter_PFP_michelScore_collection_weight_by_charge.push_back(cnn_collection.michel_weight_by_charge);
+
     }
     else{
       reco_daughter_PFP_trackScore.push_back( -999. );
@@ -4312,6 +4342,13 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
       reco_daughter_PFP_trackScore_collection.push_back( -999. );
       reco_daughter_PFP_emScore_collection.push_back( -999. );
       reco_daughter_PFP_michelScore_collection.push_back( -999. );
+
+      reco_daughter_PFP_trackScore_weight_by_charge.push_back( -999. );
+      reco_daughter_PFP_emScore_weight_by_charge.push_back( -999. );
+      reco_daughter_PFP_michelScore_weight_by_charge.push_back( -999. );
+      reco_daughter_PFP_trackScore_collection_weight_by_charge.push_back( -999. );
+      reco_daughter_PFP_emScore_collection_weight_by_charge.push_back( -999. );
+      reco_daughter_PFP_michelScore_collection_weight_by_charge.push_back( -999. );
     }
 
 
