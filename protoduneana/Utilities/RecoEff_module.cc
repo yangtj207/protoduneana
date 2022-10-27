@@ -881,7 +881,7 @@ double pdune::RecoEff::GetLengthInTPC(detinfo::DetectorClocksData const& clockDa
     if(tpcid.isValid){
       geo::CryostatGeo const & cryo = geom->Cryostat(tpcid.Cryostat);
       geo::TPCGeo const & tpc = cryo.TPC(tpcid.TPC);
-      double XPlanePosition = tpc.Plane(0).GetCenter()[0];
+      double XPlanePosition = tpc.PlaneLocation(0)[0];
       double DriftTimeCorrection = fabs( tmpPosition[0] - XPlanePosition )/ XDriftVelocity;
       double TimeAtPlane = part.T() + DriftTimeCorrection;
       if( TimeAtPlane < trigger_offset(clockData) || TimeAtPlane > trigger_offset(clockData) + WindowSize){
@@ -911,7 +911,7 @@ TVector3 pdune::RecoEff::GetPositionInTPC(detinfo::DetectorClocksData const& clo
   if(tpcid.isValid){
     geo::CryostatGeo const & cryo = geom->Cryostat(tpcid.Cryostat);
     geo::TPCGeo const & tpc = cryo.TPC(tpcid.TPC);
-    double XPlanePosition = tpc.Plane(0).GetCenter()[0];
+    double XPlanePosition = tpc.PlaneLocation(0)[0];
     double DriftTimeCorrection = fabs( tmpPosition[0] - XPlanePosition )/ XDriftVelocity;
     double TimeAtPlane = part.T() + DriftTimeCorrection;
     if( TimeAtPlane < trigger_offset(clockData) || TimeAtPlane > trigger_offset(clockData) + WindowSize){
