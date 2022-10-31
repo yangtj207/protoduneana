@@ -772,7 +772,7 @@ private:
   bool reco_beam_passes_beam_cuts;              
 
   int reco_beam_type;
-  double reco_beam_Chi2_proton;
+  double reco_beam_Chi2_proton, reco_beam_Chi2_muon;
   int    reco_beam_Chi2_ndof;
 
   ////////////////////////
@@ -2140,6 +2140,7 @@ void pduneana::PDSPAnalyzer::beginJob() {
 
 
   fTree->Branch("reco_beam_Chi2_proton", &reco_beam_Chi2_proton);
+  fTree->Branch("reco_beam_Chi2_muon", &reco_beam_Chi2_muon);
   fTree->Branch("reco_beam_Chi2_ndof", &reco_beam_Chi2_ndof);
 
 
@@ -2427,8 +2428,8 @@ void pduneana::PDSPAnalyzer::reset()
 
 
   //reco_daughter_true_byE_isPrimary = false;
-  reco_beam_Chi2_proton = 999.;
-
+  reco_beam_Chi2_proton = -999.;
+  reco_beam_Chi2_muon = -999.;
 
 
   beam_inst_P = -999.;
@@ -3283,9 +3284,14 @@ void pduneana::PDSPAnalyzer::BeamTrackInfo(
     ////////////////////////////////////////////
 
     //Get the chi2-based PID for the SCE-corrected beam track
-    std::pair< double, int > pid_chi2_ndof = trackUtil.Chi2PID( reco_beam_calibrated_dEdX_SCE, reco_beam_resRange_SCE, templates[ 2212 ] );
+    std::pair<double, int> pid_chi2_ndof = trackUtil.Chi2PID(
+        reco_beam_calibrated_dEdX_SCE, reco_beam_resRange_SCE, templates[2212]);
     reco_beam_Chi2_proton = pid_chi2_ndof.first;
     reco_beam_Chi2_ndof = pid_chi2_ndof.second;
+
+    pid_chi2_ndof = trackUtil.Chi2PID(
+        reco_beam_calibrated_dEdX_SCE, reco_beam_resRange_SCE, templates[13]);
+    reco_beam_Chi2_muon = pid_chi2_ndof.first;
 
     if (fVerbose)
       std::cout << "Calo check: " << reco_beam_calibrated_dEdX_SCE.size() << " " <<
