@@ -18,8 +18,10 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art_root_io/TFileService.h"
 
-#include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RawData/OpDetWaveform.h"
+#include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/RecoBase/OpWaveform.h"
 #include "larcore/Geometry/Geometry.h"
 
 #include "TTree.h"
@@ -77,13 +79,20 @@ protected:
 //  std::vector<unsigned short> tick;
 //  std::vector<float> adc;
   hep_hpc::hdf5::File hdffile;
+  art::InputTag fWireLabel;
+  art::InputTag fRawOpWaveformLabel;
+  art::InputTag fWienerOpWaveformLabel;
+  art::InputTag fImpulseOpWaveformLabel;
 
 };
 
 
 pdune::DataDumpHDF::DataDumpHDF(fhicl::ParameterSet const& p)
-  : EDAnalyzer{p}  // ,
-  // More initializers here.
+  : EDAnalyzer{p},
+  fWireLabel(p.get<art::InputTag>("WireLabel")),
+  fRawOpWaveformLabel(p.get<art::InputTag>("RawOpWaveformLabel")),
+  fWienerOpWaveformLabel(p.get<art::InputTag>("WienerOpWaveformLabel")),
+  fImpulseOpWaveformLabel(p.get<art::InputTag>("ImpulseOpWaveformLabel"))
 {
   // Call appropriate consumes<>() for any products to be retrieved by this module.
 }
@@ -117,12 +126,15 @@ void pdune::DataDumpHDF::analyze(art::Event const& e) noexcept
 
   //wire_nt_t wiresigs(hdffile, "wiresigs", {{"eid",4}});
   wire_nt_t wiresigs(hdffile, "wiresigs", {"adc"});
+  wire_nt_t rawpdsigs(hdffile, "rawpdsigs", {"adc"});
+  wire_nt_t wienerpdsigs(hdffile, "wienerpdsigs", {"adc"});
+  wire_nt_t impulsepdsigs(hdffile, "impulsepdsigs", {"adc"});
   evt_nt_t evtids(hdffile, "evtids", {{"eid",3}, "evttime"});
   evtids.insert(event_id.data(), evttime);
 
-  art::InputTag itag("caldata","dataprep");
+  //art::InputTag itag("caldata","dataprep");
   std::vector < art::Ptr < recob::Wire > > wires;
-  auto wireListHandle = e.getHandle < std::vector < recob::Wire > >(itag);
+  auto wireListHandle = e.getHandle < std::vector < recob::Wire > >(fWireLabel);
   if (wireListHandle) {
     art::fill_ptr_vector(wires, wireListHandle);
   }
@@ -166,6 +178,44 @@ void pdune::DataDumpHDF::analyze(art::Event const& e) noexcept
 //      for (int j = nticks; j < 6000; j++)
 //        wiresigs.insert(0.);
 //    }
+
+  auto wfHandle = e.getHandle<std::vector<raw::OpDetWaveform>>(fRawOpWaveformLabel);
+  if (wfHandle.isValid()){
+    std::vector < art::Ptr < raw::OpDetWaveform > > wfList;
+    art::fill_ptr_vector(wfList, wfHandle);
+    for (auto const& wf : wfList) {
+      for (size_t idx = 0; idx < wf->Waveform().size(); ++idx){
+        rawpdsigs.insert(wf->Waveform()[idx]);
+        //std::cout<<wf->ChannelNumber()<<" "<<idx<<" "<<wf->Waveform()[idx]<<std::endl;
+      }
+    }
+  }
+
+  auto wienerHandle = e.getHandle<std::vector<recob::OpWaveform>>(fWienerOpWaveformLabel);
+  if (wienerHandle.isValid()){
+    std::vector < art::Ptr < recob::OpWaveform > > wfList;
+    art::fill_ptr_vector(wfList, wienerHandle);
+    for (auto const& wf : wfList) {
+      auto const& signal = wf->Signal();
+      for (size_t idx = 0; idx < signal.size(); ++idx){
+        wienerpdsigs.insert(signal[idx]);
+        //std::cout<<wf->ChannelNumber()<<" "<<idx<<" "<<wf->Waveform()[idx]<<std::endl;
+      }
+    }
+  }
+
+  auto impulseHandle = e.getHandle<std::vector<recob::OpWaveform>>(fImpulseOpWaveformLabel);
+  if (impulseHandle.isValid()){
+    std::vector < art::Ptr < recob::OpWaveform > > wfList;
+    art::fill_ptr_vector(wfList, impulseHandle);
+    for (auto const& wf : wfList) {
+      auto const& signal = wf->Signal();
+      for (size_t idx = 0; idx < signal.size(); ++idx){
+        impulsepdsigs.insert(signal[idx]);
+        std::cout<<wf->Channel()<<" "<<idx<<" "<<wf->Signal()[idx]<<std::endl;
+      }
+    }
+  }
 
   std::cout<<"event_time: "<<evttime<<std::endl;
   
