@@ -320,14 +320,14 @@ void pdsp::HadronHitsRemoval::produce(art::Event& evt)
         for (; thisTrack->Length(i) > reco_beam_len - fTruncationLength/*sel_len*/; ++i ){
           ;
         }
-        TVector3 pos = thisTrack->LocationAtPoint<TVector3>(i);
+        auto const pos = thisTrack->LocationAtPoint(i);
         cout<<"$$"<<"\tX"<<pos.X()<<"\tY"<<pos.Y()<<"\tZ"<<pos.Z()<<endl; // position of cut point
         
         auto TpIndices = calo[index].TpIndices();
         
-        double wirecoord_U = fGeom->WireCoordinate(pos.Y(), pos.Z(), 0, 1, 0);
-        double wirecoord_V = fGeom->WireCoordinate(pos.Y(), pos.Z(), 1, 1, 0);
-        double wirecoord_X = fGeom->WireCoordinate(pos.Y(), pos.Z(), 2, 1, 0);
+        double wirecoord_U = fGeom->WireCoordinate(pos, geo::PlaneID{0, 1, 0});
+        double wirecoord_V = fGeom->WireCoordinate(pos, geo::PlaneID{0, 1, 1});
+        double wirecoord_X = fGeom->WireCoordinate(pos, geo::PlaneID{0, 1, 2});
         cout<<"$$$WireCoord: U "<<wirecoord_U<<"\tV "<<wirecoord_V<<"\tX "<<wirecoord_X<<endl; // Wire ID of cut point
         
         std::vector< art::Ptr< recob::Hit > > remove_hits;
