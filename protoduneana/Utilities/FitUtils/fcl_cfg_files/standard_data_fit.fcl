@@ -17,7 +17,7 @@ AnalysisOptions: {
   WirePitch: .47974
   Z0: 0.56035
 
-  Multinomial: true
+  Multinomial: false 
 
   SliceMethod: "Traj" #E, Alt, Default
 
@@ -38,14 +38,16 @@ AnalysisOptions: {
   RestrictBeamInstP: true
   VaryDataCalibration: false 
   DataCalibrationFactor: 1.02
+  BarlowBeeston: true
 }
 
 Systematics: [
   @local::SystematicsList.ediv_weight
   ,@local::g4rw_proton_coeff
   ,@local::SystematicsList.end_z_no_track_weight
-  ,@local::SystematicsList.beam_match_low_weight
-  ,@local::SystematicsList.beam_match_high_weight
+  ,@local::SystematicsList.beam_match_weight
+  #,@local::SystematicsList.beam_match_low_weight
+  #,@local::SystematicsList.beam_match_high_weight
   ,@local::g4rw_downstream_piplus_low_coeff
   ,@local::g4rw_downstream_piplus_high_coeff
 ]
@@ -75,17 +77,17 @@ Systematics[2].GenThrowLimitUp: 1.7391304347826089
 AddSystTerm: true
 
 CovarianceBins: [
-  ["ediv_weight", 1] #, #20%
- ,["end_z_no_track_weight", 4] #10%
- ,["g4rw_proton_coeff", 6] #33%
- ,["beam_match_low_weight", 1] #20%
- ,["beam_match_high_weight", 1] #20%
- ,["g4rw_downstream_piplus_low_coeff", 6] #33%
+  ["ediv_weight", 0] #, #20%
+ ,["end_z_no_track_weight", 1] #10%
+ ,["g4rw_proton_coeff", 2] #33%
+ ,["beam_match_weight", 3] #20%
+ #,["beam_match_low_weight", 3] #20%
+ #,["beam_match_high_weight", 4] #20%
+ ,["g4rw_downstream_piplus_low_coeff", 5] #33%
  ,["g4rw_downstream_piplus_high_coeff", 6] #33%
 ]
 
-CovarianceFile: "full_2_28_22_thresholds_10pct_endz_box_beam.root"
-CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/full_2_28_22_thresholds_10pct_endz_box_beam.root"
+CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/fixed_cov_7_29_22.root"
 CovarianceMatrix: "m"
 
 FixVariables: false 
@@ -263,7 +265,7 @@ DrawXSecUnderflow: false
 RandomStart: false 
 SplitMC:  false 
 MaxEntries: -1 #
-MaxDataEntries: -1 #54000
+MaxDataEntries: 51281 #-1 #54000
 DoFakeData: false 
 FluctuateStats: false 
 DoThrows: true

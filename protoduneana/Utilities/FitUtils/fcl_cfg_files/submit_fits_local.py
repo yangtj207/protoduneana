@@ -25,6 +25,7 @@ parser.add_argument('-N', type=int, default=1000)
 parser.add_argument('--sites', type=str, nargs='+')
 parser.add_argument('--memory', type=str, default=None)
 parser.add_argument('--blacklist', type=str, nargs='+')
+parser.add_argument('--multiple', action='store_true')
 
 parser.add_argument('--pduneana_tar', type=str, default='',
                     help='Optional Protoduneana tarball to be set up before NTupleProd')
@@ -67,7 +68,7 @@ cmd += ['-Osubmit.expected-lifetime=%s'%args.lifetime]
 cmd += ['-Oglobal.input_file=%s'%args.input_file]
 
 
-if 'toy' in args.type or 'alt_sce' in args.type:
+if 'toy' in args.type or 'alt_sce' in args.type or args.multiple:
   cmd += ['-Osubmit.N=%i'%args.N]
 
 if args.data_input != '':

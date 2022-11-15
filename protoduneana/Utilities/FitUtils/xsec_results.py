@@ -20,6 +20,7 @@ parser = ap()
 parser.add_argument('-o', type=str, required=True)
 parser.add_argument('-f', type=str, required=True)
 parser.add_argument('-x', type=str, required=True)
+parser.add_argument('--genie', type=str, default=None)
 parser.add_argument('--xt', type=str, default=None)
 parser.add_argument('--al', type=int, default=0)
 parser.add_argument('--ah', type=int, default=-1)
@@ -54,6 +55,9 @@ gr_abs = fResults.Get('abs_xsec')
 gr_cex = fResults.Get('cex_xsec')
 gr_other = fResults.Get('other_xsec')
 result_xsecs = [gr_abs, gr_cex, gr_other]
+#for x in result_xsecs:
+#  for i in range(x.GetN()):
+#    x.SetPointY(i, x.GetY()[i]*0.9628*0.9628)
 if args.add:
   count = 1
   for x in result_xsecs:
@@ -82,6 +86,15 @@ g4_xsecs.append(RT.TGraph(len(xs), array('d', xs), array('d', total)))
 g4_maxes = [max([y for y in g.GetY()]) for g in g4_xsecs]
 print(g4_maxes)
 
+
+genie_maxes = []
+if args.genie:
+  fGenie = RT.TFile(args.genie, 'open')
+  genie_xsecs = [fGenie.Get('abs').Clone(), fGenie.Get('cex').Clone(), fGenie.Get('other').Clone()]
+  genie_maxes = [max([y for y in g.GetY()]) for g in genie_xsecs]
+  fGenie.Close()
+
+
 if args.xt:
   fG4Thresh = RT.TFile(args.xt, 'open')
   g4_xsecs_thresh = [fG4Thresh.Get('abs_KE').Clone(), fG4Thresh.Get('cex_KE').Clone()]
@@ -102,7 +115,8 @@ for i in range(0, len(result_xsecs)):
 names = ['abs', 'cex', 'other']
 titles = ['Absorption', 'Charge Exchange', 'Other']
 
-the_max = max([i for i in g4_maxes] + [i for i in result_maxes])
+#the_max = max([i for i in g4_maxes] + [i for i in result_maxes])
+the_max = max(g4_maxes + result_maxes + genie_maxes)
 fOut = RT.TFile(args.o, 'recreate')
 for i in [0, 1, 2]:
   c = RT.TCanvas('c%s'%names[i], '')
@@ -124,6 +138,16 @@ for i in [0, 1, 2]:
   g4_xsecs[i].Draw('AC')
   g4_xsecs[i].SetLineWidth(2)
 
+  if args.genie:
+    genie_xsecs[i].SetLineColor(RT.kBlue)
+    genie_xsecs[i].SetTitle('%s;Kinetic Energy [MeV];#sigma [mb]'%titles[i])
+    genie_xsecs[i].GetXaxis().CenterTitle()
+    genie_xsecs[i].GetYaxis().CenterTitle()
+    genie_xsecs[i].GetXaxis().SetRangeUser(0., 999.)
+    genie_xsecs[i].Draw('C same')
+    genie_xsecs[i].SetLineWidth(2)
+
+
   if args.xt:
     g4_xsecs_thresh[i].SetLineColor(RT.kRed)
     g4_xsecs_thresh[i].SetLineWidth(2)
@@ -136,6 +160,8 @@ for i in [0, 1, 2]:
   if i == 0:
     leg = RT.TLegend()
     leg.AddEntry(g4_xsecs[i], 'Geant4 10.6' if not args.xt else 'Geant4 10.6 Thresholds', 'l')
+    if args.genie:
+      leg.AddEntry(genie_xsecs[i], 'Genie', 'l')
     if args.xt:
       leg.AddEntry(g4_xsecs_thresh[i], 'Geant4 10.6 No Thresholds', 'l')
     leg.AddEntry(result_xsecs[i], 'ProtoDUNE-SP', 'pez')
@@ -296,6 +322,9 @@ c = RT.TCanvas("cabs_lads")
 c.SetTicks()
 g4_xsecs[0].Draw('AC')
 g4_xsecs[0].SetLineWidth(2)
+if args.genie:
+  genie_xsecs[0].SetLineWidth(2)
+  genie_xsecs[0].Draw('C same')
 if args.xt:
   g4_xsecs_thresh[0].SetLineColor(RT.kRed)
   g4_xsecs_thresh[0].SetLineWidth(2)

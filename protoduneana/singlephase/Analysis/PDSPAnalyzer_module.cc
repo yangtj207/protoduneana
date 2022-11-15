@@ -604,6 +604,8 @@ private:
       std::vector<fhicl::ParameterSet> & pars,
       std::vector<std::vector<double>> & weights,
       G4MultiReweighter * multi_rw);
+  std::vector<int> PrimaryHierarchy(
+      int ID, const sim::ParticleList & plist, bool verbose=false);
   // Declare member data here.
   const art::InputTag fTrackModuleLabel;
 
@@ -620,6 +622,9 @@ private:
   int true_beam_PDG;
   double true_beam_mass;
   int true_beam_ID;
+  std::vector<int> true_beam_hierarchy;
+  int true_beam_hierarchy_size;
+  bool reco_beam_true_byHits_in_primary_hierarchy;
   std::string true_beam_endProcess;
   double true_beam_endX;
   double true_beam_endY;
@@ -1972,6 +1977,8 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("true_beam_PDG", &true_beam_PDG);
   fTree->Branch("true_beam_mass", &true_beam_mass);
   fTree->Branch("true_beam_ID", &true_beam_ID);
+  fTree->Branch("reco_beam_true_byHits_in_primary_hierarchy",
+                &reco_beam_true_byHits_in_primary_hierarchy);
   fTree->Branch("true_beam_endProcess", &true_beam_endProcess);
   fTree->Branch("true_beam_endX", &true_beam_endX);
   fTree->Branch("true_beam_endY", &true_beam_endY);
@@ -2347,6 +2354,9 @@ void pduneana::PDSPAnalyzer::reset()
   true_beam_PDG = -999;
   true_beam_mass = -999.;
   true_beam_ID = -999;
+  true_beam_hierarchy.clear();
+  true_beam_hierarchy_size = -999;
+  reco_beam_true_byHits_in_primary_hierarchy = false;
   true_beam_endProcess ="";
   true_beam_endX = -999.;
   true_beam_endY = -999.;
@@ -3596,6 +3606,19 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
   true_beam_PDG         = true_beam_particle->PdgCode();
   true_beam_mass        = true_beam_particle->Mass()*1.e3;
   true_beam_ID          = true_beam_particle->TrackId();
+  std::vector<int> primary_hierarchy = PrimaryHierarchy(true_beam_ID, plist);
+  true_beam_hierarchy.insert(true_beam_hierarchy.end(),
+                                primary_hierarchy.begin(),
+                                primary_hierarchy.end());
+  true_beam_hierarchy_size = true_beam_hierarchy.size();
+  reco_beam_true_byHits_in_primary_hierarchy
+      = (std::find(true_beam_hierarchy.begin(), true_beam_hierarchy.end(),
+                   reco_beam_true_byHits_ID)
+         != true_beam_hierarchy.end());
+  //std::cout << "Primary Hierarchy has " << primary_hierarchy.size() << std::endl;
+  //for (auto & i : primary_hierarchy) {
+  //  std::cout << i << std::endl;
+  //}
   true_beam_endX = true_beam_particle->EndX();
   true_beam_endY = true_beam_particle->EndY();
   true_beam_endZ = true_beam_particle->EndZ();
@@ -5819,4 +5842,30 @@ void pduneana::PDSPAnalyzer::FindTrueCrossingCosmics(
   }
 }
 
+std::vector<int> pduneana::PDSPAnalyzer::PrimaryHierarchy(
+        int ID, const sim::ParticleList & plist, bool verbose) {
+
+  std::deque<int> to_create = {ID};
+  std::vector<int> results;
+
+  while (to_create.size()) {
+    auto part = plist[to_create[0]];
+    results.push_back(to_create[0]);
+    for (int i = 0; i < part->NumberDaughters(); ++i) {
+      int daughter_ID = part->Daughter(i);
+      auto d_part = plist[daughter_ID];
+      if (abs(d_part->PdgCode()) != 11) {
+        to_create.push_back(daughter_ID);
+        if (verbose) {
+          std::cout << "Adding daughter " << to_create.back() << " " <<
+                       d_part->PdgCode() << std::endl;
+        }
+      }
+    }
+  
+    to_create.pop_front();
+  }
+
+  return results;
+}
 DEFINE_ART_MODULE(pduneana::PDSPAnalyzer)

@@ -35,6 +35,7 @@ class ThinSliceEvent {
     reco_daughter_efield = std::vector<std::vector<double>>();
     has_pi0_shower = false;
     true_daughter_PDGs = std::vector<int>();
+    reco_beam_origin = -999;
   };
   /*
   ~ThinSliceEvent() {
@@ -309,6 +310,9 @@ class ThinSliceEvent {
   int GetTrueID() const {return true_beam_ID;};
   int GetRecoToTrueID() const {return reco_beam_true_byHits_ID;};
 
+  void SetTrueID(int id) {true_beam_ID = id;};
+  void SetRecoToTrueID(int id) {reco_beam_true_byHits_ID = id;};
+
   double GetDeltaEToTPC() const {return delta_e_to_tpc;};
   void SetDeltaEToTPC(double delta_e) {delta_e_to_tpc = delta_e;};
 
@@ -319,6 +323,9 @@ class ThinSliceEvent {
   void SetLeadingPCostheta(double p) {leading_p_costheta = p;};
   void SetLeadingPiPlusCostheta(double p) {leading_piplus_costheta = p;};
   void SetLeadingPi0Costheta(double p) {leading_pi0_costheta = p;};
+
+  void SetRecoOrigin(int origin) {reco_beam_origin = origin;};
+  int GetRecoOrigin() const {return reco_beam_origin;};
  private:
   int event_ID, subrun_ID, run_ID;
   int sample_ID;
@@ -351,6 +358,7 @@ class ThinSliceEvent {
   int reco_beam_true_byHits_ID;
   double delta_e_to_tpc;
   double leading_p_costheta, leading_piplus_costheta, leading_pi0_costheta;
+  int reco_beam_origin = -999;
 };
 }
 #endif
