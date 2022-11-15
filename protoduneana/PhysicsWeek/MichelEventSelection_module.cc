@@ -523,17 +523,13 @@ bool MichelReco::insideFidVol( geo::Point_t const& pos ) {
     double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
     double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
     
-    for (size_t cryo = 0; cryo < geom.Ncryostats(); cryo++) {
-      const geo::CryostatGeo& cryostat = geom.Cryostat(cryo);
-      for (size_t tpc = 0; tpc < cryostat.NTPC(); tpc++) {
-        const geo::TPCGeo& tpcg = cryostat.TPC(tpc);
+    for (auto const& tpcg : geom.Iterate<geo::TPCGeo>()) {
         if (tpcg.MinX() < minx) minx = tpcg.MinX();
         if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX();
         if (tpcg.MinY() < miny) miny = tpcg.MinY();
         if (tpcg.MaxY() > maxy) maxy = tpcg.MaxY();
         if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
         if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ();
-      }
     }
 
     double dista = fabs(minx - pos.X());

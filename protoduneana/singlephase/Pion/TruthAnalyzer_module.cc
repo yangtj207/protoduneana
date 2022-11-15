@@ -517,7 +517,7 @@ void pionana::TruthAnalyzer::analyze(art::Event const& e)
     }
     std::cout << "Total len in LAr: " << total << std::endl;
      
-    double pitch = geom->WirePitch( 2, 1, 0);
+    double pitch = geom->WirePitch(geo::PlaneID{0, 1, 2});
 
     std::vector<int> slices = MakeSlices(
         1.e3*true_beam_trajectory.E(first_point),

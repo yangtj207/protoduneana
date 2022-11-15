@@ -1234,8 +1234,9 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
     fGridPair = p.get<std::pair<double, double>>("GridPair");
   }
 
-  fZ0 = geom->Wire( geo::WireID(0, 1, 2, 0) ).GetCenter().Z();
-  fPitch = geom->WirePitch( 2, 1, 0);
+  constexpr geo::PlaneID planeID{0, 1, 2};
+  fZ0 = geom->Wire( geo::WireID(planeID, 0) ).GetCenter().Z();
+  fPitch = geom->WirePitch(planeID);
 
 }
 
@@ -1266,16 +1267,16 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
                                                                  fPFParticleTag,
                                                                  fTrackerTag);
       if (tempTrack) {
-        double startX = tempTrack->Start().X();
-        double startY = tempTrack->Start().Y();
-        double startZ = tempTrack->Start().Z();
+        auto const start = tempTrack->Start();
+        double startX = start.X();
+        double startY = start.Y();
+        double startZ = start.Z();
 
-        double endX = tempTrack->End().X();
-        double endY = tempTrack->End().Y();
-        double endZ = tempTrack->End().Z();
+        auto const end = tempTrack->End();
+        double endX = end.X();
+        double endY = end.Y();
+        double endZ = end.Z();
 
-        double start[3] = {startX, startY, startZ};
-        double end[3] = {endX, endY, endZ};
         int end_tpc = geom->FindTPCAtPosition(end).TPC;
         int start_tpc = geom->FindTPCAtPosition(start).TPC;
 
