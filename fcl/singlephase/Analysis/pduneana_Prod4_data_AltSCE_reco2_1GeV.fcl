@@ -1,0 +1,8 @@
+#include "pduneana_Prod4_data_reco2_1GeV.fcl"
+
+services.XYZCalibService.YZCorrDBTag: "AltSCEDataFull"
+services.XYZCalibService.XCorrDBTag: "AltSCEDataFull"
+services.XYZCalibService.NormCorrDBTag: "AltSCEDataFull"
+
+physics.producers.pandoracali.CaloAlg.CalAreaConstants: [1.181e-3, 1.130e-3, 1.061e-3]
+physics.producers.pandora2cali.CaloAlg.CalAreaConstants: [1.181e-3, 1.130e-3, 1.061e-3]

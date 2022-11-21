@@ -22,6 +22,7 @@ protoana::PDSPSystematics::PDSPSystematics(
   SetupSyst_BoxBeam(pars);
   SetupSyst_ELoss(pars);
   SetupSyst_ELossMuon(pars);
+  SetupSyst_QuadBeamShift(pars);
 
 }
 
@@ -57,6 +58,9 @@ double protoana::PDSPSystematics::GetEventWeight(
     }
     else if (it->first == "eloss_weight_muon") {
       weight *= GetSystWeight_ELossMuon(event, it->second);
+    }
+    else if (it->first == "quad_beam_shift") {
+      weight *= GetSystWeight_QuadBeamShift(event, it->second);
     }
   }
   return weight;
@@ -532,6 +536,53 @@ double protoana::PDSPSystematics::GetSystWeight_TrueBeamShift(
 
   TSpline3 * spline = fTrueBeamSplines[bin];
   return spline->Eval(par/*s.at("true_beam_shift")*/.GetValue());
+}
+
+void protoana::PDSPSystematics::SetupSyst_QuadBeamShift(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  if (pars.find("quad_beam_shift") == pars.end()) {return;}
+
+  fQuadBeamBins = pars.at("quad_beam_shift").GetOption<std::vector<double>>(
+      "Bins");
+
+  fQuadBeamMeans = pars.at("quad_beam_shift").GetOption<std::vector<double>>(
+      "Means");
+  fQuadBeamSigmas = pars.at("quad_beam_shift").GetOption<std::vector<double>>(
+      "Sigmas");
+
+}
+
+double protoana::PDSPSystematics::GetSystWeight_QuadBeamShift(
+    const ThinSliceEvent & event,
+    const ThinSliceSystematic & par) {
+  if (event.GetPDG() != 211 || event.GetTrueIncidentEnergies().size() == 0)
+    return 1.;
+
+  double beam_inst_KE = sqrt(std::pow(event.GetBeamInstP()*1.e3, 2) +
+                             139.57*139.57) - 139.57;
+
+  int bin = -1;
+  for (size_t i = 1; i < fQuadBeamBins.size(); ++i) {
+    if (fQuadBeamBins[i-1] <= beam_inst_KE &&
+        beam_inst_KE <= fQuadBeamBins[i]) {
+      bin = i-1;
+      break;
+    }
+  }
+
+  //std::cout << beam_inst_KE << " " << bin << " returning 1." << std::endl;
+  if (bin == -1) {
+    return 1.;
+  }
+
+  double x = (beam_inst_KE - event.GetTrueIncidentEnergies()[0]);
+
+  double mean = fQuadBeamMeans[bin];
+  double stddev = fQuadBeamSigmas[bin];
+  double weight = (exp(.5*((std::pow(x - mean, 2)) -
+                   (std::pow(x - par.GetValue()*mean, 2)))/(stddev*stddev)));
+  //std::cout << "Returning " << par.GetValue() << " " << weight << std::endl;
+  return weight;
 }
 
 double protoana::PDSPSystematics::GetSystWeight_ELoss(

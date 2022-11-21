@@ -50,6 +50,7 @@ Systematics: [
   #,@local::SystematicsList.beam_match_high_weight
   ,@local::g4rw_downstream_piplus_low_coeff
   ,@local::g4rw_downstream_piplus_high_coeff
+  ,@local::SystematicsList.quad_beam_shift
 ]
 
 Systematics[2].Central: 1.46
@@ -85,9 +86,11 @@ CovarianceBins: [
  #,["beam_match_high_weight", 4] #20%
  ,["g4rw_downstream_piplus_low_coeff", 5] #33%
  ,["g4rw_downstream_piplus_high_coeff", 6] #33%
+ ,["quad_beam_shift", 7] #16%
 ]
 
-CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/fixed_cov_7_29_22.root"
+#CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/fixed_cov_7_29_22.root"
+CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/with_quad_shift.root"
 CovarianceMatrix: "m"
 
 FixVariables: false 
@@ -265,7 +268,7 @@ DrawXSecUnderflow: false
 RandomStart: false 
 SplitMC:  false 
 MaxEntries: -1 #
-MaxDataEntries: 51281 #-1 #54000
+MaxDataEntries: -1 #54000
 DoFakeData: false 
 FluctuateStats: false 
 DoThrows: true
