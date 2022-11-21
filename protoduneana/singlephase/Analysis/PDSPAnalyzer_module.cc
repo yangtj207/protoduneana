@@ -874,6 +874,7 @@ private:
   std::vector<double> true_beam_traj_X_SCE;
   std::vector<double> true_beam_traj_Y_SCE;
   std::vector<double> true_beam_traj_Z_SCE;
+  bool true_beam_is_scraper;
 
   int    reco_beam_PFP_ID;
   int    reco_beam_PFP_nHits;
@@ -2205,6 +2206,7 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("true_beam_traj_X_SCE", &true_beam_traj_X_SCE);
   fTree->Branch("true_beam_traj_Y_SCE", &true_beam_traj_Y_SCE);
   fTree->Branch("true_beam_traj_Z_SCE", &true_beam_traj_Z_SCE);
+  fTree->Branch("true_beam_is_scraper", &true_beam_is_scraper);
 
   //fTree->Branch("g4rw_primary_plus_sigma_weight", &g4rw_primary_plus_sigma_weight);
   //fTree->Branch("g4rw_primary_minus_sigma_weight", &g4rw_primary_minus_sigma_weight);
@@ -2686,6 +2688,7 @@ void pduneana::PDSPAnalyzer::reset()
   true_beam_traj_X_SCE.clear();
   true_beam_traj_Y_SCE.clear();
   true_beam_traj_Z_SCE.clear();
+  true_beam_is_scraper = false;
 
   //Alternative Reco
   reco_daughter_PFP_true_byHits_PDG.clear();
@@ -3869,6 +3872,7 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
   if( true_beam_incidentEnergies.size() ) true_beam_interactingEnergy = true_beam_incidentEnergies.back();
 
   //Save the trajectory points
+  art::ServiceHandle <geo::Geometry> geo_serv;
   for (size_t i = 0; i < true_beam_trajectory.size(); ++i) {
     true_beam_traj_X.push_back(true_beam_trajectory.X(i));
     true_beam_traj_Y.push_back(true_beam_trajectory.Y(i));
@@ -3885,6 +3889,15 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
     true_beam_traj_X_SCE.push_back(true_beam_trajectory.X(i) - offset.X());
     true_beam_traj_Y_SCE.push_back(true_beam_trajectory.Y(i) + offset.Y());
     true_beam_traj_Z_SCE.push_back(true_beam_trajectory.Z(i) + offset.Z());
+
+
+    geo::Point_t test_point{true_beam_trajectory.X(i),
+                            true_beam_trajectory.Y(i),
+                            true_beam_trajectory.Z(i)};
+    const TGeoMaterial * test_material = geo_serv->Material(test_point);
+    std::cout << test_material->GetName() << std::endl;
+    if (!strcmp(test_material->GetName(), "ALUMINUM_Al")) true_beam_is_scraper = true;
+
   }
   true_beam_len = 0;
   for (size_t i = 1; i < true_beam_trajectory.size(); ++i) {
