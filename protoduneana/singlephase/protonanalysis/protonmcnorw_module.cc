@@ -95,6 +95,7 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include <tuple>
 
 // Maximum number of beam particles to save
 const int NMAXDAUGTHERS = 15;
@@ -1274,15 +1275,14 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 						primtrk_hity.push_back(primtrk_pos.Y());
 						primtrk_hitz.push_back(primtrk_pos.Z());
 
-						double pos_reco[3]={primtrk_pos.X(),primtrk_pos.Y(),primtrk_pos.Z()};
 						art::ServiceHandle<geo::Geometry> geomm;
-						geo::TPCID tpc = geomm->FindTPCAtPosition(pos_reco);
+                                                geo::TPCID tpc = geomm->FindTPCAtPosition(primtrk_pos);
 						if(tpc.isValid){
 							int tpc_no=tpc.TPC;
 							geo::PlaneID planeID = geo::PlaneID(0, tpc_no, 2);
 							geo::WireID wireID;
 							try{
-								wireID = geomm->NearestWireID(pos_reco, planeID);
+                                                                wireID = geomm->NearestWireID(primtrk_pos, planeID);
 							}
 							catch(geo::InvalidWireError const& e) {
 								wireID = e.suggestedWireID(); // pick the closest valid wire
@@ -1384,18 +1384,18 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 				//if (thisTrajectoryProcessMap1.size()==0) std::cout<<"@@@ process map size is 0!"<<std::endl;
 				if (thisTrajectoryProcessMap1.size()) { //TrajectoryProcessMap1
 					for(auto const& couple1: thisTrajectoryProcessMap1) { //go through this traj with all the interaction vertices
-						interactionX.push_back(((truetraj.at(couple1.first)).first).X());
-						interactionY.push_back(((truetraj.at(couple1.first)).first).Y());
-						interactionZ.push_back(((truetraj.at(couple1.first)).first).Z());
-						interactionE.push_back(((truetraj.at(couple1.first)).first).E());	
+                                                auto const& four_position = truetraj.at(couple1.first).first;
+                                                interactionX.push_back(four_position.X());
+                                                interactionY.push_back(four_position.Y());
+                                                interactionZ.push_back(four_position.Z());
+                                                interactionE.push_back(four_position.E());
 						interactionProcesslist.push_back(truetraj.KeyToProcess(couple1.second));
 
 						//std::cout<<"int_process z, E, name:"<<((truetraj.at(couple1.first)).first).Z()<<((truetraj.at(couple1.first)).first).E()<<", "<<truetraj.KeyToProcess(couple1.second)<<std::endl;
 
 						//get the TPC num 
-						double xval=((truetraj.at(couple1.first)).first).X();
-						double yval=((truetraj.at(couple1.first)).first).Y();
-						double zval=((truetraj.at(couple1.first)).first).Z();
+                                                auto const pos = geo::vect::toPoint(four_position.Vect());
+                                                auto const [xval, zval] = std::make_tuple(pos.X(), pos.Z());
 						unsigned int tpcno=1;
 						if(xval<=0 && zval<232) tpcno=1;
 						if(xval<=0 && zval>232 && zval<464) tpcno=5; 
@@ -1404,14 +1404,15 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 						if(xval>0 && zval>232 && zval<464) tpcno=6; 
 						if(xval>0 && zval>=464) tpcno=10;
 
+                                                geo::TPCID const tpcID{0, tpcno};
 						//convert the position of the interaction vertex to (wireID, peak time)
-						interaction_wid_c.push_back(fGeometry->WireCoordinate(yval, zval, 2, tpcno, 0));
-						interaction_wid_v.push_back(fGeometry->WireCoordinate(yval, zval, 1, tpcno, 0));
-						interaction_wid_u.push_back(fGeometry->WireCoordinate(yval, zval, 0, tpcno, 0));
+                                                interaction_wid_c.push_back(fGeometry->WireCoordinate(pos, geo::PlaneID{tpcID, 2}));
+                                                interaction_wid_v.push_back(fGeometry->WireCoordinate(pos, geo::PlaneID{tpcID, 1}));
+                                                interaction_wid_u.push_back(fGeometry->WireCoordinate(pos, geo::PlaneID{tpcID, 0}));
 
-                                                interaction_tt_c.push_back(detProp.ConvertXToTicks(xval, 2, tpcno, 0));
-                                                interaction_tt_v.push_back(detProp.ConvertXToTicks(xval, 1, tpcno, 0));
-                                                interaction_tt_u.push_back(detProp.ConvertXToTicks(xval, 0, tpcno, 0));
+                                                interaction_tt_c.push_back(detProp.ConvertXToTicks(xval, geo::PlaneID{tpcID, 2}));
+                                                interaction_tt_v.push_back(detProp.ConvertXToTicks(xval, geo::PlaneID{tpcID, 1}));
+                                                interaction_tt_u.push_back(detProp.ConvertXToTicks(xval, geo::PlaneID{tpcID, 0}));
 
                                                 //interactionT.push_back(detProp.ConvertXToTicks(xval, 2, tpcno, 0));
 						//interactionU.push_back(fGeometry->WireCoordinate(((truetraj.at(couple1.first)).first).Y(), ((truetraj.at(couple1.first)).first).Z(),0, tpcno, 0));
@@ -1630,7 +1631,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 							primtrk_true_trkid.push_back(currentIde2.trackID);
 							primtrk_true_edept.push_back(currentIde2.energy);
 
-							double pos_true[3] = {currentIde2.x, currentIde2.y, currentIde2.z};
+                                                        geo::Point_t const pos_true{currentIde2.x, currentIde2.y, currentIde2.z};
 							geo::TPCID tpc = geom->FindTPCAtPosition(pos_true);
 							if(tpc.isValid){
 								int tpc_no=tpc.TPC;
@@ -1770,11 +1771,6 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 					}
 
 					//Get CNN score of each hit ------------------------------------------------------------------------//
-					int planenum=999;
-					float zpos=-999;
-					float ypos=-999;
-					float xpos=-999;
-
 					//float max_inel_score_c=-999.;
 					//float max_el_score_c=-999.;
 					if(fmthm.isValid()){ //if non-empty fmthm
@@ -1797,10 +1793,8 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 							}
 
 							//get (x,y,z) 
-							auto loc = tracklist[fprimaryID]->LocationAtPoint(vmeta[ii]->Index());
-							xpos=loc.X();
-							ypos=loc.Y();
-							zpos=loc.Z();
+                                                        auto const loc = tracklist[fprimaryID]->LocationAtPoint(vmeta[ii]->Index());
+                                                        auto const [xpos, ypos, zpos] = std::make_tuple(loc.X(), loc.Y(), loc.Z());
 							//std::cout<<"x, y, z: "<<xpos<<"  "<<ypos<<"  "<<zpos<<std::endl;
 							//std::cout<<"BadHit"<<fBadhit<<std::endl;
 
@@ -1816,8 +1810,9 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 							//skip the bad hit if any
 							if (fBadhit) continue; //HY::If BAD hit, skip this hit and go next
 							if (zpos<-100) continue; //hit not on track
-							planenum=vhit[ii]->WireID().Plane;
 
+                                                        unsigned int const planenum=vhit[ii]->WireID().Plane;
+                                                        geo::PlaneID const planeID{0, tpc_no, planenum};
 							if(planenum==2){
 								//std::cout<<"inside loop"<<std::endl;
 								//std::array<float,3> cnn_out=hitResults.getOutput(vhit[ii]);
@@ -1835,8 +1830,8 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 								//std::cout<<"(x_c/y_c/z_c): ("<<xpos<<","<<ypos<<","<<zpos<<")"<<std::endl;
 
 								//convert the position of the interaction to (wireID, peak time)
-								wid_c.push_back(fGeometry->WireCoordinate(ypos, zpos, planenum, tpc_no, 0));
-                                                                tt_c.push_back(detProp.ConvertXToTicks(xpos, planenum, tpc_no, 0));
+                                                                wid_c.push_back(fGeometry->WireCoordinate(loc, planeID));
+                                                                tt_c.push_back(detProp.ConvertXToTicks(xpos, planeID));
 
 								//save ch number
 								ch_c.push_back(vhit[ii]->Channel());
@@ -1877,8 +1872,8 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 								//hitz_1.push_back(zpos);
 
 								//convert the position of the interaction to (wireID, peak time)
-								wid_v.push_back(fGeometry->WireCoordinate(ypos, zpos, planenum, tpc_no, 0));
-                                                                tt_v.push_back(detProp.ConvertXToTicks(xpos, planenum, tpc_no, 0));
+                                                                wid_v.push_back(fGeometry->WireCoordinate(loc, planeID));
+                                                                tt_v.push_back(detProp.ConvertXToTicks(xpos, planeID));
 
 								//save ch number
 								ch_v.push_back(vhit[ii]->Channel());
@@ -1900,8 +1895,8 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 								//hitz_0.push_back(zpos);
 
 								//convert the position of the interaction to (wireID, peak time)
-								wid_u.push_back(fGeometry->WireCoordinate(ypos, zpos, planenum, tpc_no, 0));
-                                                                tt_u.push_back(detProp.ConvertXToTicks(xpos, planenum, tpc_no, 0));
+                                                                wid_u.push_back(fGeometry->WireCoordinate(loc, planeID));
+                                                                tt_u.push_back(detProp.ConvertXToTicks(xpos, planeID));
 
 								//save ch number
 								ch_u.push_back(vhit[ii]->Channel());
