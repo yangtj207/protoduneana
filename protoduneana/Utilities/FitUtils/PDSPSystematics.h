@@ -110,6 +110,12 @@ class PDSPSystematics {
       const ThinSliceSystematic & par);
       //const std::map<std::string, ThinSliceSystematic> & pars);
 
+  void SetupSyst_QuadBeamShift(
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_QuadBeamShift(
+      const ThinSliceEvent & event,
+      const ThinSliceSystematic & par);
+
   void SetupSyst_ELoss(
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_ELoss(
@@ -181,6 +187,9 @@ class PDSPSystematics {
 
   //std::vector<std::string> fActiveSysts;
   int fUpstreamID, fNoTrackID, fDecayID, fPastFVID, fBeamCutID, fPastFVSelectionID;
+
+  //Quad Beam Shift
+  std::vector<double> fQuadBeamBins, fQuadBeamMeans, fQuadBeamSigmas;
 };
 }
 #endif
