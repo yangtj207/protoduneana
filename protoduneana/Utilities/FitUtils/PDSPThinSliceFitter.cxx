@@ -353,6 +353,7 @@ void protoana::PDSPThinSliceFitter::BuildMCSamples() {
   fMCFile->Close();
 
   if (fDoSysts) {
+    std::cout << "Setting up systs" << std::endl;
     fThinSliceDriver->SetupSysts(fEvents, fSamples, fIsSignalSample,
                                  fBeamEnergyBins, fSystParameters,
                                  fOutputFile);

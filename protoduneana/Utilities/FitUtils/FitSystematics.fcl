@@ -761,6 +761,28 @@ SystematicsList: {
     }
   }
 
+  beam_shift_bin_0: {
+    Name: "beam_shift_bin_0"
+    Central: 0.
+    LowerLimit: -200
+    UpperLimit: 200
+    ThrowLimit: -150
+    ThrowLimitUp: 150 
+    GenThrowLimit: -150. 
+    GenThrowLimitUp: 150.
+    IsBeamShiftBin: true
+    Options: {
+      RangeLow: 700.
+      RangeHigh: 750.
+      Mean: -5.712
+      Sigma: 17.022
+
+      #Bins: [700., 750., 800., 850., 900., 950., 1000., 1050., 1100.]
+      #Means: [-5.712, -1.078, 4.554, 9.562, 16.343, 26.587, 44.727, 55.282]
+      #Sigmas: [17.022, 16.430, 18.410, 20.128, 20.590, 19.444, 17.269, 39.745]
+    }
+  }
+
   eloss_weight: {
     Name: "eloss_weight"
     Central: 1.
@@ -817,5 +839,54 @@ SystematicsList: {
     }
   }
 }
+
+SystematicsList.beam_shift_bin_1: @local::SystematicsList.beam_shift_bin_0
+SystematicsList.beam_shift_bin_1.Name: "beam_shift_bin_1"
+SystematicsList.beam_shift_bin_1.Options.RangeLow: 750.
+SystematicsList.beam_shift_bin_1.Options.RangeHigh: 800.
+SystematicsList.beam_shift_bin_1.Options.Mean: -1.078
+SystematicsList.beam_shift_bin_1.Options.Sigma: 16.430 
+
+SystematicsList.beam_shift_bin_2: @local::SystematicsList.beam_shift_bin_0
+SystematicsList.beam_shift_bin_2.Name: "beam_shift_bin_2"
+SystematicsList.beam_shift_bin_2.Options.RangeLow: 800.
+SystematicsList.beam_shift_bin_2.Options.RangeHigh: 850.
+SystematicsList.beam_shift_bin_2.Options.Mean: 4.554
+SystematicsList.beam_shift_bin_2.Options.Sigma: 18.410 
+
+SystematicsList.beam_shift_bin_3: @local::SystematicsList.beam_shift_bin_0
+SystematicsList.beam_shift_bin_3.Name: "beam_shift_bin_3"
+SystematicsList.beam_shift_bin_3.Options.RangeLow: 850.
+SystematicsList.beam_shift_bin_3.Options.RangeHigh: 900.
+SystematicsList.beam_shift_bin_3.Options.Mean: 9.562
+SystematicsList.beam_shift_bin_3.Options.Sigma: 20.128 
+
+SystematicsList.beam_shift_bin_4: @local::SystematicsList.beam_shift_bin_0
+SystematicsList.beam_shift_bin_4.Name: "beam_shift_bin_4"
+SystematicsList.beam_shift_bin_4.Options.RangeLow: 900.
+SystematicsList.beam_shift_bin_4.Options.RangeHigh: 950.
+SystematicsList.beam_shift_bin_4.Options.Mean: 16.343
+SystematicsList.beam_shift_bin_4.Options.Sigma: 20.590 
+
+SystematicsList.beam_shift_bin_5: @local::SystematicsList.beam_shift_bin_0
+SystematicsList.beam_shift_bin_5.Name: "beam_shift_bin_5"
+SystematicsList.beam_shift_bin_5.Options.RangeLow: 950.
+SystematicsList.beam_shift_bin_5.Options.RangeHigh: 1000.
+SystematicsList.beam_shift_bin_5.Options.Mean: 26.587
+SystematicsList.beam_shift_bin_5.Options.Sigma: 19.444 
+
+SystematicsList.beam_shift_bin_6: @local::SystematicsList.beam_shift_bin_0
+SystematicsList.beam_shift_bin_6.Name: "beam_shift_bin_6"
+SystematicsList.beam_shift_bin_6.Options.RangeLow: 1000.
+SystematicsList.beam_shift_bin_6.Options.RangeHigh: 1050.
+SystematicsList.beam_shift_bin_6.Options.Mean: 44.727
+SystematicsList.beam_shift_bin_6.Options.Sigma: 17.269 
+
+SystematicsList.beam_shift_bin_7: @local::SystematicsList.beam_shift_bin_0
+SystematicsList.beam_shift_bin_7.Name: "beam_shift_bin_7"
+SystematicsList.beam_shift_bin_7.Options.RangeLow: 1050.
+SystematicsList.beam_shift_bin_7.Options.RangeHigh: 1100.
+SystematicsList.beam_shift_bin_7.Options.Mean: 55.282
+SystematicsList.beam_shift_bin_7.Options.Sigma: 39.745 
 
 END_PROLOG

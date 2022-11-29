@@ -34,6 +34,7 @@ protoana::AbsCexDriver::AbsCexDriver(
       fEndZSelections(extra_options.get<std::vector<int>>("EndZSelections", {})),
       fOneBinSelections(extra_options.get<std::vector<int>>("OneBinSelections", {})),
       fBeamInstPScale(extra_options.get<double>("BeamInstPScale", 1.)),
+      //fMCBeamInstPShift(extra_options.get<double>("MCBeamInstPShift", 0.)),
       fRestrictBeamInstP(extra_options.get<bool>("RestrictBeamInstP", false)),
       fDebugRestrictBeamP(extra_options.get<bool>("DebugRestrictBeamP", false)),
       fVaryDataCalibration(extra_options.get<bool>("VaryDataCalibration", false)),

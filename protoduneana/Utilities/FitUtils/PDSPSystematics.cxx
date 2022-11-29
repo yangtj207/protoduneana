@@ -24,6 +24,8 @@ protoana::PDSPSystematics::PDSPSystematics(
   SetupSyst_ELossMuon(pars);
   SetupSyst_QuadBeamShift(pars);
 
+  SetupSyst_BeamShiftBins(pars);
+
 }
 
 double protoana::PDSPSystematics::GetEventWeight(
@@ -37,6 +39,9 @@ double protoana::PDSPSystematics::GetEventWeight(
     }
     else if (it->second.GetIsTiedG4RWCoeff()) {
       weight *= GetSystWeight_TiedG4RWCoeff(event, it->second);
+    }
+    else if (it->second.GetIsBeamShiftBin()) {
+      weight *= GetSystWeight_BeamShiftBin(event, it->second);
     }
     else if (it->first == "ediv_weight") {
       weight *= GetSystWeight_EDiv(event, it->second);
@@ -81,6 +86,54 @@ void protoana::PDSPSystematics::SetupSyst_G4RWCoeff(
     fG4RWCoeffBranches[it->first] = it->second.GetOption<std::string>("Branch");
     std::cout << "Added " << it->first << " " << fG4RWCoeffBranches[it->first] << std::endl;
   }
+}
+
+void protoana::PDSPSystematics::SetupSyst_BeamShiftBins(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  for (auto it = pars.begin(); it != pars.end(); ++it) {
+    if (it->first.find("beam_shift_bin") != std::string::npos) {
+      std::cout << "Setting up beam_shift_bin syst: " << it->first << std::endl;
+    }
+    else {
+      continue;
+    }
+
+    fBeamShiftBinMeans[it->second.GetName()] = it->second.GetOption<double>("Mean");
+    fBeamShiftBinSigmas[it->second.GetName()] = it->second.GetOption<double>("Sigma");
+    fBeamShiftBinRangeLows[it->second.GetName()] = it->second.GetOption<double>("RangeLow");
+    fBeamShiftBinRangeHighs[it->second.GetName()] = it->second.GetOption<double>("RangeHigh");
+    std::cout << "Added " << it->second.GetName() << " " << std::endl;
+  }
+}
+
+//optimize this -- TODO 
+double protoana::PDSPSystematics::GetSystWeight_BeamShiftBin(
+    const ThinSliceEvent & event,
+    const ThinSliceSystematic & par) {
+  if (event.GetPDG() != 211 || event.GetTrueIncidentEnergies().size() == 0)
+    return 1.;
+
+  double beam_inst_KE = sqrt(std::pow(event.GetBeamInstP()*1.e3, 2) +
+                             139.57*139.57) - 139.57;
+  //std::cout << beam_inst_KE << " " << fBeamShiftBinRangeLows[par.GetName()] <<
+  //             " " << fBeamShiftBinRangeHighs[par.GetName()] << " " <<
+  //             par.GetName() << std::endl;
+
+  if (beam_inst_KE < fBeamShiftBinRangeLows[par.GetName()] ||
+      beam_inst_KE >= fBeamShiftBinRangeHighs[par.GetName()]) {
+    //std::cout << "returning 1" << std::endl;
+    return 1.;
+  }
+
+  double x = (beam_inst_KE - event.GetTrueIncidentEnergies()[0]);
+
+  double mean = fBeamShiftBinMeans[par.GetName()];
+  double stddev = fBeamShiftBinSigmas[par.GetName()];
+  double weight = (exp(.5*((std::pow(x - mean, 2)) -
+                   (std::pow(x - mean + par.GetValue(), 2)))/(stddev*stddev)));
+  //std::cout << "Returning " << par.GetValue() << " " << weight << std::endl;
+  return weight;
+
 }
 
 double protoana::PDSPSystematics::GetSystWeight_G4RWCoeff(

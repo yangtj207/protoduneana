@@ -33,6 +33,14 @@ class PDSPSystematics {
       const ThinSliceSystematic & par);
       //const std::map<std::string, ThinSliceSystematic> & pars);
 
+
+  void SetupSyst_BeamShiftBins(
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_BeamShiftBin(
+      const ThinSliceEvent & event,
+      const ThinSliceSystematic & par);
+
+
   double GetSystWeight_TiedG4RWCoeff(
       const ThinSliceEvent & event,
       const ThinSliceSystematic & par);
@@ -142,6 +150,10 @@ class PDSPSystematics {
 
   //G4RW Coeff
   std::map<std::string, std::string> fG4RWCoeffBranches;
+
+  //BeamShiftBins
+  std::map<std::string, double> fBeamShiftBinMeans, fBeamShiftBinSigmas,
+                                fBeamShiftBinRangeLows, fBeamShiftBinRangeHighs;
 
   //BeamShift
   std::pair<double, double> fSystBeamShiftLimits;

@@ -17,6 +17,7 @@ class ThinSliceSystematic {
       fSigma(pset.get<double>("Sigma", 1.)),
       fIsG4RWCoeff(pset.get<bool>("IsG4RWCoeff", false)),
       fIsTiedG4RWCoeff(pset.get<bool>("IsTiedG4RWCoeff", false)),
+      fIsBeamShiftBin(pset.get<bool>("IsBeamShiftBin", false)),
       fOptions(pset.get<fhicl::ParameterSet>("Options")) {
     fName = "par_" + fType + "_syst";
     if (fIsG4RWCoeff) {
@@ -97,6 +98,11 @@ class ThinSliceSystematic {
   const bool GetIsTiedG4RWCoeff() const {
     return fIsTiedG4RWCoeff;
   }
+
+  const bool GetIsBeamShiftBin() const {
+    return fIsBeamShiftBin;
+  }
+
  private:
 
   std::string fType;
@@ -110,7 +116,7 @@ class ThinSliceSystematic {
   double fGenThrowLimitUp; 
   double fSigma;
 
-  bool fIsG4RWCoeff, fIsTiedG4RWCoeff;
+  bool fIsG4RWCoeff, fIsTiedG4RWCoeff, fIsBeamShiftBin;
   std::string fG4RWCoeffBranch = "";
   std::vector<std::string> fTiedG4RWCoeffBranches;
 
