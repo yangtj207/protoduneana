@@ -166,6 +166,8 @@ class PDSPThinSliceFitter {
   std::string fDataFileName;
   std::string fTreeName;
   std::vector<fhicl::ParameterSet> fSelectionSets;
+  std::map<int, int> fSelectionBins;
+  std::vector<double> fSelVarSystVals;
   std::vector<fhicl::ParameterSet> fSampleSets;
   std::map<int, std::string> fFluxTypes;
   int fMaxCalls, fMaxIterations, fPrintLevel;
@@ -216,6 +218,26 @@ class PDSPThinSliceFitter {
   std::map<int, std::vector<double>> fSignalBins;
   //////////////////////////
   
+  void ResetSelVarSystVals() {
+    for (auto & val : fSelVarSystVals) {
+      val = 1.;
+    }
+  };
+
+  void SetSelVarSystVals() {
+    ResetSelVarSystVals();
+    for (auto & sel_var_vec : fSelVarSystPars) {
+      for (auto & par : sel_var_vec) {
+        //std::cout << par.GetName() << " " << par.GetSelectionID() << " " <<
+        //             par.GetSelectionBin() << std::endl;
+        //std::cout << "Bin: " << fSelectionBins[par.GetSelectionID()] + par.GetSelectionBin()-1 << std::endl;
+        int bin = fSelectionBins[par.GetSelectionID()] +
+                  par.GetSelectionBin() - 1;
+        fSelVarSystVals[bin] = par.GetValue();
+      }
+    }
+  };
+
   double BetheBloch(double energy, double mass) {
    double K,rho,Z,A, charge, me, I, gamma,  /*momentum ,*/wmax, pitch;
    long double beta;

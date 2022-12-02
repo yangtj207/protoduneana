@@ -112,6 +112,34 @@ class ThinSliceSample {
     return fSelectionHistsRebinned.at(id);
   };
 
+  void ScaleSelections(/*int selection_id, */std::vector<double> vals,
+                       std::map<int, int> sel_bins) {
+    //std::cout << "Scaling " << selection_id << " " << val << std::endl;
+    //std::cout << "Flux: " << fVariedFlux << std::endl;
+    //std::cout << "Hists" << std::endl;
+    //double total = 0.;
+    double varied_total = 0.;
+    size_t bin = 0;
+    for (auto & sel_hist : fSelectionHists) {
+      //std::cout << sel_hist.first << " " << sel_bins[sel_hist.first] << std::endl;
+      for (int i = 1; i <= sel_hist.second->GetNbinsX(); ++i) {
+        double content = sel_hist.second->GetBinContent(i);
+        double scale = vals[bin];
+        //std::cout << sel_hist.first << " " << i << " " << content <<
+        //             " " << scale << std::endl;
+        varied_total += content*scale;
+        sel_hist.second->SetBinContent(i, content*scale);
+        ++bin;
+      }
+
+    }
+    //std::cout << "Equal? " << (total == fVariedFlux) << " " << 
+    //             total << " " << fVariedFlux << std::endl;
+    //
+    //std::cout << "Totals: " << varied_total << " " << fVariedFlux << std::endl;
+    fVariedFlux = varied_total;
+  };
+
   const std::string & GetName() const {
     return fSampleName;
   };
@@ -224,6 +252,9 @@ class ThinSliceSample {
     if (fSelectionHists.find(id) != fSelectionHists.end()) {
       fSelectionHists.at(id)->Fill(val, weight);
     }
+    else {
+      fNoSelectionEntries += weight;
+    }
   };
 
   template <size_t N> void FillSelectionHist(int id, const double (& vals)[N],
@@ -244,6 +275,9 @@ class ThinSliceSample {
       else if (N == 3) {
         ((TH3D*)fSelectionHists.at(id))->Fill(vals[0], vals[1], vals[2], weight);
       }
+    }
+    else {
+      fNoSelectionEntries += weight;
     }
   }
 
@@ -386,6 +420,7 @@ class ThinSliceSample {
   int fFluxType;
   double fNominalFlux = 0.;
   double fVariedFlux = 0.;
+  double fNoSelectionEntries = 0.;
   double fDataMCScale = 1.;
   bool fIsSignal;
   std::pair<double, double> fRange;
