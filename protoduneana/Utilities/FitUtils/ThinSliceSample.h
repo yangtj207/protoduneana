@@ -247,6 +247,15 @@ class ThinSliceSample {
     }
   }
 
+  int GetSelectionHistBin(int id, double val) {
+    if (fSelectionHists.find(id) != fSelectionHists.end()) {
+      return fSelectionHists.at(id)->GetXaxis()->FindBin(val);
+    }
+    else {
+      return -1;
+    }
+  };
+
   void FillHistFromIncidentEnergies(TH1D & hist) {
     for (auto vals : fIncidentEnergies) {
       //hist.Fill(vals.first, fFactor/*vals.second*/);

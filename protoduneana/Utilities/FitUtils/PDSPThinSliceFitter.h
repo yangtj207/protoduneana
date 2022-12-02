@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <chrono>
 
 #include "TTree.h"
 #include "TArrayD.h"
@@ -77,7 +78,8 @@ class PDSPThinSliceFitter {
 
   ThinSliceDriver * fThinSliceDriver;
   std::map<int, std::vector<std::vector<ThinSliceSample>>> fSamples,
-                                                           fFakeSamples;
+                                                           fFakeSamples,
+                                                           fCovSamples;
   ThinSliceDataSet fDataSet;
   std::map<int, TH1 *> fFixFactorHists;
   std::map<int, bool> fIsSignalSample;
@@ -129,10 +131,12 @@ class PDSPThinSliceFitter {
 
   //std::map<int, std::string> fSystParameterNames;
   std::map<std::string, ThinSliceSystematic> fSystParameters;
+  std::vector<std::vector<ThinSliceSystematic>> fSelVarSystPars;
   std::vector<std::string> fSystParameterNames;
   std::vector<double> fParLimits, fParLimitsUp;
   size_t fTotalSystParameters = 0;
   std::map<std::string, size_t> fCovarianceBins;
+  std::vector<size_t> fCovarianceBinsSimple;
   bool fAddSystTerm, fAddRegTerm, fAddDiffInQuadrature;
   double fRegFactor = 0.;
   TMatrixD * fCovMatrix, * fCovMatrixDisplay;
@@ -166,6 +170,7 @@ class PDSPThinSliceFitter {
   std::map<int, std::string> fFluxTypes;
   int fMaxCalls, fMaxIterations, fPrintLevel;
   size_t fNFitSteps = 0;
+  std::chrono::system_clock::time_point fTime;
   unsigned int fNScanSteps;
   double fTolerance, fLowerLimit, fUpperLimit;
   std::vector<std::pair<int, int>> fPlotStyle;

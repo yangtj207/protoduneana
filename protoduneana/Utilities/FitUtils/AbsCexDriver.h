@@ -318,6 +318,28 @@ class AbsCexDriver : public ThinSliceDriver {
       double C_cal,
       TProfile * prot_template);
   double TruncatedMean(const std::vector<double> & dEdX);
+
+   void ConstructCovariances(
+    const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & covariance_samples,
+    const std::map<int, bool> & signal_sample_checks,
+    std::vector<double> & beam_energy_bins,
+    std::map<int, double> & nominal_fluxes,
+    std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
+    const std::map<int, std::vector<double>> & signal_pars,
+    const std::map<int, double> & flux_pars,
+    const std::map<std::string, ThinSliceSystematic> & syst_pars,
+    bool fit_under_over, bool tie_under_over, bool use_beam_inst_P
+
+    /*   const std::vector<ThinSliceEvent> & events,
+       std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
+       std::map<int, std::vector<std::vector<ThinSliceSample>>> & covariance_samples,
+       const std::map<int, bool> & signal_sample_checks,
+       std::map<int, double> & nominal_fluxes,
+       std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
+       std::vector<double> & beam_energy_bins, bool use_beam_inst_P*/) override;
+
  private:
    TH2D * fEndSlices;
    TFile * fIn;
@@ -384,6 +406,29 @@ class AbsCexDriver : public ThinSliceDriver {
      const std::vector<double> & beam_energy_bins,
      const double & true_beam_startP, bool restrict_P=false);
 
+   void CovarianceRoutineBeamShift(
+    const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & new_samples,
+    const std::map<int, bool> & signal_sample_checks,
+    std::vector<double> & beam_energy_bins,
+    std::map<int, double> & nominal_fluxes,
+    std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
+    const std::map<int, std::vector<double>> & signal_pars,
+    const std::map<int, double> & flux_pars,
+    const std::map<std::string, ThinSliceSystematic> & syst_pars,
+    bool fit_under_over, bool tie_under_over, bool use_beam_inst_P);
+    //   const std::vector<ThinSliceEvent> & events,
+    //   std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
+    //   std::map<int, std::vector<std::vector<ThinSliceSample>>> & new_samples,
+    //   const std::map<int, bool> & signal_sample_checks,
+    //   std::map<int, double> & nominal_fluxes,
+    //   std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
+    //   std::vector<double> & beam_energy_bins, bool use_beam_inst_P);
+
+   void SetupBeamShiftCovRoutine(fhicl::ParameterSet & routine);
+   double GetBeamShiftDelta(const std::vector<double> & energies);
+
    TH1D fBeamShiftRatioNomHist;
    std::vector<TSpline3*> fBeamShiftRatioSplines;
    std::map<std::string, std::string> fG4RWCoeffBranches;
@@ -400,6 +445,13 @@ class AbsCexDriver : public ThinSliceDriver {
    bool fVaryDataCalibration;
    double fDataCalibrationFactor;
    bool fBarlowBeeston;
+
+   std::vector<std::string> fCovarianceRoutines;
+   bool fBeamShiftCovRoutineActive = false;
+   std::string fBeamShiftCovOutput;
+   size_t fNCovarianceGens;
+   std::pair<double, double> fBeamShiftCovP0, fBeamShiftCovP1, fBeamShiftCovP2;
+   double fCurrentBeamShiftP0, fCurrentBeamShiftP1, fCurrentBeamShiftP2;
 };
 }
 #endif

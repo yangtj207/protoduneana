@@ -1,0 +1,25 @@
+BEGIN_PROLOG
+
+beam_shift_vars: {
+  Name: "beam_shift_vars"
+  Central: 1.
+  LowerLimit: 1.e-7
+  UpperLimit: 10.0
+  ThrowLimit: 0.1
+  ThrowLimitUp: 8.0
+  GenThrowLimit: 0.1
+  GenThrowLimitUp: 8.0
+  Sigma: .2  # unused
+  Selections: [
+    [1, 26],
+    [2, 22],
+    [3, 22],
+    [4, 2],
+    [7, 1]
+  ]
+  Options: {}
+  IsSelVar: true
+  InputCovariance: "BeamShiftCovariance.root"
+}
+
+END_PROLOG

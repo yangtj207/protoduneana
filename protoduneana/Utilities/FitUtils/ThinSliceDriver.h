@@ -141,6 +141,27 @@ class ThinSliceDriver {
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file) = 0;
   virtual void WrapUpSysts(TFile & output_file) = 0;
+
+
+  virtual void ConstructCovariances(
+    const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & covariance_samples,
+    const std::map<int, bool> & signal_sample_checks,
+    std::vector<double> & beam_energy_bins,
+    std::map<int, double> & nominal_fluxes,
+    std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
+    const std::map<int, std::vector<double>> & signal_pars,
+    const std::map<int, double> & flux_pars,
+    const std::map<std::string, ThinSliceSystematic> & syst_pars,
+    bool fit_under_over, bool tie_under_over, bool use_beam_inst_P
+    /*   const std::vector<ThinSliceEvent> & events,
+       std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
+       std::map<int, std::vector<std::vector<ThinSliceSample>>> & covariance_samples,
+       const std::map<int, bool> & signal_sample_checks,
+       std::map<int, double> & nominal_fluxes,
+       std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
+       std::vector<double> & beam_energy_bins, bool use_beam_inst_P*/) = 0;
  protected:
   fhicl::ParameterSet fExtraOptions;
 

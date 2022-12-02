@@ -25,7 +25,7 @@ DoNTracks: false
 DoMichel: true 
 MichelCut: 0.6
 
-RestrictBeamP: true
+RestrictBeamP: false #true
 BeamPLow: 750.
 BeamPHigh: 1250.
 

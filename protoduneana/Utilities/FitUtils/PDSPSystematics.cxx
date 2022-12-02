@@ -1,4 +1,5 @@
 #include "PDSPSystematics.h"
+#include <chrono>
 
 protoana::PDSPSystematics::PDSPSystematics(
     const std::vector<ThinSliceEvent> & events,
@@ -31,17 +32,21 @@ protoana::PDSPSystematics::PDSPSystematics(
 double protoana::PDSPSystematics::GetEventWeight(
     const ThinSliceEvent & event,
     int signal_index,
+    int selection_bin,
     const std::map<std::string, ThinSliceSystematic> & pars) {
   double weight = 1.;
+  //auto begin_time = std::chrono::high_resolution_clock::now();
   for (auto it = pars.begin(); it != pars.end(); ++it) {
     if (it->second.GetIsG4RWCoeff()) {
       weight *= GetSystWeight_G4RWCoeff(event, it->second);
     }
+    else if (it->second.GetIsSelVar() &&
+        (event.GetSelectionID() == it->second.GetSelectionID()) &&
+        (selection_bin == it->second.GetSelectionBin())) {
+      weight *= it->second.GetValue();
+    }
     else if (it->second.GetIsTiedG4RWCoeff()) {
       weight *= GetSystWeight_TiedG4RWCoeff(event, it->second);
-    }
-    else if (it->second.GetIsBeamShiftBin()) {
-      weight *= GetSystWeight_BeamShiftBin(event, it->second);
     }
     else if (it->first == "ediv_weight") {
       weight *= GetSystWeight_EDiv(event, it->second);
@@ -68,6 +73,13 @@ double protoana::PDSPSystematics::GetEventWeight(
       weight *= GetSystWeight_QuadBeamShift(event, it->second);
     }
   }
+
+  //auto end_time = std::chrono::high_resolution_clock::now();
+  //auto delta =
+  //    std::chrono::duration_cast<std::chrono::nanoseconds>(
+  //        end_time - begin_time).count();
+  //std::cout << "\tWeighting took " << delta << " ns" << std::endl;
+
   return weight;
 }
 

@@ -5,6 +5,8 @@
 #include "TLegend.h"
 #include "TRandom3.h"
 #include "TMath.h"
+#include "TMatrixD.h"
+#include "TDecompChol.h"
 #include "TProfile.h"
 #include "Math/ProbFunc.h"
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
@@ -75,6 +77,19 @@ protoana::AbsCexDriver::AbsCexDriver(
 
   fSkipFirstLast = extra_options.get<bool>("SkipFirstLast", false);
   fBarlowBeeston = extra_options.get<bool>("BarlowBeeston", false);
+
+
+  std::vector<fhicl::ParameterSet> cov_routines
+      = extra_options.get<std::vector<fhicl::ParameterSet>>(
+          "CovarianceRoutines");
+
+  for (auto & routine : cov_routines) {
+    std::string name = routine.get<std::string>("Name");
+    fCovarianceRoutines.push_back(name);
+    if (name == "BeamShift") {
+      SetupBeamShiftCovRoutine(routine);
+    }
+  }
 }
 
 void protoana::AbsCexDriver::FillMCEvents(
@@ -437,6 +452,12 @@ void protoana::AbsCexDriver::BuildMCSamples(
     const std::vector<int> & true_beam_slices
         = event.GetTrueSlices();
 
+    //double beam_shift_delta = 0.;
+    //if (fBeamShiftCovRoutineActive) {
+    //  beam_shift_delta = GetBeamShiftDelta(true_beam_incidentEnergies);
+    //  beam_inst_P += beam_shift_delta;
+    //}
+
     double end_energy = true_beam_interactingEnergy;
     if (fSliceMethod == "Traj") {
       end_energy = sqrt(true_beam_endP*true_beam_endP*1.e6 + 139.57*139.57) - 139.57;
@@ -461,7 +482,6 @@ void protoana::AbsCexDriver::BuildMCSamples(
         true_beam_incidentEnergies);
     int bin = GetBeamBin(beam_energy_bins, (use_beam_inst_P ? beam_inst_P :
                                             true_beam_startP));
-
 
     std::vector<ThinSliceSample> & samples_vec = samples.at(sample_ID)[bin];
     bool is_signal = signal_sample_checks.at(sample_ID);
@@ -539,6 +559,7 @@ void protoana::AbsCexDriver::BuildMCSamples(
           if (deltaE > fEnergyFix) {
             energy[0] += deltaE; 
           }
+          //energy[0] += 1.e3*beam_shift_delta;
         }
       }
 
@@ -630,6 +651,13 @@ void protoana::AbsCexDriver::RefillMCSamples(
     const std::vector<double> daughter_thetas
         = event.GetRecoDaughterTrackThetas();
 
+    double beam_shift_delta = 0.;
+    if (fBeamShiftCovRoutineActive) {
+      beam_shift_delta = GetBeamShiftDelta(true_beam_incidentEnergies);
+      beam_inst_P += beam_shift_delta;
+    }
+
+
     double end_energy = true_beam_interactingEnergy;
     if (fSliceMethod == "Traj") {
       end_energy = sqrt(true_beam_endP*true_beam_endP*1.e6 + 139.57*139.57) - 139.57;
@@ -657,7 +685,12 @@ void protoana::AbsCexDriver::RefillMCSamples(
     }
 
     int bin = GetBeamBin(beam_energy_bins, (use_beam_inst_P ? beam_inst_P :
-                                            true_beam_startP));
+                                            true_beam_startP),
+                                           fBeamShiftCovRoutineActive);
+
+    if (fBeamShiftCovRoutineActive && bin == -1) continue;
+    //int bin = GetBeamBin(beam_energy_bins, (use_beam_inst_P ? beam_inst_P :
+    //                                        true_beam_startP));
 
     //Weight for the event
     //Possibly affected by signal, flux, and syst parameters
@@ -771,7 +804,7 @@ void protoana::AbsCexDriver::RefillMCSamples(
       }
 
       else {*/
-        energy[0] = {reco_beam_interactingEnergy};
+        energy[0] = {reco_beam_interactingEnergy + 1.e3*beam_shift_delta};
         if (fDoEnergyFix) {
           for (size_t k = 1; k < reco_beam_incidentEnergies.size(); ++k) {
             double deltaE = ((reco_beam_incidentEnergies)[k-1] -
@@ -888,7 +921,9 @@ void protoana::AbsCexDriver::RefillMCSamples(
     weight *= fSystematics->GetSystWeight_ELossMuon(
         event, syst_pars, (!fInclusive? 4 : 2));
         */
-    weight *= fSystematics->GetEventWeight(event, signal_index, syst_pars);
+    int weight_bin = this_sample->GetSelectionHistBin(new_selection, val[0]);
+    weight *= fSystematics->GetEventWeight(event, signal_index, weight_bin,
+                                           syst_pars);
 
     if (fix_factors != 0x0) {
       int bin = fix_factors->at(new_selection)->FindBin(val[0]);
@@ -5993,3 +6028,319 @@ int protoana::AbsCexDriver::GetBeamBin(
   return bin;
 }
 
+void protoana::AbsCexDriver::ConstructCovariances(
+    const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & covariance_samples,
+    const std::map<int, bool> & signal_sample_checks,
+    std::vector<double> & beam_energy_bins,
+    std::map<int, double> & nominal_fluxes,
+    std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
+    const std::map<int, std::vector<double>> & signal_pars,
+    const std::map<int, double> & flux_pars,
+    const std::map<std::string, ThinSliceSystematic> & syst_pars,
+    bool fit_under_over, bool tie_under_over, bool use_beam_inst_P
+
+    /*const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & covariance_samples,
+    const std::map<int, bool> & signal_sample_checks,
+    std::map<int, double> & nominal_fluxes,
+    std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
+    std::vector<double> & beam_energy_bins, bool use_beam_inst_P*/) {
+  for (auto & routine : fCovarianceRoutines) {
+    if (routine == "BeamShift") {
+      CovarianceRoutineBeamShift(
+          events, nominal_samples, covariance_samples, signal_sample_checks,
+          beam_energy_bins, nominal_fluxes, fluxes_by_sample, signal_pars,
+          flux_pars, syst_pars, fit_under_over, tie_under_over, use_beam_inst_P);
+    }
+  }
+}
+
+void protoana::AbsCexDriver::SetupBeamShiftCovRoutine(fhicl::ParameterSet & routine) {
+  fBeamShiftCovP0 = routine.get<std::pair<double, double>>("P0");
+  fBeamShiftCovP1 = routine.get<std::pair<double, double>>("P1");
+  fBeamShiftCovP2 = routine.get<std::pair<double, double>>("P2");
+  std::cout << fBeamShiftCovP0.first << " " << fBeamShiftCovP0.second << std::endl;
+  std::cout << fBeamShiftCovP1.first << " " << fBeamShiftCovP1.second << std::endl;
+  std::cout << fBeamShiftCovP2.first << " " << fBeamShiftCovP2.second << std::endl;
+
+  fBeamShiftCovOutput = routine.get<std::string>("OutputName");
+  fNCovarianceGens = routine.get<size_t>("NCovarianceGens");
+}
+
+void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
+    const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & new_samples,
+    const std::map<int, bool> & signal_sample_checks,
+    std::vector<double> & beam_energy_bins,
+    std::map<int, double> & nominal_fluxes,
+    std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
+    const std::map<int, std::vector<double>> & signal_pars,
+    const std::map<int, double> & flux_pars,
+    const std::map<std::string, ThinSliceSystematic> & syst_pars,
+    bool fit_under_over, bool tie_under_over, bool use_beam_inst_P
+    
+
+    /*const std::vector<ThinSliceEvent> & events,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & new_samples,
+    const std::map<int, bool> & signal_sample_checks,
+    std::map<int, double> & nominal_fluxes,
+    std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
+    std::vector<double> & beam_energy_bins, bool use_beam_inst_P*/) {
+
+  fBeamShiftCovRoutineActive = true;
+
+  //Nominal samples -- get total histograms
+  std::vector<double> nominal_vals;
+  bool push_back = true;
+  for (auto it = nominal_samples.begin(); it != nominal_samples.end(); ++it) {
+    for (size_t i = 0; i < it->second.size(); ++i) {
+      for (size_t j = 0; j < it->second[i].size(); ++j) {
+        const std::map<int, TH1*> & sel_hists
+            = it->second[i][j].GetSelectionHists();
+        int bin = 0;
+        for (auto it2 = sel_hists.begin(); it2 != sel_hists.end(); ++it2) {
+          if (it2->first == 6 || it2->first == 5) continue;
+          //std::cout << it2->first << std::endl;
+
+          for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
+            if (push_back) {
+              nominal_vals.push_back(it2->second->GetBinContent(k));
+            }
+            else {
+              nominal_vals[bin] += it2->second->GetBinContent(k);
+            }
+            ++bin;
+          }
+        }
+        if (push_back) push_back = false;
+      }
+    }
+  }
+  //std::vector<double> cov_vals(nominal_vals.size());
+
+  //int a = 0;
+  //for (auto & nv : nominal_vals) {
+  //  std::cout << a << " " << nv << std::endl;
+  //  ++a;
+  //}
+
+  TFile output_cov_file(fBeamShiftCovOutput.c_str(), "recreate");
+  TH2D output_cov("cov_hist", "", nominal_vals.size(), 0, nominal_vals.size(),
+                  nominal_vals.size(), 0, nominal_vals.size());
+  TMatrixD output_cov_mat(nominal_vals.size(), nominal_vals.size());
+  //for (size_t i = 0; i < cov_vals.size(); ++i) {
+  //  for (size_t j = 0; j < cov_vals.size(); ++j) {
+  //    output_cov_mat[i][j] = cov_vals[i]*cov_vals[j]/fNCovarianceGens;
+  //    output_cov.SetBinContent(i+1, j+1,
+  //                             cov_vals[i]*cov_vals[j]/fNCovarianceGens);
+  //  }
+  //}
+
+
+
+  //
+  //
+  //Create TH2D/TMatrixD to hold relative differences
+  //bin_i_j = (1/fNCovarianceGens)*sum((bin_i - bin_i_nom)*(bin_j - bin_j_nom)/(bin_i*bin_j))
+  //int fNCovarianceGens = 2;
+  std::cout << "Generating covariance for beam shift" << std::endl;
+  for (size_t gen_i = 0; gen_i < fNCovarianceGens; ++gen_i) {
+
+    fCurrentBeamShiftP0 = fBeamShiftCovP0.first + fBeamShiftCovP0.second*fRNG.Gaus();
+    fCurrentBeamShiftP1 = fBeamShiftCovP1.first + fBeamShiftCovP1.second*fRNG.Gaus();
+    fCurrentBeamShiftP2 = fBeamShiftCovP2.first + fBeamShiftCovP2.second*fRNG.Gaus();
+
+    std::cout << gen_i << "Beam shift pars: " << fCurrentBeamShiftP0 <<
+                 " " << fCurrentBeamShiftP1 << " " << fCurrentBeamShiftP2 <<
+                 std::endl;;
+
+    for (auto it = new_samples.begin(); it != new_samples.end(); ++it) {
+      for (size_t i = 0; i < it->second.size(); ++i) {
+        for (size_t j = 0; j < it->second[i].size(); ++j) {
+          it->second[i][j].Reset();
+        }
+      }
+    }
+
+    RefillMCSamples(events, new_samples, signal_sample_checks, beam_energy_bins,
+                    signal_pars, flux_pars, syst_pars, fit_under_over,
+                    tie_under_over, use_beam_inst_P);
+    //To-do renormalize
+
+    double total_varied_flux = 0.;
+    double total_nominal_flux = 0.;
+    std::vector<double> varied_flux(beam_energy_bins.size() - 1, 0.);
+    std::vector<double> nominal_flux(beam_energy_bins.size() - 1, 0.);
+
+    //Go through and determine the scaled flux
+    //Two styles:
+    //--Scaling to true incident momentum for pions/primary only
+    //--Scaling to reco beam inst momentum for all types of particles
+    //----(Set by use_beam_inst_P)
+
+    for (auto it = fluxes_by_sample.begin(); it != fluxes_by_sample.end(); ++it) {
+      int sample_ID = it->first;
+      std::vector<std::vector<ThinSliceSample>> & samples_2D
+          = new_samples[sample_ID];
+      for (size_t i = 0; i < samples_2D.size(); ++i) {
+        std::vector<ThinSliceSample> & samples = samples_2D[i];
+        for (size_t j = 0; j < samples.size(); ++j) {
+          ThinSliceSample & sample = samples.at(j);
+          int flux_type = sample.GetFluxType();
+          if (use_beam_inst_P || flux_type == 1) {
+            nominal_flux[i] += fluxes_by_sample[sample_ID][i][j];
+            varied_flux[i] += sample.GetVariedFlux();
+          }
+          total_nominal_flux += fluxes_by_sample[sample_ID][i][j];
+          total_varied_flux += sample.GetVariedFlux();
+        }
+      }
+    }
+
+    double total_flux_factor = (total_nominal_flux/total_varied_flux);
+
+    if (!use_beam_inst_P) {
+      double nominal_primary = 0., varied_primary = 0.;
+      for (size_t i = 0; i < nominal_flux.size(); ++i) {
+        nominal_primary += nominal_flux[i];
+        varied_primary += varied_flux[i];
+      }
+
+      std::vector<double> flux_factor = nominal_flux;
+      for (size_t i = 0; i < flux_factor.size(); ++i) {
+        flux_factor[i] = (nominal_flux[i] > 1.e-7 ?
+                          flux_factor[i] / varied_flux[i] :
+                          0.)*(varied_primary/nominal_primary);
+      }
+
+      for (auto it = new_samples.begin(); it != new_samples.end(); ++it) {
+        for (size_t i = 0; i < it->second.size(); ++i) {
+          for (size_t j = 0; j < it->second[i].size(); ++j) {
+            int flux_type = it->second[i][j].GetFluxType();
+
+            it->second[i][j].SetFactorAndScale(
+                total_flux_factor*(flux_type == 1 ? flux_factor[i] : 1.));
+          }
+        }
+      }
+    }
+    else {
+      std::vector<double> flux_factor = nominal_flux;
+      for (size_t i = 0; i < flux_factor.size(); ++i) {
+        flux_factor[i] = (nominal_flux[i] > 1.e-7 ?
+                          flux_factor[i] / varied_flux[i] :
+                          0.);
+      }
+
+      for (auto it = new_samples.begin(); it != new_samples.end(); ++it) {
+        for (size_t i = 0; i < it->second.size(); ++i) {
+          for (size_t j = 0; j < it->second[i].size(); ++j) {
+            it->second[i][j].SetFactorAndScale(flux_factor[i]);
+          }
+        }
+      }
+    }
+
+    //loop over varied/new samples and calculate bin_i_j as above
+    //
+    //
+    //New samples -- get total histograms
+    std::vector<double> new_vals;
+    bool push_back = true;
+    for (auto it = new_samples.begin(); it != new_samples.end(); ++it) {
+      for (size_t i = 0; i < it->second.size(); ++i) {
+        for (size_t j = 0; j < it->second[i].size(); ++j) {
+          const std::map<int, TH1*> & sel_hists
+              = it->second[i][j].GetSelectionHists();
+          int bin = 0;
+          for (auto it2 = sel_hists.begin(); it2 != sel_hists.end(); ++it2) {
+            if (it2->first == 6 || it2->first == 5) continue;
+
+            for (int k = 1; k <= it2->second->GetNbinsX(); ++k) {
+              if (push_back) {
+                new_vals.push_back(it2->second->GetBinContent(k));
+              }
+              else {
+                new_vals[bin] += it2->second->GetBinContent(k);
+              }
+              ++bin;
+            }
+          }
+          if (push_back) push_back = false;
+        }
+      }
+    }
+
+    //std::cout << "New vals" << std::endl;
+    //int a = 0;
+    //for (auto & nv : new_vals) {
+    //  std::cout << a << " " << nv << std::endl;
+    //  ++a;
+    //}
+
+    for (size_t i = 0; i < nominal_vals.size(); ++i) {
+      double val_i = (nominal_vals[i] - new_vals[i])/nominal_vals[i];
+      for (size_t j = 0; j < nominal_vals.size(); ++j) {
+        double val_j = (nominal_vals[j] - new_vals[j])/nominal_vals[j];
+        //std::cout << i << " " << j << " " << val_i << " " << val_j << std::endl;
+        output_cov_mat[i][j] += val_i*val_j/fNCovarianceGens;
+        output_cov.SetBinContent(i+1, j+1, (output_cov.GetBinContent(i+1, j+1) +
+                                            val_i*val_j/fNCovarianceGens));
+        //std::cout << "\t" << output_cov_mat[i][j] << " " <<
+        //             output_cov.GetBinContent(i+1, j+1) << std::endl;
+      }
+    }
+
+    //std::cout << "Diffs" << std::endl;
+    //std::vector<double> diffs = nominal_vals;
+    //for (size_t j = 0; j < cov_vals.size(); ++j) {
+    //  cov_vals[j] += (new_vals[j] - nominal_vals[j]);
+    //  std::cout << j << " " << cov_vals[j] << std::endl;
+    //}
+  }
+
+  //for (size_t i = 0; i < cov_vals.size(); ++i) {
+  //  cov_vals[i] /= nominal_vals[i];
+
+  //}
+
+  //Test decomposing it
+  TDecompChol test_chol(output_cov_mat);
+  bool decomposed = test_chol.Decompose();
+  if (!decomposed) {
+    std::cout << "WARNING: THE CONSTRUCTED COVARIANCE WAS NOT ABLE TO BE DECOMPOSED" << std::endl;
+  }
+
+  TH2D * output_corr = (TH2D*)output_cov.Clone("corr_hist");
+  for (int i = 1; i <= output_corr->GetNbinsX(); ++i) {
+    double val_i = output_cov.GetBinContent(i, i);
+    for (int j = 1; j <= output_corr->GetNbinsX(); ++j) {
+      double val_j = output_cov.GetBinContent(j, j);
+      double content = output_corr->GetBinContent(i, j);
+      output_corr->SetBinContent(
+          i, j, content/sqrt(val_i*val_j));
+    }
+  }
+
+  output_cov.Write();
+  output_corr->Write();
+  output_cov_mat.Write("cov_mat");
+  output_cov_file.Close();
+  //Save the covariances in a new file
+  //
+  fBeamShiftCovRoutineActive = false;
+}
+
+double protoana::AbsCexDriver::GetBeamShiftDelta(const std::vector<double> & energies) {
+  if (energies.size() == 0) return 0.;
+
+  double shift = fCurrentBeamShiftP0 +
+                 fCurrentBeamShiftP1*energies[0] +
+                 fCurrentBeamShiftP2*energies[0]*energies[0];
+  return shift*1.e-3;
+}

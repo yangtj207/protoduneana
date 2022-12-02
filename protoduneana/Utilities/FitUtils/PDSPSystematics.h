@@ -24,6 +24,7 @@ class PDSPSystematics {
   double GetEventWeight(
       const ThinSliceEvent & event,
       int signal_index,
+      int selection_bin,
       const std::map<std::string, ThinSliceSystematic> & pars);
 
   void SetupSyst_G4RWCoeff(
