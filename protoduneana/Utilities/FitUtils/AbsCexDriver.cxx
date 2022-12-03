@@ -921,9 +921,8 @@ void protoana::AbsCexDriver::RefillMCSamples(
     weight *= fSystematics->GetSystWeight_ELossMuon(
         event, syst_pars, (!fInclusive? 4 : 2));
         */
-    int weight_bin = this_sample->GetSelectionHistBin(new_selection, val[0]);
-    weight *= fSystematics->GetEventWeight(event, signal_index, weight_bin,
-                                           syst_pars);
+    //int weight_bin = this_sample->GetSelectionHistBin(new_selection, val[0]);
+    weight *= fSystematics->GetEventWeight(event, signal_index, syst_pars);
 
     if (fix_factors != 0x0) {
       int bin = fix_factors->at(new_selection)->FindBin(val[0]);
