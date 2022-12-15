@@ -110,6 +110,13 @@ class PDSPSystematics {
       const ThinSliceEvent & event,
       int signal_index);
 
+
+  void SetupSyst_BeamScraper(
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  static double GetSystWeight_BeamScraper(
+      const ThinSliceEvent & event,
+      int signal_index);
+
   double GetSystWeight_UpstreamInt(
       const ThinSliceEvent & event,
       const ThinSliceSystematic & par/*,
@@ -158,6 +165,7 @@ class PDSPSystematics {
       const ThinSliceSystematic & par/*,
       const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID*/);
 
+
   double CheckAndReturn(double weight, std::string name,
                         const ThinSliceSystematic & par);
 
@@ -192,6 +200,7 @@ class PDSPSystematics {
   static bool fBeamMatchHighUseSingleFrac;
   static const ThinSliceSystematic * fBeamMatchHighPar;
 
+  static const ThinSliceSystematic * fBeamScraperPar;
  private:
 
   static double GetFractionBySample(
