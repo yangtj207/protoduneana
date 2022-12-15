@@ -19,7 +19,7 @@ beam_shift_vars: {
   ]
   Options: {}
   IsSelVar: true
-  InputCovariance: "BeamShiftCovariance.root"
+  InputCovariance: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/BeamShiftCovariance.root"
 }
 
 END_PROLOG
