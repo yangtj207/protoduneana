@@ -838,6 +838,19 @@ SystematicsList: {
       
     }
   }
+
+  beam_scraper_weight: {
+    Name: "beam_scraper_weight"
+    Central: 1.
+    LowerLimit: 1.e-5
+    UpperLimit: 5.0000
+    ThrowLimit: 0.01
+    ThrowLimitUp: 4.0000
+    GenThrowLimit: 0.01
+    GenThrowLimitUp: 4.0000
+    Sigma: .1
+    Options: {}
+  }
 }
 
 SystematicsList.beam_shift_bin_1: @local::SystematicsList.beam_shift_bin_0
