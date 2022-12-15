@@ -57,6 +57,9 @@ class ThinSliceSystematic {
   const double GetCentral() const {
     return fCentral;
   };
+  void SetCentral(double val) {
+    fCentral = val;
+  };
 
   const double GetUpperLimit() const {
     return fUpperLimit;
