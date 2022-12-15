@@ -428,6 +428,7 @@ class AbsCexDriver : public ThinSliceDriver {
 
    void SetupBeamShiftCovRoutine(fhicl::ParameterSet & routine);
    double GetBeamShiftDelta(const std::vector<double> & energies);
+   void GenerateBeamShiftUniverse();
 
    TH1D fBeamShiftRatioNomHist;
    std::vector<TSpline3*> fBeamShiftRatioSplines;
@@ -445,12 +446,14 @@ class AbsCexDriver : public ThinSliceDriver {
    bool fVaryDataCalibration;
    double fDataCalibrationFactor;
    bool fBarlowBeeston;
+   std::vector<int> fToSkip;
 
    std::vector<std::string> fCovarianceRoutines;
    bool fBeamShiftCovRoutineActive = false;
    std::string fBeamShiftCovOutput;
    size_t fNCovarianceGens;
    std::pair<double, double> fBeamShiftCovP0, fBeamShiftCovP1, fBeamShiftCovP2;
+   double fBeamShiftNominalP0, fBeamShiftNominalP1, fBeamShiftNominalP2;
    double fCurrentBeamShiftP0, fCurrentBeamShiftP1, fCurrentBeamShiftP2;
 };
 }

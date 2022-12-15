@@ -77,11 +77,12 @@ protoana::AbsCexDriver::AbsCexDriver(
 
   fSkipFirstLast = extra_options.get<bool>("SkipFirstLast", false);
   fBarlowBeeston = extra_options.get<bool>("BarlowBeeston", false);
+  fToSkip = extra_options.get<std::vector<int>>("ToSkip", {5, 6});
 
 
   std::vector<fhicl::ParameterSet> cov_routines
       = extra_options.get<std::vector<fhicl::ParameterSet>>(
-          "CovarianceRoutines");
+          "CovarianceRoutines", {});
 
   for (auto & routine : cov_routines) {
     std::string name = routine.get<std::string>("Name");
@@ -161,26 +162,26 @@ void protoana::AbsCexDriver::FillMCEvents(
   tree->SetBranchAddress("true_beam_ID", &true_beam_ID);
   tree->SetBranchAddress("reco_beam_true_byHits_ID", &reco_beam_true_byHits_ID);
 
-  std::vector<std::vector<double>> * g4rw_primary_grid_weights = 0x0,
+  std::vector<std::vector<double>> /** g4rw_primary_grid_weights = 0x0,
                                    * g4rw_full_grid_weights = 0x0,
-                                   * g4rw_full_grid_proton_weights = 0x0,
+                                   * g4rw_full_grid_proton_weights = 0x0,*/
                                    * g4rw_full_grid_proton_coeffs = 0x0,
-                                   * g4rw_full_grid_piplus_weights = 0x0,
-                                   * g4rw_downstream_grid_piplus_coeffs = 0x0,
-                                   * g4rw_downstream_grid_piplus_weights = 0x0;
-  tree->SetBranchAddress("g4rw_full_grid_weights", &g4rw_full_grid_weights);
+                                   //* g4rw_full_grid_piplus_weights = 0x0,
+                                   * g4rw_downstream_grid_piplus_coeffs = 0x0 /*,
+                                   * g4rw_downstream_grid_piplus_weights = 0x0*/;
+  /*tree->SetBranchAddress("g4rw_full_grid_weights", &g4rw_full_grid_weights);
   tree->SetBranchAddress("g4rw_full_grid_proton_weights",
                          &g4rw_full_grid_proton_weights);
   tree->SetBranchAddress("g4rw_full_grid_piplus_weights",
-                         &g4rw_full_grid_piplus_weights);
+                         &g4rw_full_grid_piplus_weights);*/
   tree->SetBranchAddress("g4rw_full_grid_proton_coeffs",
                          &g4rw_full_grid_proton_coeffs);
-  tree->SetBranchAddress("g4rw_primary_grid_weights",
-                         &g4rw_primary_grid_weights);
+  /*tree->SetBranchAddress("g4rw_primary_grid_weights",
+                         &g4rw_primary_grid_weights);*/
   tree->SetBranchAddress("g4rw_downstream_grid_piplus_coeffs",
                          &g4rw_downstream_grid_piplus_coeffs);
-  tree->SetBranchAddress("g4rw_downstream_grid_piplus_weights",
-                         &g4rw_downstream_grid_piplus_weights);
+  /*tree->SetBranchAddress("g4rw_downstream_grid_piplus_weights",
+                         &g4rw_downstream_grid_piplus_weights);*/
 
   std::vector<std::vector<double>> * daughter_dQdXs = 0x0,
                                    * daughter_resRanges = 0x0,
@@ -198,6 +199,8 @@ void protoana::AbsCexDriver::FillMCEvents(
   tree->SetBranchAddress("leading_p_costheta", &leading_p_costheta);
   tree->SetBranchAddress("leading_piplus_costheta", &leading_piplus_costheta);
   tree->SetBranchAddress("leading_pi0_costheta", &leading_pi0_costheta);
+  bool is_beam_scraper;
+  tree->SetBranchAddress("true_beam_is_scraper", &is_beam_scraper);
 
   //int nentries = tree->GetEntries();
   int nentries = (max_entries < 0 ? tree->GetEntries() : max_entries);
@@ -260,6 +263,7 @@ void protoana::AbsCexDriver::FillMCEvents(
     events.back().SetLeadingPCostheta(leading_p_costheta);
     events.back().SetLeadingPiPlusCostheta(leading_piplus_costheta);
     events.back().SetLeadingPi0Costheta(leading_pi0_costheta);
+    events.back().SetIsBeamScraper(is_beam_scraper);
     //events.back().MakeG4RWBranch("g4rw_alt_primary_plus_sigma_weight",
     //                              *g4rw_alt_primary_plus_sigma_weight);
     //events.back().MakeG4RWBranch("g4rw_alt_primary_minus_sigma_weight",
@@ -274,29 +278,29 @@ void protoana::AbsCexDriver::FillMCEvents(
       events.back().AddRecoDaughterEField((*daughter_EFields)[j]);
     }
 
-    for (size_t j = 0; j < g4rw_primary_grid_weights->size(); ++j) {
-      std::string name_full = "g4rw_full_grid_weights_" + std::to_string(j);
+    for (size_t j = 0; j < g4rw_downstream_grid_piplus_coeffs->size(); ++j) {
+      //std::string name_full = "g4rw_full_grid_weights_" + std::to_string(j);
       //std::cout << "Adding " << name_full << std::endl;
       //if (!(*g4rw_full_grid_weights)[j].size())
       //  std::cout << "Adding empty branch " << event << " " << run << " " << subrun << std::endl;
-      events.back().MakeG4RWBranch(name_full, (*g4rw_full_grid_weights)[j]);
+      //events.back().MakeG4RWBranch(name_full, (*g4rw_full_grid_weights)[j]);
       //events.back().MakeG4RWSpline(name_full);
 
-      std::string name_primary = "g4rw_primary_grid_weights_" +
-                                 std::to_string(j);
+      //std::string name_primary = "g4rw_primary_grid_weights_" +
+      //                           std::to_string(j);
       //std::cout << "Adding " << name_primary << std::endl;
       //if (!(*g4rw_primary_grid_weights)[j].size())
       //  std::cout << "Adding empty branch " << event << " " << run << " " << subrun << std::endl;
-      events.back().MakeG4RWBranch(name_primary,
-                                    (*g4rw_primary_grid_weights)[j]);
+      //events.back().MakeG4RWBranch(name_primary,
+      //                              (*g4rw_primary_grid_weights)[j]);
 
       std::string name_downstream = "g4rw_downstream_grid_piplus_coeffs_" +
                                    std::to_string(j);
       events.back().MakeG4RWCoeff(name_downstream,
                                   (*g4rw_downstream_grid_piplus_coeffs)[j]);
     }
-    events.back().MakeG4RWBranch("g4rw_full_grid_proton_weights",
-                                  (*g4rw_full_grid_proton_weights)[0]);
+    //events.back().MakeG4RWBranch("g4rw_full_grid_proton_weights",
+    //                              (*g4rw_full_grid_proton_weights)[0]);
     events.back().MakeG4RWCoeff("g4rw_full_grid_proton_coeffs",
                                 (*g4rw_full_grid_proton_coeffs)[0]);
 
@@ -355,6 +359,7 @@ void protoana::AbsCexDriver::FillMCEvents(
       fake_data_events.back().SetLeadingPCostheta(leading_p_costheta);
       fake_data_events.back().SetLeadingPiPlusCostheta(leading_piplus_costheta);
       fake_data_events.back().SetLeadingPi0Costheta(leading_pi0_costheta);
+      fake_data_events.back().SetIsBeamScraper(is_beam_scraper);
 
       fake_data_events.back().SetTrueID(true_beam_ID);
       fake_data_events.back().SetRecoToTrueID(reco_beam_true_byHits_ID);
@@ -373,32 +378,32 @@ void protoana::AbsCexDriver::FillMCEvents(
         fake_data_events.back().AddRecoDaughterEField((*daughter_EFields)[j]);
       }
 
-      for (size_t j = 0; j < g4rw_primary_grid_weights->size(); ++j) {
+      for (size_t j = 0; j < g4rw_downstream_grid_piplus_coeffs->size(); ++j) {
         //std::string name_full = "g4rw_full_grid_weights_" + std::to_string(j);
         //fake_data_events.back().MakeG4RWBranch(name_full, (*g4rw_full_grid_weights)[j]);
-        std::string name_full = "g4rw_full_grid_piplus_weights_" + std::to_string(j);
-        fake_data_events.back().MakeG4RWBranch(name_full, (*g4rw_full_grid_piplus_weights)[j]);
+        //std::string name_full = "g4rw_full_grid_piplus_weights_" + std::to_string(j);
+        //fake_data_events.back().MakeG4RWBranch(name_full, (*g4rw_full_grid_piplus_weights)[j]);
 
-        std::string name_primary = "g4rw_primary_grid_weights_" +
-                                   std::to_string(j);
+        //std::string name_primary = "g4rw_primary_grid_weights_" +
+        //                           std::to_string(j);
         //std::cout << "Adding " << name_primary << std::endl;
         //if (!(*g4rw_primary_grid_weights)[j].size())
         //  std::cout << "Adding empty branch " << event << " " << run << " " << subrun << std::endl;
-        std::string name_downstream_branch = "g4rw_downstream_grid_piplus_weights_" +
-                                     std::to_string(j);
-        fake_data_events.back().MakeG4RWBranch(name_downstream_branch,
-                                    (*g4rw_downstream_grid_piplus_weights)[j]);
+        //std::string name_downstream_branch = "g4rw_downstream_grid_piplus_weights_" +
+        //                             std::to_string(j);
+        //fake_data_events.back().MakeG4RWBranch(name_downstream_branch,
+        //                            (*g4rw_downstream_grid_piplus_weights)[j]);
 
 
-        fake_data_events.back().MakeG4RWBranch(name_primary,
-                                      (*g4rw_primary_grid_weights)[j]);
+        //fake_data_events.back().MakeG4RWBranch(name_primary,
+        //                              (*g4rw_primary_grid_weights)[j]);
         std::string name_downstream = "g4rw_downstream_grid_piplus_coeffs_" +
                                      std::to_string(j);
         fake_data_events.back().MakeG4RWCoeff(name_downstream,
                                     (*g4rw_downstream_grid_piplus_coeffs)[j]);
       }
-      fake_data_events.back().MakeG4RWBranch("g4rw_full_grid_proton_weights",
-                                    (*g4rw_full_grid_proton_weights)[0]);
+      //fake_data_events.back().MakeG4RWBranch("g4rw_full_grid_proton_weights",
+      //                              (*g4rw_full_grid_proton_weights)[0]);
       fake_data_events.back().MakeG4RWCoeff("g4rw_full_grid_proton_coeffs",
                                             (*g4rw_full_grid_proton_coeffs)[0]);
       bool found_start = false;
@@ -5148,7 +5153,9 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
         chi2 += 2*data_val*std::log(data_val/(mc_val*(fBarlowBeeston ? beta : 1.))) +
                   (fBarlowBeeston ? ((beta - 1.)*(beta - 1.)/sigma_squared) : 0.);
 
-        if (selection_ID != 6 && selection_ID != 5) {
+        if (std::find(fToSkip.begin(), fToSkip.end(), selection_ID) ==
+            fToSkip.end()) {
+        //if (selection_ID != 6 && selection_ID != 5) {
           //std::cout << selection_ID << " " << mc_val << " " << beta << " " <<
           //             beta*mc_val << std::endl;
           alt_chi2 += 2.*((fBarlowBeeston ? beta : 1.)*mc_val - data_val +
@@ -6067,6 +6074,10 @@ void protoana::AbsCexDriver::SetupBeamShiftCovRoutine(fhicl::ParameterSet & rout
 
   fBeamShiftCovOutput = routine.get<std::string>("OutputName");
   fNCovarianceGens = routine.get<size_t>("NCovarianceGens");
+
+  fBeamShiftNominalP0 = routine.get<double>("NominalP0");
+  fBeamShiftNominalP1 = routine.get<double>("NominalP1");
+  fBeamShiftNominalP2 = routine.get<double>("NominalP2");
 }
 
 void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
@@ -6080,16 +6091,7 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
     const std::map<int, std::vector<double>> & signal_pars,
     const std::map<int, double> & flux_pars,
     const std::map<std::string, ThinSliceSystematic> & syst_pars,
-    bool fit_under_over, bool tie_under_over, bool use_beam_inst_P
-    
-
-    /*const std::vector<ThinSliceEvent> & events,
-    std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
-    std::map<int, std::vector<std::vector<ThinSliceSample>>> & new_samples,
-    const std::map<int, bool> & signal_sample_checks,
-    std::map<int, double> & nominal_fluxes,
-    std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
-    std::vector<double> & beam_energy_bins, bool use_beam_inst_P*/) {
+    bool fit_under_over, bool tie_under_over, bool use_beam_inst_P) {
 
   fBeamShiftCovRoutineActive = true;
 
@@ -6120,6 +6122,8 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
       }
     }
   }
+
+  std::vector<double> mean_new_vals(nominal_vals.size());
   //std::vector<double> cov_vals(nominal_vals.size());
 
   //int a = 0;
@@ -6148,15 +6152,19 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
   //bin_i_j = (1/fNCovarianceGens)*sum((bin_i - bin_i_nom)*(bin_j - bin_j_nom)/(bin_i*bin_j))
   //int fNCovarianceGens = 2;
   std::cout << "Generating covariance for beam shift" << std::endl;
+  std::vector<std::vector<double>> all_new_vals;
   for (size_t gen_i = 0; gen_i < fNCovarianceGens; ++gen_i) {
 
+    /*
     fCurrentBeamShiftP0 = fBeamShiftCovP0.first + fBeamShiftCovP0.second*fRNG.Gaus();
     fCurrentBeamShiftP1 = fBeamShiftCovP1.first + fBeamShiftCovP1.second*fRNG.Gaus();
     fCurrentBeamShiftP2 = fBeamShiftCovP2.first + fBeamShiftCovP2.second*fRNG.Gaus();
 
     std::cout << gen_i << "Beam shift pars: " << fCurrentBeamShiftP0 <<
                  " " << fCurrentBeamShiftP1 << " " << fCurrentBeamShiftP2 <<
-                 std::endl;;
+                 std::endl;
+    */
+    GenerateBeamShiftUniverse();
 
     for (auto it = new_samples.begin(); it != new_samples.end(); ++it) {
       for (size_t i = 0; i < it->second.size(); ++i) {
@@ -6275,13 +6283,12 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
       }
     }
 
-    //std::cout << "New vals" << std::endl;
-    //int a = 0;
-    //for (auto & nv : new_vals) {
-    //  std::cout << a << " " << nv << std::endl;
-    //  ++a;
-    //}
+    all_new_vals.push_back(new_vals);
+    for (size_t i = 0; i < new_vals.size(); ++i) {
+      mean_new_vals[i] += new_vals[i];
+    }
 
+    /*
     for (size_t i = 0; i < nominal_vals.size(); ++i) {
       double val_i = (nominal_vals[i] - new_vals[i])/nominal_vals[i];
       for (size_t j = 0; j < nominal_vals.size(); ++j) {
@@ -6293,7 +6300,7 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
         //std::cout << "\t" << output_cov_mat[i][j] << " " <<
         //             output_cov.GetBinContent(i+1, j+1) << std::endl;
       }
-    }
+    }*/
 
     //std::cout << "Diffs" << std::endl;
     //std::vector<double> diffs = nominal_vals;
@@ -6303,10 +6310,26 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
     //}
   }
 
-  //for (size_t i = 0; i < cov_vals.size(); ++i) {
-  //  cov_vals[i] /= nominal_vals[i];
+  std::cout << "Mean new vals" << std::endl;
+  for (size_t i = 0; i < mean_new_vals.size(); ++i) {
+    mean_new_vals[i] /= fNCovarianceGens;
+    std::cout << mean_new_vals[i] << " " << nominal_vals[i] << std::endl;
+  }
 
-  //}
+  for (size_t gen_i = 0; gen_i < fNCovarianceGens; ++gen_i) {
+    for (size_t i = 0; i < mean_new_vals.size(); ++i) {
+      double val_i = (mean_new_vals[i] - all_new_vals[gen_i][i])/mean_new_vals[i];
+      for (size_t j = 0; j < mean_new_vals.size(); ++j) {
+        double val_j = (mean_new_vals[j] - all_new_vals[gen_i][j])/mean_new_vals[j];
+        //std::cout << i << " " << j << " " << val_i << " " << val_j << std::endl;
+        output_cov_mat[i][j] += val_i*val_j/fNCovarianceGens;
+        output_cov.SetBinContent(i+1, j+1, (output_cov.GetBinContent(i+1, j+1) +
+                                            val_i*val_j/fNCovarianceGens));
+        //std::cout << "\t" << output_cov_mat[i][j] << " " <<
+        //             output_cov.GetBinContent(i+1, j+1) << std::endl;
+      }
+    }
+  }
 
   //Test decomposing it
   TDecompChol test_chol(output_cov_mat);
@@ -6329,6 +6352,18 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
   output_cov.Write();
   output_corr->Write();
   output_cov_mat.Write("cov_mat");
+
+  TH1D centrals_hist("centrals_hist", "", mean_new_vals.size(), 0,
+                     mean_new_vals.size());
+  TVectorD centrals(mean_new_vals.size());
+  for (size_t i = 0; i < mean_new_vals.size(); ++i) {
+    centrals[i] = mean_new_vals[i]/nominal_vals[i];
+    centrals_hist.SetBinContent(i+1, centrals[i]);
+  }
+  centrals.Write("centrals");
+  centrals_hist.Write();
+
+
   output_cov_file.Close();
   //Save the covariances in a new file
   //
@@ -6338,8 +6373,76 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
 double protoana::AbsCexDriver::GetBeamShiftDelta(const std::vector<double> & energies) {
   if (energies.size() == 0) return 0.;
 
-  double shift = fCurrentBeamShiftP0 +
-                 fCurrentBeamShiftP1*energies[0] +
-                 fCurrentBeamShiftP2*energies[0]*energies[0];
-  return shift*1.e-3;
+  //Currently, Sungbin's work is in P_reco_BI - P_range_FF vs P_reco_BI
+  //so we need to transform to P_reco_BI vs P_range_FF -- P_true_FF is approximately equal
+  //
+  //x - y = p2*x^2 + p1*x + p0
+  //--> y = -p2*x^2 + (1 - p1)*x - p0
+  //
+  //Invert --> x = -p2*y^2 + (1 - p1)*y - p0
+  //Find root of: 0 = -p2*y^2 + (1 - p1)*y - (p0 + x)
+  //
+  //Solve quad. eqn
+  // --> y = ((1 - p1) +/- sqrt((1 - p1)^2 - 4*p2*(p0 + x)))/(2*p2)
+  //
+  // if p2 < 0., take positive soln., else take negative
+  //
+  // Check if the inverse is defined in the domain of P_true_FF
+  // Don't generate a shift if not (set to 0.)
+  // if p2 < 0, p0 > 0 --> defined for x > 0. --> all good
+  //    p2 < 0, p0 < 0 --> defined for x >= (1 - p1)^2/(4*p2) - p0
+  //    p2 > 0         --> defined for x <= (1 - p1)^2/(4*p2) - p0
+  //
+  // Also we have to subtract the nominal P_reco_BI vs P_true_FF
+
+  double energy = energies[0] + 139.57;
+  double true_P = sqrt(energy*energy - 139.57*139.57);
+
+  if (fCurrentBeamShiftP2 < 0. && fCurrentBeamShiftP0 < 0.) {
+    double domain_edge = ((1 - fCurrentBeamShiftP1)*(1 - fCurrentBeamShiftP1) /
+                          (4*fCurrentBeamShiftP2)) - fCurrentBeamShiftP0;
+    if (domain_edge > true_P) {
+      std::cout << "P2 < 0" << std::endl;
+      std::cout << "Skipping " << true_P << " " << domain_edge << std::endl;
+      return 0.;
+    }
+  }
+  else if (fCurrentBeamShiftP2 > 0.) {
+    double domain_edge = ((1 - fCurrentBeamShiftP1)*(1 - fCurrentBeamShiftP1) /
+                          (4*fCurrentBeamShiftP2)) - fCurrentBeamShiftP0;
+    if (domain_edge < true_P) {
+      std::cout << "P2 > 0" << std::endl;
+      std::cout << "Skipping " << true_P << " " << domain_edge << std::endl;
+      return 0.;
+    }
+  }
+
+  double nominal_reco = fBeamShiftNominalP0 +
+                        fBeamShiftNominalP1*true_P +
+                        fBeamShiftNominalP2*true_P*true_P;
+
+  double factor = (fCurrentBeamShiftP2 < 0. ? 1. : -1.); //If p2 < 0. use positive soln.
+  double varied_reco
+      = ((1. - fCurrentBeamShiftP1) +
+         factor*sqrt((1. - fCurrentBeamShiftP1)*
+                     (1. - fCurrentBeamShiftP1) -
+                     4.*fCurrentBeamShiftP2*(fCurrentBeamShiftP0 + true_P)))*
+        (1./(2*fCurrentBeamShiftP2));
+  //std::cout << true_P << " " << nominal_reco << " " << varied_reco << " " <<
+  //             varied_reco - nominal_reco << std::endl;
+  //double shift = fCurrentBeamShiftP0 +
+  //               fCurrentBeamShiftP1*energies[0] +
+  //               fCurrentBeamShiftP2*energies[0]*energies[0];
+  return 1.e-3*(varied_reco - nominal_reco);
+  //return shift*1.e-3;
+}
+
+void protoana::AbsCexDriver::GenerateBeamShiftUniverse() {
+    fCurrentBeamShiftP0 = fBeamShiftCovP0.first + fBeamShiftCovP0.second*fRNG.Gaus();
+    fCurrentBeamShiftP1 = fBeamShiftCovP1.first + fBeamShiftCovP1.second*fRNG.Gaus();
+    fCurrentBeamShiftP2 = fBeamShiftCovP2.first + fBeamShiftCovP2.second*fRNG.Gaus();
+
+    std::cout << /*gen_i <<*/ "Beam shift pars: " << fCurrentBeamShiftP0 <<
+                 " " << fCurrentBeamShiftP1 << " " << fCurrentBeamShiftP2 <<
+                 std::endl;
 }
