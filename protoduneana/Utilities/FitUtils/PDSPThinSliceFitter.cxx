@@ -1666,7 +1666,7 @@ void protoana::PDSPThinSliceFitter::RunFitAndSave() {
   std::string extra_name = "PreFit";
   CompareDataMC(extra_name, xsec_dir, top_dir);
 
-  if (fFitType == "Normal" /*|| fFitType == "Toy"*/) {
+  if (fFitType == "Normal") {
     NormalFit();
   }
   else if (fFitType == "Pulls") {
@@ -1686,6 +1686,68 @@ void protoana::PDSPThinSliceFitter::RunFitAndSave() {
         fSignalParameters, fFluxParameters,
         fSystParameters, fFitUnderOverflow, fTieUnderOver,
         fScaleToDataBeamProfile);
+  }
+  else if (fFitType == "ThrowsOnly") {
+    //Load up parsHist and covariance
+    TFile * prior_fit_file = TFile::Open(fFitResultsFile.c_str());
+    TH1D * parsHist_normal_val = (TH1D*)prior_fit_file->Get("postFitParsNormal");
+    TMatrixD * cov = (TMatrixD*)prior_fit_file->Get("CovMatrix");
+
+    //Also load up best fit xsecs
+    for (auto & s : fMeasurementSamples) {
+      auto & samples_vec_2D = fSamples[s]; 
+
+      std::string xsec_name = "PostFitXSec/PostFit" + samples_vec_2D[0][1].GetName() +
+                              "XSec";
+      fBestFitXSecs[s]
+          = (TH1D*)prior_fit_file->Get(xsec_name.c_str());
+
+      std::string inc_name = "PostFitXSec/PostFitTotalIncident" +
+                             samples_vec_2D[0][0].GetName();
+      fBestFitIncs[s]
+          = (TH1D*)prior_fit_file->Get(inc_name.c_str());
+      std::cout << fBestFitXSecs[s] << " " << fBestFitIncs[s] << std::endl;
+
+      //Nominals
+      xsec_name = "PreFitXSec/PreFit" + samples_vec_2D[0][1].GetName() +
+                              "XSec";
+      fNominalXSecs[s]
+          = (TH1D*)prior_fit_file->Get(xsec_name.c_str());
+    }
+
+    DoThrows(*parsHist_normal_val, cov);
+
+    //Copy some hists/canvases/graphs to new output
+    TDirectory * postfit_input = (TDirectory*)prior_fit_file->Get("PostFitXSec");
+    TList * postfit_keys = postfit_input->GetListOfKeys();
+    TList * top_keys = prior_fit_file->GetListOfKeys();
+
+    fOutputFile.cd();
+    TDirectory * postfit_dir = (TDirectory*)fOutputFile.mkdir("PostFitXSec");
+    postfit_dir->cd();
+    for (int i = 0; i < postfit_keys->GetSize(); ++i) {
+      postfit_input->Get(postfit_keys->At(i)->GetName())->Write();
+    }
+
+    std::vector<std::string> to_copy = {
+      "cCorr", "covHist", "corrHist", "CovMatrix", "chi2_syst",
+      "chi2_stat", "chi2_reg"
+    };
+
+    fOutputFile.cd();
+    for (int i = 0; i < top_keys->GetSize(); ++i) {
+      std::string name = top_keys->At(i)->GetName();
+
+      if (name.find("ostFit") != std::string::npos) {
+        std::cout << name << " " << (name.find("ostFit") != std::string::npos) << std::endl;
+        prior_fit_file->Get(name.c_str())->Write(name.c_str());
+      }
+
+      if (std::find(to_copy.begin(), to_copy.end(), name) != to_copy.end()) {
+        std::cout << name << std::endl;
+        prior_fit_file->Get(name.c_str())->Write(name.c_str());
+      }
+    }
   }
   else {
     std::string message = "Error: invalid fit type given -- ";
@@ -2170,23 +2232,32 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
         //then keys of flux par map
         //then values of syst parameters
         size_t par_position = 0;
+        //if (fDebugPars) {
+        //  std::cout << "Pars: " << std::endl;
+        //}
         for (auto it = fSignalParameters.begin();
              it != fSignalParameters.end(); ++it) {
           for (size_t i = 0; i < it->second.size(); ++i) {
             it->second.at(i) = coeffs[par_position];
             ++par_position;
+            //if (fDebugPars) 
+            //  std::cout << "\t" << par_position << " " << coeffs[par_position] << std::endl;
           }
         }
         for (auto it = fFluxParameters.begin();
              it != fFluxParameters.end(); ++it) {
           it->second = coeffs[par_position];
           ++par_position;
+          //if (fDebugPars) 
+          //  std::cout << "\t" << par_position << " " << coeffs[par_position] << std::endl;
         }
 
         for (auto it = fSystParameters.begin();
              it != fSystParameters.end(); ++it) {
           it->second.SetValue(coeffs[par_position]);
           //std::cout << it->first << " " << it->second.GetValue() << std::endl;
+          //if (fDebugPars) 
+          //  std::cout << "\t" << par_position << " " << coeffs[par_position] << std::endl;
           ++par_position;
         }
 
@@ -2194,6 +2265,8 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
           for (auto & par : sel_par_vec) {
             par.SetValue(coeffs[par_position]);
             ++par_position;
+            //if (fDebugPars) 
+            //  std::cout << "\t" << par_position << " " << coeffs[par_position] << std::endl;
           }
         }
 
@@ -2536,6 +2609,11 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fMaxRethrows = pset.get<size_t>("MaxRethrows");
 
   fFitType = pset.get<std::string>("FitType");
+
+  if (fFitType == "ThrowsOnly") {
+    fFitResultsFile = pset.get<std::string>("PriorFitResults");
+  }
+
   fNPulls = pset.get<size_t>("NPulls");
 
   fDoScaleDataToNorm = pset.get<bool>("ScaleDataToNorm", false);
@@ -2572,10 +2650,11 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
     std::vector<fhicl::ParameterSet> sel_vec
         = pset.get<std::vector<fhicl::ParameterSet>>("SelectionVarSysts");
     std::vector<std::string> sel_var_cov_files;
+    bool set_sel_var_centrals = pset.get<bool>("SetSelVarCentrals", false);
     //std::vector<std::vector<ThinSliceSystematic*>> sel_var_systs;
     for (size_t i = 0; i < sel_vec.size(); ++i) {
       fhicl::ParameterSet & selection_var = sel_vec[i];
-      std::cout << selection_var.get<std::string>("Name") << std::endl;;
+      std::cout << selection_var.get<std::string>("Name") << std::endl;
 
       //sel_var_systs.push_back(std::vector<ThinSliceSystematic*>());
       fSelVarSystPars.push_back(std::vector<ThinSliceSystematic>());
@@ -2640,14 +2719,24 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
         TMatrixD* matrix = (TMatrixD*)temp_file->Get("cov_mat");
         matrices.push_back(matrix);
 
+        //Centrals
+
         int start_row = sel_var_rows.back();
         sel_var_rows.push_back(matrix->GetNrows());
 
-        for (const auto & syst : these_systs) {
+        TVectorD * centrals = (TVectorD*)temp_file->Get("centrals");
+
+        size_t a = 0;
+        for (auto & syst : these_systs) {
           fCovarianceBins[syst.GetName()] = start_row;
           fCovarianceBinsSimple.push_back(start_row);
           ++start_row;
           std::cout << syst.GetName() << " " << fCovarianceBins[syst.GetName()] << std::endl;
+          if (set_sel_var_centrals) {
+            syst.SetCentral((*centrals)[a]);
+            std::cout << "Setting central: " << (*centrals)[a] << std::endl;
+          }
+          ++a;
         }
 
         n_total += sel_var_rows.back();
@@ -3001,7 +3090,6 @@ void protoana::PDSPThinSliceFitter::PlotThrows(
 
   auto & measured_xsec = (fGetMeanXSec ? mean_xsecs : best_fit_xsec_truth);
 
-  //for (auto it = best_fit_xsec_truth/*mean_xsecs*/.begin(); it != best_fit_xsec_truth/*mean_xsecs*/.end();
   for (auto it = measured_xsec.begin(); it != measured_xsec.end();
        ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
@@ -3021,6 +3109,9 @@ void protoana::PDSPThinSliceFitter::PlotThrows(
           nominal_xsec_chi2 += ((measured_val_i - mc_val_i)*
                                 xsec_cov_matrix[bin_i][bin_j]*
                                 (measured_val_j - mc_val_j));
+          /*std::cout << bin_i << " " << bin_j << " " << mc_val_i << " " << mc_val_j <<
+                       " " << nominal_xsec_chi2 << " " <<
+                       xsec_cov_matrix[bin_i][bin_j] << std::endl;*/
           if (fDoFakeData /*&& fFakeDataRoutine != "Toy"*/) {
             fake_xsec_chi2 += ((measured_val_i - fake_val_i)*
                                xsec_cov_matrix[bin_i][bin_j]*

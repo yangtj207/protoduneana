@@ -205,6 +205,7 @@ class PDSPThinSliceFitter {
   bool fFitFlux;
   size_t fNThrows, fMaxRethrows;
   std::string fFitType = "Normal";
+  std::string fFitResultsFile;
   size_t fNPulls;
   bool fDoScaleDataToNorm;
   double fDataNorm;
