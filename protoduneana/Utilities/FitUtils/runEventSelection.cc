@@ -22,6 +22,11 @@ class testing {
 auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
   testing testing1(1);
   testing testing2(2);
+  std::string track_score_string = (
+      pset.get<bool>("UseWeightedTrackScore") ?
+      "reco_daughter_PFP_trackScore_collection_weight_by_charge" :
+      "reco_daughter_PFP_trackScore_collection");
+                                    
   auto mc = frame.Define("testing1", testing(1)/*testing1*/)
            .Define("testing2", testing(2)/*testing2*/)
            .Define("beam_P_range",
@@ -34,14 +39,14 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                    endAPA3(pset.get<double>("EndZHigh")), {"reco_beam_endZ"})
            .Define("shower_dists",
                    shower_dists(pset.get<double>("TrackScoreCut")),
-                   {"reco_daughter_PFP_trackScore_collection",
+                   {track_score_string,
                     "reco_daughter_allShower_startX",
                     "reco_daughter_allShower_startY",
                     "reco_daughter_allShower_startZ",
                     "reco_beam_endX", "reco_beam_endY", "reco_beam_endZ"})
            .Define("has_shower_dist_energy",
                    has_shower_dist_energy(pset.get<double>("TrackScoreCut")),
-                   {"reco_daughter_PFP_trackScore_collection",
+                   {track_score_string,
                     "reco_daughter_allShower_startX",
                     "reco_daughter_allShower_startY",
                     "reco_daughter_allShower_startZ",
@@ -57,7 +62,7 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                        pset.get<double>("dEdXLow"),
                        pset.get<double>("dEdXMed"),
                        pset.get<double>("dEdXHigh")),
-                   {"reco_daughter_PFP_trackScore_collection",
+                   {track_score_string,
                     "reco_daughter_allTrack_ID", 
                     "reco_daughter_allTrack_truncLibo_dEdX_pos",
                     "reco_daughter_allTrack_Chi2_proton",
@@ -162,6 +167,11 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
 auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
   testing testing1(3);
   testing testing2(4);
+  std::string track_score_string = (
+      pset.get<bool>("UseWeightedTrackScore") ?
+      "reco_daughter_PFP_trackScore_collection_weight_by_charge" :
+      "reco_daughter_PFP_trackScore_collection");
+
   auto data = frame.Define("testing1", testing(1)/*testing1*/)
            .Define("testing2", testing(2)/*testing2*/)
            .Define("beamPID", data_beam_PID, {"beam_inst_PDG_candidates", "MC", "true_beam_PDG"})
@@ -178,14 +188,14 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                    endAPA3(pset.get<double>("EndZHigh")), {"reco_beam_endZ"})
            .Define("shower_dists",
                    shower_dists(pset.get<double>("TrackScoreCut")),
-                   {"reco_daughter_PFP_trackScore_collection",
+                   {track_score_string,
                     "reco_daughter_allShower_startX",
                     "reco_daughter_allShower_startY",
                     "reco_daughter_allShower_startZ",
                     "reco_beam_endX", "reco_beam_endY", "reco_beam_endZ"})
            .Define("has_shower_dist_energy",
                    has_shower_dist_energy(pset.get<double>("TrackScoreCut")),
-                   {"reco_daughter_PFP_trackScore_collection",
+                   {track_score_string,
                     "reco_daughter_allShower_startX",
                     "reco_daughter_allShower_startY",
                     "reco_daughter_allShower_startZ",
@@ -204,11 +214,15 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                        pset.get<double>("dEdXLow"),
                        pset.get<double>("dEdXMed"),
                        pset.get<double>("dEdXHigh")),
-                   {"reco_daughter_PFP_trackScore_collection",
+                   {track_score_string,
                     "reco_daughter_allTrack_ID", 
                     "reco_daughter_allTrack_truncLibo_dEdX_pos",
                     "reco_daughter_allTrack_Chi2_proton",
                     "reco_daughter_allTrack_Chi2_ndof"})
+           .Define("good_run",
+                   exclude_runs(
+                       pset.get<std::vector<int>>("ExcludeRuns")),
+                   {"run"})
            /*.Define("beam_inst_P_scaled", beam_inst_P_scaled())*/;
 
   if(pset.get<bool>("UseBI")) {
@@ -334,9 +348,10 @@ int main(int argc, char ** argv){
     std::cout << "Calling DefineData" << std::endl;
     auto data = DefineData(data_frame, pset);
     std::cout << "Snapshotting" << std::endl;
+    //data.Filter("good_run");
     if (pset.get<bool>("SaveAllData", false))
       data.Snapshot(tree_name, "eventSelection_data_all.root");
-    data = data.Filter("passBeamQuality");
+    data = data.Filter("passBeamQuality && good_run");
     //asdf
     if (pset.get<bool>("DoReconstructable"))
       data = data.Filter("reco_reconstructable_beam_event");
