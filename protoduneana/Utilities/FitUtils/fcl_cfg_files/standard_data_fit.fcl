@@ -1,6 +1,7 @@
 #include "FitterPlotStyle.fcl"
 #include "ProtoDUNECalibration.fcl"
 #include "FitSystematics.fcl"
+#include "SelectionVarSysts.fcl"
 
 MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_31_22/eventSelection_mc_all.root"
 DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_4_22/AltSCE/eventSelection_data_BeamQuality.root"
@@ -39,6 +40,7 @@ AnalysisOptions: {
   VaryDataCalibration: false 
   DataCalibrationFactor: 1.02
   BarlowBeeston: true
+  #ToSkip: [6]
 }
 
 Systematics: [
@@ -50,13 +52,15 @@ Systematics: [
   #,@local::SystematicsList.beam_match_high_weight
   ,@local::g4rw_downstream_piplus_low_coeff
   ,@local::g4rw_downstream_piplus_high_coeff
-  ,@local::SystematicsList.quad_beam_shift
+  #,@local::SystematicsList.quad_beam_shift
+  ,@local::SystematicsList.beam_scraper_weight
 ]
 
 Systematics[2].Central: 1.46
 Systematics[0].Options.F: .65078 #restricted P
 Systematics[0].ThrowLimitUp: 1.536
 Systematics[0].UpperLimit: 1.536
+
 
 Systematics[2].Options.Fractions: [
 [1, [-1., -1., -1., 0.4,  0.2028985507246377, 0.24324324324324323, 0.22010869565217392, 0.15562248995983935, 0.17752234993614305, 0.19827299900365325, 0.22109443954104147, 0.2775628626692457] ],
@@ -86,12 +90,20 @@ CovarianceBins: [
  #,["beam_match_high_weight", 4] #20%
  ,["g4rw_downstream_piplus_low_coeff", 5] #33%
  ,["g4rw_downstream_piplus_high_coeff", 6] #33%
- ,["quad_beam_shift", 7] #16%
+ #,["quad_beam_shift", 7] #16%
+ ,["beam_scraper_weight", 7] #50%
 ]
 
 #CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/fixed_cov_7_29_22.root"
-CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/with_quad_shift.root"
+#CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/with_quad_shift.root"
+#CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/with_beam_bins.root"
+CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/with_scraper.root"
 CovarianceMatrix: "m"
+
+SelectionVarSysts: [
+  #@local::beam_shift_vars
+]
+SetSelVarCentrals: true
 
 FixVariables: false 
 SystsToFix: [
@@ -267,16 +279,16 @@ DrawXSecUnderflow: false
 ## Validation
 RandomStart: false 
 SplitMC:  false 
-MaxEntries: -1 #
+MaxEntries: -1 
 MaxDataEntries: -1 #54000
 DoFakeData: false 
 FluctuateStats: false 
-DoThrows: true
+DoThrows: false 
 NThrows: 1000
 DoScans: false
 OnlySystScans: true
 RunHesse: true
-Do1DShifts: false
+Do1DShifts: false 
 DoSysts: true
 MaxRethrows: 1000
 #####################

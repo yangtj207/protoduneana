@@ -25,9 +25,11 @@ DoNTracks: false
 DoMichel: true 
 MichelCut: 0.6
 
-RestrictBeamP: false #true
+RestrictBeamP: true
 BeamPLow: 750.
 BeamPHigh: 1250.
+ExcludeRuns: []
+UseWeightedTrackScore: true
 
 #DataBeamInstPScale: 1.007
 #DataBeamInstPScale: 0.993
