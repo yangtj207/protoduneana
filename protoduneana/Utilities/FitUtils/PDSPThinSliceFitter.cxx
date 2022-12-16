@@ -3572,9 +3572,6 @@ void protoana::PDSPThinSliceFitter::BuildFakeDataXSecs(bool use_scales) {
 }
 
 double protoana::PDSPThinSliceFitter::CalcChi2SystTerm() {
-  //double result = 0.;
-  //size_t a1 = 0;
-  
   std::vector<double> syst_vals, central_vals;
   for (auto it = fSystParameters.begin(); it != fSystParameters.end(); ++it) {
     syst_vals.push_back(it->second.GetValue());
@@ -3586,37 +3583,6 @@ double protoana::PDSPThinSliceFitter::CalcChi2SystTerm() {
       central_vals.push_back(par.GetCentral());
     }
   }
-
-  //for (auto it = fSystParameters.begin(); it != fSystParameters.end(); ++it) {
-  //  //int bin_1_new = fCovarianceBinsSimple[a1];
-  //  //size_t a2 = 0;
-  //  for (auto it2 = fSystParameters.begin();
-  //       it2 != fSystParameters.end(); ++it2) {
-  //    double val_1 = it->second.GetValue();
-  //    double val_2 = it2->second.GetValue();
-  //    double central_1 = it->second.GetCentral();
-  //    double central_2 = it2->second.GetCentral();
-  //    int bin_1 = fCovarianceBins[it->first];
-  //    int bin_2 = fCovarianceBins[it2->first];
-  //    
-  //    //int bin_2_new = fCovarianceBinsSimple[a2];
-  //    //std::cout << bin_1 << " " << bin_2 << " " <<
-  //    //             bin_1_new << " " << bin_2_new << std::endl;
-  //    result += (val_1 - central_1)*(val_2 - central_2)*
-  //              (*fCovMatrix)[bin_1][bin_2];
-  //    /*
-  //    if (fDebugChi2) {
-  //      std::cout << it->second.GetName() << " " << it2->second.GetName() << std::endl;
-  //      std::cout << bin_1 << " " << bin_2 << " " << val_1 << " " << val_2 <<
-  //                   " " << central_1 << " " << central_2 << " " << 
-  //                   (*fCovMatrix)[bin_1][bin_2] << " " <<
-  //                   (val_1 - central_1)*(val_2 - central_2)*(*fCovMatrix)[bin_1][bin_2] <<
-  //                   std::endl;
-  //    }*/
-  //    //++a2;
-  //  }
-  //  //++a1;
-  //}
 
   double new_result = 0.;
   for (size_t i = 0; i < syst_vals.size(); ++i) {

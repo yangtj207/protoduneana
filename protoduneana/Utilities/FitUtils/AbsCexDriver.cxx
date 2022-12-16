@@ -624,6 +624,16 @@ void protoana::AbsCexDriver::RefillMCSamples(
     }
   }
 
+  //Threading ideas:
+  //see https://root.cern/doc/master/mt304__fillHistos_8C.html
+  //and https://root.cern/doc/master/mt201__parallelHistoFill_8C.html
+  //
+  //  -- split up events into chunks
+  //  -- elsewhere define member function to pass as a std::thread to pool of workers
+  //  -- That function will handle iterating through events
+  //  -- Works mostly as normal until sample->FillSelectionHist, etc.
+  //  -- Need to make sure using threadsafe versions of hists within there -- same for AddVariedFlux
+  //  -- Maybe separate that out and just have a running sum at the end?
 
   for (size_t i = 0; i < events.size(); ++i) {
     const ThinSliceEvent & event = events.at(i);
@@ -835,98 +845,6 @@ void protoana::AbsCexDriver::RefillMCSamples(
       val[0] = selected_hist->GetBinCenter(1);
     }
 
-    //Systematics
-    /*
-    if (syst_pars.find("dEdX_Cal_Spline") != syst_pars.end()) {
-      int bin = selected_hist->FindBin(val[0]);
-      TSpline3 * spline
-          = fFullSelectionSplines["dEdX_Cal_Spline"][new_selection][bin-1];
-      //TF1 * spline
-      //    = fFullSelectionFuncs["dEdX_Cal_Spline"][new_selection][bin-1];
-      weight *= spline->Eval(syst_pars.at("dEdX_Cal_Spline").GetValue());
-      if (weight < 0.) {
-        std::cout << syst_pars.at("dEdX_Cal_Spline").GetValue() <<
-                     " " <<
-                     spline->Eval(syst_pars.at("dEdX_Cal_Spline").GetValue()) <<
-                     std::endl;
-        std::string message = "negative dedx cal weight";
-        throw std::runtime_error(message);
-      }
-    }
-    if (weight < 0.) {
-      std::cout << "Weight went negative after dedx spline" << std::endl;
-    }
-
-    if (syst_pars.find("beam_shift_spline") != syst_pars.end()) {
-      int bin = selected_hist->FindBin(val[0]);
-      TSpline3 * spline
-          = fFullSelectionSplines["Beam_Shift_Spline"][new_selection][bin-1];
-      weight *= spline->Eval(syst_pars.at("beam_shift_spline").GetValue());
-    }
-    if (syst_pars.find("eff_var") != syst_pars.end()) {
-      int bin = selected_hist->FindBin(val[0]);
-      TSpline3 * spline
-          = fFullSelectionSplines["EffVar_Spline"][new_selection][bin-1];
-      weight *= spline->Eval(syst_pars.at("eff_var").GetValue());
-    }
-    if (weight < 0.) {
-      std::cout << "Weight went negative after eff var spline" << std::endl;
-    }
-
-    if (syst_pars.find("beam_shift_spline_2") != syst_pars.end()) {
-      int bin = selected_hist->FindBin(val[0]);
-      TSpline3 * spline
-          = fFullSelectionSplines["BeamShiftSpline2"][new_selection][bin-1];
-      weight *= spline->Eval(syst_pars.at("beam_shift_spline_2").GetValue());
-    }
-    if (weight < 0.) {
-      std::cout << "Weight went negative after beam shift spline" << std::endl;
-    }
-
-    weight *= GetSystWeight_EffVar(event, syst_pars);
-    if (weight < 0.) {
-      std::cout << "Weight went negative after eff" << std::endl;
-    }
-    weight *= GetSystWeight_NoTrack(event, syst_pars);
-    weight *= GetSystWeight_BeamEffs(event, syst_pars);
-    if (weight < 0.) {
-      std::cout << "Weight went negative after beam effs" << std::endl;
-    }
-
-    weight *= GetSystWeight_LowP(event, signal_index, syst_pars);
-    weight *= GetSystWeight_NPi0(event, signal_index, syst_pars);
-
-    if (weight < 0.) std::cout << "Warning: negative weight! " << weight << std::endl;
-    */
-
-    /*
-    weight *= fSystematics->GetSystWeight_G4RWCoeff(event, syst_pars);
-    weight *= fSystematics->GetSystWeight_BeamShift(event, syst_pars);
-    weight *= fSystematics->GetSystWeight_EDiv(event, syst_pars,
-                                               (!fInclusive ? 4 : 2));
-    weight *= fSystematics->GetSystWeight_EndZNoTrack(
-        event, signal_index, syst_pars, (!fInclusive ? 4 : 2),
-        (!fInclusive ? 6 : 4));
-    weight *= fSystematics->GetSystWeight_UpstreamInt(
-        event, syst_pars, (!fInclusive ? 4 : 2));
-    weight *= fSystematics->GetSystWeight_BGPions(
-        event, syst_pars, (!fInclusive ? 6 : 4), (!fInclusive ? 7 : 5));
-    weight *= fSystematics->GetSystWeight_BeamMatch(
-        event, syst_pars, (!fInclusive ? 4 : 2), (!fInclusive ? 6 : 4));
-    weight *= fSystematics->GetSystWeight_BoxBeam(
-        event, syst_pars, (!fInclusive? 5 : 3));
-    if (weight < 0.) {
-      std::cout << "Weight negative before eloss " << weight << std::endl;
-    }
-    weight *= fSystematics->GetSystWeight_ELoss(
-        event, syst_pars, (!fInclusive? 4 : 2));
-    if (weight < 0.) {
-      std::cout << "Weight negative after eloss " << weight << std::endl;
-    }
-    weight *= fSystematics->GetSystWeight_ELossMuon(
-        event, syst_pars, (!fInclusive? 4 : 2));
-        */
-    //int weight_bin = this_sample->GetSelectionHistBin(new_selection, val[0]);
     weight *= fSystematics->GetEventWeight(event, signal_index, syst_pars);
 
     if (fix_factors != 0x0) {
@@ -966,81 +884,6 @@ void protoana::AbsCexDriver::SetupSysts(
     std::vector<double> & beam_energy_bins,
     const std::map<std::string, ThinSliceSystematic> & pars,
     TFile & output_file) {
-
-  /*
-  if (pars.find("dEdX_Cal") != pars.end()) {
-    //std::cout << "Found par dEdX_Cal" << std::endl;
-    fhicl::ParameterSet cal_set
-        = pars.at("dEdX_Cal").GetOption<fhicl::ParameterSet>("Cal_set");
-    fBetaP = cal_set.get<double>("betap");
-    fRho = cal_set.get<double>("Rho");
-    fWion = cal_set.get<double>("Wion");
-    fAlpha = cal_set.get<double>("alpha");
-
-    std::vector<fhicl::ParameterSet> PlanePars
-        = cal_set.get<std::vector<fhicl::ParameterSet>>("PlaneParameters");
-    bool found_collection = false;
-    for (auto & p : PlanePars) {
-      if (p.get<int>("PlaneID") == 2) {
-        fNominalCCal = p.get<double>("calib_factor");
-        found_collection = true;
-        break;
-      }
-    }
-  
-    if (!found_collection) {
-      std::string message = "Could not find collection plane calibration factor";
-      throw std::runtime_error(message);
-    }
-  }
-  else if (pars.find("dEdX_Cal_Spline") != pars.end()) {
-    fhicl::ParameterSet cal_set
-        = pars.at("dEdX_Cal_Spline").GetOption<fhicl::ParameterSet>("Cal_set");
-    fBetaP = cal_set.get<double>("betap");
-    fRho = cal_set.get<double>("Rho");
-    fWion = cal_set.get<double>("Wion");
-    fAlpha = cal_set.get<double>("alpha");
-
-    std::vector<fhicl::ParameterSet> PlanePars
-        = cal_set.get<std::vector<fhicl::ParameterSet>>("PlaneParameters");
-    bool found_collection = false;
-    for (auto & p : PlanePars) {
-      if (p.get<int>("PlaneID") == 2) {
-        fNominalCCal = p.get<double>("calib_factor");
-        found_collection = true;
-        break;
-      }
-    }
-  
-    if (!found_collection) {
-      std::string message = "Could not find collection plane calibration factor";
-      throw std::runtime_error(message);
-    }
-    SetupSyst_dEdX_Cal(events, samples, pars, output_file);
-  }
-
-  SetupSyst_G4RW(events, samples, signal_sample_checks, beam_energy_bins,
-                   pars, output_file);
-  SetupSyst_G4RWCoeff(pars);
-
-  //SetupSyst_BeamRes(events, samples, pars, output_file);
-  SetupSyst_BeamShift(pars, output_file);
-  SetupSyst_BeamShiftSpline(events, samples, pars, output_file);
-  SetupSyst_BeamShiftSpline2(events, samples, pars, output_file);
-  SetupSyst_BeamShiftRatio(events, samples, pars, output_file);
-  //SetupSyst_BeamShift2D(pars, output_file);
-  SetupSyst_EffVar(events, samples, pars, output_file);
-  SetupSyst_EffVarWeight(pars);
-  SetupSyst_EDivWeight(pars);
-  //SetupSyst_NoTrackWeight(pars);
-  SetupSyst_BeamEffsWeight(pars);
-  SetupSyst_LowP(pars);
-  SetupSyst_NPi0(pars);
-  SetupSyst_EndZNoTrackWeight(pars);
-  //SetupSyst_BeamMatch(pars);
-  SetupSyst_BoxBeam(pars);
-  */
-
   fSystematics = new PDSPSystematics(events, samples, signal_sample_checks,
                                      beam_energy_bins, pars, output_file,
                                      (!fInclusive ? 4 : 2), //Upstream
