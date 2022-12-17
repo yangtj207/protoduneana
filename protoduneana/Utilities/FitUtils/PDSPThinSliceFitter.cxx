@@ -73,7 +73,8 @@ void protoana::PDSPThinSliceFitter::MakeMinimizer() {
   fMinimizer->SetTolerance(fTolerance);
   fMinimizer->SetPrintLevel(fPrintLevel);
 
-  size_t total_parameters = fTotalSignalParameters + fTotalFluxParameters + fTotalSystParameters;
+  size_t total_parameters = fTotalSignalParameters + fTotalFluxParameters +
+                            fTotalSystParameters;
   TH1D parsHist("preFitPars", "", total_parameters, 0, total_parameters);
   fPreFitParsNormal = TH1D("preFitParsNormal", "", 
                            total_parameters, 0, total_parameters);
@@ -786,7 +787,8 @@ void protoana::PDSPThinSliceFitter::ScaleMCToData() {
           it->second[i][j].ExtraFactor(factors_by_beam_bin[i]);
 
         mc_flux += it->second[i][j].GetNominalFlux();
-        const std::map<int, TH1 *> & hists
+        //const std::map<int, TH1 *> & hists
+        const auto & hists
             = it->second[i][j].GetSelectionHists();
         for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
           new_total_mc += it2->second->Integral();
@@ -957,7 +959,8 @@ void protoana::PDSPThinSliceFitter::SaveMCSamples() {
     for (size_t i = 0; i < it->second.size(); ++i) {
       auto vec = it->second.at(i);
       for (size_t j = 0; j < vec.size(); ++j) {
-        const std::map<int, TH1 *> & hists = vec[j].GetSelectionHists();
+        //const std::map<int, TH1 *> & hists = vec[j].GetSelectionHists();
+        const auto & hists = vec[j].GetSelectionHists();
         for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
           it2->second->Write();
         }
@@ -1756,8 +1759,8 @@ void protoana::PDSPThinSliceFitter::RunFitAndSave() {
   }
 
 
-  if (fDoSysts)
-    fThinSliceDriver->WrapUpSysts(fOutputFile);
+  //if (fDoSysts)
+  //  fThinSliceDriver->WrapUpSysts(fOutputFile);
 
   //fMCFile.Close();
 }

@@ -46,6 +46,7 @@ protoana::ThinSliceSample::ThinSliceSample(
                            &true_incident_bins[0]);
 
   for (auto it = selections.begin(); it != selections.end(); ++it) {
+    int id = it->get<int>("ID");
     std::string sel_name = "";
     if (is_signal) {
       sel_name = "sample_" + name + "_" +
@@ -62,18 +63,18 @@ protoana::ThinSliceSample::ThinSliceSample(
     std::vector<std::vector<double>> selected_bins
         = it->get<std::vector<std::vector<double>>>("RecoBins");
     if (selected_bins.size() == 1) {
-      fSelectionHists[it->get<int>("ID")] = new TH1D(
+      fSelectionHists[id] = new TH1D(
           sel_name.c_str(), title.c_str(), selected_bins[0].size() - 1,
           &selected_bins[0][0]);
     }
     else if (selected_bins.size() == 2) {
-      fSelectionHists[it->get<int>("ID")] = new TH2D(
+      fSelectionHists[id] = new TH2D(
           sel_name.c_str(), title.c_str(),
           selected_bins[0].size() - 1, &selected_bins[0][0],
           selected_bins[1].size() - 1, &selected_bins[1][0]);
     }
     else if (selected_bins.size() == 3) {
-      fSelectionHists[it->get<int>("ID")] = new TH3D(
+      fSelectionHists[id] = new TH3D(
           sel_name.c_str(), title.c_str(),
           selected_bins[0].size() - 1, &selected_bins[0][0],
           selected_bins[1].size() - 1, &selected_bins[1][0],

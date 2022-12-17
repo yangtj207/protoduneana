@@ -12,6 +12,7 @@
 #include "TF1.h"
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
 #include "PDSPSystematics.h"
+#include <mutex>
 
 namespace protoana {
 class AbsCexDriver : public ThinSliceDriver {
@@ -128,6 +129,18 @@ class AbsCexDriver : public ThinSliceDriver {
       std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
       std::vector<double> & beam_energy_bins, bool use_beam_inst_P) override;
 
+  void RefillSampleLoop(
+      const std::vector<ThinSliceEvent> & events,
+      std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+      const std::map<int, bool> & signal_sample_checks,
+      std::vector<double> & beam_energy_bins,
+      const std::map<int, std::vector<double>> & signal_pars,
+      const std::map<int, double> & flux_pars,
+      const std::map<std::string, ThinSliceSystematic> & syst_pars,
+      bool fit_under_over, bool tie_under_over, bool use_beam_inst_P,
+      bool fill_incident, std::map<int, TH1 *> * fix_factors,
+      size_t worker_id, std::vector<size_t> n_events);
+
   void RefillMCSamples(
       //TTree * tree,
       const std::vector<ThinSliceEvent> & events,
@@ -147,6 +160,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<int, bool> & signal_sample_checks,
       std::vector<double> & beam_energy_bins) override;*/
   
+/*
   void SetupSyst_G4RWCoeff(
       const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_G4RW(
@@ -157,6 +171,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);
 
+  
   void SetupSyst_dEdX_Cal(
       const std::vector<ThinSliceEvent> & events,
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -172,7 +187,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::vector<ThinSliceEvent> & events,
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
       const std::map<std::string, ThinSliceSystematic> & pars,
-      TFile & output_file);
+      TFile & output_file);*/
 
   std::pair<double, size_t> CalculateChi2(
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -226,7 +241,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::vector<ThinSliceEvent> & events,
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
       const std::map<std::string, ThinSliceSystematic> & pars,
-      TFile & output_file);*/
+      TFile & output_file);
   void SetupSyst_BeamShift(
       const std::map<std::string, ThinSliceSystematic> & pars,
       TFile & output_file);
@@ -243,9 +258,10 @@ class AbsCexDriver : public ThinSliceDriver {
     const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_NPi0(
     const std::map<std::string, ThinSliceSystematic> & pars);
-  /*void SetupSyst_BeamShift2D(
+  void SetupSyst_BeamShift2D(
       const std::map<std::string, ThinSliceSystematic> & pars,
-      TFile & output_file);*/
+      TFile & output_file);
+  
   void SetupSyst_EffVar(
       const std::vector<ThinSliceEvent> & events,
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -260,7 +276,7 @@ class AbsCexDriver : public ThinSliceDriver {
   void SetupSyst_BeamEffsWeight(
       const std::map<std::string, ThinSliceSystematic> & pars);
   void SetupSyst_BoxBeam(
-      const std::map<std::string, ThinSliceSystematic> & pars);
+      const std::map<std::string, ThinSliceSystematic> & pars);*/
 
   /*double GetSystWeight_BeamRes(
       const ThinSliceEvent & event,
@@ -312,7 +328,7 @@ class AbsCexDriver : public ThinSliceDriver {
   double GetSystWeight_BoxBeam(
       const ThinSliceEvent & event,
       const std::map<std::string, ThinSliceSystematic> & pars);
-  void WrapUpSysts(TFile & output_file) override;
+  //void WrapUpSysts(TFile & output_file) override;
   int RecalculateSelectionID(
       const ThinSliceEvent & event,
       double C_cal,
@@ -447,6 +463,7 @@ class AbsCexDriver : public ThinSliceDriver {
    double fDataCalibrationFactor;
    bool fBarlowBeeston;
    std::vector<int> fToSkip;
+   size_t fNWorkers;
 
    std::vector<std::string> fCovarianceRoutines;
    bool fBeamShiftCovRoutineActive = false;
@@ -455,6 +472,7 @@ class AbsCexDriver : public ThinSliceDriver {
    std::pair<double, double> fBeamShiftCovP0, fBeamShiftCovP1, fBeamShiftCovP2;
    double fBeamShiftNominalP0, fBeamShiftNominalP1, fBeamShiftNominalP2;
    double fCurrentBeamShiftP0, fCurrentBeamShiftP1, fCurrentBeamShiftP2;
+   std::mutex fRefillMutex;
 };
 }
 #endif

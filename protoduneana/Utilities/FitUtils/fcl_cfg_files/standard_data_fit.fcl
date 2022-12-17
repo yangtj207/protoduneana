@@ -41,6 +41,7 @@ AnalysisOptions: {
   DataCalibrationFactor: 1.02
   BarlowBeeston: true
   #ToSkip: [6]
+  NWorkers: 4
 }
 
 Systematics: [
