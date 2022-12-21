@@ -1845,7 +1845,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 								double xyzStart[3];
 								double xyzEnd[3];
 								unsigned int wireno=vhit[ii]->WireID().Wire;
-								fGeometry->WireEndPoints(0,vhit[ii]->WireID().TPC,2,wireno, xyzStart, xyzEnd);
+                                                                fGeometry->WireEndPoints(geo::WireID(0,vhit[ii]->WireID().TPC,2,wireno), xyzStart, xyzEnd);
 								wirez_c.push_back(xyzStart[2]);
 
 
@@ -1887,7 +1887,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 								double xyzStart[3];
 								double xyzEnd[3];
 								unsigned int wireno=vhit[ii]->WireID().Wire;
-								fGeometry->WireEndPoints(0,vhit[ii]->WireID().TPC,1,wireno, xyzStart, xyzEnd);
+                                                                fGeometry->WireEndPoints(geo::WireID(0,vhit[ii]->WireID().TPC,1,wireno), xyzStart, xyzEnd);
 								wirez_v.push_back(xyzStart[2]);
 							}//planenum 1
 							if(planenum==0){
@@ -1910,7 +1910,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 								double xyzStart[3];
 								double xyzEnd[3];
 								unsigned int wireno=vhit[ii]->WireID().Wire;
-								fGeometry->WireEndPoints(0,vhit[ii]->WireID().TPC,0,wireno, xyzStart, xyzEnd);
+                                                                fGeometry->WireEndPoints(geo::WireID(0,vhit[ii]->WireID().TPC,0,wireno), xyzStart, xyzEnd);
 								wirez_u.push_back(xyzStart[2]);
 							}//planenum 0
 
@@ -1972,7 +1972,7 @@ void protoana::protonmcnorw::analyze(art::Event const & evt){
 								double xyzEnd[3];
 								unsigned int wireno=std::round(wire_no);
 								geo::WireID wireid(0,TPCb[clt],2,wireno);
-								fGeometry->WireEndPoints(0,TPCb[clt],2,wireno, xyzStart, xyzEnd);
+                                                                fGeometry->WireEndPoints(wireid, xyzStart, xyzEnd);
 								std::cout<<"Z position of intersection = "<<xyzStart[2]<<" "<<xyzEnd[2]<<"  "<<wireno<<std::endl;
 								Zintersection.push_back(xyzStart[2]);
 								Yintersection.push_back(xyzStart[1]);

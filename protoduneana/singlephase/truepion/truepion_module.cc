@@ -871,7 +871,7 @@ void protoana::truepion::analyze(art::Event const & evt){
  double xyzEnd[3];
  unsigned int wireno=std::round(wire_no);
  geo::WireID wireid(0,TPCb[clt],2,wireno);
- fGeometry->WireEndPoints(0,TPCb[clt],2,wireno, xyzStart, xyzEnd);
+ fGeometry->WireEndPoints(wireid, xyzStart, xyzEnd);
  std::cout<<"Z position of intersection = "<<xyzStart[2]<<" "<<xyzEnd[2]<<"  "<<wireno<<std::endl;
  Zintersection.push_back(xyzStart[2]);
  timeintersection.push_back(ticks_no);
