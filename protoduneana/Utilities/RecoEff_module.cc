@@ -869,20 +869,18 @@ double pdune::RecoEff::GetLengthInTPC(detinfo::DetectorClocksData const& clockDa
   double TPCLength = 0;
 
   for(unsigned int MCHit=0; MCHit < nTrajectoryPoints; ++MCHit) {
-    const TLorentzVector& tmpPosition = part.Position(MCHit);
-    double const tmpPosArray[] = {tmpPosition[0], tmpPosition[1], tmpPosition[2]};
-
     if (MCHit!=0) TPCLengthHits[MCHit] = pow ( pow( (part.Vx(MCHit-1)-part.Vx(MCHit)),2)
                                              + pow( (part.Vy(MCHit-1)-part.Vy(MCHit)),2)
     				         + pow( (part.Vz(MCHit-1)-part.Vz(MCHit)),2)
     				         , 0.5 );
     // check if in TPC
-    geo::TPCID tpcid = geom->FindTPCAtPosition(tmpPosArray);
+    auto const position = geo::vect::toPoint(part.Position(MCHit).Vect());
+
+    geo::TPCID tpcid = geom->FindTPCAtPosition(position);
     if(tpcid.isValid){
-      geo::CryostatGeo const & cryo = geom->Cryostat(tpcid.Cryostat);
-      geo::TPCGeo const & tpc = cryo.TPC(tpcid.TPC);
-      double XPlanePosition = tpc.Plane(0).GetCenter()[0];
-      double DriftTimeCorrection = fabs( tmpPosition[0] - XPlanePosition )/ XDriftVelocity;
+      geo::TPCGeo const & tpc = geom->TPC(tpcid);
+      double XPlanePosition = tpc.Plane(0).GetCenter().X();
+      double DriftTimeCorrection = fabs( position.X() - XPlanePosition )/ XDriftVelocity;
       double TimeAtPlane = part.T() + DriftTimeCorrection;
       if( TimeAtPlane < trigger_offset(clockData) || TimeAtPlane > trigger_offset(clockData) + WindowSize){
         continue;}
@@ -902,17 +900,14 @@ double pdune::RecoEff::GetLengthInTPC(detinfo::DetectorClocksData const& clockDa
 
 TVector3 pdune::RecoEff::GetPositionInTPC(detinfo::DetectorClocksData const& clockData,
                                           const simb::MCParticle part, int MCHit) {
-
-  const TLorentzVector& tmpPosition = part.Position(MCHit);
-  double const tmpPosArray[] = {tmpPosition[0], tmpPosition[1], tmpPosition[2]};
+  auto const position = geo::vect::toPoint(part.Position(MCHit).Vect());
 
   // check if in TPC
-  geo::TPCID tpcid = geom->FindTPCAtPosition(tmpPosArray);
+  geo::TPCID tpcid = geom->FindTPCAtPosition(position);
   if(tpcid.isValid){
-    geo::CryostatGeo const & cryo = geom->Cryostat(tpcid.Cryostat);
-    geo::TPCGeo const & tpc = cryo.TPC(tpcid.TPC);
-    double XPlanePosition = tpc.Plane(0).GetCenter()[0];
-    double DriftTimeCorrection = fabs( tmpPosition[0] - XPlanePosition )/ XDriftVelocity;
+    geo::TPCGeo const & tpc = geom->TPC(tpcid);
+    double XPlanePosition = tpc.Plane(0).GetCenter().X();
+    double DriftTimeCorrection = fabs( position.X() - XPlanePosition )/ XDriftVelocity;
     double TimeAtPlane = part.T() + DriftTimeCorrection;
     if( TimeAtPlane < trigger_offset(clockData) || TimeAtPlane > trigger_offset(clockData) + WindowSize){
       return TVector3(-1,-1,-1);}
@@ -921,8 +916,7 @@ TVector3 pdune::RecoEff::GetPositionInTPC(detinfo::DetectorClocksData const& clo
     return TVector3(-1,-1,-1);
   }
   
-  TVector3 posInTPC(tmpPosArray);
-  return posInTPC;
+  return geo::vect::convertTo<TVector3>(position);
 }
 
 double pdune::RecoEff::GetdEdX(const simb::MCTrajectory traj, size_t this_step){

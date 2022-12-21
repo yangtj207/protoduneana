@@ -1738,7 +1738,7 @@ protoana::mcsXsection::mcsXsection(fhicl::ParameterSet const & p)
 	      unsigned int wireno=std::round(wire_no);
 	      // geo::WireID wireid(0,TPCb[clt],2,wireno);
 	      if(wireno>=0 && wireno<=479){
-		fGeometry->WireEndPoints(0,TPCb[clt],2,wireno, xyzStart, xyzEnd);
+                fGeometry->WireEndPoints(geo::WireID(0,TPCb[clt],2,wireno), xyzStart, xyzEnd);
 		Zintersection.push_back(xyzStart[2]);
 		timeintersection.push_back(ticks_no);
 		// std::cout<<"intersecting "<<xyzStart[2]<<std::endl;
@@ -1822,7 +1822,7 @@ protoana::mcsXsection::mcsXsection(fhicl::ParameterSet const & p)
 
 	      if(((Stw[clt]-5<ans[0] && Endw[clt]+5>ans[0])||(Stw[clt]+5>ans[0] && Endw[clt]<ans[0]-5))&&((Stt[clt]-50<ans[1] && Endt[clt]+50>ans[1])||(Stt[clt]+50>ans[1] && Endt[clt]-50<ans[1])) && ((Stwires[cl1]-5<ans[0] && Endwires[cl1]+5>ans[0])||(Stwires[cl1]+5>ans[0] && Endwires[cl1]-5<ans[0])) && ((Stticks[cl1]-50<ans[1] && Endticks[cl1]+50>ans[1])||(Stticks[cl1]+50>ans[1] && Endticks[cl1]-50<ans[1]))){
 		if(wir>=0 && wir<=479){
-		  fGeometry->WireEndPoints(0,TPCb[clt],2,wir, xyzStart1, xyzEnd1);
+                  fGeometry->WireEndPoints(geo::WireID(0,TPCb[clt],2,wir), xyzStart1, xyzEnd1);
 		  Zintersection1.push_back(xyzStart1[2]);
 		  timeintersection1.push_back(ans[1]);
 		  std::cout<<"wire X position is here  "<<xyzStart1[0]<<std::endl;

@@ -514,7 +514,7 @@ namespace protoana{
 	    double xyzStart[3];
 	    double xyzEnd[3];
 	    unsigned int wireno=vhit[ii]->WireID().Wire;
-	    fGeometry->WireEndPoints(0,vhit[ii]->WireID().TPC,2,wireno, xyzStart, xyzEnd);
+            fGeometry->WireEndPoints(geo::WireID(0,vhit[ii]->WireID().TPC,2,wireno), xyzStart, xyzEnd);
 	    hitz_wire2.push_back(xyzStart[2]);
             //std::cout<<xpos<<" "<<ypos<<" "<<zpos<<" "<<truexpos<<" "<<trueypos<<" "<<truezpos<<std::endl;
 	  }//planenum 2
