@@ -12,6 +12,7 @@
 #include "TF1.h"
 #include "protoduneana/Utilities/ProtoDUNETrackUtils.h"
 #include "PDSPSystematics.h"
+#include "TDecompChol.h"
 #include <mutex>
 
 namespace protoana {
@@ -446,6 +447,11 @@ class AbsCexDriver : public ThinSliceDriver {
    double GetBeamShiftDelta(const std::vector<double> & energies);
    void GenerateBeamShiftUniverse();
 
+   double GetFakeWeight_G4RWCoeff(
+      const ThinSliceEvent & event,
+      const std::vector<std::string> & branches,
+      const std::vector<double> & vars);
+
    TH1D fBeamShiftRatioNomHist;
    std::vector<TSpline3*> fBeamShiftRatioSplines;
    std::map<std::string, std::string> fG4RWCoeffBranches;
@@ -471,8 +477,13 @@ class AbsCexDriver : public ThinSliceDriver {
    size_t fNCovarianceGens;
    std::pair<double, double> fBeamShiftCovP0, fBeamShiftCovP1, fBeamShiftCovP2;
    double fBeamShiftNominalP0, fBeamShiftNominalP1, fBeamShiftNominalP2;
+   TVectorD * fBeamShiftInputCentrals;
+   TMatrixD * fBeamShiftInputCov;
+   TDecompChol fBeamShiftInputChol;
+   bool fBeamShiftCovUseInput;
    double fCurrentBeamShiftP0, fCurrentBeamShiftP1, fCurrentBeamShiftP2;
-   std::mutex fRefillMutex;
+   std::mutex fRefillMutex, fFillMutex;
+   int fNThreads;
 };
 }
 #endif
