@@ -281,6 +281,11 @@ for i in range(0, len(prefit_hists)):
   post_bins = [postfit.GetBinContent(i) for i in range(1, postfit.GetNbinsX()+1)]
   pre_bins = [prefit.GetBinContent(i) for i in range(1, prefit.GetNbinsX()+1)]
   data_bins = [data.GetBinContent(i) + data.GetBinError(i) for i in range(1, data.GetNbinsX()+1)]
+  if 'Michel' in short_names[i]:
+    postfit.GetXaxis().SetBinLabel(1, '')
+    prefit.GetXaxis().SetBinLabel(1, '')
+    data.GetXaxis().SetBinLabel(1, '')
+    
   max_post = max(post_bins)
   max_pre = max(pre_bins)
   max_data = max(data_bins)
