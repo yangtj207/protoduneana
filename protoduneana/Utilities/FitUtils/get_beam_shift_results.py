@@ -89,8 +89,10 @@ minus_cov_vals = [[di*dj for di in minus_diffs] for dj in minus_diffs]
 plus_cov = RT.TH2D('plus_cov', '', len(nom_vals), 0, len(nom_vals), len(nom_vals), 0, len(nom_vals))
 minus_cov = RT.TH2D('minus_cov', '', len(nom_vals), 0, len(nom_vals), len(nom_vals), 0, len(nom_vals))
 ave_cov = RT.TH2D('ave_cov', '', len(nom_vals), 0, len(nom_vals), len(nom_vals), 0, len(nom_vals))
+ave_var = RT.TH1D('ave_var', '', len(nom_vals), 0, len(nom_vals))
 
 for i in range(0, len(nom_vals)):
+  ave_var.SetBinContent(i+1, sqrt((plus_cov_vals[i][i] + minus_cov_vals[i][i])/2.))
   for j in range(0, len(nom_vals)):
     plus_cov.SetBinContent(i+1, j+1, plus_cov_vals[i][j])
     minus_cov.SetBinContent(i+1, j+1, minus_cov_vals[i][j])
@@ -107,7 +109,9 @@ plus_cov.Write()
 minus_cov.SetTitle(';Cross Section Bin;Cross Section Bin')
 minus_cov.Write()
 ave_cov.SetTitle(';Cross Section Bin;Cross Section Bin')
+ave_var.SetTitle(';Cross Section Bin')
 ave_cov.Write()
+ave_var.Write()
 
 ave_corr = ave_cov.Clone('ave_corr')
 for i in range(0, len(nom_vals)):
