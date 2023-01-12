@@ -18,6 +18,7 @@ tt.SetNDC();
 parser = ap()
 
 parser.add_argument('-o', type=str, required=True)
+parser.add_argument('--total', action='store_true')
 parser.add_argument('-f', type=str, required=True)
 parser.add_argument('-x', type=str, required=True)
 parser.add_argument('--genie', type=str, default=None)
@@ -224,82 +225,83 @@ for x,n in zip(result_xsecs, names):
   print(n, [x.GetErrorYhigh(i) for i in range(0, x.GetN())])
 
 ###Total
-total_xs = [i for i in result_xsecs[0].GetX()][args.al:]
-total_results = []
-total_results += [i for i in result_xsecs[0].GetY()][args.al:]
-total_errs = []
-for i in range(0, result_xsecs[0].GetN()):
-  total_errs.append(result_xsecs[0].GetEYhigh()[i]**2)
-total_errs = total_errs[args.al:]
-#print(total_errs)
-for i in range(0, len(total_results)):
-  total_results[i] += result_xsecs[1].GetY()[args.cl+i]
-  total_results[i] += result_xsecs[2].GetY()[args.ol+i]
-
-  total_errs[i] += result_xsecs[1].GetEYhigh()[args.cl+i]**2
-  total_errs[i] += result_xsecs[2].GetEYhigh()[args.ol+i]**2
-#total_errs = [sqrt(e) for e in total_errs]
-print(total_results)
-print([sqrt(i) for i in total_errs])
-
-#cov_hist = fResults.Get('xsec_cov')
-total_cov_hist = RT.TH2D("total_cov", "", len(total_results), 0, len(total_results), len(total_results), 0, len(total_results))
-for i in range(0, 3):
-  for j in range(0, 3):
-    for k in range(0, len(total_results)):
-      for l in range(0, len(total_results)):
-        bin_i = i*len(total_results) + k + 1 + (args.al if i == 0 else 0)
-        bin_j = j*len(total_results) + l + 1 + (args.al if j == 0 else 0)
-        #print(bin_i, bin_j)
-        total_cov_hist.SetBinContent(k+1, l+1, total_cov_hist.GetBinContent(k+1, l+1) + cov_hist.GetBinContent(bin_i, bin_j))
-total_cov_hist.Write("total_cov")
-
-added_errs = [sqrt(total_cov_hist.GetBinContent(i+1, i+1)) for i in range(0, len(total_results))]
-gr_total = RT.TGraphErrors(len(total_results), array('d', total_xs), array('d', total_results),
-                           array('d', [0.]*len(total_results)), array('d', added_errs))
-gr_total.Write('total_gr')
-
-total_g4 = fG4.Get('total_inel_KE')
-total_g4.SetMinimum(0.)
-total_g4.SetLineWidth(2)
-gr_total.SetLineWidth(2)
-total_g4.SetLineColor(RT.kRed)
-total_g4.SetTitle('Total Inelastic;Kinetic Energy [MeV];#sigma [mb]')
-
-c = RT.TCanvas('cTotal', '')
-total_g4.Draw('AC')
-gr_total.Draw('pez same')
-total_g4.GetXaxis().CenterTitle()
-total_g4.GetYaxis().CenterTitle()
-total_g4.GetXaxis().SetRangeUser(0., 999.)
-tt.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-leg = RT.TLegend()
-leg.AddEntry(total_g4, 'Geant4 10.6', 'l')
-leg.AddEntry(gr_total, 'ProtoDUNE-SP', 'pez')
-leg.Draw()
-if args.p:
-  t_prelim.DrawLatex(0.33, .5, 'Preliminary')
-c.Write()
-
-total_corr = total_cov_hist.Clone('total_corr')
-for i in range(1, total_corr.GetNbinsX()+1):
-  for j in range(1, total_corr.GetNbinsX()+1):
-    total_corr.SetBinContent(i, j, total_corr.GetBinContent(i, j)/(gr_total.GetEY()[i-1]*gr_total.GetEY()[j-1]))
-c = RT.TCanvas('cTotalCorr', '')
-total_corr.Draw('colz')
-total_corr.GetXaxis().SetNdivisions(4)
-total_corr.GetYaxis().SetNdivisions(4)
-total_corr.GetXaxis().CenterTitle()
-total_corr.GetYaxis().CenterTitle()
-total_corr.SetTitle(';Cross Section Bin;Cross Section Bin;')
-total_corr.GetZaxis().SetRangeUser(-1., 1.)
-total_corr.SetMarkerSize(1.5)
-if args.t:
-  total_corr.Draw('text same')
-tt.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
-if args.p:
-  t_prelim.DrawLatex(0.33, .5, 'Preliminary')
-c.Write()
+if args.total:
+  total_xs = [i for i in result_xsecs[0].GetX()][args.al:]
+  total_results = []
+  total_results += [i for i in result_xsecs[0].GetY()][args.al:]
+  total_errs = []
+  for i in range(0, result_xsecs[0].GetN()):
+    total_errs.append(result_xsecs[0].GetEYhigh()[i]**2)
+  total_errs = total_errs[args.al:]
+  #print(total_errs)
+  for i in range(0, len(total_results)):
+    total_results[i] += result_xsecs[1].GetY()[args.cl+i]
+    total_results[i] += result_xsecs[2].GetY()[args.ol+i]
+  
+    total_errs[i] += result_xsecs[1].GetEYhigh()[args.cl+i]**2
+    total_errs[i] += result_xsecs[2].GetEYhigh()[args.ol+i]**2
+  #total_errs = [sqrt(e) for e in total_errs]
+  print(total_results)
+  print([sqrt(i) for i in total_errs])
+  
+  #cov_hist = fResults.Get('xsec_cov')
+  total_cov_hist = RT.TH2D("total_cov", "", len(total_results), 0, len(total_results), len(total_results), 0, len(total_results))
+  for i in range(0, 3):
+    for j in range(0, 3):
+      for k in range(0, len(total_results)):
+        for l in range(0, len(total_results)):
+          bin_i = i*len(total_results) + k + 1 + (args.al if i == 0 else 0)
+          bin_j = j*len(total_results) + l + 1 + (args.al if j == 0 else 0)
+          #print(bin_i, bin_j)
+          total_cov_hist.SetBinContent(k+1, l+1, total_cov_hist.GetBinContent(k+1, l+1) + cov_hist.GetBinContent(bin_i, bin_j))
+  total_cov_hist.Write("total_cov")
+  
+  added_errs = [sqrt(total_cov_hist.GetBinContent(i+1, i+1)) for i in range(0, len(total_results))]
+  gr_total = RT.TGraphErrors(len(total_results), array('d', total_xs), array('d', total_results),
+                             array('d', [0.]*len(total_results)), array('d', added_errs))
+  gr_total.Write('total_gr')
+  
+  total_g4 = fG4.Get('total_inel_KE')
+  total_g4.SetMinimum(0.)
+  total_g4.SetLineWidth(2)
+  gr_total.SetLineWidth(2)
+  total_g4.SetLineColor(RT.kRed)
+  total_g4.SetTitle('Total Inelastic;Kinetic Energy [MeV];#sigma [mb]')
+  
+  c = RT.TCanvas('cTotal', '')
+  total_g4.Draw('AC')
+  gr_total.Draw('pez same')
+  total_g4.GetXaxis().CenterTitle()
+  total_g4.GetYaxis().CenterTitle()
+  total_g4.GetXaxis().SetRangeUser(0., 999.)
+  tt.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+  leg = RT.TLegend()
+  leg.AddEntry(total_g4, 'Geant4 10.6', 'l')
+  leg.AddEntry(gr_total, 'ProtoDUNE-SP', 'pez')
+  leg.Draw()
+  if args.p:
+    t_prelim.DrawLatex(0.33, .5, 'Preliminary')
+  c.Write()
+  
+  total_corr = total_cov_hist.Clone('total_corr')
+  for i in range(1, total_corr.GetNbinsX()+1):
+    for j in range(1, total_corr.GetNbinsX()+1):
+      total_corr.SetBinContent(i, j, total_corr.GetBinContent(i, j)/(gr_total.GetEY()[i-1]*gr_total.GetEY()[j-1]))
+  c = RT.TCanvas('cTotalCorr', '')
+  total_corr.Draw('colz')
+  total_corr.GetXaxis().SetNdivisions(4)
+  total_corr.GetYaxis().SetNdivisions(4)
+  total_corr.GetXaxis().CenterTitle()
+  total_corr.GetYaxis().CenterTitle()
+  total_corr.SetTitle(';Cross Section Bin;Cross Section Bin;')
+  total_corr.GetZaxis().SetRangeUser(-1., 1.)
+  total_corr.SetMarkerSize(1.5)
+  if args.t:
+    total_corr.Draw('text same')
+  tt.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
+  if args.p:
+    t_prelim.DrawLatex(0.33, .5, 'Preliminary')
+  c.Write()
 
 ##WWith LADS
 #Rowntree
@@ -351,10 +353,10 @@ if args.LADS in [1, 2]:
 
 KEs = [450, 550, 650, 750, 850]
 lines = []
-for i in range(0, len(KEs)):
-  if i == 0: line = '%i & %.2f $\pm$ %.2f & - & - & -\\\\'%(KEs[i], result_xsecs[0].GetY()[i], result_xsecs[0].GetEYhigh()[i])
-  else: line = '%i & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f\\\\'%(KEs[i], result_xsecs[0].GetY()[i], result_xsecs[0].GetEYhigh()[i], result_xsecs[1].GetY()[i-1], result_xsecs[1].GetEYhigh()[i-1], result_xsecs[2].GetY()[i-1], result_xsecs[2].GetEYhigh()[i-1], total_results[i-1], sqrt(total_errs[i-1]))
-  print(line)
+#for i in range(0, len(KEs)):
+#  if i == 0: line = '%i & %.2f $\pm$ %.2f & - & - & -\\\\'%(KEs[i], result_xsecs[0].GetY()[i], result_xsecs[0].GetEYhigh()[i])
+#  else: line = '%i & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f\\\\'%(KEs[i], result_xsecs[0].GetY()[i], result_xsecs[0].GetEYhigh()[i], result_xsecs[1].GetY()[i-1], result_xsecs[1].GetEYhigh()[i-1], result_xsecs[2].GetY()[i-1], result_xsecs[2].GetEYhigh()[i-1], total_results[i-1], sqrt(total_errs[i-1]))
+#  print(line)
 
 all_xs = [result_xsecs[j].GetX()[i] for j in range(0, 3) for i in range(0, result_xsecs[j].GetN())]
 all_ys = [result_xsecs[j].GetY()[i] for j in range(0, 3) for i in range(0, result_xsecs[j].GetN())]
