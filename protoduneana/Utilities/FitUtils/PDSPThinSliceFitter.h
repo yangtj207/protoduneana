@@ -212,6 +212,11 @@ class PDSPThinSliceFitter {
   bool fDebugMCDataScale, fScaleToDataBeamProfile, fFixPostFit;
   bool fDebugChi2;
 
+  //bool fUncorrelate;
+  std::string fThrowType;
+  int fSingleThrowBin;
+  std::pair<int, int> fRemainCorrRange;
+
   std::vector<double> fIncidentRecoBins, fTrueIncidentBins, fBeamEnergyBins;
   std::vector<double> fDataBeamFluxes;
   std::vector<int> fIncidentSamples, fMeasurementSamples;
@@ -225,6 +230,11 @@ class PDSPThinSliceFitter {
     }
   };
 
+  void GenerateCorrelatedThrow(
+      const TH1D & pars, const TDecompChol & chol, std::vector<double> & vals);
+  void GenerateUncorrelatedThrow(
+      const TH1D & pars, const TMatrixD * cov, std::vector<double> & vals);
+  
   void SetSelVarSystVals() {
     ResetSelVarSystVals();
     for (auto & sel_var_vec : fSelVarSystPars) {

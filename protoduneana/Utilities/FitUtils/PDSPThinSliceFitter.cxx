@@ -1955,7 +1955,46 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
   std::vector<std::vector<double>> vals;
   TVectorD rand(pars.GetNbinsX());
 
-  TDecompChol chol(*cov);
+  TMatrixD * cov_copy = 0x0;
+  //TODO -- comment this
+  if (fThrowType == "SingleBinThrow") {
+    std::cout << "Uncorrelating" << std::endl;
+    cov_copy = new TMatrixD(cov->GetNrows(), cov->GetNcols());
+    for (int i = 0; i < cov_copy->GetNrows(); ++i) {
+      if (i == fSingleThrowBin) {
+        (*cov_copy)[i][i] = (*cov)[i][i];
+      }
+      else {
+        (*cov_copy)[i][i] = 0.;
+      }
+
+      std::cout << i << " " << (*cov_copy)[i][i] << std::endl;
+    }
+  }
+  else if (fThrowType == "CorrelateRangeThrow") {
+    std::cout << "Uncorrelating" << std::endl;
+    cov_copy = new TMatrixD(cov->GetNrows(), cov->GetNcols());
+    for (int i = 0; i < cov_copy->GetNrows(); ++i) {
+      for (int j = 0; j < cov_copy->GetNrows(); ++j) {
+        if (i == j) {
+          (*cov_copy)[i][j] = (*cov)[i][j];
+        }
+        else if ((i >= fRemainCorrRange.first) &&
+            (i <= fRemainCorrRange.second) &&
+            (j >= fRemainCorrRange.first) &&
+            (j <= fRemainCorrRange.second)) {
+          (*cov_copy)[i][j] = (*cov)[i][j];
+        }
+        else {
+          (*cov_copy)[i][j] = 0.;
+        }
+
+        std::cout << i << " " << j << " " << (*cov_copy)[i][j] << std::endl;
+      }
+    }
+  }
+
+  TDecompChol chol((fThrowType == "CorrelateRangeThrow" ? *cov_copy : *cov));
   bool success = chol.Decompose();
   if (!success) {
     std::cout << "Error" << std::endl;
@@ -2064,6 +2103,13 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
     }
     vals.push_back(std::vector<double>(pars.GetNbinsX(), 1.));
     
+    if (fThrowType == "SingleBinThrow") {
+      GenerateUncorrelatedThrow(pars, cov_copy, vals.back());
+    }
+    else {
+      GenerateCorrelatedThrow(pars, chol, vals.back());
+    }
+    /*
     bool rethrow = true;
     size_t nRethrows = 0;
     while (rethrow && nRethrows < fMaxRethrows) {
@@ -2099,7 +2145,7 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
 
       //std::cout << std::endl;
       ++nRethrows;
-    }
+    }*/
 
     for (size_t j = 0; j < vals.back().size(); ++j) {
       *(throws_branches[j]) = vals.back()[j];
@@ -2578,6 +2624,11 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fMaxDataEntries = pset.get<int>("MaxDataEntries", -1);
   fSplitMC = pset.get<bool>("SplitMC");
   fDoThrows = pset.get<bool>("DoThrows");
+
+  fThrowType = pset.get<std::string>("ThrowType", "NormalThrow");
+  fRemainCorrRange = pset.get<std::pair<int, int>>("RemainCorrRange", {-1, -1});
+  fSingleThrowBin = pset.get<int>("SingleThrowBin", 0);
+
   fDoScans = pset.get<bool>("DoScans");
   fOnlySystScans = pset.get<bool>("OnlySystScans", false);
   fRunHesse = pset.get<bool>("RunHesse");
@@ -3681,6 +3732,85 @@ void protoana::PDSPThinSliceFitter::GetFixFactors(
     }
     std::cout << std::endl;
   }
+}
+
+void protoana::PDSPThinSliceFitter::GenerateCorrelatedThrow(
+    const TH1D & pars, const TDecompChol & chol, std::vector<double> & vals) {
+  bool rethrow = true;
+  size_t nRethrows = 0;
+  TVectorD rand(pars.GetNbinsX());
+  while (rethrow && nRethrows < fMaxRethrows) {
+    bool all_pos = true;
+
+
+    //std::cout << "Throw Pars" << std::endl;
+    for (int j = 1; j <= pars.GetNbinsX(); ++j) {
+      if ((fThrowType == "NormalThrow") ||
+          (j-1 >= fRemainCorrRange.first && j-1 <= fRemainCorrRange.second)) {
+        rand[j-1] = fRNG.Gaus();
+      }
+      else {
+        rand[j-1] = 0.;
+      }
+      //std::cout << j-1 << " " << rand[j-1] << std::endl;
+    }
+
+    TVectorD rand_times_chol = chol.GetU()*rand;
+
+    for (int j = 1; j <= pars.GetNbinsX(); ++j) {
+      //std::cout << rand_times_chol[j-1] << " ";
+      vals[j-1] = pars.GetBinContent(j) + rand_times_chol[j-1];
+
+      //Configure this to truncate at 0 or rethrow
+      if (vals[j-1] < fParLimits[j-1]) {
+        all_pos = false;
+        std::cout << "Rethrowing " << j-1 << " " << vals[j-1] << " " <<
+                     fParLimits[j-1] << std::endl;
+      }
+      if (vals[j-1] > fParLimitsUp[j-1]) {
+        all_pos = false;
+        std::cout << "Rethrowing " << j-1 << " " << vals[j-1] << " " <<
+                     fParLimitsUp[j-1] << std::endl;
+      }
+      rethrow = !all_pos;
+    }
+
+    for (auto it = fFixSystsPostFit.begin(); it != fFixSystsPostFit.end();
+         ++it) {
+      vals[fSystParameterIndices[it->first]] = it->second;
+    }
+
+    //std::cout << std::endl;
+    ++nRethrows;
+  }
+}
+
+void protoana::PDSPThinSliceFitter::GenerateUncorrelatedThrow(
+    const TH1D & pars, const TMatrixD * cov, std::vector<double> & vals) {
+
+  for (int j = 1; j <= pars.GetNbinsX(); ++j) {
+
+    bool rethrow = true;
+    while (rethrow) {
+      vals[j-1] = fRNG.Gaus(pars.GetBinContent(j), (*cov)[j-1][j-1]);
+
+      //Configure this to truncate at 0 or rethrow
+      if (vals[j-1] < fParLimits[j-1]) {
+        std::cout << "Rethrowing " << j-1 << " " << vals[j-1] << " " <<
+                     fParLimits[j-1] << std::endl;
+      }
+      else if (vals[j-1] > fParLimitsUp[j-1]) {
+        std::cout << "Rethrowing " << j-1 << " " << vals[j-1] << " " <<
+                     fParLimitsUp[j-1] << std::endl;
+      }
+      else {
+        rethrow = false;
+      }
+    }
+    std::cout << j << " " << vals[j-1] << " " << pars.GetBinContent(j) << " " <<
+                 (*cov)[j-1][j-1] << std::endl;
+  }
+
 }
 
 //void protoana::PDSPThinSliceFitter::MakeThrowsArrays(std::vector<TArrayD*> & arrays) {
