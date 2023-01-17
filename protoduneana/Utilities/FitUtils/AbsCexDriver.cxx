@@ -1306,6 +1306,7 @@ void protoana::AbsCexDriver::SetupSyst_NPi0(
       = pars.at("npi0_weight").GetOption<std::vector<double>>("Fractions");
 }*/
 
+/*
 double protoana::AbsCexDriver::GetSystWeight_EffVar(
     const ThinSliceEvent & event,
     const std::map<std::string, ThinSliceSystematic> & pars) {
@@ -1342,7 +1343,7 @@ double protoana::AbsCexDriver::GetSystWeight_EffVar(
   //std::cout << "\tF: " << fEffVarF << " Val: " <<
   //             pars.at("eff_var_weight").GetValue() << std::endl;
   return weight;
-}
+}*/
 
 /*
 void protoana::AbsCexDriver::SetupSyst_EDivWeight(
@@ -1391,6 +1392,7 @@ void protoana::AbsCexDriver::SetupSyst_EndZNoTrackWeight(
   }
 }*/
 
+/*
 double protoana::AbsCexDriver::GetSystWeight_EndZNoTrack(
     const ThinSliceEvent & event,
     int signal_index,
@@ -1430,7 +1432,7 @@ double protoana::AbsCexDriver::GetSystWeight_UpstreamInt(
           1.);
 }
 
-/*
+
 void protoana::AbsCexDriver::SetupSyst_BeamMatch(
     const std::map<std::string, ThinSliceSystematic> & pars) {
   if (pars.find("beam_match_weight") == pars.end()) return; 
@@ -1444,7 +1446,7 @@ void protoana::AbsCexDriver::SetupSyst_BeamMatch(
     std::exception e;
     throw e;
   }
-}*/
+}
 
 double protoana::AbsCexDriver::GetSystWeight_BeamMatch(
     const ThinSliceEvent & event,
@@ -1678,7 +1680,7 @@ double protoana::AbsCexDriver::GetSystWeight_BeamEffs(
     }
     return weight;
   }
-}
+}*/
 
 double protoana::AbsCexDriver::GetFakeWeight_G4RWCoeff(
     const ThinSliceEvent & event,
@@ -1693,6 +1695,7 @@ double protoana::AbsCexDriver::GetFakeWeight_G4RWCoeff(
   return weight;
 }
 
+/*
 double protoana::AbsCexDriver::GetSystWeight_G4RWCoeff(
     const ThinSliceEvent & event,
     const std::map<std::string, ThinSliceSystematic> & pars) {
@@ -1734,64 +1737,64 @@ double protoana::AbsCexDriver::GetSystWeight_G4RW(
                  event.GetRunID() << std::endl;
   }
   return weight;
-}
+}*/
 
-double protoana::AbsCexDriver::GetSystWeight_BeamShift(
-    const ThinSliceEvent & event,
-    const std::map<std::string, ThinSliceSystematic> & pars) {
-  if (pars.find("beam_shift") == pars.end()) return 1.;
-  if (event.GetPDG() != 211) return 1.;
-  double x_val = pars.at("beam_shift").GetValue();
-  double y_val = (event.GetBeamInstP() - event.GetTrueStartP())/
-                  event.GetTrueStartP();
-  if (y_val < fSystBeamShiftLimits.first/*fSystBeamShiftMap->GetYmin()*/ ||
-      y_val > fSystBeamShiftLimits.second/*fSystBeamShiftMap->GetYmax()*/) {
-    return 1.;
-  }
-
-  double nominal_mean = fSystBeamShiftMeans->Eval(0.);
-  double nominal_width = fSystBeamShiftWidths->Eval(0.);
-  double varied_mean = fSystBeamShiftMeans->Eval(x_val);
-  double varied_width = fSystBeamShiftWidths->Eval(x_val);
-
-  //double weight = 1.;
-
-  /*
-  if (y_val > fSystBeamShiftRatioLimitUp) {
-    if (x_val != 0.) std::cout << x_val << " Past limit: " << y_val << " ";
-    weight = ROOT::Math::normal_cdf_c(y_val, varied_width, varied_mean);
-    if (x_val != 0.) std::cout << weight << " ";
-    weight /= ROOT::Math::normal_cdf_c(y_val, nominal_width, nominal_mean);
-    if (x_val != 0.) std::cout << weight << std::endl;
-  }
-  else if (y_val < fSystBeamShiftRatioLimitDown) {
-    if (x_val != 0.) std::cout << x_val << " Past limit: " << y_val << " ";
-    weight = ROOT::Math::normal_cdf(y_val, varied_width, varied_mean);
-    if (x_val != 0.) std::cout << weight << " ";
-    weight /= ROOT::Math::normal_cdf(y_val, nominal_width, nominal_mean);
-    if (x_val != 0.) std::cout << weight << std::endl;
-  }
-  else {*/
-  double weight = (nominal_width/varied_width)*
-                  exp(.5*std::pow(((y_val - nominal_mean)/nominal_width), 2)
-                      - .5*std::pow(((y_val - varied_mean)/varied_width), 2));
-
-  if (weight > fSystBeamShiftWeightCap && fSystBeamShiftWeightCap > 0.) {
-    //std::cout << "Weight above cap: " << weight << " " << x_val <<
-    //             " event: " << event.GetEventID() << std::endl;
-    weight = fSystBeamShiftWeightCap;
-  }
-  //}
-
-  //fSystBeamShiftWeight = fSystBeamShiftMap->Interpolate(x_val, y_val);
-  if (fSystBeamShiftTreeSave) {
-    fSystBeamShiftWeight = weight;
-    fSystBeamShiftVal = x_val;
-    fSystBeamShiftR = y_val;
-    fSystBeamShiftTree->Fill();
-  }
-  return weight;
-}
+//double protoana::AbsCexDriver::GetSystWeight_BeamShift(
+//    const ThinSliceEvent & event,
+//    const std::map<std::string, ThinSliceSystematic> & pars) {
+//  if (pars.find("beam_shift") == pars.end()) return 1.;
+//  if (event.GetPDG() != 211) return 1.;
+//  double x_val = pars.at("beam_shift").GetValue();
+//  double y_val = (event.GetBeamInstP() - event.GetTrueStartP())/
+//                  event.GetTrueStartP();
+//  if (y_val < fSystBeamShiftLimits.first/*fSystBeamShiftMap->GetYmin()*/ ||
+//      y_val > fSystBeamShiftLimits.second/*fSystBeamShiftMap->GetYmax()*/) {
+//    return 1.;
+//  }
+//
+//  double nominal_mean = fSystBeamShiftMeans->Eval(0.);
+//  double nominal_width = fSystBeamShiftWidths->Eval(0.);
+//  double varied_mean = fSystBeamShiftMeans->Eval(x_val);
+//  double varied_width = fSystBeamShiftWidths->Eval(x_val);
+//
+//  //double weight = 1.;
+//
+//  /*
+//  if (y_val > fSystBeamShiftRatioLimitUp) {
+//    if (x_val != 0.) std::cout << x_val << " Past limit: " << y_val << " ";
+//    weight = ROOT::Math::normal_cdf_c(y_val, varied_width, varied_mean);
+//    if (x_val != 0.) std::cout << weight << " ";
+//    weight /= ROOT::Math::normal_cdf_c(y_val, nominal_width, nominal_mean);
+//    if (x_val != 0.) std::cout << weight << std::endl;
+//  }
+//  else if (y_val < fSystBeamShiftRatioLimitDown) {
+//    if (x_val != 0.) std::cout << x_val << " Past limit: " << y_val << " ";
+//    weight = ROOT::Math::normal_cdf(y_val, varied_width, varied_mean);
+//    if (x_val != 0.) std::cout << weight << " ";
+//    weight /= ROOT::Math::normal_cdf(y_val, nominal_width, nominal_mean);
+//    if (x_val != 0.) std::cout << weight << std::endl;
+//  }
+//  else {*/
+//  double weight = (nominal_width/varied_width)*
+//                  exp(.5*std::pow(((y_val - nominal_mean)/nominal_width), 2)
+//                      - .5*std::pow(((y_val - varied_mean)/varied_width), 2));
+//
+//  if (weight > fSystBeamShiftWeightCap && fSystBeamShiftWeightCap > 0.) {
+//    //std::cout << "Weight above cap: " << weight << " " << x_val <<
+//    //             " event: " << event.GetEventID() << std::endl;
+//    weight = fSystBeamShiftWeightCap;
+//  }
+//  //}
+//
+//  //fSystBeamShiftWeight = fSystBeamShiftMap->Interpolate(x_val, y_val);
+//  if (fSystBeamShiftTreeSave) {
+//    fSystBeamShiftWeight = weight;
+//    fSystBeamShiftVal = x_val;
+//    fSystBeamShiftR = y_val;
+//    fSystBeamShiftTree->Fill();
+//  }
+//  return weight;
+//}
 
 /*
 double protoana::AbsCexDriver::GetSystWeight_BeamShift2D(

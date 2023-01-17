@@ -381,21 +381,12 @@ class AbsCexDriver : public ThinSliceDriver {
    //bool fStaticBeamResMean = false;
    //double fBeamResMeanVal = 1.;
    //double fBeamResWidthVal = 1.;
-   TTree /** fSystBeamResTree, */* fSystBeamShiftTree/*, * fSystBeamShift2DTree*/;
    //double fSystBeamResWeight, fSystBeamResMeanOutput, fSystBeamResWidthOutput;
    //double fSystBeamResWeightCap, fSystBeamResOutput;
-   double fSystBeamShiftWeight, fSystBeamShiftVal, fSystBeamShiftR;
-   bool /*fSetupSystBeamRes = false,*/ fSetupSystBeamShift = false,
-        /*fSetupSystBeamShift2D = false, */fSetupSystEffVar = false,
-        fSystBeamShiftTreeSave = false;
    //double fSystBeamShift2DWeight, fSystBeamShift2DBVal, fSystBeamShift2DVal,
    //       fSystBeamShift2DR;
   // double fEffVarSystVal;
-   TGraph2D * fSystBeamShiftMap; // , * fSystBeam2DMeans, * fSystBeam2DStdDevs;
-   TGraph * fSystBeamShiftMeans, * fSystBeamShiftWidths;
    //double fSystBeamShiftRatioLimitUp, fSystBeamShiftRatioLimitDown;
-   std::pair<double, double> fSystBeamShiftLimits;
-   double fSystBeamShiftWeightCap;
 
    std::map<std::string, std::map<int, std::vector<TH1D*>>> fFullSelectionVars;
    std::map<std::string, std::map<int, std::vector<TSpline3*>>> fFullSelectionSplines;
@@ -455,8 +446,6 @@ class AbsCexDriver : public ThinSliceDriver {
    TH1D fBeamShiftRatioNomHist;
    std::vector<TSpline3*> fBeamShiftRatioSplines;
    std::map<std::string, std::string> fG4RWCoeffBranches;
-   std::vector<std::pair<double, double>> fBoxBeamRegions;
-   double fBoxBeamFraction;
 
    std::vector<double> fBeamMatchLimits, fBeamMatchFractions;
    PDSPSystematics * fSystematics;

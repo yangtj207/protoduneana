@@ -172,7 +172,7 @@ class PDSPThinSliceFitter {
   std::map<int, std::string> fFluxTypes;
   int fMaxCalls, fMaxIterations, fPrintLevel;
   size_t fNFitSteps = 0;
-  std::chrono::system_clock::time_point fTime;
+  std::chrono::high_resolution_clock::time_point fTime;
   unsigned int fNScanSteps;
   double fTolerance, fLowerLimit, fUpperLimit;
   std::vector<std::pair<int, int>> fPlotStyle;
