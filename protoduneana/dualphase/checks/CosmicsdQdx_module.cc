@@ -66,10 +66,10 @@ namespace {
   public:
     dist_projected(recob::Hit const* h, geo::Geometry const* g):
       hit(h), geom(g){}
-    bool operator() (std::pair<geo::WireID,float> i, std::pair<geo::WireID,float> j)
+    bool operator() (std::pair<geo::WireID,float> const& i, std::pair<geo::WireID,float> const& j)
     {
-      float dw_i = ((int)(i.first.Wire) - (int)(hit->WireID().Wire))*geom->WirePitch(i.first.Plane);
-      float dw_j = ((int)(j.first.Wire) - (int)(hit->WireID().Wire))*geom->WirePitch(j.first.Plane);
+      float dw_i = ((int)(i.first.Wire) - (int)(hit->WireID().Wire))*geom->WirePitch(i.first.asPlaneID());
+      float dw_j = ((int)(j.first.Wire) - (int)(hit->WireID().Wire))*geom->WirePitch(j.first.asPlaneID());
       float dt_i = i.second - hit->PeakTime();
       float dt_j = j.second - hit->PeakTime();
       return (std::sqrt(dw_i*dw_i + dt_i*dt_i) < std::sqrt(dw_j*dw_j + dt_j*dt_j));
@@ -182,7 +182,7 @@ pddpana::CosmicsdQdx::CosmicsdQdx(fhicl::ParameterSet const& p)
     fGeom    = &*art::ServiceHandle<geo::Geometry>();
 
     //auto const &tpc = ;
-    fDrift = (std::abs( fGeom->TPC(0).DetectDriftDirection() ));
+    fDrift = (std::abs( fGeom->TPC().DetectDriftDirection() ));
     if( fDrift != 1 ){
       throw cet::exception("CosmicsdQdx") << "Drift direction "<<fDrift
 					  << " is not support\n";

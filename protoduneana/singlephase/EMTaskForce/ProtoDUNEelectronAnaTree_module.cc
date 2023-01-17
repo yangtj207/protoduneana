@@ -632,7 +632,7 @@ void protoana::ProtoDUNEelectronAnaTree::FillPrimaryPFParticle(art::Event const 
         for( size_t i=0; i<hitsFromMCPart.size(); ++i){
            if( hitsFromMCPart[i]->WireID().Plane != 2 ) continue;
            const geo::WireGeo* pwire = fGeometry->WirePtr(hitsFromMCPart[i]->WireID());
-           TVector3 xyzWire = pwire->GetCenter<TVector3>();
+           auto xyzWire = pwire->GetCenter();
            tot_ch += hitsFromMCPart[i]->Integral(); 
            fprimaryTruthShower_hit_w[n_hits]=hitsFromMCPart[i]->WireID().Wire;
            fprimaryTruthShower_hit_t[n_hits]=hitsFromMCPart[i]->PeakTime();
@@ -682,7 +682,7 @@ void protoana::ProtoDUNEelectronAnaTree::FillPrimaryPFParticle(art::Event const 
        art::FindManyP<recob::Wire> wFromHits(sh_hits,evt,"hitpdune");
        std::vector<art::Ptr<recob::Wire>> wires = wFromHits.at(j);
        const geo::WireGeo* pwire = fGeometry->WirePtr(sh_hits[j]->WireID());
-       TVector3 xyzWire = pwire->GetCenter<TVector3>();
+       auto xyzWire = pwire->GetCenter();
        std::array<float,4> cnn_out = hitResults.getOutput( tmp_sh_hits[j] );
        double p_trk_or_sh = cnn_out[ hitResults.getIndex("track") ]+ cnn_out[ hitResults.getIndex("em") ]; 
        double cnn_score = cnn_out[ hitResults.getIndex("em") ]/p_trk_or_sh; 

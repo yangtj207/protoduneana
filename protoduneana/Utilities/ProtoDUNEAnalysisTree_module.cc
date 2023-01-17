@@ -1655,18 +1655,16 @@ void protoana::ProtoDUNEAnalysisTree::FillConfigTree(){
     std::cout << "GDML file: " << fGeometry->GDMLFile() << std::endl;
   }
 
-  for (geo::TPCGeo const& TPC: fGeometry->IterateTPCs()) {
+  for (geo::TPCGeo const& TPC: fGeometry->Iterate<geo::TPCGeo>()) {
     // get center in world coordinates
-    double origin[3] = {0.};
-    double center[3] = {0.};
-    TPC.LocalToWorld(origin, center);
+    auto const center = TPC.GetCenter();
     double tpc[3] = {TPC.HalfWidth(), TPC.HalfHeight(), 0.5*TPC.Length() };
-    if(center[0] - tpc[0] < fActiveTPCBoundsX[0]) fActiveTPCBoundsX[0] = center[0] - tpc[0];
-    if(center[0] + tpc[0] > fActiveTPCBoundsX[1]) fActiveTPCBoundsX[1] = center[0] + tpc[0];
-    if(center[1] - tpc[1] < fActiveTPCBoundsY[0]) fActiveTPCBoundsY[0] = center[1] - tpc[1];
-    if(center[1] + tpc[1] > fActiveTPCBoundsY[1]) fActiveTPCBoundsY[1] = center[1] + tpc[1];
-    if(center[2] - tpc[2] < fActiveTPCBoundsZ[0]) fActiveTPCBoundsZ[0] = center[2] - tpc[2];
-    if(center[2] + tpc[2] > fActiveTPCBoundsZ[1]) fActiveTPCBoundsZ[1] = center[2] + tpc[2];
+    if(center.X() - tpc[0] < fActiveTPCBoundsX[0]) fActiveTPCBoundsX[0] = center.X() - tpc[0];
+    if(center.X() + tpc[0] > fActiveTPCBoundsX[1]) fActiveTPCBoundsX[1] = center.X() + tpc[0];
+    if(center.Y() - tpc[1] < fActiveTPCBoundsY[0]) fActiveTPCBoundsY[0] = center.Y() - tpc[1];
+    if(center.Y() + tpc[1] > fActiveTPCBoundsY[1]) fActiveTPCBoundsY[1] = center.Y() + tpc[1];
+    if(center.Z() - tpc[2] < fActiveTPCBoundsZ[0]) fActiveTPCBoundsZ[0] = center.Z() - tpc[2];
+    if(center.Z() + tpc[2] > fActiveTPCBoundsZ[1]) fActiveTPCBoundsZ[1] = center.Z() + tpc[2];
   }
 
   fConfigTree->Fill();

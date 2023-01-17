@@ -245,19 +245,16 @@ T0RecoSCE::T0RecoSCE(fhicl::ParameterSet const & fcl)
 	det_front = fEdgeWidth;
 	det_back = fEdgeWidth;
 
-	for (geo::TPCID const& tID: geom->IterateTPCIDs()) {
-		geo::TPCGeo const& TPC = geom->TPC(tID);
+        for (geo::TPCGeo const& TPC: geom->Iterate<geo::TPCGeo>()) {
    
 		if(TPC.DriftDistance() < 25.0) continue;
    
-		double origin[3] = {0.};
-		double center[3] = {0.};
-		TPC.LocalToWorld(origin, center);
-   
-		double tpc_top = center[1] + TPC.HalfHeight();
-		double tpc_bottom = center[1] - TPC.HalfHeight();
-		double tpc_front = center[2] - TPC.HalfLength();
-		double tpc_back = center[2] + TPC.HalfLength();
+                auto const center = TPC.GetCenter();
+
+                double tpc_top = center.Y() + TPC.HalfHeight();
+                double tpc_bottom = center.Y() - TPC.HalfHeight();
+                double tpc_front = center.Z() - TPC.HalfLength();
+                double tpc_back = center.Z() + TPC.HalfLength();
    
 		if (tpc_top 	> det_top) 	det_top = tpc_top;
 		if (tpc_bottom 	< det_bottom) 	det_bottom = tpc_bottom;
@@ -578,13 +575,13 @@ void T0RecoSCE::analyze(art::Event const & evt){
 		auto const* geom = lar::providerFrom<geo::Geometry>();   
     	auto const* hit = hit_v.at(0);
 	    const geo::WireID wireID = hit->WireID();
-		const auto TPCGeoObject = geom->TPC(wireID.TPC,wireID.Cryostat);
+            const auto& TPCGeoObject = geom->TPC(wireID.asPlaneID().asTPCID());
 		short int driftDir_start = TPCGeoObject.DetectDriftDirection();
 		short int driftDir_end = 0;
 
 	    for (size_t ii = 1; ii < hit_v.size(); ii++) {
     		const geo::WireID wireID2 = hit_v.at(ii)->WireID();
-			const auto TPCGeoObject2 = geom->TPC(wireID2.TPC,wireID2.Cryostat);
+                const auto& TPCGeoObject2 = geom->TPC(wireID2.asPlaneID().asTPCID());
 			driftDir_end = TPCGeoObject2.DetectDriftDirection(); 
 		
 			if(driftDir_end + driftDir_start == 0){

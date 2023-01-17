@@ -210,7 +210,7 @@ void ProtoDUNEelectronWireAna::analyze(art::Event const& evt)
          if( plane != 2 ) continue;
          std::vector< geo::WireID > wireID= fGeometry->ChannelToWire(channel_no);
          const geo::WireGeo* pwire = fGeometry->WirePtr(wireID.at(0)); //for collection plane there is one wire per channel
-         TVector3 xyzWire = pwire->GetCenter<TVector3>();
+         auto xyzWire = pwire->GetCenter();
          if( it_w == channel_no ){  
            double charge =0.0;
            for(size_t i = 0; i < wire.Signal().size(); ++i){

@@ -988,7 +988,7 @@ protoana::ProtoDUNEPizeroAnaTree::FillPrimaryPFParticle(art::Event const & evt,
       if(pfpDHits[i]->WireID().Plane != 2) continue;
 
       const geo::WireGeo* pwire = fGeometryService->WirePtr(pfpDHits[i]->WireID());
-      TVector3 xyzWire = pwire->GetCenter<TVector3>();
+      auto xyzWire = pwire->GetCenter();
       fprimaryDaughterHitWire[di][rec_hiti] = pfpDHits[i]->WireID().Wire;
       fprimaryDaughterHitTime[di][rec_hiti] = pfpDHits[i]->PeakTime();
       fprimaryDaughterHitPosition[di][rec_hiti][0] = detProp.ConvertTicksToX(pfpDHits[i]->PeakTime(),pfpDHits[i]->WireID().Plane,pfpDHits[i]->WireID().TPC,0);
