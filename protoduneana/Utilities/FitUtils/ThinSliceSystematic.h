@@ -4,7 +4,8 @@
 namespace protoana {
 class ThinSliceSystematic {
  public:
-  ThinSliceSystematic(const fhicl::ParameterSet & pset)
+  ThinSliceSystematic(const fhicl::ParameterSet & pset,
+                      int selection_id=-1, int selection_bin=-1)
     : fType(pset.get<std::string>("Name")),
       fVal(pset.get<double>("Central")),
       fCentral(pset.get<double>("Central")),
@@ -17,6 +18,9 @@ class ThinSliceSystematic {
       fSigma(pset.get<double>("Sigma", 1.)),
       fIsG4RWCoeff(pset.get<bool>("IsG4RWCoeff", false)),
       fIsTiedG4RWCoeff(pset.get<bool>("IsTiedG4RWCoeff", false)),
+      fIsSelVar(pset.get<bool>("IsSelVar", false)),
+      fSelectionID(selection_id),
+      fSelectionBin(selection_bin),
       fOptions(pset.get<fhicl::ParameterSet>("Options")) {
     fName = "par_" + fType + "_syst";
     if (fIsG4RWCoeff) {
@@ -25,6 +29,12 @@ class ThinSliceSystematic {
     if (fIsTiedG4RWCoeff) {
       fTiedG4RWCoeffBranches
           = fOptions.get<std::vector<std::string>>("Branches");
+    }
+
+    if (fIsSelVar) {
+      fName = "par_" + fType + "_syst_" + std::to_string(fSelectionID) + "_" +
+              std::to_string(fSelectionBin);
+      std::cout << "SelectionVar: " << fName << std::endl;
     }
   };
 
@@ -46,6 +56,9 @@ class ThinSliceSystematic {
 
   const double GetCentral() const {
     return fCentral;
+  };
+  void SetCentral(double val) {
+    fCentral = val;
   };
 
   const double GetUpperLimit() const {
@@ -97,6 +110,19 @@ class ThinSliceSystematic {
   const bool GetIsTiedG4RWCoeff() const {
     return fIsTiedG4RWCoeff;
   }
+
+  const bool GetIsSelVar() const {
+    return fIsSelVar;
+  }
+
+  const int GetSelectionID() const {
+    return fSelectionID;
+  }
+
+  const int GetSelectionBin() const {
+    return fSelectionBin;
+  }
+
  private:
 
   std::string fType;
@@ -110,7 +136,8 @@ class ThinSliceSystematic {
   double fGenThrowLimitUp; 
   double fSigma;
 
-  bool fIsG4RWCoeff, fIsTiedG4RWCoeff;
+  bool fIsG4RWCoeff, fIsTiedG4RWCoeff, fIsSelVar;
+  int fSelectionID, fSelectionBin;
   std::string fG4RWCoeffBranch = "";
   std::vector<std::string> fTiedG4RWCoeffBranches;
 

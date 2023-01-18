@@ -24,6 +24,7 @@ class PDSPSystematics {
   double GetEventWeight(
       const ThinSliceEvent & event,
       int signal_index,
+      //int selection_bin,
       const std::map<std::string, ThinSliceSystematic> & pars);
 
   void SetupSyst_G4RWCoeff(
@@ -32,6 +33,16 @@ class PDSPSystematics {
       const ThinSliceEvent & event,
       const ThinSliceSystematic & par);
       //const std::map<std::string, ThinSliceSystematic> & pars);
+
+  static double GetSystWeight_G4RWCoeffNoPar(
+      const ThinSliceEvent & event, int signal_index);
+
+  void SetupSyst_BeamShiftBins(
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  double GetSystWeight_BeamShiftBin(
+      const ThinSliceEvent & event,
+      const ThinSliceSystematic & par);
+
 
   double GetSystWeight_TiedG4RWCoeff(
       const ThinSliceEvent & event,
@@ -52,6 +63,8 @@ class PDSPSystematics {
       const ThinSliceSystematic & par/*,
       //const std::map<std::string, ThinSliceSystematic> & pars);
       int ediv_selection_ID*/);
+  static double GetSystWeight_EDivNoPar(
+      const ThinSliceEvent & event, int signal_index);
 
   void SetupSyst_EndZNoTrackWeight(
       const std::map<std::string, ThinSliceSystematic> & pars);
@@ -62,6 +75,10 @@ class PDSPSystematics {
       //const std::map<std::string, ThinSliceSystematic> & pars,
       int upstream_ID, int no_track_ID*/);
 
+  static double GetSystWeight_EndZNoTrackNoPar(
+      const ThinSliceEvent & event,
+      int signal_index);
+
   void SetupSyst_BeamMatch(
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_BeamMatch(
@@ -69,12 +86,19 @@ class PDSPSystematics {
       int signal_index,
       const ThinSliceSystematic & par);
 
+  static double GetSystWeight_BeamMatchNoPar(
+      const ThinSliceEvent & event,
+      int signal_index);
+
   void SetupSyst_BeamMatchLow(
       const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_BeamMatchLow(
       const ThinSliceEvent & event,
       int signal_index,
       const ThinSliceSystematic & par);
+  static double GetSystWeight_BeamMatchLowNoPar(
+      const ThinSliceEvent & event,
+      int signal_index);
 
   void SetupSyst_BeamMatchHigh(
       const std::map<std::string, ThinSliceSystematic> & pars);
@@ -82,6 +106,16 @@ class PDSPSystematics {
       const ThinSliceEvent & event,
       int signal_index,
       const ThinSliceSystematic & par);
+  static double GetSystWeight_BeamMatchHighNoPar(
+      const ThinSliceEvent & event,
+      int signal_index);
+
+
+  void SetupSyst_BeamScraper(
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  static double GetSystWeight_BeamScraper(
+      const ThinSliceEvent & event,
+      int signal_index);
 
   double GetSystWeight_UpstreamInt(
       const ThinSliceEvent & event,
@@ -131,17 +165,54 @@ class PDSPSystematics {
       const ThinSliceSystematic & par/*,
       const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID*/);
 
+
   double CheckAndReturn(double weight, std::string name,
                         const ThinSliceSystematic & par);
 
+  //EDiv
+  static double fEDivF, fEDivCut;
+  static const ThinSliceSystematic * fEDivPar;
+  static int fPastFVSelectionID;
+
+  //G4RW
+  static std::vector<const ThinSliceSystematic *> fActiveG4RWPars;
+
+  static int fUpstreamID, fNoTrackID;
+
+  //EndZ
+  static std::map<int, std::vector<double>> fEndZFractions;
+  static double fEndZNoTrackCut;
+  static const ThinSliceSystematic * fEndZPar;
+
+  //BeamMatch
+  static const ThinSliceSystematic * fBeamMatchPar;
+  static std::map<int, std::vector<double>> fBeamMatchFractions;
+
+  //BeamMatchLow
+  static double fBeamMatchLowLimit, fBeamMatchLowFraction;
+  static std::map<int, std::vector<double>> fBeamMatchLowFractions;
+  static bool fBeamMatchLowUseSingleFrac;
+  static const ThinSliceSystematic * fBeamMatchLowPar;
+
+  //BeamMatchHigh
+  static double fBeamMatchHighLimit, fBeamMatchHighFraction;
+  static std::map<int, std::vector<double>> fBeamMatchHighFractions;
+  static bool fBeamMatchHighUseSingleFrac;
+  static const ThinSliceSystematic * fBeamMatchHighPar;
+
+  static const ThinSliceSystematic * fBeamScraperPar;
  private:
 
-  double GetFractionBySample(
+  static double GetFractionBySample(
     const std::map<int, std::vector<double>> & fractions, int sample_ID,
     int signal_index);
 
   //G4RW Coeff
   std::map<std::string, std::string> fG4RWCoeffBranches;
+
+  //BeamShiftBins
+  std::map<std::string, double> fBeamShiftBinMeans, fBeamShiftBinSigmas,
+                                fBeamShiftBinRangeLows, fBeamShiftBinRangeHighs;
 
   //BeamShift
   std::pair<double, double> fSystBeamShiftLimits;
@@ -150,25 +221,26 @@ class PDSPSystematics {
   double fSystBeamShiftWeightCap;
 
   //EDiv
-  double fEDivF, fEDivCut;
+  //static double fEDivF, fEDivCut;
+  //static const ThinSliceSystematic * fEDivPar;
 
   //EndZ
-  std::map<int, std::vector<double>> fEndZFractions;
-  double fEndZNoTrackCut;
+  //std::map<int, std::vector<double>> fEndZFractions;
+  //double fEndZNoTrackCut;
 
   //Beam Match
-  std::vector<double> fBeamMatchLimits;
-  std::map<int, std::vector<double>> fBeamMatchFractions;
+  //std::vector<double> fBeamMatchLimits;
+  //std::map<int, std::vector<double>> fBeamMatchFractions;
 
   //Beam Match Low
-  double fBeamMatchLowLimit, fBeamMatchLowFraction;
-  std::map<int, std::vector<double>> fBeamMatchLowFractions;
-  bool fBeamMatchLowUseSingleFrac;
+  //double fBeamMatchLowLimit, fBeamMatchLowFraction;
+  //std::map<int, std::vector<double>> fBeamMatchLowFractions;
+  //bool fBeamMatchLowUseSingleFrac;
 
   //Beam Match High
-  double fBeamMatchHighLimit, fBeamMatchHighFraction;
-  std::map<int, std::vector<double>> fBeamMatchHighFractions;
-  bool fBeamMatchHighUseSingleFrac;
+  //double fBeamMatchHighLimit, fBeamMatchHighFraction;
+  //std::map<int, std::vector<double>> fBeamMatchHighFractions;
+  //bool fBeamMatchHighUseSingleFrac;
 
   //Box Beam
   std::vector<std::pair<double, double>> fBoxBeamRegions;
@@ -186,10 +258,17 @@ class PDSPSystematics {
   std::map<int, double> fELossMuonFractions;
 
   //std::vector<std::string> fActiveSysts;
-  int fUpstreamID, fNoTrackID, fDecayID, fPastFVID, fBeamCutID, fPastFVSelectionID;
+  int /*fUpstreamID, fNoTrackID, */fDecayID, fPastFVID, fBeamCutID;
+  //static int fPastFVSelectionID;
 
   //Quad Beam Shift
   std::vector<double> fQuadBeamBins, fQuadBeamMeans, fQuadBeamSigmas;
+
+
+  std::vector<
+      std::pair<std::string,
+                std::function<double(const ThinSliceEvent & event,
+                                     int signal_index)>>> fActiveSystematics;
 };
 }
 #endif

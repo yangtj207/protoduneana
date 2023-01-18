@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <chrono>
 
 #include "TTree.h"
 #include "TArrayD.h"
@@ -77,7 +78,8 @@ class PDSPThinSliceFitter {
 
   ThinSliceDriver * fThinSliceDriver;
   std::map<int, std::vector<std::vector<ThinSliceSample>>> fSamples,
-                                                           fFakeSamples;
+                                                           fFakeSamples,
+                                                           fCovSamples;
   ThinSliceDataSet fDataSet;
   std::map<int, TH1 *> fFixFactorHists;
   std::map<int, bool> fIsSignalSample;
@@ -129,10 +131,12 @@ class PDSPThinSliceFitter {
 
   //std::map<int, std::string> fSystParameterNames;
   std::map<std::string, ThinSliceSystematic> fSystParameters;
+  std::vector<std::vector<ThinSliceSystematic>> fSelVarSystPars;
   std::vector<std::string> fSystParameterNames;
   std::vector<double> fParLimits, fParLimitsUp;
   size_t fTotalSystParameters = 0;
   std::map<std::string, size_t> fCovarianceBins;
+  std::vector<size_t> fCovarianceBinsSimple;
   bool fAddSystTerm, fAddRegTerm, fAddDiffInQuadrature;
   double fRegFactor = 0.;
   TMatrixD * fCovMatrix, * fCovMatrixDisplay;
@@ -162,10 +166,13 @@ class PDSPThinSliceFitter {
   std::string fDataFileName;
   std::string fTreeName;
   std::vector<fhicl::ParameterSet> fSelectionSets;
+  std::map<int, int> fSelectionBins;
+  std::vector<double> fSelVarSystVals;
   std::vector<fhicl::ParameterSet> fSampleSets;
   std::map<int, std::string> fFluxTypes;
   int fMaxCalls, fMaxIterations, fPrintLevel;
   size_t fNFitSteps = 0;
+  std::chrono::high_resolution_clock::time_point fTime;
   unsigned int fNScanSteps;
   double fTolerance, fLowerLimit, fUpperLimit;
   std::vector<std::pair<int, int>> fPlotStyle;
@@ -198,11 +205,17 @@ class PDSPThinSliceFitter {
   bool fFitFlux;
   size_t fNThrows, fMaxRethrows;
   std::string fFitType = "Normal";
+  std::string fFitResultsFile;
   size_t fNPulls;
   bool fDoScaleDataToNorm;
   double fDataNorm;
   bool fDebugMCDataScale, fScaleToDataBeamProfile, fFixPostFit;
   bool fDebugChi2;
+
+  //bool fUncorrelate;
+  std::string fThrowType;
+  int fSingleThrowBin;
+  std::pair<int, int> fRemainCorrRange;
 
   std::vector<double> fIncidentRecoBins, fTrueIncidentBins, fBeamEnergyBins;
   std::vector<double> fDataBeamFluxes;
@@ -211,6 +224,31 @@ class PDSPThinSliceFitter {
   std::map<int, std::vector<double>> fSignalBins;
   //////////////////////////
   
+  void ResetSelVarSystVals() {
+    for (auto & val : fSelVarSystVals) {
+      val = 1.;
+    }
+  };
+
+  void GenerateCorrelatedThrow(
+      const TH1D & pars, const TDecompChol & chol, std::vector<double> & vals);
+  void GenerateUncorrelatedThrow(
+      const TH1D & pars, const TMatrixD * cov, std::vector<double> & vals);
+  
+  void SetSelVarSystVals() {
+    ResetSelVarSystVals();
+    for (auto & sel_var_vec : fSelVarSystPars) {
+      for (auto & par : sel_var_vec) {
+        //std::cout << par.GetName() << " " << par.GetSelectionID() << " " <<
+        //             par.GetSelectionBin() << std::endl;
+        //std::cout << "Bin: " << fSelectionBins[par.GetSelectionID()] + par.GetSelectionBin()-1 << std::endl;
+        int bin = fSelectionBins[par.GetSelectionID()] +
+                  par.GetSelectionBin() - 1;
+        fSelVarSystVals[bin] = par.GetValue();
+      }
+    }
+  };
+
   double BetheBloch(double energy, double mass) {
    double K,rho,Z,A, charge, me, I, gamma,  /*momentum ,*/wmax, pitch;
    long double beta;

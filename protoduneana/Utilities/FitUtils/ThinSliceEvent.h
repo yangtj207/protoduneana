@@ -326,6 +326,10 @@ class ThinSliceEvent {
 
   void SetRecoOrigin(int origin) {reco_beam_origin = origin;};
   int GetRecoOrigin() const {return reco_beam_origin;};
+
+  void SetIsBeamScraper(bool val) {is_beam_scraper = val;};
+  bool GetIsBeamScraper() const {return is_beam_scraper;};
+
  private:
   int event_ID, subrun_ID, run_ID;
   int sample_ID;
@@ -359,6 +363,7 @@ class ThinSliceEvent {
   double delta_e_to_tpc;
   double leading_p_costheta, leading_piplus_costheta, leading_pi0_costheta;
   int reco_beam_origin = -999;
+  bool is_beam_scraper;
 };
 }
 #endif

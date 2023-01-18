@@ -760,6 +760,22 @@ class beam_P_range {
     }
 };
 
+class exclude_runs {
+  private:
+    std::vector<int> bad_runs;
+  public:
+    exclude_runs(std::vector<int> runs) : bad_runs(runs) {
+      std::cout << "Excluded runs: " << std::endl;
+      for (int & run : bad_runs) {
+        std::cout << run << std::endl;
+      }
+    }
+    bool operator()(int run) {
+      return (std::find(bad_runs.begin(), bad_runs.end(), run) ==
+              bad_runs.end());
+    }
+};
+
 /*
 class beam_inst_P_scaled {
   private:
