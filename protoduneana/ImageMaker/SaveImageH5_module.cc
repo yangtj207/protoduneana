@@ -18,7 +18,6 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "BookNtuple.h"
 #include "ImageMaker.h"
 
 namespace dnn {
@@ -49,7 +48,6 @@ private:
 
   // Declare member data here.
   hep_hpc::hdf5::File hdffile;
-  std::function <decltype(dnn::bookNtuple)> bookNtuple_; 
   std::function <decltype(dnn::saveImage)> saveImage_; 
   std::string fHDF5FileName;
 };
@@ -57,7 +55,6 @@ private:
 
 dnn::SaveImageH5::SaveImageH5(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-  bookNtuple_{art::make_tool<decltype(dnn::bookNtuple)>(p.get<fhicl::ParameterSet>("BookNtuple"), "pimu")},
   saveImage_{art::make_tool<decltype(dnn::saveImage)>(p.get<fhicl::ParameterSet>("imageMaker"), "pimu")},
   fHDF5FileName(p.get<std::string>("HDF5NAME"))
   // More initializers here.
@@ -79,7 +76,6 @@ void dnn::SaveImageH5::beginJob()
 {
   // Implementation of optional member function here.
   hdffile = hep_hpc::hdf5::File(fHDF5FileName, H5F_ACC_TRUNC);
-  bookNtuple_(hdffile);
 }
 
 DEFINE_ART_MODULE(dnn::SaveImageH5)

@@ -24,6 +24,12 @@ art_make(BASENAME_ONLY
   ROOT_BASIC_LIB_LIST
   hep_hpc_hdf5
   ${HDF5_LIBRARIES}
+  TOOL_LIBRARIES
+  art::Framework_Core
+  ROOT_BASIC_LIB_LIST     
+  hep_hpc_hdf5
+  ${HDF5_LIBRARIES}
+
   )
 
 install_headers()
