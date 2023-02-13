@@ -170,9 +170,13 @@ void protoDUNE_X_calib::Loop(TString mn)
   TTree t1("t1","a simple Tree with simple variables");//creating a tree example
   Int_t run_number;
   Double_t event_time1;
-  Float_t global_med_0,global_med_1,global_med_2; 
+  Int_t year_month_date1;
+  Int_t hour_minute_second1;
+  Float_t global_med_0,global_med_1,global_med_2;
   t1.Branch("run_number",&run_number,"run_number/I");
   t1.Branch("event_time1",&event_time1,"event_time1/D");
+  t1.Branch("year_month_date1",&year_month_date1,"year_month_date1/I");
+  t1.Branch("hour_minute_second1",&hour_minute_second1,"hour_minute_second1/I");
   t1.Branch("global_med_0",&global_med_0,"global_med_0/F");
   t1.Branch("global_med_1",&global_med_1,"global_med_1/F");
   t1.Branch("global_med_2",&global_med_2,"global_med_2/F");
@@ -198,6 +202,8 @@ void protoDUNE_X_calib::Loop(TString mn)
     if(jentry==0){
       time1=evttime;
       runvalue=run;
+      year_month_date1=year_month_date;
+      hour_minute_second1=hour_min_sec;
     }
 
     int x_bin;
@@ -491,8 +497,8 @@ void protoDUNE_X_calib::Loop(TString mn)
     hdqdx[i]->Write();
     hdedx[i]->Write();
   }
-
-  file->Close(); 
+  t1.Write();
+  file->Close();  
   dqdx_X_hist_2->Draw();
   TFile treefile(Form("globalmedians_cathanode_r%d.root",run),"RECREATE");
   t1.Write();
