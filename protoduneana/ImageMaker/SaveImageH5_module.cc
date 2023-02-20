@@ -55,7 +55,7 @@ private:
 
 dnn::SaveImageH5::SaveImageH5(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-  saveImage_{art::make_tool<decltype(dnn::saveImage)>(p.get<fhicl::ParameterSet>("imageMaker"), "pimu")},
+  saveImage_{art::make_tool<decltype(dnn::saveImage)>(p.get<fhicl::ParameterSet>("imageMaker"), "saveImage")},
   fHDF5FileName(p.get<std::string>("HDF5NAME"))
   // More initializers here.
 {

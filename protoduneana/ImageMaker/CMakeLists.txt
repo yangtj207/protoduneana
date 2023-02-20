@@ -26,6 +26,7 @@ art_make(BASENAME_ONLY
   ${HDF5_LIBRARIES}
   TOOL_LIBRARIES
   art::Framework_Core
+  larcorealg::Geometry
   ROOT_BASIC_LIB_LIST     
   hep_hpc_hdf5
   ${HDF5_LIBRARIES}
