@@ -8,7 +8,7 @@
 /// Contact Person: ehinkle@uchicago.edu                                   ///
 /// Written by: Ajib Paudel                                                ///
 /// Modified by: Elise Hinkle                                              ///
-/// Last Date Modified: February 15, 2023                                  ///
+/// Last Date Modified: February 23, 2023                                  ///
 //////////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -481,7 +481,7 @@ namespace protoana{
 
       // COMMENTED OUT FOR SIMPLE MC GENERATION
       bool test1=true;
-      bool test2=true;
+      //bool test2=true;
       if(fmt0crt2.isValid()){
 
 	std::cout<<"Readout Test #12a."<<i<<std::endl;   
@@ -674,7 +674,7 @@ namespace protoana{
 	       if (!wirelist.empty() && evt.isRealData()){ // ^^TODO^^: Find alt for rawlist, wirelist
 	      	const auto & wire = wirelist[ich];
 	      	if(wirelist[ich]->Channel()!=vhit[ii]->Channel()) continue;
-	      	art::Ptr<recob::Wire>   wire(wireHandle, wireIter);
+	      	//art::Ptr<recob::Wire>   wire(wireHandle, wireIter);
 	      	const auto & signal = wire->Signal();
 	      	double hit_pk = -1;
 	
@@ -685,7 +685,7 @@ namespace protoana{
 	     	    hit_pk = inputsignal[itck];
 	     	    hit_t = itck;
 	     	  }
-	     	} // RAWDIGITS: Finding Peak Signal (also for new diffusion fit find peak time)
+	     	} // RAWDIGITS: Finding Peak Signal (also for new diffusion fit find peak time) 
       
         	std::cout<<"hitpeak time, hitraw peak time "<<vhit[ii]->PeakTime()<<"  "<<hit_t<<std::endl;
 	      	int hitindx=0;
@@ -797,7 +797,7 @@ namespace protoana{
 	    // 	mean_t/=hit_ch;
 	    // 	mean_t2/=hit_ch;
 	    // 	hit_rms = sqrt(mean_t2-mean_t*mean_t);
-	    // } // END: RAWDIGITS RMS
+	      } // END: RAWDIGITS RMS
 
 	    }  // END: Channel Loop RAWDIGITS LOOP END --> comment out ((IF NO RAWDIGITS!!!)) loop end above if using this endpoint
 	    
@@ -943,7 +943,7 @@ namespace protoana{
 
       std::cout<<"Readout Test #26."<<i<<std::endl;   
 
-    } // loop over trks...
+    } //loop over trks...
 
     std::cout<<"Readout Test #27"<<std::endl;   
 
@@ -953,7 +953,6 @@ namespace protoana{
     std::cout<<"Readout Test #28"<<std::endl;   
 
   } // end of analyze function
-	   
   /////////////////// Defintion of reset function ///////////
   void hitrms::reset(){
     run = -9999;
