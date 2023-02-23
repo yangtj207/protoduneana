@@ -1,0 +1,3 @@
+#include "protoDUNE_refactored_detsim_stage1.fcl"
+
+physics.producers.tpcrawdecoder.wcls_main.structs.driftSpeed: 1.565
