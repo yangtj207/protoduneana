@@ -12,12 +12,12 @@
 #include "ProtoDUNEFembFilter.fcl"
 
 
-process_name: sMC_hitrms
+process_name: simpleMChitrms
 
 services:
 {
   #Load the service that manages root files for histograms.
-  TFileService: { fileName: "sMC_hitrms.root" }
+  TFileService: { fileName: "simpleMChitrms.root" }
   RandomNumberGenerator: {}                     #ART native random number generator
   @table::protodune_services
   message:      @local::standard_info
@@ -42,30 +42,30 @@ f1: @local::HVfilter
    } 
    fpath: [f1]
  analyzers:{
-   sMC_hitrms:
+   simpleMChitrms:
    {
-   module_type: "sMC_hitrms"
+   module_type: "simpleMChitrms"
    DataUtils: @local::standard_protodunedatautils
   }	   
  }
  
 
-ana:  [ sMC_hitrms ]
+ana:  [ simpleMChitrms ]
  end_paths:     [  ana ] 
 }
 
 # define the list of LArSoft modules to run through the simulate path
 
 
-physics.analyzers.sMC_hitrms.TrackModuleLabel:        "pandoraTrack"
-physics.analyzers.sMC_hitrms.CalorimetryModuleLabel:  "pandoracalo"
-physics.analyzers.sMC_hitrms.HitsModuleLabel:  "hitpdune"
-physics.analyzers.sMC_hitrms.WireProducerLabel:  "caldata:dataprep"
-physics.analyzers.sMC_hitrms.RawProducerLabel:  "tpcrawdecoder:daq"
-#physics.analyzers.sMC_hitrms.WireProducerLabel:  "caldata:dataprep"
-#physics.analyzers.sMC_hitrms.RawProducerLabel:  "caldata:dataprep"
-#physics.analyzers.sMC_hitrms.DataUtils.RawDigitTag: "caldata:dataprep"
-physics.analyzers.sMC_hitrms.SaveTrackInfo: true
-#physics.analyzers.sMC_hitrms.SelectEvents: [fpath]
+physics.analyzers.simpleMChitrms.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.simpleMChitrms.CalorimetryModuleLabel:  "pandoracalo"
+physics.analyzers.simpleMChitrms.HitsModuleLabel:  "hitpdune"
+physics.analyzers.simpleMChitrms.WireProducerLabel:  "caldata:dataprep"
+physics.analyzers.simpleMChitrms.RawProducerLabel:  "tpcrawdecoder:daq"
+#physics.analyzers.simpleMChitrms.WireProducerLabel:  "caldata:dataprep"
+#physics.analyzers.simpleMChitrms.RawProducerLabel:  "caldata:dataprep"
+#physics.analyzers.simpleMChitrms.DataUtils.RawDigitTag: "caldata:dataprep"
+physics.analyzers.simpleMChitrms.SaveTrackInfo: true
+#physics.analyzers.simpleMChitrms.SelectEvents: [fpath]
 services.PdspChannelMapService:        @local::pdspchannelmap
 services.BackTrackerService.BackTracker.SimChannelModuleLabel: "tpcrawdecoder:simpleSC"

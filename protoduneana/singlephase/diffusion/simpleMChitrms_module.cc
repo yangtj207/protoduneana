@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
-/// Class:       sMC_hitrms                                                    ///
-/// File:        sMC_hitrms_module.cc                                          /// 
+/// Class:       simpleMChitrms                                                    ///
+/// File:        simpleMChitrms_module.cc                                          /// 
 /// Description: Module for calculations with hit information saved        ///
 ///              following deconvolution. Information is taken from        ///
 ///              MC samples or data files and put into TTrees to be        ///
@@ -97,10 +97,10 @@
 
 
 namespace protoana{
-  class sMC_hitrms : public art::EDAnalyzer {
+  class simpleMChitrms : public art::EDAnalyzer {
   public:
-    explicit sMC_hitrms(fhicl::ParameterSet const& pset);
-    virtual ~sMC_hitrms();
+    explicit simpleMChitrms(fhicl::ParameterSet const& pset);
+    virtual ~simpleMChitrms();
 
     void beginJob();
     void endJob();
@@ -195,7 +195,7 @@ namespace protoana{
   };
 
   //========================================================================
-  sMC_hitrms::sMC_hitrms(fhicl::ParameterSet const& pset) :
+  simpleMChitrms::simpleMChitrms(fhicl::ParameterSet const& pset) :
     EDAnalyzer(pset),
     fWaveformSize             (pset.get<unsigned int>("WaveformSize", 6000)),
     fDataUtils                (pset.get<fhicl::ParameterSet>("DataUtils")),
@@ -212,12 +212,12 @@ namespace protoana{
   }
   
   //========================================================================
-  sMC_hitrms::~sMC_hitrms(){
+  simpleMChitrms::~simpleMChitrms(){
   }
   //========================================================================
 
   //========================================================================
-  void sMC_hitrms::beginJob(){
+  void simpleMChitrms::beginJob(){
     std::cout<<"job begin..."<<std::endl;
     art::ServiceHandle<art::TFileService> tfs;
     fEventTree = tfs->make<TTree>("Event", "Event Tree from Reco");
@@ -290,13 +290,13 @@ namespace protoana{
   }
 
   //========================================================================
-  void sMC_hitrms::endJob(){     
+  void simpleMChitrms::endJob(){     
 
   }
 
   //========================================================================
-  void sMC_hitrms::beginRun(const art::Run&){
-    mf::LogInfo("sMC_hitrms")<<"begin run..."<<std::endl;
+  void simpleMChitrms::beginRun(const art::Run&){
+    mf::LogInfo("simpleMChitrms")<<"begin run..."<<std::endl;
   }
   //========================================================================
 
@@ -304,7 +304,7 @@ namespace protoana{
 
   //========================================================================
 
-  void sMC_hitrms::analyze( const art::Event& evt){//analyze
+  void simpleMChitrms::analyze( const art::Event& evt){//analyze
     reset();  
     std::cout<<"raw producer module label "<<fRawProducerLabel<<std::endl;
     //std::cout<<"Readout Test #0"<<std::endl;   
@@ -917,7 +917,7 @@ namespace protoana{
   } // end of analyze function
 	   
   /////////////////// Defintion of reset function ///////////
-  void sMC_hitrms::reset(){
+  void simpleMChitrms::reset(){
     run = -9999;
     subrun = -9999;
     event = -9999;
@@ -998,5 +998,5 @@ namespace protoana{
   }
   //////////////////////// End of definition ///////////////	
 	  
-  DEFINE_ART_MODULE(sMC_hitrms)
+  DEFINE_ART_MODULE(simpleMChitrms)
 }

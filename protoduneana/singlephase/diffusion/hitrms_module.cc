@@ -310,7 +310,7 @@ namespace protoana{
     //std::cout<<"Readout Test #0"<<std::endl;   
     // art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());
-    std::cout<<"Readout Test #1"<<std::endl;   
+    //std::cout<<"Readout Test #1"<<std::endl;   
     //Detector properties service
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(evt);
    
@@ -360,9 +360,9 @@ namespace protoana{
     // // END: RAWDIGITS CODE
     std::vector<const sim::SimChannel*> fSimChannels;
     try{
-      std::cout<<"Readout Test #7a"<<std::endl;
+      //std::cout<<"Readout Test #7a"<<std::endl;
       evt.getView("largeant", fSimChannels);
-      std::cout<<"Readout Test #7b"<<std::endl;   
+      //std::cout<<"Readout Test #7b"<<std::endl;   
     }catch (art::Exception const&e){
     }
 
@@ -440,7 +440,7 @@ namespace protoana{
 
       art::Ptr<recob::Track> ptrack(trackListHandle, i);
 
-      std::cout<<"Readout Test #11."<<i<<std::endl;   
+      //std::cout<<"Readout Test #11."<<i<<std::endl;   
 
       ///this block just saves the t0 values while I include entries with no T0s as well also this saves T0 coming from pandroaTrack alg only
       double t_zero=-999999;
@@ -484,12 +484,12 @@ namespace protoana{
       //bool test2=true;
       if(fmt0crt2.isValid()){
 
-	std::cout<<"Readout Test #12a."<<i<<std::endl;   
+	//std::cout<<"Readout Test #12a."<<i<<std::endl;   
 
 	auto const& vt0crt2 = fmt0crt2.at(i);
 	if (!vt0crt2.empty()){
 
-	  std::cout<<"Readout Test #12b."<<i<<std::endl;   
+	  //std::cout<<"Readout Test #12b."<<i<<std::endl;   
 
 	  this_t0crt2 = vt0crt2[0]->Time();
       // COMMENTED OUT FOR SIMPLE MC GENERATION
@@ -544,7 +544,7 @@ namespace protoana{
       auto allHits=fmthm.at(i);
       double ticksoffset=0;
 
-      std::cout<<"Readout Test #13."<<i<<std::endl;   
+      //std::cout<<"Readout Test #13."<<i<<std::endl;   
 
       // if (this_t0crt2 > -DBL_MAX) ticksoffset = this_t0crt2/500.+detProp.GetXTicksOffset(allHits[0]->WireID());
       if (this_t0crt2 > -DBL_MAX) ticksoffset = this_t0crt2/500.+detProp.GetXTicksOffset (allHits[0]->WireID().Plane, allHits[0]->WireID().TPC, allHits[0]->WireID().Cryostat);
@@ -559,7 +559,7 @@ namespace protoana{
 	auto vhit=fmthm.at(i);
 	auto vmeta=fmthm.data(i);
 
-	std::cout<<"Readout Test #14."<<i<<std::endl;   
+	//std::cout<<"Readout Test #14."<<i<<std::endl;   
 
 	for (size_t ii = 0; ii<vhit.size(); ++ii){ //loop over all meta data hit
 	  bool fBadhit = false;
@@ -941,16 +941,16 @@ namespace protoana{
       crt2tickoffset.push_back(ticksoffset);
       t0crt2.push_back(this_t0crt2/500.0);
 
-      std::cout<<"Readout Test #26."<<i<<std::endl;   
+      //std::cout<<"Readout Test #26."<<i<<std::endl;   
 
     } //loop over trks...
 
-    std::cout<<"Readout Test #27"<<std::endl;   
+    //std::cout<<"Readout Test #27"<<std::endl;   
 
     tot_trks.push_back(ntrks);
     fEventTree->Fill();
 
-    std::cout<<"Readout Test #28"<<std::endl;   
+    //std::cout<<"Readout Test #28"<<std::endl;   
 
   } // end of analyze function
   /////////////////// Defintion of reset function ///////////
