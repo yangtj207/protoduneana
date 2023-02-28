@@ -1,0 +1,71 @@
+#include "services_dune.fcl"
+#include "hitfindermodules_dune.fcl"
+#include "filters.fcl"
+#include "ProtoDUNEUnstableHVFilter.fcl"
+#include "signalservices_dune.fcl"
+#include "caldata_dune.fcl"
+#include "trackfindermodules_dune.fcl"
+#include "ecalibration.fcl"
+#include "triggeralgo_service.fcl"
+#include "photpropservices_dune.fcl"
+#include "ProtoDUNEDataUtils.fcl"
+#include "ProtoDUNEFembFilter.fcl"
+
+
+process_name: simpleMChitrms
+
+services:
+{
+  #Load the service that manages root files for histograms.
+  TFileService: { fileName: "simpleMChitrms.root" }
+  RandomNumberGenerator: {}                     #ART native random number generator
+  @table::protodune_services
+  message:      @local::standard_info
+  FileCatalogMetadata: @local::art_file_catalog_mc
+}
+
+#source is now a root file
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1            # Number of events to create
+}
+physics:
+{
+ producers:{
+
+  }
+filters:  
+ {
+#  filter:   @local::pdsp_fembfilter_all
+f1: @local::HVfilter
+   } 
+   fpath: [f1]
+ analyzers:{
+   simpleMChitrms:
+   {
+   module_type: "simpleMChitrms"
+   DataUtils: @local::standard_protodunedatautils
+  }	   
+ }
+ 
+
+ana:  [ simpleMChitrms ]
+ end_paths:     [  ana ] 
+}
+
+# define the list of LArSoft modules to run through the simulate path
+
+
+physics.analyzers.simpleMChitrms.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.simpleMChitrms.CalorimetryModuleLabel:  "pandoracalo"
+physics.analyzers.simpleMChitrms.HitsModuleLabel:  "hitpdune"
+physics.analyzers.simpleMChitrms.WireProducerLabel:  "caldata:dataprep"
+physics.analyzers.simpleMChitrms.RawProducerLabel:  "tpcrawdecoder:daq"
+#physics.analyzers.simpleMChitrms.WireProducerLabel:  "caldata:dataprep"
+#physics.analyzers.simpleMChitrms.RawProducerLabel:  "caldata:dataprep"
+#physics.analyzers.simpleMChitrms.DataUtils.RawDigitTag: "caldata:dataprep"
+physics.analyzers.simpleMChitrms.SaveTrackInfo: true
+#physics.analyzers.simpleMChitrms.SelectEvents: [fpath]
+services.PdspChannelMapService:        @local::pdspchannelmap
+services.BackTrackerService.BackTracker.SimChannelModuleLabel: "tpcrawdecoder:simpleSC"
