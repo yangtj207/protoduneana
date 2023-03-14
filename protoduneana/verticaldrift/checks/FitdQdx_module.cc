@@ -35,7 +35,8 @@
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
 // ROOT
-#include <TStyle.h>
+#include "Math/ProbFunc.h"
+#include "TStyle.h"
 #include "TTree.h"
 #include "TGraphErrors.h"
 #include "TF1.h"
@@ -155,10 +156,11 @@ private:
   vector<vector<float> > fQ;
   vector<vector<float> > fDqdx;
 
-  bool   HitsInYXVolume(double fX, double fY, double fZ);
-  bool   HitsInZXVolume(double fX, double fY, double fZ);
-  bool   HitsInYZVolume(double fX, double fY, double fZ);
-  bool   HitsInFiducialVolume(double fX, double fY, double fZ);
+  bool   SetPhiFlag(float fPhi);
+  bool   HitsInYXVolume(float fX, float fY, float fZ);
+  bool   HitsInZXVolume(float fX, float fY, float fZ);
+  bool   HitsInYZVolume(float fX, float fY, float fZ);
+  bool   HitsInFiducialVolume(float fX, float fY, float fZ);
   void   GetAngles(const recob::Track& track, bool isRevert, float &theta, float &phi);
   TF1*   LGfit(TH1F* hin);
 
@@ -202,9 +204,9 @@ pdvdana::FitdQdx::FitdQdx(fhicl::ParameterSet const& p)
   fDQdxMax(                        p.get< float >("DQdxMax") ),
   fDQdxFitMin(                     p.get< float >("DQdxFitMin") ),
   fDQdxFitMax(       		   p.get< float >("DQdxFitMax") ),
-  bFieldDistortion(                p.get< bool >("FieldDistortion")),
-  bTrackIsFieldDistortionCorrected(p.get< bool >("TrackIsFieldDistortionCorrected")),
-  bFieldDistortionCorrectionXSign( p.get< bool >("FieldDistortionCorrectionXSign")) 
+  bFieldDistortion(                p.get< bool  >("FieldDistortion")),
+  bTrackIsFieldDistortionCorrected(p.get< bool  >("TrackIsFieldDistortionCorrected")),
+  bFieldDistortionCorrectionXSign( p.get< bool  >("FieldDistortionCorrectionXSign")) 
 {
   fGeom    = &*art::ServiceHandle<geo::Geometry>();
 }
@@ -251,13 +253,11 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
       float fEndY   = track.End().Y();
       float fEndZ   = track.End().Z();
 
-      // Remove tracks that start outside the detector
-      //if(fStartX < fXmin || fStartX > fXmax) continue;
+      // Remove tracks that start outside the detector in the horizontal plane
       if(fStartY < fYmin || fStartY > fYmax) continue;
       if(fStartZ < fZmin || fStartZ > fZmax) continue;
 
-      // Remove tracks that end outside the detector
-      //if(fEndX < fXmin   || fEndX > fXmax)   continue;
+      // Remove tracks that end   outside the detector in the horizontal plane
       if(fEndY < fYmin   || fEndY > fYmax)   continue;
       if(fEndZ < fZmin   || fEndZ > fZmax)   continue;
      
@@ -274,6 +274,8 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
       GetAngles(track,isRevert,fTrackTheta,fTrackPhi);
 
       if( fLogLevel >= 3 ) std::cout << "    track " << trk << " -> length:    " << track.Length() << " - theta: " << fTrackTheta << " - phi: " << fTrackPhi << std::endl;
+
+      bool isTrkAlongStrip = SetPhiFlag(fTrackPhi);
 
       // if the track passed selection criteria, loop over hits to retrieve pulse width
       const std::vector<art::Ptr<recob::Hit>>& Hits       = fmHits.at(trk);
@@ -350,30 +352,30 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
 
           if( fLogLevel >= 4 ) std::cout << "        vectors set... " << std::endl;
 
-
           // Remove hits from noise pedestal
           if(charge < fQMin){if( fLogLevel >= 4 ) std::cout << "        #4 nok" << std::endl;                       continue;}
           if( fLogLevel >= 4 ) std::cout << "        #4 ok" << std::endl;
 
-
           // Fill 2D histograms used for position dependent checks
-          
-          if(HitsInYXVolume(fX,fY,fZ)){
-            if( fLogLevel >= 4 ) std::cout << "        #5 ok" << std::endl;
-            yxw[plane_i][h2_dqdx_yx[plane_i]->GetXaxis()->FindBin(fY)-1][h2_dqdx_yx[plane_i]->GetYaxis()->FindBin(fX)-1]++;
-            h2_dqdx_yx[plane_i]->Fill(fY,fX,         charge/pitch);
-          }
+          // -> remove tracks along one of the strips to avoid <dQ/dx> overshoot
+          if(!isTrkAlongStrip){
+            if(HitsInYXVolume(fX,fY,fZ)){
+              if( fLogLevel >= 4 ) std::cout << "        #5 ok" << std::endl;
+              yxw[plane_i][h2_dqdx_yx[plane_i]->GetXaxis()->FindBin(fY)-1][h2_dqdx_yx[plane_i]->GetYaxis()->FindBin(fX)-1]++;
+              h2_dqdx_yx[plane_i]->Fill(fY,fX,         charge/pitch);
+            }
            
-          if(HitsInZXVolume(fX,fY,fZ)){
-            if( fLogLevel >= 4 ) std::cout << "        #6 ok" << std::endl;
-            zxw[plane_i][h2_dqdx_zx[plane_i]->GetXaxis()->FindBin(fZ)-1][h2_dqdx_zx[plane_i]->GetYaxis()->FindBin(fX)-1]++;
-            h2_dqdx_zx[plane_i]->Fill(fZ,fX,         charge/pitch);
-          }
+            if(HitsInZXVolume(fX,fY,fZ)){
+              if( fLogLevel >= 4 ) std::cout << "        #6 ok" << std::endl;
+              zxw[plane_i][h2_dqdx_zx[plane_i]->GetXaxis()->FindBin(fZ)-1][h2_dqdx_zx[plane_i]->GetYaxis()->FindBin(fX)-1]++;
+              h2_dqdx_zx[plane_i]->Fill(fZ,fX,         charge/pitch);
+            }
           
-          if(HitsInYZVolume(fX,fY,fZ)){
-            if( fLogLevel >= 4 ) std::cout << "        #7 ok" << std::endl;
-            yzw[plane_i][h2_dqdx_yz[plane_i]->GetXaxis()->FindBin(fY)-1][h2_dqdx_yz[plane_i]->GetYaxis()->FindBin(fZ)-1]++;
-            h2_dqdx_yz[plane_i]->Fill(fY,fZ,         charge/pitch);
+            if(HitsInYZVolume(fX,fY,fZ)){
+              if( fLogLevel >= 4 ) std::cout << "        #7 ok" << std::endl;
+              yzw[plane_i][h2_dqdx_yz[plane_i]->GetXaxis()->FindBin(fY)-1][h2_dqdx_yz[plane_i]->GetYaxis()->FindBin(fZ)-1]++;
+              h2_dqdx_yz[plane_i]->Fill(fY,fZ,         charge/pitch);
+            }
           }
           
           // Not cut by general criteria but the fiducial volume cut
@@ -398,11 +400,24 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
       fTrackId++;
 
     } // end of track loop
-
-
 } // end of event loop
 
-bool pdvdana::FitdQdx::HitsInYXVolume(double fX, double fY, double fZ){
+bool pdvdana::FitdQdx::SetPhiFlag(float phi){
+
+  // along plane 0 strip
+  if(phi > 145  && phi < 155)  return true;
+  if(phi > -35  && phi < -25)  return true;
+  // along plane 1 strip
+  if(phi > -155 && phi < -145) return true;
+  if(phi > 25   && phi < 35)   return true;
+  // along plane 2 strip
+  if(phi > -95  && phi < -85)  return true;
+  if(phi > 85   && phi < 95 )  return true;
+
+  return false;
+}
+
+bool pdvdana::FitdQdx::HitsInYXVolume(float fX, float fY, float fZ){
 
   if(fX <= 0            || fX >= fXmax-fXmin)  return false;
   if(fY <= fYmin        || fY >= fYmax)        return false;
@@ -410,7 +425,7 @@ bool pdvdana::FitdQdx::HitsInYXVolume(double fX, double fY, double fZ){
 
   return true;
 }
-bool pdvdana::FitdQdx::HitsInZXVolume(double fX, double fY, double fZ){
+bool pdvdana::FitdQdx::HitsInZXVolume(float fX, float fY, float fZ){
 
   if(fX <= 0            || fX >= fXmax-fXmin)  return false;
   if(fY <= fYmin+fYZfid || fY >= fYmax-fYZfid) return false;
@@ -418,7 +433,7 @@ bool pdvdana::FitdQdx::HitsInZXVolume(double fX, double fY, double fZ){
 
   return true;
 }
-bool pdvdana::FitdQdx::HitsInYZVolume(double fX, double fY, double fZ){
+bool pdvdana::FitdQdx::HitsInYZVolume(float fX, float fY, float fZ){
 
   if(fX <= 0     || fX >= fXmax-fXmin)  return false;
   if(fY <= fYmin || fY >= fYmax)        return false;
@@ -426,7 +441,7 @@ bool pdvdana::FitdQdx::HitsInYZVolume(double fX, double fY, double fZ){
 
   return true;
 }
-bool pdvdana::FitdQdx::HitsInFiducialVolume(double fX, double fY, double fZ){
+bool pdvdana::FitdQdx::HitsInFiducialVolume(float fX, float fY, float fZ){
 
   if(fX <= 0            || fX >= fXmax-fXmin)  return false;
   if(fY <= fYmin+fYZfid || fY >= fYmax-fYZfid) return false;
@@ -499,9 +514,9 @@ void pdvdana::FitdQdx::beginJob()
     for(int y_i = 0; y_i < iYbins; y_i++){yzw[plane_i][y_i].resize(iZbins,0); yxw[plane_i][y_i].resize(iXbins,0);}
     for(int z_i = 0; z_i < iZbins; z_i++) zxw[plane_i][z_i].resize(iXbins,0);
 
-    h2_dqdx_yz[plane_i] = tfs->make<TH2F>(Form("h2_dqdx_yz_%d",plane_i),Form("Plane %d;Y (cm);Z (cm)",plane_i),iYbins,fYmin,fYmax,iZbins,fZmin,fZmax);
-    h2_dqdx_yx[plane_i] = tfs->make<TH2F>(Form("h2_dqdx_yx_%d",plane_i),Form("Plane %d;Y (cm);X (cm)",plane_i),iYbins,fYmin,fYmax,iXbins,0,fXmax-fXmin);
-    h2_dqdx_zx[plane_i] = tfs->make<TH2F>(Form("h2_dqdx_zx_%d",plane_i),Form("Plane %d;Z (cm);X (cm)",plane_i),iZbins,fZmin,fZmax,iXbins,0,fXmax-fXmin);
+    h2_dqdx_yz[plane_i] = tfs->make<TH2F>(Form("h2_dqdx_yz_%d",plane_i),Form("Plane %d;Y (cm);Z (cm);<dQ/dx> (fC/cm)",plane_i),iYbins,fYmin,fYmax,iZbins,fZmin,fZmax);
+    h2_dqdx_yx[plane_i] = tfs->make<TH2F>(Form("h2_dqdx_yx_%d",plane_i),Form("Plane %d;Y (cm);X (cm);<dQ/dx> (fC/cm)",plane_i),iYbins,fYmin,fYmax,iXbins,0,fXmax-fXmin);
+    h2_dqdx_zx[plane_i] = tfs->make<TH2F>(Form("h2_dqdx_zx_%d",plane_i),Form("Plane %d;Z (cm);X (cm);<dQ/dx> (fC/cm)",plane_i),iZbins,fZmin,fZmax,iXbins,0,fXmax-fXmin);
     h2_dqdx_dt[plane_i] = tfs->make<TH2F>(Form("h2_dqdx_dt_%d",plane_i),Form("Plane %d;Drift time (#mus);dQ/dx (fC/cm)",plane_i),iDtBins,fDtMin,fDtMax,iDQdxBins,fDQdxMin,fDQdxMax);
     h2_dqdx_t[plane_i]  = tfs->make<TH2F>(Form("h2_dqdx_t_%d",plane_i), Form("Plane %d;Theta (deg);dQ/dx (fC/cm)",plane_i),360,180.,180.,iDQdxBins,fDQdxMin,fDQdxMax);
     h2_dqdx_p[plane_i]  = tfs->make<TH2F>(Form("h2_dqdx_p_%d",plane_i), Form("Plane %d;Phi (deg);dQ/dx (fC/cm)",plane_i),360,-180.,180.,iDQdxBins,fDQdxMin,fDQdxMax);
@@ -573,22 +588,30 @@ double langaufun(double *x, double *par) {
       fland = TMath::Landau(xx,mpc,par[0]) / par[0];
       sum += fland * TMath::Gaus(x[0],xx,par[3]);
    }
+   
+   double baseline = par[4]*(1-ROOT::Math::normal_cdf(double(x[0]),double(par[3]),double(par[1])));
 
-   return (par[2] * step * sum * invsq2pi / par[3]);                        
+   return (par[2] * step * sum * invsq2pi / par[3] + baseline);
+   //return (par[2] * step * sum * invsq2pi / par[3] + par[4]*(1-ROOT::Math::normal_cdf(x,par[3],par[1])));                        
 }
 
 
 TF1* pdvdana::FitdQdx::LGfit(TH1F* hin){
 
-  TF1* fit = new TF1("fit",langaufun,5.5,20,4);
+  TF1* fit = new TF1("fit",langaufun,5,20,5);
   fit->SetParameters(1.,
                      hin->GetBinCenter(hin->GetMaximumBin()),
                      hin->Integral(),
                      0.5,
-                     hin->GetBinContent(1));
-  fit->SetParLimits(0,0,100);
-  fit->SetParLimits(1,0.9*hin->GetBinCenter(hin->GetMaximumBin()),1.5*hin->GetBinCenter(hin->GetMaximumBin()));
-  fit->SetParNames("Width","MP","Area","GSigma");
+                     hin->GetBinContent(hin->FindBin(5.)));
+
+  fit->SetParLimits(0,0.                      ,3.0);
+  fit->SetParLimits(1,0.9*fit->GetParameter(1),1.5*fit->GetParameter(1));
+  fit->SetParLimits(2,0.                      ,5.0*fit->GetParameter(2));
+  fit->SetParLimits(3,0.                      ,3.0);
+  fit->SetParLimits(4,0.3*fit->GetParameter(4),3.0*fit->GetParameter(4));
+
+  fit->SetParNames("Width","MP","Area","GSigma","Step");
 
   hin->Fit("fit","QR");
 
@@ -610,8 +633,8 @@ void pdvdana::FitdQdx::endJob()
     g_dqdx_z[plane_i]->SetMarkerStyle(24);
   }
 
-  vector<double> tau(fNplanes,0); 
-  vector<double> dtau(fNplanes,0); 
+  vector<float> tau(fNplanes,0); 
+  vector<float> dtau(fNplanes,0); 
 
   for (unsigned plane_i = 0; plane_i < fNplanes; plane_i++){
     // TF1 for fitting dQ/dx in each individual TH2 bin
@@ -666,10 +689,10 @@ void pdvdana::FitdQdx::endJob()
 	    h_dqdx_cor[vw]->Fill(fDqdx[vw][hit] * TMath::Exp(fPosX[vw][hit]/(tau[vw]*fDriftSpeed)));
   }
 
-  vector<double> mDqdx(fNplanes,0); 
-  vector<double> dmDqdx(fNplanes,0); 
-  vector<double> wDqdx(fNplanes,0); 
-  vector<double> dwDqdx(fNplanes,0); 
+  vector<float> mDqdx(fNplanes,0); 
+  vector<float> dmDqdx(fNplanes,0); 
+  vector<float> wDqdx(fNplanes,0); 
+  vector<float> dwDqdx(fNplanes,0); 
 
   // Perform gaus convolved landau fit of the global dQ/dx distribution
   for(unsigned int vw = 0;vw<fNplanes;vw++){
@@ -776,23 +799,33 @@ void pdvdana::FitdQdx::endJob()
   // Write objects to output files
   for(unsigned vw = 0;vw<fNplanes;vw++){
     // Normalize YX 2D histo 
+    
     for(int y_i = 0; y_i < h2_dqdx_yx[vw]->GetNbinsX(); y_i++)
       for(int x_i = 0; x_i < h2_dqdx_yx[vw]->GetNbinsY(); x_i++){
         if(yxw[vw][y_i][x_i] == 0) continue;
         h2_dqdx_yx[vw]->SetBinContent(y_i+1,x_i+1,h2_dqdx_yx[vw]->GetBinContent(y_i+1,x_i+1)/yxw[vw][y_i][x_i]);        
       }
+    h2_dqdx_yx[vw]->SetStats(0);
+    h2_dqdx_yx[vw]->SetMinimum(0);
+    h2_dqdx_yx[vw]->SetMaximum(20);
     // Normalize ZX 2D histo 
     for(int z_i = 0; z_i < h2_dqdx_zx[vw]->GetNbinsX(); z_i++)
       for(int x_i = 0; x_i < h2_dqdx_zx[vw]->GetNbinsY(); x_i++){
         if(zxw[vw][z_i][x_i] == 0) continue;
         h2_dqdx_zx[vw]->SetBinContent(z_i+1,x_i+1,h2_dqdx_zx[vw]->GetBinContent(z_i+1,x_i+1)/zxw[vw][z_i][x_i]);        
       }
+    h2_dqdx_zx[vw]->SetStats(0);
+    h2_dqdx_zx[vw]->SetMinimum(0);
+    h2_dqdx_zx[vw]->SetMaximum(20);
     // Normalize YZ 2D histo 
     for(int y_i = 0; y_i < h2_dqdx_yz[vw]->GetNbinsX(); y_i++)
       for(int z_i = 0; z_i < h2_dqdx_yz[vw]->GetNbinsY(); z_i++){
         if(yzw[vw][y_i][z_i] == 0) continue;
         h2_dqdx_yz[vw]->SetBinContent(y_i+1,z_i+1,h2_dqdx_yz[vw]->GetBinContent(y_i+1,z_i+1)/yzw[vw][y_i][z_i]);        
       }
+    h2_dqdx_yz[vw]->SetStats(0);
+    h2_dqdx_yz[vw]->SetMinimum(0);
+    h2_dqdx_yz[vw]->SetMaximum(20);
 
     c_dqdx_z[vw]->Write();
     f_dqdx_z[vw]->Write();
