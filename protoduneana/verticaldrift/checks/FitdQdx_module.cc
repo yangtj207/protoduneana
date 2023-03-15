@@ -275,8 +275,6 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
 
       if( fLogLevel >= 3 ) std::cout << "    track " << trk << " -> length:    " << track.Length() << " - theta: " << fTrackTheta << " - phi: " << fTrackPhi << std::endl;
 
-      bool isTrkAlongStrip = SetPhiFlag(fTrackPhi);
-
       // if the track passed selection criteria, loop over hits to retrieve pulse width
       const std::vector<art::Ptr<recob::Hit>>& Hits       = fmHits.at(trk);
       const std::vector<const recob::TrackHitMeta*>& thms = fmHits.data(trk);
@@ -293,12 +291,12 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
 
         unsigned Nhits = hit_indices[plane_i].size();
 
-        fPosX[plane_i].clear(); fPosX[plane_i].resize(Nhits,-999);
-        fPosY[plane_i].clear(); fPosY[plane_i].resize(Nhits,-999);
-        fPosZ[plane_i].clear(); fPosZ[plane_i].resize(Nhits,-999);
-        fDqdx[plane_i].clear(); fDqdx[plane_i].resize(Nhits,-999);
-        fCut[plane_i].clear();  fCut[plane_i].resize(Nhits,-999);
-        fQ[plane_i].clear();    fQ[plane_i].resize(Nhits,-999);
+        fPosX[plane_i].clear();    fPosX[plane_i].resize(Nhits,-999);
+        fPosY[plane_i].clear();    fPosY[plane_i].resize(Nhits,-999);
+        fPosZ[plane_i].clear();    fPosZ[plane_i].resize(Nhits,-999);
+        fDqdx[plane_i].clear();    fDqdx[plane_i].resize(Nhits,-999);
+        fCut[plane_i].clear();     fCut[plane_i].resize(Nhits,-999);
+        fQ[plane_i].clear();       fQ[plane_i].resize(Nhits,-999);
 
         // Loop over hits
         for (unsigned hit_i = 0; hit_i < Nhits; hit_i++) {
@@ -343,52 +341,26 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
             std::cout << "        -> ( " << fX << "," << fY << "," << fZ << ") - pitch: " << pitch << " - charge:" << charge << " - dQdx: " << charge/pitch << std::endl; 
 
           // Store quantities of interest into vector -> output file
-          fPosX[plane_i][hit_i] = fX;    
-          fPosY[plane_i][hit_i] = fY;    
-          fPosZ[plane_i][hit_i] = fZ;    
-          fQ[plane_i][hit_i]    = charge;
-          fDqdx[plane_i][hit_i] = charge/pitch;
-          fCut[plane_i][hit_i]  = 2;
+          fPosX[plane_i][hit_i]    = fX;    
+          fPosY[plane_i][hit_i]    = fY;    
+          fPosZ[plane_i][hit_i]    = fZ;    
+          fQ[plane_i][hit_i]       = charge;
+          fDqdx[plane_i][hit_i]    = charge/pitch;
+          fCut[plane_i][hit_i]     = 2;
 
           if( fLogLevel >= 4 ) std::cout << "        vectors set... " << std::endl;
 
           // Remove hits from noise pedestal
           if(charge < fQMin){if( fLogLevel >= 4 ) std::cout << "        #4 nok" << std::endl;                       continue;}
           if( fLogLevel >= 4 ) std::cout << "        #4 ok" << std::endl;
-
-          // Fill 2D histograms used for position dependent checks
-          // -> remove tracks along one of the strips to avoid <dQ/dx> overshoot
-          if(!isTrkAlongStrip){
-            if(HitsInYXVolume(fX,fY,fZ)){
-              if( fLogLevel >= 4 ) std::cout << "        #5 ok" << std::endl;
-              yxw[plane_i][h2_dqdx_yx[plane_i]->GetXaxis()->FindBin(fY)-1][h2_dqdx_yx[plane_i]->GetYaxis()->FindBin(fX)-1]++;
-              h2_dqdx_yx[plane_i]->Fill(fY,fX,         charge/pitch);
-            }
-           
-            if(HitsInZXVolume(fX,fY,fZ)){
-              if( fLogLevel >= 4 ) std::cout << "        #6 ok" << std::endl;
-              zxw[plane_i][h2_dqdx_zx[plane_i]->GetXaxis()->FindBin(fZ)-1][h2_dqdx_zx[plane_i]->GetYaxis()->FindBin(fX)-1]++;
-              h2_dqdx_zx[plane_i]->Fill(fZ,fX,         charge/pitch);
-            }
-          
-            if(HitsInYZVolume(fX,fY,fZ)){
-              if( fLogLevel >= 4 ) std::cout << "        #7 ok" << std::endl;
-              yzw[plane_i][h2_dqdx_yz[plane_i]->GetXaxis()->FindBin(fY)-1][h2_dqdx_yz[plane_i]->GetYaxis()->FindBin(fZ)-1]++;
-              h2_dqdx_yz[plane_i]->Fill(fY,fZ,         charge/pitch);
-            }
-          }
-          
-          // Not cut by general criteria but the fiducial volume cut
           fCut[plane_i][hit_i]  = 1;
 
           // Remove hits that reconstructed outside the fiducial volume
-          if(!HitsInFiducialVolume(fX,fY,fZ)){if( fLogLevel >= 4 ) std::cout << "        #8 nok" << std::endl;      continue;}
-          if( fLogLevel >= 4 ) std::cout << "        #8 ok" << std::endl;
+          if(!HitsInFiducialVolume(fX,fY,fZ)){if( fLogLevel >= 4 ) std::cout << "        #5 nok" << std::endl;      continue;}
+          if( fLogLevel >= 4 ) std::cout << "        #5 ok" << std::endl;
 
           // Fill 2D histogram later used for drift time-wise fitting of dQ/dx distributions
           h2_dqdx_dt[plane_i]->Fill(fX/fDriftSpeed,charge/pitch);
-          h2_dqdx_t[plane_i] ->Fill(fTrackTheta,   charge/pitch);
-          h2_dqdx_p[plane_i] ->Fill(fTrackPhi,     charge/pitch);
           
           // Not cut by any criteria (enters dQ/dx vs drift time fit)
           fCut[plane_i][hit_i]  = 0;
@@ -592,9 +564,7 @@ double langaufun(double *x, double *par) {
    double baseline = par[4]*(1-ROOT::Math::normal_cdf(double(x[0]),double(par[3]),double(par[1])));
 
    return (par[2] * step * sum * invsq2pi / par[3] + baseline);
-   //return (par[2] * step * sum * invsq2pi / par[3] + par[4]*(1-ROOT::Math::normal_cdf(x,par[3],par[1])));                        
 }
-
 
 TF1* pdvdana::FitdQdx::LGfit(TH1F* hin){
 
@@ -680,37 +650,78 @@ void pdvdana::FitdQdx::endJob()
     else if( fLogLevel >= 1 ) std::cout << "  WARNING: Not enough data point for e- lifetime fit" << std::endl;
   } // end of plane loop
 
-  // Fill 1D histograms with e- lifetime corrected dQ/dx
+  //////////////////////////////
+  // e- lifetime corrected dQ/dx
+
   for(int trk = 0;trk < fTree->GetEntries(); trk++){
     fTree->GetEntry(trk);
-    for(unsigned int vw = 0;vw<fNplanes;vw++)
-	for(unsigned int hit = 0; hit < fCut[vw].size(); hit++) 
-	  if(fCut[vw][hit] == 0) 
-	    h_dqdx_cor[vw]->Fill(fDqdx[vw][hit] * TMath::Exp(fPosX[vw][hit]/(tau[vw]*fDriftSpeed)));
-  }
+
+    // Check if the track has been recontructed along one of the strips
+    bool isTrkAlongStrip = SetPhiFlag(fTrackPhi);
+
+    for(unsigned int plane_i = 0;plane_i<fNplanes;plane_i++){
+	for(unsigned int hit_i = 0; hit_i < fCut[plane_i].size(); hit_i++){
+
+          if(fCut[plane_i][hit_i] < 0) continue;
+
+          // Correct bare dQ/dx for e- lifetime
+          float dqdx = fDqdx[plane_i][hit_i] * TMath::Exp(fPosX[plane_i][hit_i]/(tau[plane_i]*fDriftSpeed));
+
+	  if(fCut[plane_i][hit_i] == 0){ 
+            // Fill 1D dQ/dx distributions
+	    h_dqdx_cor[plane_i]->Fill(dqdx);
+            // Fill angular dependance 2D histograms
+            h2_dqdx_t[plane_i] ->Fill(fTrackTheta,dqdx);
+            h2_dqdx_p[plane_i] ->Fill(fTrackPhi,  dqdx);
+          }
+ 
+          // Fill 2D histograms used for position dependent checks
+          // -> remove tracks along one of the strips to avoid <dQ/dx> overshoot
+          if(!isTrkAlongStrip && fCut[plane_i][hit_i] <= 1){
+            // YX 2D map
+            if(HitsInYXVolume(fPosX[plane_i][hit_i],fPosY[plane_i][hit_i],fPosZ[plane_i][hit_i])){
+              yxw[plane_i][h2_dqdx_yx[plane_i]->GetXaxis()->FindBin(fPosY[plane_i][hit_i])-1][h2_dqdx_yx[plane_i]->GetYaxis()->FindBin(fPosX[plane_i][hit_i])-1]++;
+              h2_dqdx_yx[plane_i]->Fill(fPosY[plane_i][hit_i],fPosX[plane_i][hit_i],dqdx);
+            }
+            // ZX 2D map
+            if(HitsInZXVolume(fPosX[plane_i][hit_i],fPosY[plane_i][hit_i],fPosZ[plane_i][hit_i])){
+              zxw[plane_i][h2_dqdx_zx[plane_i]->GetXaxis()->FindBin(fPosZ[plane_i][hit_i])-1][h2_dqdx_zx[plane_i]->GetYaxis()->FindBin(fPosX[plane_i][hit_i])-1]++;
+              h2_dqdx_zx[plane_i]->Fill(fPosZ[plane_i][hit_i],fPosX[plane_i][hit_i],dqdx);
+            }
+	    // YZ 2D map
+            if(HitsInYZVolume(fPosX[plane_i][hit_i],fPosY[plane_i][hit_i],fPosZ[plane_i][hit_i])){
+              yzw[plane_i][h2_dqdx_yz[plane_i]->GetXaxis()->FindBin(fPosY[plane_i][hit_i])-1][h2_dqdx_yz[plane_i]->GetYaxis()->FindBin(fPosZ[plane_i][hit_i])-1]++;
+              h2_dqdx_yz[plane_i]->Fill(fPosY[plane_i][hit_i],fPosZ[plane_i][hit_i],dqdx);
+            }
+          }
+        } // end of hits loop
+    } // end of planes loop
+  } // end of tracks loop
+
+  //////////////////////////////
 
   vector<float> mDqdx(fNplanes,0); 
   vector<float> dmDqdx(fNplanes,0); 
   vector<float> wDqdx(fNplanes,0); 
   vector<float> dwDqdx(fNplanes,0); 
 
-  // Perform gaus convolved landau fit of the global dQ/dx distribution
-  for(unsigned int vw = 0;vw<fNplanes;vw++){
-    TF1* f_dqdx = LGfit(h_dqdx_cor[vw]);
+  // Perform gaus convolved landau + step fit of the global dQ/dx distribution
+  for(unsigned int plane_i = 0;plane_i<fNplanes;plane_i++){
+    TF1* f_dqdx = LGfit(h_dqdx_cor[plane_i]);
 
-    mDqdx[vw]   = f_dqdx->GetParameter(1);
-    dmDqdx[vw]  = f_dqdx->GetParError(1);
-    wDqdx[vw]   = f_dqdx->GetParameter(0);
-    dwDqdx[vw]  = f_dqdx->GetParError(0);
+    mDqdx[plane_i]   = f_dqdx->GetParameter(1);
+    dmDqdx[plane_i]  = f_dqdx->GetParError(1);
+    wDqdx[plane_i]   = f_dqdx->GetParameter(0);
+    dwDqdx[plane_i]  = f_dqdx->GetParError(0);
 
     if( fLogLevel >= 1 ){ 
-      std::cout << "  Plane " << vw << ":" << std::endl; 
+      std::cout << "  Plane " << plane_i << ":" << std::endl; 
       std::cout << "    Mean dQ/dx = " << f_dqdx->GetParameter(1) << " +/- " << f_dqdx->GetParError(1) << " fC/cm" << std::endl;
       std::cout << "    Width      = " << f_dqdx->GetParameter(0) << " +/- " << f_dqdx->GetParError(0) << " fC/cm" << std::endl;
     }
   }
 
-  // Plot histo into TCanvas for nice rendering
+  // Plot histo into TCanvas for nice automatic rendering
   vector<vector<TLatex*> > lpars_1D(fNplanes,vector<TLatex*>(2));
   vector<TPaveStats*>      st_1D(fNplanes);
   vector<TList*>           list_1D(fNplanes);
@@ -719,117 +730,120 @@ void pdvdana::FitdQdx::endJob()
   vector<TPaveStats*>      st(fNplanes);
   vector<TList*>           list(fNplanes);
 
-  for(unsigned int vw = 0;vw<fNplanes;vw++){
-    c_dqdx[vw]->cd();
-    h_dqdx_cor[vw]->GetXaxis()->SetNdivisions(409);
-    h_dqdx_cor[vw]->GetYaxis()->SetNdivisions(409);
-    h_dqdx_cor[vw]->SetLineColor(kBlack); 
-    h_dqdx_cor[vw]->SetStats("e");
+  for(unsigned int plane_i = 0;plane_i<fNplanes;plane_i++){
+    c_dqdx[plane_i]->cd();
+    h_dqdx_cor[plane_i]->GetXaxis()->SetNdivisions(409);
+    h_dqdx_cor[plane_i]->GetYaxis()->SetNdivisions(409);
+    h_dqdx_cor[plane_i]->SetLineColor(kBlack); 
+    h_dqdx_cor[plane_i]->SetStats("e");
 
-    c_dqdx[vw]->Update();
-    h_dqdx_cor[vw]->Draw("hist"); 
-    c_dqdx[vw]->Update();
+    c_dqdx[plane_i]->Update();
+    h_dqdx_cor[plane_i]->Draw("hist"); 
+    c_dqdx[plane_i]->Update();
 
-    st_1D[vw] = (TPaveStats*)h_dqdx_cor[vw]->GetListOfFunctions()->FindObject("stats");
-    st_1D[vw]->SetOptStat(000000100);
-    st_1D[vw]->SetOptFit(1);
+    st_1D[plane_i] = (TPaveStats*)h_dqdx_cor[plane_i]->GetListOfFunctions()->FindObject("stats");
+    st_1D[plane_i]->SetOptStat(000000100);
+    st_1D[plane_i]->SetOptFit(1);
     gPad->Modified(); gPad->Update();
-    st_1D[vw]->SetX1NDC(0.45);
-    st_1D[vw]->SetX2NDC(0.89);
-    st_1D[vw]->SetY1NDC(0.7);
-    st_1D[vw]->SetY2NDC(0.89);
+    st_1D[plane_i]->SetX1NDC(0.45);
+    st_1D[plane_i]->SetX2NDC(0.89);
+    st_1D[plane_i]->SetY1NDC(0.7);
+    st_1D[plane_i]->SetY2NDC(0.89);
 
-    st_1D[vw]->SetName(Form("mystats_1D_%d",vw));
+    st_1D[plane_i]->SetName(Form("mystats_1D_%d",plane_i));
 
-    c_dqdx[vw]->Update();
-    h_dqdx_cor[vw]->SetStats(0);
+    c_dqdx[plane_i]->Update();
+    h_dqdx_cor[plane_i]->SetStats(0);
     gPad->Modified(); gPad->Update();
-    c_dqdx[vw]->Update();
+    c_dqdx[plane_i]->Update();
 /*
-    list_1D[vw] = st_1D[vw]->GetListOfLines();
-    lpars_1D[vw][0] = new TLatex(0, 0, Form("<dQ/dx_{0}> = %.2f +/- %.2f (fC/cm)",mDqdx[vw],mDqdx[vw]));
-    lpars_1D[vw][1] = new TLatex(0, 0, Form("Width       = %.2f +/- %.2f (fC/cm)",wDqdx[vw],wDqdx[vw]));
+    list_1D[plane_i] = st_1D[plane_i]->GetListOfLines();
+    lpars_1D[plane_i][0] = new TLatex(0, 0, Form("<dQ/dx_{0}> = %.2f +/- %.2f (fC/cm)",mDqdx[plane_i],mDqdx[plane_i]));
+    lpars_1D[plane_i][1] = new TLatex(0, 0, Form("Width       = %.2f +/- %.2f (fC/cm)",wDqdx[plane_i],wDqdx[plane_i]));
     for(unsigned int par=0;par<2;par++){
-      lpars_1D[vw][par]->SetTextFont(42);
-      lpars_1D[vw][par]->SetTextSize(0.04);
-      list_1D[vw]->Add(lpars_1D[vw][par]);
+      lpars_1D[plane_i][par]->SetTextFont(42);
+      lpars_1D[plane_i][par]->SetTextSize(0.04);
+      list_1D[plane_i]->Add(lpars_1D[plane_i][par]);
     }
 */
 
-    c_dqdx_z[vw]->cd();
-    //gPad->SetLogz();
-    h2_dqdx_dt[vw]->SetMinimum(1); //h2_dqdx_dt[vw]->SetMaximum(600);
-    h2_dqdx_dt[vw]->GetXaxis()->SetNdivisions(409);
-    h2_dqdx_dt[vw]->GetYaxis()->SetNdivisions(409);
-    h2_dqdx_dt[vw]->SetStats("e");
+    c_dqdx_z[plane_i]->cd();
+    h2_dqdx_dt[plane_i]->SetMinimum(1); //h2_dqdx_dt[plane_i]->SetMaximum(600);
+    h2_dqdx_dt[plane_i]->GetXaxis()->SetNdivisions(409);
+    h2_dqdx_dt[plane_i]->GetYaxis()->SetNdivisions(409);
+    h2_dqdx_dt[plane_i]->SetStats("e");
 
-    c_dqdx_z[vw]->Update();
-    h2_dqdx_dt[vw]->Draw("colz");
-    c_dqdx_z[vw]->Update();
+    c_dqdx_z[plane_i]->Update();
+    h2_dqdx_dt[plane_i]->Draw("colz");
+    c_dqdx_z[plane_i]->Update();
 
-    g_dqdx_z[vw]->Draw("P same");
+    g_dqdx_z[plane_i]->Draw("P same");
      
-    st[vw] = (TPaveStats*)h2_dqdx_dt[vw]->GetListOfFunctions()->FindObject("stats");
-    st[vw]->SetOptStat(000000100);
-    st[vw]->SetOptFit(1);
+    st[plane_i] = (TPaveStats*)h2_dqdx_dt[plane_i]->GetListOfFunctions()->FindObject("stats");
+    st[plane_i]->SetOptStat(000000100);
+    st[plane_i]->SetOptFit(1);
     gPad->Modified(); gPad->Update(); 
-    st[vw]->SetX1NDC(0.45);
-    st[vw]->SetX2NDC(0.89);
-    st[vw]->SetY1NDC(0.7);
-    st[vw]->SetY2NDC(0.89);
+    st[plane_i]->SetX1NDC(0.45);
+    st[plane_i]->SetX2NDC(0.89);
+    st[plane_i]->SetY1NDC(0.7);
+    st[plane_i]->SetY2NDC(0.89);
 
-    st[vw]->SetName(Form("mystats_%d",vw));
+    st[plane_i]->SetName(Form("mystats_%d",plane_i));
 
-    c_dqdx_z[vw]->Update();
-    h2_dqdx_dt[vw]->SetStats(0);
+    c_dqdx_z[plane_i]->Update();
+    h2_dqdx_dt[plane_i]->SetStats(0);
     gPad->Modified(); gPad->Update(); 
-    c_dqdx_z[vw]->Update();
+    c_dqdx_z[plane_i]->Update();
 
-    list[vw] = st[vw]->GetListOfLines();
-    lpars[vw][0] = new TLatex(0, 0, Form("dQ/dx_{0} = %.3f +/- %.3f (fC/cm)",f_dqdx_z[vw]->GetParameter(0),f_dqdx_z[vw]->GetParError(0)));
-    lpars[vw][1] = new TLatex(0, 0, Form("#tau     = %.1f +/- %.1f (#mus)",tau[vw],dtau[vw]));
+    list[plane_i] = st[plane_i]->GetListOfLines();
+    lpars[plane_i][0] = new TLatex(0, 0, Form("dQ/dx_{0} = %.3f +/- %.3f (fC/cm)",f_dqdx_z[plane_i]->GetParameter(0),f_dqdx_z[plane_i]->GetParError(0)));
+    lpars[plane_i][1] = new TLatex(0, 0, Form("#tau     = %.1f +/- %.1f (#mus)",tau[plane_i],dtau[plane_i]));
     for(unsigned int par=0;par<2;par++){
-      lpars[vw][par]->SetTextFont(42);
-      lpars[vw][par]->SetTextSize(0.04);
-      list[vw]->Add(lpars[vw][par]);
+      lpars[plane_i][par]->SetTextFont(42);
+      lpars[plane_i][par]->SetTextSize(0.04);
+      list[plane_i]->Add(lpars[plane_i][par]);
     }
     gPad->Modified(); gPad->Update();
   } 
 
   // Write objects to output files
-  for(unsigned vw = 0;vw<fNplanes;vw++){
-    // Normalize YX 2D histo 
-    
-    for(int y_i = 0; y_i < h2_dqdx_yx[vw]->GetNbinsX(); y_i++)
-      for(int x_i = 0; x_i < h2_dqdx_yx[vw]->GetNbinsY(); x_i++){
-        if(yxw[vw][y_i][x_i] == 0) continue;
-        h2_dqdx_yx[vw]->SetBinContent(y_i+1,x_i+1,h2_dqdx_yx[vw]->GetBinContent(y_i+1,x_i+1)/yxw[vw][y_i][x_i]);        
+  for(unsigned plane_i = 0;plane_i<fNplanes;plane_i++){
+    // Bin-wise normalize dQ/dx 2D YX maps 
+    for(int y_i = 0; y_i < h2_dqdx_yx[plane_i]->GetNbinsX(); y_i++)
+      for(int x_i = 0; x_i < h2_dqdx_yx[plane_i]->GetNbinsY(); x_i++){
+        if(yxw[plane_i][y_i][x_i] == 0) continue;
+        h2_dqdx_yx[plane_i]->SetBinContent(y_i+1,x_i+1,h2_dqdx_yx[plane_i]->GetBinContent(y_i+1,x_i+1)/yxw[plane_i][y_i][x_i]);        
       }
-    h2_dqdx_yx[vw]->SetStats(0);
-    h2_dqdx_yx[vw]->SetMinimum(0);
-    h2_dqdx_yx[vw]->SetMaximum(20);
-    // Normalize ZX 2D histo 
-    for(int z_i = 0; z_i < h2_dqdx_zx[vw]->GetNbinsX(); z_i++)
-      for(int x_i = 0; x_i < h2_dqdx_zx[vw]->GetNbinsY(); x_i++){
-        if(zxw[vw][z_i][x_i] == 0) continue;
-        h2_dqdx_zx[vw]->SetBinContent(z_i+1,x_i+1,h2_dqdx_zx[vw]->GetBinContent(z_i+1,x_i+1)/zxw[vw][z_i][x_i]);        
-      }
-    h2_dqdx_zx[vw]->SetStats(0);
-    h2_dqdx_zx[vw]->SetMinimum(0);
-    h2_dqdx_zx[vw]->SetMaximum(20);
-    // Normalize YZ 2D histo 
-    for(int y_i = 0; y_i < h2_dqdx_yz[vw]->GetNbinsX(); y_i++)
-      for(int z_i = 0; z_i < h2_dqdx_yz[vw]->GetNbinsY(); z_i++){
-        if(yzw[vw][y_i][z_i] == 0) continue;
-        h2_dqdx_yz[vw]->SetBinContent(y_i+1,z_i+1,h2_dqdx_yz[vw]->GetBinContent(y_i+1,z_i+1)/yzw[vw][y_i][z_i]);        
-      }
-    h2_dqdx_yz[vw]->SetStats(0);
-    h2_dqdx_yz[vw]->SetMinimum(0);
-    h2_dqdx_yz[vw]->SetMaximum(20);
+    h2_dqdx_yx[plane_i]->SetStats(0);
+    h2_dqdx_yx[plane_i]->SetMinimum(0);
+    h2_dqdx_yx[plane_i]->SetMaximum(20);
 
-    c_dqdx_z[vw]->Write();
-    f_dqdx_z[vw]->Write();
-    g_dqdx_z[vw]->Write();
+    // Bin-wise normalize dQ/dx 2D YX maps 
+    for(int z_i = 0; z_i < h2_dqdx_zx[plane_i]->GetNbinsX(); z_i++)
+      for(int x_i = 0; x_i < h2_dqdx_zx[plane_i]->GetNbinsY(); x_i++){
+        if(zxw[plane_i][z_i][x_i] == 0) continue;
+        h2_dqdx_zx[plane_i]->SetBinContent(z_i+1,x_i+1,h2_dqdx_zx[plane_i]->GetBinContent(z_i+1,x_i+1)/zxw[plane_i][z_i][x_i]);        
+      }
+    h2_dqdx_zx[plane_i]->SetStats(0);
+    h2_dqdx_zx[plane_i]->SetMinimum(0);
+    h2_dqdx_zx[plane_i]->SetMaximum(20);
+
+    // Bin-wise normalize dQ/dx 2D YX maps 
+    for(int y_i = 0; y_i < h2_dqdx_yz[plane_i]->GetNbinsX(); y_i++)
+      for(int z_i = 0; z_i < h2_dqdx_yz[plane_i]->GetNbinsY(); z_i++){
+        if(yzw[plane_i][y_i][z_i] == 0) continue;
+        h2_dqdx_yz[plane_i]->SetBinContent(y_i+1,z_i+1,h2_dqdx_yz[plane_i]->GetBinContent(y_i+1,z_i+1)/yzw[plane_i][y_i][z_i]);        
+      }
+
+    // Set histogram rendering
+    h2_dqdx_yz[plane_i]->SetStats(0);
+    h2_dqdx_yz[plane_i]->SetMinimum(0);
+    h2_dqdx_yz[plane_i]->SetMaximum(20);
+
+    // Write objects to output files
+    c_dqdx_z[plane_i]->Write();
+    f_dqdx_z[plane_i]->Write();
+    g_dqdx_z[plane_i]->Write();
   }
 
   // End of the game
