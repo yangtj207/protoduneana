@@ -22,7 +22,7 @@
 #include "TColor.h"
 #include "TProfile.h"
 #include "TProfile2D.h"
-void plotXCaloLifetime(std::string runNumber, std::string txtLabel, double nBins=144)
+void plotXCaloLifetime(std::string runNumber, std::string txtLabel)
 {
 
 	TCanvas c1=TCanvas();
@@ -55,36 +55,39 @@ void plotXCaloLifetime(std::string runNumber, std::string txtLabel, double nBins
 	std::cout<<hour_min_sec<<','<<year_month_day<<std::endl;
 
 	TH1F *x_correction_factor=(TH1F*)my_file1.Get("dqdx_mpv_X_hist_2");
-
+        int nBins=x_correction_factor->GetNbinsX();
 	TProfile* rebinHist=new TProfile("rebinHist","rebinHist",nBins/2,0.0,2.3);
 	TH1F* rebinHistL=new TH1F("rebinHistL","rebinHistL",nBins/2,0.0,2.3);
 	TH1F* rebinHistR=new TH1F("rebinHistR","rebinHistR",nBins/2,0.0,2.3);
 	double velocity=156;
-    for (int i=1; i<=x_correction_factor->GetNbinsX()-1;i++){
-    if (i==(nBins/2)) continue;
+    for (int i=1; i<=x_correction_factor->GetNbinsX();i++){
+    
+    double x_value=(abs(x_correction_factor->GetBinCenter(1))-abs(x_correction_factor->GetBinCenter(i)))/velocity;
+    double position=rebinHist->FindBin(x_value);
     if (x_correction_factor->GetBinContent(i)<10 || x_correction_factor->GetBinContent(i)>200) continue;
     std::cout<<x_correction_factor->GetBinContent(i)<<std::endl;
-    rebinHist->Fill((abs(x_correction_factor->GetBinCenter(1))-abs(x_correction_factor->GetBinCenter(i)))/velocity,x_correction_factor->GetBinContent(i));
-    if (i>nBins/2) {rebinHistL->SetBinContent(nBins/2-(i-nBins/2-2),x_correction_factor->GetBinContent(i));
-rebinHistL->SetBinError(nBins/2-(i-nBins/2-2),x_correction_factor->GetBinContent(i)*0.02);
+    
+    rebinHist->Fill(x_value,x_correction_factor->GetBinContent(i));
+    if (x_correction_factor->GetBinCenter(i)>0) {rebinHistL->SetBinContent(position,x_correction_factor->GetBinContent(i));
+rebinHistL->SetBinError(position,x_correction_factor->GetBinError(i));
     }
-    if (i<nBins/2-1){ rebinHistR->SetBinContent(i-1,x_correction_factor->GetBinContent(i));
- rebinHistR->SetBinError(i-1,0.02*x_correction_factor->GetBinContent(i)/2.f);
+    if (x_correction_factor->GetBinCenter(i)<0){ rebinHistR->SetBinContent(position,x_correction_factor->GetBinContent(i));
+ rebinHistR->SetBinError(position,x_correction_factor->GetBinError(i));
     }
     }
 
 	rebinHistR->GetXaxis()->SetTitle("Hit Time [ms]");
 	rebinHistR->GetYaxis()->SetTitle("dQ/dx [(ADC count)#timestick/cm]");
 	rebinHistR->GetYaxis()->SetRangeUser(0,100);
-	rebinHistR->GetXaxis()->SetRangeUser(0,2.3);
-	rebinHistL->GetXaxis()->SetRangeUser(0,2.3);
-	rebinHist->GetXaxis()->SetRangeUser(0,2.3);
+	rebinHistR->GetXaxis()->SetRangeUser(0,2.00);
+	rebinHistL->GetXaxis()->SetRangeUser(0,2.0);
+	rebinHist->GetXaxis()->SetRangeUser(0,2.0);
 	rebinHistR->GetXaxis()->CenterTitle();
 	rebinHistR->GetYaxis()->CenterTitle(); 
 	rebinHistR->SetTitle(Form("Run %s BR",s.c_str()));
 	if (runNumber.find(Form("MC"))!=std::string::npos)  rebinHist->SetTitle(Form("Prod. 4 %s BR",s.c_str()));
 	rebinHistR->Draw("p e0");
-	TF1 *fit= new TF1("exp","[0]*exp(x/(-[1]))",0.1,2.3);
+	TF1 *fit= new TF1("exp","[0]*exp(x/(-[1]))",0.0,2.0);
 	fit->SetParName(0,"Constant");
 	fit->SetParName(1,"e^{-} Lifetime [ms]");
 	fit->SetParameter(0,50);

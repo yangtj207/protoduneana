@@ -8,4 +8,4 @@ for i in runArray:
     os.system("python filelisting.py -r "+str(i))
     os.system("make_yz_correction file_list_"+str(i)+".txt 1")
     os.system("make_x_correction file_list_"+str(i)+".txt 1 1 1")
-    os.system("root -l -b -q 'plotXCaloLifetime.C(\""+str(i)+"\",\"All\",46)'")
+    os.system("root -l -b -q 'plotXCaloLifetime.C(\""+str(i)+"\",\"All\")'")
