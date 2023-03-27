@@ -12,7 +12,7 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TString.h>
-
+#include "protoduneana/singlephase/michelremoving/scripts/LanGausFit.h"
 // Header file for the classes stored in the TTree if any.
 
 class protoDUNE_X_calib {

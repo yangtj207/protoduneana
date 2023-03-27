@@ -18,6 +18,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "art_root_io/TFileService.h"
+#include "TFile.h"
 #include "TTree.h"
 
 #include "geant4reweight/src/ReweightBase/G4ReweighterFactory.hh"

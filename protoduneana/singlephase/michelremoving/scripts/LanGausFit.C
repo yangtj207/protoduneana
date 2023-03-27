@@ -154,12 +154,12 @@ Int_t langaupro(Double_t *params, Double_t &maxx, Double_t &FWHM) {
   return (0);
 }
 
-TF1 *runlangaufit(TH1 *his, int plane){
+TF1 *runlangaufit(TH1 *his, int plane, double xbin_max){
 
   double fr[2];
   double sv[4], pllo[4], plhi[4], fp[4], fpe[4];
   fr[0]=1.;//this was originally 0.
-  fr[1]=15.;
+  fr[1]=xbin_max;
   sv[1] = his->GetBinCenter(his->GetMaximumBin());
   sv[2] = 0.05*his->GetEntries();
   if (his->GetMean()>5.5){
