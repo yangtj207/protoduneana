@@ -2309,7 +2309,7 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
 
   //std::cout << "Calculating" << std::endl;
   TMatrixD recalculated_cov(pars.GetNbinsX(), pars.GetNbinsX());
-  for (int i = 0; i < fNThrows; ++i) {
+  for (size_t i = 0; i < fNThrows; ++i) {
     for (int j = 0; j < pars.GetNbinsX(); ++j) {
       for (int k = 0; k < pars.GetNbinsX(); ++k) {
         //std::cout << i << " " << j << " " << k << std::endl;
@@ -2994,7 +2994,8 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
       fInputChol = new TDecompChol(*fCovMatrix);
       fInputChol->Decompose();
 
-      if (fTotalSystParameters != fCovMatrix->GetNrows()) {
+      size_t nrows = static_cast<size_t>(fCovMatrix->GetNrows());
+      if (fTotalSystParameters != nrows) {
         std::string message = "PDSPThinSliceFitter::Configure: ";
         message += "Error. Input covariance matrix and nsyst differ\n";
         message += std::to_string(fTotalSystParameters);
