@@ -15,11 +15,13 @@ beam_shift_vars: {
     [2, 22],
     [3, 22],
     [4, 2],
+    #[5, 1],
+    #[6, 1],
     [7, 1]
   ]
   Options: {}
   IsSelVar: true
-  InputCovariance: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/NewBeamShiftCovariance.root"
+  InputCovariance: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/No56FixedBeamShiftCovariance.root"
 }
 
 END_PROLOG

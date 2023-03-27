@@ -166,8 +166,12 @@ class PDSPSystematics {
       const std::map<std::string, ThinSliceSystematic> & pars, int upstream_ID*/);
 
 
-  double CheckAndReturn(double weight, std::string name,
-                        const ThinSliceSystematic & par);
+  static double CheckAndReturn(double weight, std::string name,
+                        const ThinSliceSystematic & par,
+                        const ThinSliceEvent & event);
+  //static double CheckAndReturn(double weight, std::string name,
+  //                      ThinSliceSystematic * par,
+  //                      const ThinSliceEvent & event);
 
   //EDiv
   static double fEDivF, fEDivCut;

@@ -189,17 +189,21 @@ void protoana::ThinSliceDataSet::Rebin3D(TH1 * sel_hist, TH1 * rebinned) {
   }
 }
 
-void protoana::ThinSliceDataSet::GenerateStatFluctuation() {
+void protoana::ThinSliceDataSet::GenerateStatFluctuation(bool poisson) {
 
   //bool retry = true;
   //while (retry) {
+  //if (!poisson) {
     for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
       it->second->Reset();
       //fSelectionHistsRebinned[it->first]->Reset();
     }
 
+    int total = 0;
+    std::cout << "Seed: " << fRNG.GetSeed() << std::endl;
     for (int i = 0; i < fTotal; ++i) {
       double r = fRNG.Uniform();
+      if (i < 10) std::cout << i << " " << r << std::endl;
       std::pair<int, int> bin;
       for (size_t j = 0; j < fCumulatives.size(); ++j) {
         //std::cout << fCumulatives[j].second << " " <<  r <<
@@ -213,8 +217,34 @@ void protoana::ThinSliceDataSet::GenerateStatFluctuation() {
       }
       //std::cout << "Found bin: " << bin.first << " " << bin.second << std::endl;
       fSelectionHists[bin.first]->AddBinContent(bin.second); 
+      ++total;
       //fSelectionHistsRebinned[bin.first]->AddBinContent(bin.second); 
     }
+
+    double bin_total = 0.;
+    for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
+      for (int i = 1; i <= it->second->GetNbinsX(); ++i) {
+        bin_total += it->second->GetBinContent(i);
+      }
+    }
+    std::cout << total << " " << bin_total << std::endl;
+
+  //}
+  /*else {
+    std::cout << "Poisson fluc" << std::endl;
+    double total = 0.;
+    for (auto & it : fSelectionHists) {
+      for (int i = 1; i <= it.second->GetNbinsX(); ++i) {
+        std::cout << it.first << " " << it.second << " " <<
+                     it.second->GetBinContent(i) << " ";
+        it.second->SetBinContent(
+            i, fRNG.PoissonD(it.second->GetBinContent(i)));
+        std::cout << it.second->GetBinContent(i) << std::endl;
+        total += it.second->GetBinContent(i);
+      }
+    }
+    std::cout << "total: " << total << std::endl;
+  }*/
 
     //bool good = true;
     /*
@@ -249,11 +279,87 @@ void protoana::ThinSliceDataSet::GenerateStatFluctuation() {
 
 void protoana::ThinSliceDataSet::FillHistsFromSamples(
     const std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
-    double & flux, std::vector<double> & fluxes_by_beam) {
+    double & flux, std::vector<double> & fluxes_by_beam, bool fluctuate,
+    const std::vector<int> & to_skip) {
 
   flux = 0.;
+  std::vector<double> temp_flux(fluxes_by_beam.size());
+  fluxes_by_beam.clear();
   for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
     it->second->Reset();
+  }
+
+
+  if (fluctuate) {
+    //Get total
+    double total = 0.;
+    int a = 0;
+    for (auto & sample : samples ) {
+      for (size_t i = 0; i < sample.second.size(); ++i) {
+        for (size_t j = 0; j < sample.second[i].size(); ++j) {
+          const auto & hists = sample.second[i][j].GetSelectionHists();
+          for (auto & hist : hists) {
+            total += hist.second->Integral();
+            //std::cout << a << " " << i << " "  << j << " " << hist.second->Integral() << std::endl;
+            temp_flux[i] += hist.second->Integral();
+          }
+        }
+      }
+      ++a;
+    }
+    std::cout << "Total: " << total << std::endl;
+    for (auto & f : temp_flux) {std::cout << f << " ";} std::cout << std::endl;
+
+
+    //First, iterate through all samples/hists. Vary the contents
+    //Skip accordingly. Get varied total
+    double varied_total = 0.;
+    double nominal_skip_total = 0.;
+    //std::map<int, double> nominal_skip_vals;
+    //for (auto i : to_skip) nominal_skip_vals[i] = 0.;
+
+    for (auto & sample : samples ) {
+      auto & sample_vec = sample.second;
+      for (size_t i = 0; i < sample_vec.size(); ++i) {
+        for (size_t j = 0; j < sample_vec[i].size(); ++j) {
+          const auto & hists = sample_vec[i][j].GetSelectionHists();
+          for (auto & hist : hists) {
+            if (std::find(to_skip.begin(), to_skip.end(), hist.first)
+                != to_skip.end()) {
+              nominal_skip_total += hist.second->Integral();
+              //nominal_skip_vals[hist.first] += hist.second->Integral();
+              continue;
+            }
+            for (int k = 1; k <= hist.second->GetNbinsX(); ++k) {
+              double val = hist.second->GetBinContent(k);
+              double rand = fRNG.PoissonD(val);
+              hist.second->SetBinContent(k, rand);
+            }
+            varied_total += hist.second->Integral();
+          }
+        }
+      }
+    }
+
+    double leftover = total - varied_total;
+    double ratio = leftover/nominal_skip_total;
+    std::cout << "Leftover: " << leftover << std::endl;
+    std::cout << "Nominal skip total " << nominal_skip_total << std::endl;
+
+    for (auto & sample : samples ) {
+      auto & sample_vec = sample.second;
+      for (size_t i = 0; i < sample_vec.size(); ++i) {
+        for (size_t j = 0; j < sample_vec[i].size(); ++j) {
+          const auto & hists = sample_vec[i][j].GetSelectionHists();
+          for (auto k : to_skip) {
+            if (hists.find(k) == hists.end()) continue;
+            //std::cout << "Scaling " << k << " " << hists.at(k)->Integral() <<
+            //             " " << ratio << std::endl;
+            hists.at(k)->Scale(ratio);
+          }
+        }
+      }
+    }
   }
 
   int a = 0;
@@ -262,13 +368,17 @@ void protoana::ThinSliceDataSet::FillHistsFromSamples(
       if (a == 0) fluxes_by_beam.push_back(0.);
       for (size_t j = 0; j < it->second[i].size(); ++j) {
         const auto & hists = it->second[i][j].GetSelectionHists();
+
         for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
+
           fSelectionHists[it2->first]->Add(it2->second);
           flux += it2->second->Integral();
           fluxes_by_beam[i] += it2->second->Integral();
+          //std::cout << "Adding " << it2->second->Integral() << " to " << i << std::endl;
         }
       }
     }
     ++a;
   }
+  std::cout << "Flux: " << flux << std::endl;
 }

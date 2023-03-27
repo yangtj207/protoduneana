@@ -57,7 +57,7 @@ RT.gStyle.SetTitleX(.915)
 RT.gStyle.SetTitleY(.95)
 RT.gROOT.ForceStyle()
 #fIn = RT.TFile(sys.argv[1], "OPEN");
-fIn = RT.TFile(args.i, "OPEN");
+fIn = RT.TFile.Open(args.i);
 
 
 nominal_canvas = fIn.Get("cNominalAbs")

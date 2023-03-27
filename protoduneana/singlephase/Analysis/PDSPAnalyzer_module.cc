@@ -81,6 +81,8 @@
 #include "Math/Vector3D.h"
 #include "TGraph2D.h"
 #include "TROOT.h"
+#include "TFitResultPtr.h"
+#include "TFitResult.h"
 
 
 namespace pduneana {
@@ -591,6 +593,7 @@ private:
                      detinfo::DetectorClocksData const& clockData);
   void BeamForcedTrackInfo();
   void GetG4RWCoeffs(std::vector<double> & weights, std::vector<double> & coeffs);
+  double GetG4RWExpCoeffs(std::vector<double> & weights, std::vector<double> & coeffs);
   void CheckForCrossingCosmics(
       const art::Event & evt, protoana::ProtoDUNEPFParticleUtils & pfpUtil,
       const recob::Track * thisTrack/*,
@@ -827,6 +830,23 @@ private:
 
   std::vector<std::vector<double>> g4rw_full_fine_piplus_weights,
                                    g4rw_full_fine_piplus_coeffs;
+
+  std::vector<std::vector<double>> g4rw_primary_grid_exp_coeffs,
+                                   g4rw_full_grid_piplus_exp_coeffs,
+                                   g4rw_full_grid_piplus_exp_coeffs_fake_data,
+                                   g4rw_full_grid_proton_exp_coeffs,
+                                   g4rw_full_grid_neutron_exp_coeffs,
+                                   g4rw_full_grid_kplus_exp_coeffs,
+                                   g4rw_downstream_grid_piplus_exp_coeffs,
+                                   g4rw_full_fine_piplus_exp_coeffs;
+  std::vector<double> g4rw_primary_grid_exp_fit_chi2,
+                      g4rw_full_grid_piplus_exp_fit_chi2,
+                      g4rw_full_grid_piplus_exp_fit_chi2_fake_data,
+                      g4rw_full_grid_proton_exp_fit_chi2,
+                      g4rw_full_grid_neutron_exp_fit_chi2,
+                      g4rw_full_grid_kplus_exp_fit_chi2,
+                      g4rw_downstream_grid_piplus_exp_fit_chi2,
+                      g4rw_full_fine_piplus_exp_fit_chi2;
 
   //EDIT: STANDARDIZE
   //EndProcess --> endProcess ?
@@ -1580,6 +1600,11 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     for (auto weights : g4rw_full_grid_piplus_weights) {
       g4rw_full_grid_piplus_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_piplus_coeffs.back());
+
+
+      g4rw_full_grid_piplus_exp_coeffs.push_back(std::vector<double>());
+      g4rw_full_grid_piplus_exp_fit_chi2.push_back(
+          GetG4RWExpCoeffs(weights, g4rw_full_grid_piplus_exp_coeffs.back()));
     }
 
     //Fine Weights
@@ -1588,6 +1613,10 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     for (auto weights : g4rw_full_fine_piplus_weights) {
       g4rw_full_fine_piplus_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_fine_piplus_coeffs.back());
+
+      g4rw_full_fine_piplus_exp_coeffs.push_back(std::vector<double>());
+      g4rw_full_fine_piplus_exp_fit_chi2.push_back(
+          GetG4RWExpCoeffs(weights, g4rw_full_fine_piplus_exp_coeffs.back()));
     }
 
 
@@ -1597,6 +1626,10 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     for (auto weights : g4rw_full_grid_piplus_weights_fake_data) {
       g4rw_full_grid_piplus_coeffs_fake_data.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_piplus_coeffs_fake_data.back());
+
+      g4rw_full_grid_piplus_exp_coeffs_fake_data.push_back(std::vector<double>());
+      g4rw_full_grid_piplus_exp_fit_chi2_fake_data.push_back(
+          GetG4RWExpCoeffs(weights, g4rw_full_grid_piplus_exp_coeffs_fake_data.back()));
     }
 
     std::vector<std::vector<G4ReweightTraj *>> proton_hierarchy 
@@ -1607,6 +1640,10 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     for (auto weights : g4rw_full_grid_proton_weights) {
       g4rw_full_grid_proton_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_proton_coeffs.back());
+
+      g4rw_full_grid_proton_exp_coeffs.push_back(std::vector<double>());
+      g4rw_full_grid_proton_exp_fit_chi2.push_back(
+          GetG4RWExpCoeffs(weights, g4rw_full_grid_proton_exp_coeffs.back()));
     }
 
     std::vector<std::vector<G4ReweightTraj *>> neutron_hierarchy 
@@ -1617,6 +1654,10 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     for (auto weights : g4rw_full_grid_neutron_weights) {
       g4rw_full_grid_neutron_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_neutron_coeffs.back());
+
+      g4rw_full_grid_neutron_exp_coeffs.push_back(std::vector<double>());
+      g4rw_full_grid_neutron_exp_fit_chi2.push_back(
+          GetG4RWExpCoeffs(weights, g4rw_full_grid_neutron_exp_coeffs.back()));
     }
 
     std::vector<std::vector<G4ReweightTraj *>> kplus_hierarchy 
@@ -1627,6 +1668,10 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     for (auto weights : g4rw_full_grid_kplus_weights) {
       g4rw_full_grid_kplus_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_full_grid_kplus_coeffs.back());
+
+      g4rw_full_grid_kplus_exp_coeffs.push_back(std::vector<double>());
+      g4rw_full_grid_kplus_exp_fit_chi2.push_back(
+          GetG4RWExpCoeffs(weights, g4rw_full_grid_kplus_exp_coeffs.back()));
     }
 
     std::vector<std::vector<G4ReweightTraj *>> downstream_piplus_hierarchy 
@@ -1637,6 +1682,10 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     for (auto weights : g4rw_downstream_grid_piplus_weights) {
       g4rw_downstream_grid_piplus_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_downstream_grid_piplus_coeffs.back());
+
+      g4rw_downstream_grid_piplus_exp_coeffs.push_back(std::vector<double>());
+      g4rw_downstream_grid_piplus_exp_fit_chi2.push_back(
+          GetG4RWExpCoeffs(weights, g4rw_downstream_grid_piplus_exp_coeffs.back()));
     }
 
 
@@ -1670,6 +1719,10 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
     for (auto weights : g4rw_primary_grid_weights) {
       g4rw_primary_grid_coeffs.push_back(std::vector<double>());
       GetG4RWCoeffs(weights, g4rw_primary_grid_coeffs.back());
+
+      g4rw_primary_grid_exp_coeffs.push_back(std::vector<double>());
+      g4rw_primary_grid_exp_fit_chi2.push_back(
+          GetG4RWExpCoeffs(weights, g4rw_primary_grid_exp_coeffs.back()));
     }
 
 
@@ -2245,6 +2298,24 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("g4rw_full_grid_neutron_coeffs", &g4rw_full_grid_neutron_coeffs);
   fTree->Branch("g4rw_full_grid_kplus_coeffs", &g4rw_full_grid_kplus_coeffs);
   fTree->Branch("g4rw_primary_grid_coeffs", &g4rw_primary_grid_coeffs);
+
+  fTree->Branch("g4rw_full_grid_piplus_exp_coeffs",  &g4rw_full_grid_piplus_exp_coeffs);
+  fTree->Branch("g4rw_full_fine_piplus_exp_coeffs",  &g4rw_full_fine_piplus_exp_coeffs);
+  fTree->Branch("g4rw_full_grid_piplus_exp_coeffs_fake_data",  &g4rw_full_grid_piplus_exp_coeffs_fake_data);
+  fTree->Branch("g4rw_downstream_grid_piplus_exp_coeffs",  &g4rw_downstream_grid_piplus_exp_coeffs);
+  fTree->Branch("g4rw_full_grid_proton_exp_coeffs", &g4rw_full_grid_proton_exp_coeffs);
+  fTree->Branch("g4rw_full_grid_neutron_exp_coeffs", &g4rw_full_grid_neutron_exp_coeffs);
+  fTree->Branch("g4rw_full_grid_kplus_exp_coeffs", &g4rw_full_grid_kplus_exp_coeffs);
+  fTree->Branch("g4rw_primary_grid_exp_coeffs", &g4rw_primary_grid_exp_coeffs);
+
+  fTree->Branch("g4rw_full_grid_piplus_exp_fit_chi2",  &g4rw_full_grid_piplus_exp_fit_chi2);
+  fTree->Branch("g4rw_full_fine_piplus_exp_fit_chi2",  &g4rw_full_fine_piplus_exp_fit_chi2);
+  fTree->Branch("g4rw_full_grid_piplus_exp_fit_chi2_fake_data",  &g4rw_full_grid_piplus_exp_fit_chi2_fake_data);
+  fTree->Branch("g4rw_downstream_grid_piplus_exp_fit_chi2",  &g4rw_downstream_grid_piplus_exp_fit_chi2);
+  fTree->Branch("g4rw_full_grid_proton_exp_fit_chi2", &g4rw_full_grid_proton_exp_fit_chi2);
+  fTree->Branch("g4rw_full_grid_neutron_exp_fit_chi2", &g4rw_full_grid_neutron_exp_fit_chi2);
+  fTree->Branch("g4rw_full_grid_kplus_exp_fit_chi2", &g4rw_full_grid_kplus_exp_fit_chi2);
+  fTree->Branch("g4rw_primary_grid_exp_fit_chi2", &g4rw_primary_grid_exp_fit_chi2);
   //fTree->Branch("g4rw_primary_grid_pair_weights", &g4rw_primary_grid_pair_weights);
 
   if( fSaveHits ){
@@ -2843,6 +2914,24 @@ void pduneana::PDSPAnalyzer::reset()
   g4rw_primary_grid_weights.clear();
   g4rw_primary_grid_coeffs.clear();
   //g4rw_primary_grid_pair_weights.clear();
+  //
+  g4rw_primary_grid_exp_coeffs.clear();
+  g4rw_full_grid_piplus_exp_coeffs.clear();
+  g4rw_full_grid_piplus_exp_coeffs_fake_data.clear();
+  g4rw_full_grid_proton_exp_coeffs.clear();
+  g4rw_full_grid_neutron_exp_coeffs.clear();
+  g4rw_full_grid_kplus_exp_coeffs.clear();
+  g4rw_downstream_grid_piplus_exp_coeffs.clear();
+  g4rw_full_fine_piplus_exp_coeffs.clear();
+
+  g4rw_primary_grid_exp_fit_chi2.clear();
+  g4rw_full_grid_piplus_exp_fit_chi2.clear();
+  g4rw_full_grid_piplus_exp_fit_chi2_fake_data.clear();
+  g4rw_full_grid_proton_exp_fit_chi2.clear();
+  g4rw_full_grid_neutron_exp_fit_chi2.clear();
+  g4rw_full_grid_kplus_exp_fit_chi2.clear();
+  g4rw_downstream_grid_piplus_exp_fit_chi2.clear();
+  g4rw_full_fine_piplus_exp_fit_chi2.clear();
 }
 
 
@@ -5579,6 +5668,20 @@ void pduneana::PDSPAnalyzer::GetG4RWCoeffs(std::vector<double> & weights, std::v
   for (int j = 0; j < fit_func->GetNpar(); ++j) {
     coeffs.push_back(fit_func->GetParameter(j));
   }
+}
+
+double pduneana::PDSPAnalyzer::GetG4RWExpCoeffs(std::vector<double> & weights, std::vector<double> & coeffs) {
+  //Check if there are no weights
+  if (weights.empty()) return -999.;
+
+  TGraph gr(fGridPoints.size(), &fGridPoints[0], &weights[0]);
+  TF1 fit_func("weight_func", "[0]*exp([1]*x)", fGridPoints[0], fGridPoints.back());
+  TFitResultPtr result = gr.Fit(&fit_func, "QS");
+  for (int j = 0; j < fit_func.GetNpar(); ++j) {
+    coeffs.push_back(fit_func.GetParameter(j));
+  }
+
+  return result->Chi2();
 }
 
 void pduneana::PDSPAnalyzer::CheckForCrossingCosmics(

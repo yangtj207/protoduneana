@@ -70,6 +70,9 @@ class PDSPThinSliceFitter {
   void BuildFakeDataXSecs(bool use_scales = true);
   void BuildDataFromToy();
   double CalcChi2SystTerm(), CalcRegTerm();
+  void CalculateCrossSection(TH1D * xsec_hist);
+  void CalcFullCrossSection(TH1D * xsec_hist);
+  void CalcApproxCrossSection(TH1D * xsec_hist);
   void GetFixFactors();
   void MakeThrowsTree(TTree & tree, std::vector<double> & branches);
   //void MakeThrowsArrays(std::vector<TVectorD *> & arrays);
@@ -120,6 +123,8 @@ class PDSPThinSliceFitter {
   std::map<int, std::vector<int>> fFluxParsToSamples;
   double fDataFlux;
   double fMCDataScale = 1.;
+
+  std::string fXSecCalcStyle;
 
   std::map<int, std::vector<double>> fSignalParameters;
   std::map<int, std::vector<std::string>> fSignalParameterNames;
@@ -185,18 +190,19 @@ class PDSPThinSliceFitter {
   std::string fSliceMethod;
   bool fMultinomial;
   bool fDoFakeData, fDoThrows, fDoScans, fOnlySystScans, fDo1DShifts, fDoSysts,
-       fRunHesse, fSetLimits;
+       fRunHesse, fSetSigLimits, fSetSystLimits, fSetSelVarLimits;
   bool fFixVariables;
   bool fSetValsPreFit;
   std::vector<double> fPreFitVals;
   std::map<std::string, double> fSystsToFix, fFixSystsPostFit;
   std::map<std::string, int> fSystParameterIndices;
   std::string fFakeDataRoutine;
-  bool fDoFluctuateStats;
-  bool fSplitMC;
+  bool fDoFluctuateStats, fFluctuateInSamples, fVaryMCStatsForFakeData;
+  bool fSplitMC, fShuffle;
   int fMaxEntries = -1, fMaxDataEntries = -1;
   int fSplitVal = 0;
   bool fFillIncidentInFunction = false;
+  bool fCalcChi2InFCN = true;
   bool fFixSamplesInFunction = false;
   bool fFitUnderOverflow = false;
   bool fGetMeanXSec = false;
@@ -231,7 +237,7 @@ class PDSPThinSliceFitter {
   };
 
   void GenerateCorrelatedThrow(
-      const TH1D & pars, const TDecompChol & chol, std::vector<double> & vals);
+      const TH1D & pars, const TMatrixD * cov_lower/*TDecompChol & chol*/, std::vector<double> & vals);
   void GenerateUncorrelatedThrow(
       const TH1D & pars, const TMatrixD * cov, std::vector<double> & vals);
   

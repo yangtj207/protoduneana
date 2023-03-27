@@ -53,7 +53,6 @@ Systematics: [
   #,@local::SystematicsList.beam_match_high_weight
   ,@local::g4rw_downstream_piplus_low_coeff
   ,@local::g4rw_downstream_piplus_high_coeff
-  #,@local::SystematicsList.quad_beam_shift
   ,@local::SystematicsList.beam_scraper_weight
 ]
 
@@ -89,20 +88,16 @@ CovarianceBins: [
  ,["beam_match_weight", 3] #20%
  #,["beam_match_low_weight", 3] #20%
  #,["beam_match_high_weight", 4] #20%
- ,["g4rw_downstream_piplus_low_coeff", 5] #33%
- ,["g4rw_downstream_piplus_high_coeff", 6] #33%
- #,["quad_beam_shift", 7] #16%
- ,["beam_scraper_weight", 7] #50%
+ ,["g4rw_downstream_piplus_low_coeff", 4] #33%
+ ,["g4rw_downstream_piplus_high_coeff", 5] #33%
+ ,["beam_scraper_weight", 6] #50%
 ]
 
-#CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/fixed_cov_7_29_22.root"
-#CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/with_quad_shift.root"
-#CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/with_beam_bins.root"
-CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/persistent/users/calcuttj/with_scraper.root"
+CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/scraper_onebeam.root"
 CovarianceMatrix: "m"
 
 SelectionVarSysts: [
-  #@local::beam_shift_vars
+  @local::beam_shift_vars
 ]
 SetSelVarCentrals: true
 
@@ -220,9 +215,10 @@ Samples: [
   {
     Name: "UpstreamInt"
     ID: 4
-    IsSignal: false
+    IsSignal: true
     SignalBins: []
     FluxType: 1
+    SingleSignalBin: true
   },
   {
     Name: "Muons"
@@ -263,12 +259,17 @@ AddRegTerm: false
 RegFactor: 5.
 
 FitFunctionType: 2
+
+SetSigLimits: true 
+SetSystLimits: true
+SetSelVarLimits: true
 #####################
 
 FitUnderOverflow: true
 TieUnderOver: false 
 
-GetMeanXSec: false
+GetMeanXSec: true
+XSecCalcStyle: "Approx"
 
 ## Plotting
 #PlotStyle: @local::ReducedColorsStyle
@@ -284,10 +285,10 @@ MaxEntries: -1
 MaxDataEntries: -1 #54000
 DoFakeData: false 
 FluctuateStats: false 
-DoThrows: false 
+DoThrows: true
 NThrows: 1000
 DoScans: false
-OnlySystScans: true
+OnlySystScans: false
 RunHesse: true
 Do1DShifts: false 
 DoSysts: true

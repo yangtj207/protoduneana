@@ -7,6 +7,7 @@
 #include "TSpline.h"
 #include "TDirectory.h"
 #include "TCanvas.h"
+#include "TRandom3.h"
 
 #include <map>
 #include <sstream>
@@ -281,7 +282,7 @@ class ThinSliceSample {
     }
   }
 
-  int GetSelectionHistBin(int id, double val) {
+  int GetSelectionHistBin(int id, double val) const {
     if (fSelectionHists.find(id) != fSelectionHists.end()) {
       return fSelectionHists.at(id)->GetXaxis()->FindBin(val);
     }
@@ -413,6 +414,9 @@ class ThinSliceSample {
   void RefillRebinnedHists();
   void MakeRebinnedHists();
 
+  void CalculateStatVariations();
+  double GetStatVarWeight(int sel, double val) const;
+
  private:
   double fFactor = 1., fBestFitFactor = 1.;
   bool fBestFitIsSet = false;
@@ -448,8 +452,11 @@ class ThinSliceSample {
   std::map<std::string, std::vector<double>> fSystematicVals;
 
 
+  std::map<int, std::vector<double>> fStatVariations;
   std::vector<std::pair<double, double>> fIncidentEnergies;
   std::vector<std::pair<std::pair<double, double>, double>> fESliceEnergies;
+
+  TRandom3 fRNG = TRandom3(0);
 
 };
 

@@ -88,7 +88,7 @@ void protoana::PDSPThinSliceFitter::MakeMinimizer() {
       }
       fMinimizer->SetVariable(n_par, fSignalParameterNames[it->first][i].c_str(),
                               it->second[i], 0.01);
-      if (fSetLimits)
+      if (fSetSigLimits)
         fMinimizer->SetVariableLimits(n_par, fLowerLimit, fUpperLimit);
       fMinimizerInitVals.push_back(it->second[i]);
       parsHist.SetBinContent(n_par+1, it->second[i]);
@@ -100,7 +100,7 @@ void protoana::PDSPThinSliceFitter::MakeMinimizer() {
       fPreFitParsNormal.SetBinError(n_par+1, 0.);
       fPreFitParsNormal.GetXaxis()->SetBinLabel(
           n_par+1, fSignalParameterNames[it->first][i].c_str());
-      fParLimits.push_back(0.);
+      fParLimits.push_back(-1.e6);
       fParLimitsUp.push_back(100.);
       ++n_par;
 
@@ -115,7 +115,7 @@ void protoana::PDSPThinSliceFitter::MakeMinimizer() {
     fMinimizer->SetVariable(n_par, fFluxParameterNames[it->first].c_str(),
                             it->second, 0.01);
     fMinimizerInitVals.push_back(it->second);
-    if (fSetLimits)
+    if (fSetSigLimits)
       fMinimizer->SetVariableLimits(n_par, fLowerLimit, fUpperLimit);
     parsHist.SetBinContent(n_par+1, it->second);
     parsHist.SetBinError(n_par+1, 0.);
@@ -125,7 +125,8 @@ void protoana::PDSPThinSliceFitter::MakeMinimizer() {
     fPreFitParsNormal.SetBinError(n_par+1, 0.);
     fPreFitParsNormal.GetXaxis()->SetBinLabel(
         n_par+1, fFluxParameterNames[it->first].c_str());
-    fParLimits.push_back(0.);
+    //fParLimits.push_back(0.);
+    fParLimits.push_back((fSetSigLimits ? 0. : -1.e6));//Set to something very low if not setting limits
     fParLimitsUp.push_back(100.);
     ++n_par;
   }
@@ -144,9 +145,12 @@ void protoana::PDSPThinSliceFitter::MakeMinimizer() {
     fMinimizer->SetVariable(n_par, it->second.GetName().c_str(),
                             val, 0.01);
     fMinimizerInitVals.push_back(val);
-    if (fSetLimits)
+    if (fSetSystLimits && it->second.GetSetLimits()) {
+      std::cout << "Setting limit " << it->second.GetLowerLimit() << " " <<
+                   it->second.GetUpperLimit() << std::endl;
       fMinimizer->SetVariableLimits(n_par, it->second.GetLowerLimit(),
                                     it->second.GetUpperLimit());
+    }
     if (fFixVariables &&
         fSystsToFix.find(it->first) != fSystsToFix.end()) {
       std::cout << "Fixing variable " << it->second.GetName() <<
@@ -215,9 +219,12 @@ void protoana::PDSPThinSliceFitter::MakeMinimizer() {
       fMinimizer->SetVariable(n_par, sel_var_par.GetName().c_str(),
                               val, 0.01);
       fMinimizerInitVals.push_back(val);
-      if (fSetLimits)
+      if (fSetSelVarLimits) {
+        std::cout << "Setting limit " << sel_var_par.GetLowerLimit() << " " <<
+                     sel_var_par.GetUpperLimit() << std::endl;
         fMinimizer->SetVariableLimits(n_par, sel_var_par.GetLowerLimit(),
                                       sel_var_par.GetUpperLimit());
+      }
       if (fFixVariables &&
           fSystsToFix.find(sel_var_par.GetName()) != fSystsToFix.end()) {
         std::cout << "Fixing variable " << sel_var_par.GetName() <<
@@ -346,6 +353,38 @@ void protoana::PDSPThinSliceFitter::InitializeMCSamples() {
           fFluxesBySample[sample_ID].back().push_back(0.);
           fFakeFluxesBySample[sample_ID].back().push_back(0.);
         }
+        else {
+          ThinSliceSample single_sample(
+              sample_name + "Single",
+              flux_type, fSelectionSets,
+              fIncidentRecoBins, fTrueIncidentBins, j);
+          fSamples[sample_ID].back().push_back(single_sample);
+
+          ThinSliceSample fake_single_sample(
+              sample_name + "FakeSingle",
+              flux_type, fSelectionSets,
+              fIncidentRecoBins, fTrueIncidentBins, j);
+          fFakeSamples[sample_ID].back().push_back(fake_single_sample);
+
+          if (fFitType == "ConstructCovariance") {
+            ThinSliceSample cov_single_sample(
+                sample_name + "CovSingle",
+                flux_type, fSelectionSets,
+                fIncidentRecoBins, fTrueIncidentBins, j);
+            fCovSamples[sample_ID].back().push_back(cov_single_sample);
+          }
+
+          if (j == 1) {
+            fSignalParameters[sample_ID].push_back(1.);
+
+            std::string par_name = "par_" + sample_name + "_single";
+            fSignalParameterNames[sample_ID].push_back(par_name);
+            ++fTotalSignalParameters;
+          }
+
+          fFluxesBySample[sample_ID].back().push_back(0.);
+          fFakeFluxesBySample[sample_ID].back().push_back(0.);
+        }
 
         for (size_t k = 1; k < bins.size(); ++k) {
           ThinSliceSample sample(sample_name, flux_type, fSelectionSets,
@@ -449,7 +488,7 @@ void protoana::PDSPThinSliceFitter::BuildMCSamples() {
   std::cout << "FakeData: " << fDoFakeData << " Routine: " <<
                fFakeDataRoutine << std::endl;
   fThinSliceDriver->FillMCEvents(fMCTree, fEvents, fFakeDataEvents, fSplitVal,
-                                 fSplitMC, fMaxEntries,
+                                 fSplitMC, fShuffle, fMaxEntries,
                                  (fDoFakeData /*&&
                                   (fFakeDataRoutine == "Asimov" ||
                                    fFakeDataRoutine == "Toy")*/));
@@ -901,14 +940,18 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
 
     fFillIncidentInFunction = true;
     fUseFakeSamples = true;
+    std::cout << "Vary stats: " << fVaryMCStatsForFakeData << std::endl;
+    fThinSliceDriver->SetStatVar(fVaryMCStatsForFakeData); //Force on stat vars in driver
     fFitFunction(&vals[0]);
-    fDataSet.FillHistsFromSamples(fFakeSamples, fDataFlux, fDataBeamFluxes);
+    fDataSet.FillHistsFromSamples(fFakeSamples, fDataFlux, fDataBeamFluxes,
+                                  (fDoFluctuateStats && fFluctuateInSamples));
     std::cout << "Asimov fluxes: " << std::endl;
     for (const auto & f: fDataBeamFluxes) std::cout << f << " ";
     std::cout << std::endl;
     BuildFakeDataXSecs(false);
 
     fUseFakeSamples = false;
+    fThinSliceDriver->SetStatVar(false);
     //Refill the hists for comparisons
     fFitFunction(&vals[0]); 
     fFillIncidentInFunction = false;
@@ -930,7 +973,23 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
                                     fDataFlux, fFakeDataScales, fBeamEnergyBins,
                                     fDataBeamFluxes,
                                     fSplitVal, fScaleToDataBeamProfile);
+
     BuildFakeDataXSecs(false);
+
+    std::cout << std::endl << " Data by beam bin: ";
+    for (const auto & f : fDataBeamFluxes) {
+      std::cout << f << " ";
+    }
+
+    if (fDoFluctuateStats && fFluctuateInSamples) {
+      fDataSet.FillHistsFromSamples(fFakeSamples, fDataFlux, fDataBeamFluxes,
+                                    (fDoFluctuateStats && fFluctuateInSamples));
+    }
+
+    std::cout << std::endl << " Data by beam bin: ";
+    for (const auto & f : fDataBeamFluxes) {
+      std::cout << f << " ";
+    }
   }
 
   inputFile->Close();
@@ -1035,16 +1094,16 @@ void protoana::PDSPThinSliceFitter::CompareDataMC(
                          signal_bins.size() - 1,
                          &signal_bins[0]));
           }
-          if (fSliceMethod == "E") {
+          /*if (fSliceMethod == "E") {
             samples_vec[k].FillESliceHist(*total_incident_hist);
             samples_vec[k].FillESliceHist(
                 *(temp_hists[fIncidentSamples[i]][k]));
           }
-          else {
+          else {*/
             samples_vec[k].FillHistFromIncidentEnergies(*total_incident_hist);
             samples_vec[k].FillHistFromIncidentEnergies(
                 *(temp_hists[fIncidentSamples[i]][k]));
-          }
+          //}
         }
       }
     }
@@ -1061,7 +1120,7 @@ void protoana::PDSPThinSliceFitter::CompareDataMC(
     TH1D * xsec_hist = (TH1D*)signal_hist.Clone(xsec_name.c_str());
     xsec_hist->Sumw2();
     xsec_hist->Divide(total_incident_hist);
-    if (fSliceMethod == "E") {
+    /*if (fSliceMethod == "E") {
       for (int i = 1; i <= xsec_hist->GetNbinsX(); ++i) {
         xsec_hist->SetBinContent(i, -1.*log(1. - xsec_hist->GetBinContent(i)));
       }
@@ -1086,7 +1145,9 @@ void protoana::PDSPThinSliceFitter::CompareDataMC(
         xsec_hist->SetBinContent(i, -1.*log(1. - xsec_hist->GetBinContent(i)));
       }
       xsec_hist->Scale(1.E27/ (fPitch * 1.4 * 6.022E23 / 39.948 ));
-    }
+    }*/
+    CalculateCrossSection(xsec_hist);
+
     xsec_hist->Write();
     if (post_fit) {
       fBestFitXSecs[sample_ID] = xsec_hist;
@@ -1623,15 +1684,6 @@ void protoana::PDSPThinSliceFitter::RunFitAndSave() {
   DefineFitFunction();
   fMinimizer->SetFunction(fFitFunction);
 
-  BuildDataHists();
-  if (fDoFluctuateStats) {
-    fDataSet.GetCumulatives();
-    fDataSet.GenerateStatFluctuation();
-  }
-
-  ScaleMCToData();
-  SaveMCSamples();
-
   if (fSetValsPreFit) {
     size_t par_position = 0;
     for (auto it = fSignalParameters.begin();
@@ -1661,8 +1713,26 @@ void protoana::PDSPThinSliceFitter::RunFitAndSave() {
       }
     }
 
+    std::cout << fPreFitVals.size() << std::endl;
+    for (auto p : fPreFitVals) {
+      std::cout << p << std::endl;
+    }
+    fFillIncidentInFunction = true;
     fFitFunction(&fPreFitVals[0]);
+    fFillIncidentInFunction = false;
   }
+
+  BuildDataHists();
+  if (fDoFluctuateStats && !fFluctuateInSamples) {
+    fDataSet.GetCumulatives();
+    fDataSet.GenerateStatFluctuation(
+        /*!(fAnalysisOptions.get<bool>("Multinomial", false))*/);
+  }
+
+  ScaleMCToData();
+  SaveMCSamples();
+
+
 
   TDirectory * top_dir = fOutputFile.GetDirectory("");
   TDirectory * xsec_dir = fOutputFile.mkdir("PreFitXSec");
@@ -1827,6 +1897,15 @@ void protoana::PDSPThinSliceFitter::BuildDataFromToy() {
   }
   else {
 
+    TMatrixD * cov_lower = (TMatrixD*)fInputChol->GetU().Clone();
+    cov_lower->Transpose(fInputChol->GetU());
+
+    size_t n_cov_rows = cov_lower->GetNrows();
+    if (n_cov_rows != fTotalSystParameters) {
+      std::cout << "Error: " << n_cov_rows << " " << fTotalSystParameters <<
+                   std::endl;
+    }
+
     bool rethrow = true;
     while (rethrow) {
       bool all_pos = true;
@@ -1834,7 +1913,8 @@ void protoana::PDSPThinSliceFitter::BuildDataFromToy() {
       for (size_t i = 0; i < fTotalSystParameters; ++i) {
         rand[i] = fRNG.Gaus();
       }
-      TVectorD rand_times_chol = fInputChol->GetU()*rand;
+      //TVectorD rand_times_chol = fInputChol->GetU()*rand;
+      TVectorD rand_times_chol = (*cov_lower)*rand;
 
       for (size_t i = 0; i < fTotalSystParameters; ++i) {
         //double val = rand_times_chol[bins[i]] + init_vals[base_par + i];
@@ -1843,14 +1923,14 @@ void protoana::PDSPThinSliceFitter::BuildDataFromToy() {
         //if (val < fSystParameters[names[i]].GetGenThrowLimit()) {
         if (val < throw_limits[i]) {
           all_pos = false;
-          std::cout << "Rethrowing " << i << " " << val <<
+          std::cout << "Rethrowing " << i << " " << val << " " <<
                        throw_limits[i] <<
                        std::endl;
         }
         //if (val > fSystParameters[names[i]].GetGenThrowLimitUp()) {
-        if (val < throw_limits_up[i]) {
+        if (val > throw_limits_up[i]) {
           all_pos = false;
-          std::cout << "Rethrowing " << i << " " << val <<
+          std::cout << "Rethrowing " << i << " " << val << " " <<
                        throw_limits_up[i] <<
                        std::endl;
         }
@@ -1890,13 +1970,16 @@ void protoana::PDSPThinSliceFitter::BuildDataFromToy() {
   }
   fFillIncidentInFunction = true;
   fUseFakeSamples = true;
+  fThinSliceDriver->SetStatVar(fVaryMCStatsForFakeData); //Force on stat vars in driver
   fFitFunction(&vals[0]);
-  fDataSet.FillHistsFromSamples(fFakeSamples, fDataFlux, fDataBeamFluxes);
+  fDataSet.FillHistsFromSamples(fFakeSamples, fDataFlux, fDataBeamFluxes,
+                                (fDoFluctuateStats && fFluctuateInSamples));
   BuildFakeDataXSecs(false);
 
   fUseFakeSamples = false;
+  fThinSliceDriver->SetStatVar(false); //Turn it back off
   //Refill the hists for comparisons
-  fFitFunction(&init_vals[0]); 
+  fFitFunction(&init_vals[0]);
   fFillIncidentInFunction = false;
   
 
@@ -2001,14 +2084,18 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
     return;
   }
 
+  TMatrixD * cov_lower = (TMatrixD*)chol.GetU().Clone();
+  cov_lower->Transpose(chol.GetU());
+
   fOutputFile.mkdir("Throws");
   fOutputFile.cd("Throws");
 
-  TTree throws_tree("tree", "");
-  std::vector<double *> throws_branches;
+  //TTree throws_tree("tree", "");
+  //std::vector<double *> throws_branches;
   std::vector<TVectorD *> throws_arrays;
   std::vector<TVectorD *> throws_xsec_arrays;
  
+  /*
   int count = 0;
   for (auto it = fSignalParameters.begin(); it != fSignalParameters.end(); ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
@@ -2040,7 +2127,7 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
                          throws_branches.back());
       ++count;
     }
-  }
+  }*/
 
   //MakeThrowsTree(throws_tree, throws_branches);
   //MakeThrowsArrays(throws_arrays);
@@ -2095,7 +2182,9 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
     truth_combined_xsec_throw_hists[*it] = std::vector<TH1*>();
   } */
 
+  std::vector<double> throw_means(pars.GetNbinsX());
   //int n_signal_flux_pars = fTotalSignalParameters + fTotalFluxParameters;
+  fCalcChi2InFCN = false;
   for (size_t i = 0; i < fNThrows; ++i) {
     if (! (i%100) ) {
       std::cout << "Throw " << i << "/" << fNThrows << std::endl;
@@ -2107,8 +2196,9 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
       GenerateUncorrelatedThrow(pars, cov_copy, vals.back());
     }
     else {
-      GenerateCorrelatedThrow(pars, chol, vals.back());
+      GenerateCorrelatedThrow(pars, cov_lower, vals.back());
     }
+
     /*
     bool rethrow = true;
     size_t nRethrows = 0;
@@ -2148,8 +2238,9 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
     }*/
 
     for (size_t j = 0; j < vals.back().size(); ++j) {
-      *(throws_branches[j]) = vals.back()[j];
+      //*(throws_branches[j]) = vals.back()[j];
       (*throws_arrays[j])[i] = vals.back()[j];
+      throw_means[j] += vals.back()[j];
     }
 
     //Applies the variations according to the thrown parameters
@@ -2162,8 +2253,8 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
     int xsec_bin = 0;
     for(auto it = truth_xsec_throw_hists.begin();
         it != truth_xsec_throw_hists.end(); ++it) {
-      TH1 * xsec_hist = it->second.back();
-      if (fSliceMethod == "E") {
+      TH1D * xsec_hist = static_cast<TH1D*>(it->second.back());
+      /*if (fSliceMethod == "E") {
         for (int j = 1; j <= xsec_hist->GetNbinsX(); ++j) {
           xsec_hist->SetBinContent(j, -1.*log(1. - xsec_hist->GetBinContent(j)));
         }
@@ -2188,16 +2279,19 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
           xsec_hist->SetBinContent(j, -1.*log(1. - xsec_hist->GetBinContent(j)));
         }
         xsec_hist->Scale(1.E27/ (fPitch * 1.4 * 6.022E23 / 39.948 ));
-      }
+      }*/
+      CalculateCrossSection(xsec_hist);
+
       for (int j = 1; j <= xsec_hist->GetNbinsX(); ++j) {
         (*throws_xsec_arrays[xsec_bin])[i] = xsec_hist->GetBinContent(j);
         ++xsec_bin;
       }
     }
-    throws_tree.Fill();
+    //throws_tree.Fill();
   }
+  fCalcChi2InFCN = true;
 
-  throws_tree.Write();
+  //throws_tree.Write();
   for (size_t i = 0; i < throws_arrays.size(); ++i) {
     std::string name = "array" + std::to_string(i);
     throws_arrays[i]->Write(name.c_str());
@@ -2206,6 +2300,28 @@ void protoana::PDSPThinSliceFitter::DoThrows(const TH1D & pars, const TMatrixD *
     std::string name = "xsec_array" + std::to_string(i);
     throws_xsec_arrays[i]->Write(name.c_str());
   }
+
+  for (size_t i = 0; i < throw_means.size(); ++i) {
+    throw_means[i] /= fNThrows;
+  }
+
+  fOutputFile.cd("Throws");
+
+  //std::cout << "Calculating" << std::endl;
+  TMatrixD recalculated_cov(pars.GetNbinsX(), pars.GetNbinsX());
+  for (int i = 0; i < fNThrows; ++i) {
+    for (int j = 0; j < pars.GetNbinsX(); ++j) {
+      for (int k = 0; k < pars.GetNbinsX(); ++k) {
+        //std::cout << i << " " << j << " " << k << std::endl;
+        recalculated_cov[j][k]
+            += (throw_means[j] - vals[i][j])*(throw_means[k] - vals[i][k]) /
+               fNThrows;
+      }
+    }
+  }
+
+  recalculated_cov.Write("recalculated_cov");
+  //std::cout << "Wrote" << std::endl;
 
   PlotThrows(throw_hists, truth_throw_hists,
              truth_inc_throw_hists, truth_xsec_throw_hists);
@@ -2349,10 +2465,21 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
         //potentially do this within the sample?
         SetSelVarSystVals();
 
-        for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
-          for (size_t i = 0; i < it->second.size(); ++i) {
-            for (size_t j = 0; j < it->second[i].size(); ++j) {
-              it->second[i][j].ScaleSelections(fSelVarSystVals, fSelectionBins);
+        if (!fUseFakeSamples) {
+          for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
+            for (size_t i = 0; i < it->second.size(); ++i) {
+              for (size_t j = 0; j < it->second[i].size(); ++j) {
+                it->second[i][j].ScaleSelections(fSelVarSystVals, fSelectionBins);
+              }
+            }
+          }
+        }
+        else {
+          for (auto it = fFakeSamples.begin(); it != fFakeSamples.end(); ++it) {
+            for (size_t i = 0; i < it->second.size(); ++i) {
+              for (size_t j = 0; j < it->second[i].size(); ++j) {
+                it->second[i][j].ScaleSelections(fSelVarSystVals, fSelectionBins);
+              }
             }
           }
         }
@@ -2360,6 +2487,15 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
         //Scale to Data
         if (!fUseFakeSamples) {
           for (auto it = fSamples.begin(); it != fSamples.end(); ++it) {
+            for (size_t i = 0; i < it->second.size(); ++i) {
+              for (size_t j = 0; j < it->second[i].size(); ++j) {
+                it->second[i][j].ScaleToDataMC();
+              }
+            }
+          }
+        }
+        else {
+          for (auto it = fFakeSamples.begin(); it != fFakeSamples.end(); ++it) {
             for (size_t i = 0; i < it->second.size(); ++i) {
               for (size_t j = 0; j < it->second[i].size(); ++j) {
                 it->second[i][j].ScaleToDataMC();
@@ -2453,8 +2589,11 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
           }
         }
 
-        std::pair<double, size_t> chi2_points
-            = fThinSliceDriver->CalculateChi2(fSamples, fDataSet);
+        std::pair<double, size_t> chi2_points= (
+          fCalcChi2InFCN ?
+          fThinSliceDriver->CalculateChi2(fSamples, fDataSet) :
+          std::make_pair<double, size_t>(0., 0)
+        );
         ++fNFitSteps;
 
         auto begin_time = std::chrono::high_resolution_clock::now();
@@ -2470,7 +2609,8 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
         if (fDebugChi2)
           std::cout << chi2_points.first << " " << syst_chi2 << std::endl;
         //if (chi2_points.first < 0.) {
-        if (chi2_points.first < -1.*FLT_EPSILON) {
+        if (chi2_points.first < -1.*FLT_EPSILON ||
+            std::isnan(chi2_points.first)) {
           std::string message = "Chi2 went negative " +
                                 std::to_string(chi2_points.first) + "\n";
 
@@ -2496,14 +2636,16 @@ void protoana::PDSPThinSliceFitter::DefineFitFunction() {
                it != fSystParameters.end(); ++it) {
             //it->second.SetValue(coeffs[a]);
             message += std::to_string(a) + " " +
-                       std::to_string(it->second.GetValue()) + "\n";
+                       std::to_string(it->second.GetValue()) + " " +
+                       it->second.GetName() + "\n";
             ++a;
           }
 
           for (auto & sel_var_vec : fSelVarSystPars) {
             for (auto & par : sel_var_vec) {
               message += std::to_string(a) + " " +
-                         std::to_string(par.GetValue()) + "\n";
+                         std::to_string(par.GetValue()) + " " +
+                         par.GetName() + "\n";
               ++a;
             }
           }
@@ -2623,6 +2765,7 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fMaxEntries = pset.get<int>("MaxEntries", -1);
   fMaxDataEntries = pset.get<int>("MaxDataEntries", -1);
   fSplitMC = pset.get<bool>("SplitMC");
+  fShuffle = pset.get<bool>("Shuffle", false);
   fDoThrows = pset.get<bool>("DoThrows");
 
   fThrowType = pset.get<std::string>("ThrowType", "NormalThrow");
@@ -2634,7 +2777,9 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fRunHesse = pset.get<bool>("RunHesse");
   fDo1DShifts = pset.get<bool>("Do1DShifts");
   fDoSysts = pset.get<bool>("DoSysts");
-  fSetLimits = pset.get<bool>("SetLimits", true);
+  fSetSystLimits = pset.get<bool>("SetSystLimits", true);
+  fSetSelVarLimits = pset.get<bool>("SetSelVarLimits", true);
+  fSetSigLimits = pset.get<bool>("SetSigLimits", true);
   fFixVariables = pset.get<bool>("FixVariables", false);
   fFitUnderOverflow = pset.get<bool>("FitUnderOverflow", false);
   fGetMeanXSec = pset.get<bool>("GetMeanXSec", false);
@@ -2654,6 +2799,9 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
     fPreFitVals = pset.get<std::vector<double>>("PreFitVals");
 
   fDoFluctuateStats = pset.get<bool>("FluctuateStats");
+  fFluctuateInSamples = pset.get<bool>("FluctuateInSamples", false);
+  fVaryMCStatsForFakeData = pset.get<bool>("VaryMCStatsForFakeData", false);
+
   fDebugMCDataScale = pset.get<bool>("DebugMCDataScale", false);
   fDebugChi2 = pset.get<bool>("DebugChi2", false);
   fScaleToDataBeamProfile = pset.get<bool>("ScaleToDataBeamProfile", false);
@@ -2663,6 +2811,8 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
   fMaxRethrows = pset.get<size_t>("MaxRethrows");
 
   fFitType = pset.get<std::string>("FitType");
+
+  fXSecCalcStyle = pset.get<std::string>("XSecCalcStyle", "Approx");
 
   if (fFitType == "ThrowsOnly") {
     fFitResultsFile = pset.get<std::string>("PriorFitResults");
@@ -2843,6 +2993,15 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
 
       fInputChol = new TDecompChol(*fCovMatrix);
       fInputChol->Decompose();
+
+      if (fTotalSystParameters != fCovMatrix->GetNrows()) {
+        std::string message = "PDSPThinSliceFitter::Configure: ";
+        message += "Error. Input covariance matrix and nsyst differ\n";
+        message += std::to_string(fTotalSystParameters);
+        message += " " + std::to_string(fCovMatrix->GetNrows());
+        throw std::runtime_error(message);
+      }
+
 
       fCovMatrix->Invert();
       cov_file->Close();
@@ -3496,12 +3655,12 @@ void protoana::PDSPThinSliceFitter::GetCurrentTruthHists(
       auto & incident_vec_2D = fSamples[i_s];
       for (size_t i = 0; i < incident_vec_2D.size(); ++i) {
         for (size_t j = 0; j < incident_vec_2D[i].size(); ++j) {
-          if (fSliceMethod == "E") {
+          /*if (fSliceMethod == "E") {
             incident_vec_2D[i][j].FillESliceHist(*temp_inc_hist);
           }
-          else {
+          else {*/
             incident_vec_2D[i][j].FillHistFromIncidentEnergies(*temp_inc_hist);
-          }
+          //}
         }
       }
     }
@@ -3560,12 +3719,12 @@ void protoana::PDSPThinSliceFitter::BuildFakeDataXSecs(bool use_scales) {
       for (size_t j = 0; j < vec_2D.size(); ++j) {
         auto & samples_vec = vec_2D[j];
         for (size_t k = 0; k < samples_vec.size(); ++k) {
-          if (fSliceMethod == "E") {
+          /*if (fSliceMethod == "E") {
             samples_vec[k].FillESliceHist(*temp_inc);
           }
-          else {
+          else {*/
             samples_vec[k].FillHistFromIncidentEnergies(*temp_inc);
-          }
+          //}
         }
       }
     }
@@ -3575,7 +3734,7 @@ void protoana::PDSPThinSliceFitter::BuildFakeDataXSecs(bool use_scales) {
     fake_data_totals[s] = (TH1D*)temp_xsec->Clone(tot_name.c_str());
     temp_xsec->Divide(temp_inc);
 
-    if (fSliceMethod == "E") {
+    /*if (fSliceMethod == "E") {
       for (int i = 1; i <= temp_xsec->GetNbinsX(); ++i) {
         temp_xsec->SetBinContent(i, -1.*log(1. - temp_xsec->GetBinContent(i)));
       }
@@ -3595,12 +3754,15 @@ void protoana::PDSPThinSliceFitter::BuildFakeDataXSecs(bool use_scales) {
       }
       temp_xsec->Scale(1.E27*39.948/(fPitch * 1.4 * 6.022E23));
     }
-    else {
-      for (int i = 1; i <= temp_xsec->GetNbinsX(); ++i) {
+    else {*/
+      /*for (int i = 1; i <= temp_xsec->GetNbinsX(); ++i) {
         temp_xsec->SetBinContent(i, -1.*log(1. - temp_xsec->GetBinContent(i)));
       }
       temp_xsec->Scale(1.E27/ (fPitch * 1.4 * 6.022E23 / 39.948 ));
-    }
+      */
+    //}
+    CalculateCrossSection(temp_xsec);
+
     fFakeDataXSecs[s] = temp_xsec;
     fFakeDataIncs[s] = temp_inc;
 
@@ -3735,7 +3897,7 @@ void protoana::PDSPThinSliceFitter::GetFixFactors(
 }
 
 void protoana::PDSPThinSliceFitter::GenerateCorrelatedThrow(
-    const TH1D & pars, const TDecompChol & chol, std::vector<double> & vals) {
+    const TH1D & pars, const TMatrixD * cov_lower/*TDecompChol & chol*/, std::vector<double> & vals) {
   bool rethrow = true;
   size_t nRethrows = 0;
   TVectorD rand(pars.GetNbinsX());
@@ -3755,7 +3917,8 @@ void protoana::PDSPThinSliceFitter::GenerateCorrelatedThrow(
       //std::cout << j-1 << " " << rand[j-1] << std::endl;
     }
 
-    TVectorD rand_times_chol = chol.GetU()*rand;
+    //TVectorD rand_times_chol = chol.GetU()*rand;
+    TVectorD rand_times_chol = (*cov_lower)*rand;
 
     for (int j = 1; j <= pars.GetNbinsX(); ++j) {
       //std::cout << rand_times_chol[j-1] << " ";
@@ -3811,6 +3974,29 @@ void protoana::PDSPThinSliceFitter::GenerateUncorrelatedThrow(
                  (*cov)[j-1][j-1] << std::endl;
   }
 
+}
+
+void protoana::PDSPThinSliceFitter::CalcFullCrossSection(TH1D * xsec_hist) {
+  for (int i = 1; i <= xsec_hist->GetNbinsX(); ++i) {
+    xsec_hist->SetBinContent(i, -1.*log(1. - xsec_hist->GetBinContent(i)));
+  }
+}
+
+void protoana::PDSPThinSliceFitter::CalcApproxCrossSection(TH1D * xsec_hist) {
+  for (int i = 1; i <= xsec_hist->GetNbinsX(); ++i) {
+    double val = xsec_hist->GetBinContent(i);
+    xsec_hist->SetBinContent(i, 1. - sqrt(1. - 2.*val));
+  }
+}
+
+void protoana::PDSPThinSliceFitter::CalculateCrossSection(TH1D * xsec_hist) {
+  if (fXSecCalcStyle == "Full") {
+    CalcFullCrossSection(xsec_hist);
+  }
+  else {
+    CalcApproxCrossSection(xsec_hist);
+  }
+  xsec_hist->Scale(1.E27/ (fPitch * 1.4 * 6.022E23 / 39.948 ));
 }
 
 //void protoana::PDSPThinSliceFitter::MakeThrowsArrays(std::vector<TArrayD*> & arrays) {

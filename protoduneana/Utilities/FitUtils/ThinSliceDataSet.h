@@ -115,11 +115,12 @@ class ThinSliceDataSet {
     }
   };
 
-  void GenerateStatFluctuation();
+  void GenerateStatFluctuation(bool poisson=false);
 
   void FillHistsFromSamples(
       const std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
-      double & flux, std::vector<double> & fluxes_by_beam);
+      double & flux, std::vector<double> & fluxes_by_beam,
+      bool fluctuate=false, const std::vector<int> & to_skip = {5,6});
 
  private:
   void Rebin1D(TH1 * sel_hist, TH1 * rebinned);
