@@ -902,4 +902,31 @@ SystematicsList.beam_shift_bin_7.Options.RangeHigh: 1100.
 SystematicsList.beam_shift_bin_7.Options.Mean: 55.282
 SystematicsList.beam_shift_bin_7.Options.Sigma: 39.745 
 
+SystematicsList.beam_match_weight_coarse: @local::SystematicsList.beam_match_weight
+SystematicsList.beam_match_weight_coarse.Options.Fractions:
+[[1, [0.09790605546123372, 0.08293904814917896, 0.08506616257088846, 0.09363245566899517, 0.09775256382282348, 0.11536453801983644, 0.1446862996158771]],
+[2, [0.07778608825729244, 0.09925558312655088, 0.09642222786094899, 0.10104923325262308, 0.11980696600923206, 0.1308411214953271]],
+[3, [0.08556298773690078, 0.09608277900960828, 0.09770784770784771, 0.10680738203116366, 0.11308106753539657, 0.12402826855123675]],
+[4, [0.07976705197211682]],
+[5, [0.08531586267476758]],
+[6, [0.09583579444772593]],
+[7, [0.08947612424663885]]]
+SystematicsList.beam_match_weight_coarse.UpperLimit:      6.911
+SystematicsList.beam_match_weight_coarse.ThrowLimitUp:    6.911
+SystematicsList.beam_match_weight_coarse.GenThrowLimitUp: 6.8
+
+SystematicsList.end_z_no_track_weight_coarse: @local::SystematicsList.end_z_no_track_weight
+SystematicsList.end_z_no_track_weight_coarse.Options.Fractions: [
+[1, [-1., 0.5454545454545455, 0.24719101123595508, 0.22820037105751392, 0.17168034032209054, 0.20778466305189774, 0.27755905511811024] ],
+[2, [0.0, 0.23255813953488372, 0.27526132404181186, 0.23842404549147034, 0.2752179327521794, 0.3222748815165877] ],
+[3, [0.28571428571428575, 0.19469026548672566, 0.18655692729766807, 0.14479025710419485, 0.16308307736266878, 0.19363474122546107] ],
+[4, [] ],
+[5, [0.5750000000000001] ],
+[6, [] ],
+[7, [0.07407407407407407] ]
+]
+SystematicsList.end_z_no_track_weight_coarse.UpperLimit: 1.7391
+SystematicsList.end_z_no_track_weight_coarse.ThrowLimitUp: 1.7391
+SystematicsList.end_z_no_track_weight_coarse.GenThrowLimitUp: 1.700
+
 END_PROLOG

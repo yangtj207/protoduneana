@@ -1,0 +1,3 @@
+#include "standard_data_fit_throws.fcl"
+SingleThrowBin: 39
+ThrowType: "SingleBinThrow"

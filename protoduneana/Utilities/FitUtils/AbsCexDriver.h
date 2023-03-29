@@ -24,8 +24,8 @@ class AbsCexDriver : public ThinSliceDriver {
   void FillMCEvents(
     TTree * tree, std::vector<ThinSliceEvent> & events,
     std::vector<ThinSliceEvent> & fake_data_events,
-    int & split_val, const bool & do_split, int max_entries,
-    const bool & do_fake_data) override;
+    int & split_val, const bool & do_split, const bool & shuffle,
+    int max_entries, const bool & do_fake_data) override;
 
   void BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,
@@ -47,7 +47,9 @@ class AbsCexDriver : public ThinSliceDriver {
     const std::map<int, bool> & signal_sample_checks,
     ThinSliceDataSet & data_set, double & flux,
     std::map<int, std::vector<double>> & sample_scales,
-    int split_val = 0);
+    std::vector<double> & beam_energy_bins,
+    std::vector<double> & beam_fluxes,
+    int split_val = 0, bool scale_to_data_beam_p = false);
   void FakeDataBinnedScales(
     TTree * tree,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -438,6 +440,10 @@ class AbsCexDriver : public ThinSliceDriver {
    double GetBeamShiftDelta(const std::vector<double> & energies);
    void GenerateBeamShiftUniverse();
 
+   void ScaleSamples(
+      std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+      double scale);
+
    double GetFakeWeight_G4RWCoeff(
       const ThinSliceEvent & event,
       const std::vector<std::string> & branches,
@@ -448,7 +454,7 @@ class AbsCexDriver : public ThinSliceDriver {
    std::map<std::string, std::string> fG4RWCoeffBranches;
 
    std::vector<double> fBeamMatchLimits, fBeamMatchFractions;
-   PDSPSystematics * fSystematics;
+   PDSPSystematics * fSystematics = 0x0;
 
    bool fInclusive;
    std::vector<int> fERecoSelections, fEndZSelections, fOneBinSelections;
@@ -459,6 +465,7 @@ class AbsCexDriver : public ThinSliceDriver {
    bool fBarlowBeeston;
    std::vector<int> fToSkip;
    size_t fNWorkers;
+   //bool fStatVar;
 
    std::vector<std::string> fCovarianceRoutines;
    bool fBeamShiftCovRoutineActive = false;
@@ -469,7 +476,9 @@ class AbsCexDriver : public ThinSliceDriver {
    TVectorD * fBeamShiftInputCentrals;
    TMatrixD * fBeamShiftInputCov;
    TDecompChol fBeamShiftInputChol;
+   TMatrixD * fBeamShiftInputCovL;
    bool fBeamShiftCovUseInput;
+   std::string fBeamShiftInputFileName;
    double fCurrentBeamShiftP0, fCurrentBeamShiftP1, fCurrentBeamShiftP2;
    std::mutex fRefillMutex, fFillMutex;
    int fNThreads;

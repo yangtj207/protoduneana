@@ -760,6 +760,23 @@ class beam_P_range {
     }
 };
 
+class beam_XY_cuts {
+  private:
+    double fMeanX, fMeanY, fRadius2;
+  public:
+    beam_XY_cuts(double x, double y, double r)
+     : fMeanX(x), fMeanY(y), fRadius2(r*r) {}
+
+    bool operator()(double beam_inst_X, double beam_inst_Y,
+                    int beam_inst_nTracks) {
+      if (beam_inst_nTracks != 1) return false;
+
+      double r2 = ((beam_inst_X - fMeanX)*(beam_inst_X - fMeanX) + 
+                   (beam_inst_Y - fMeanY)*(beam_inst_Y - fMeanY));
+      return (r2 < fRadius2);
+    }
+};
+
 class exclude_runs {
   private:
     std::vector<int> bad_runs;
@@ -775,6 +792,12 @@ class exclude_runs {
               bad_runs.end());
     }
 };
+
+/*auto exp_coeffs(std::vector<std::vector<double>> coeffs) {
+  std::vector<std::vector<double>> results;
+  //w = a*exp(b*x)
+  return results;
+}*/
 
 /*
 class beam_inst_P_scaled {

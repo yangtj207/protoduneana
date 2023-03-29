@@ -28,6 +28,14 @@ MichelCut: 0.6
 RestrictBeamP: true
 BeamPLow: 750.
 BeamPHigh: 1250.
+
+RestrictBeamXY: true
+BeamYMean: 422.
+BeamXMean: -30.
+DataBeamYMean: 423.
+DataBeamXMean: -31.
+BeamXYRadius: 4.
+
 ExcludeRuns: []
 UseWeightedTrackScore: true
 
