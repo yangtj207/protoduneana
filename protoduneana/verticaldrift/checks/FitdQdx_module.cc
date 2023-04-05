@@ -144,11 +144,26 @@ private:
   vector<TF1*>          f_dqdx_z;
   vector<TGraphErrors*> g_dqdx_z;
  
+  // Track-wise information
   int   fEventNum;
   int   fTrackId;
   float fTrackLength;
   float fTrackTheta;
   float fTrackPhi;
+  float fTrackStartT;
+  float fTrackStartX;
+  float fTrackStartY;
+  float fTrackStartZ;
+  float fTrackEndT;
+  float fTrackEndX;
+  float fTrackEndY;
+  float fTrackEndZ;
+  // Plane-wise information
+  vector<float>          fTrackQ;    // Total track charge in each view
+  vector<int>            fNsnippets;
+  vector<int>            fNvalid;
+  vector<int>            fNhits;
+  // Hit-wise information
   vector<vector<int> >   fCut;
   vector<vector<float> > fPosX;
   vector<vector<float> > fPosY;
@@ -172,7 +187,8 @@ private:
       const std::vector<art::Ptr<recob::Hit>>& hits,
       const std::vector<const recob::TrackHitMeta*>& thms,
       const recob::Track& track,
-      unsigned nplanes);
+      unsigned nplanes,
+      vector<int> &nhits);
   float GetPitch(const recob::Track& track,
                  const art::Ptr<recob::Hit> hit,
                  const recob::TrackHitMeta* meta);
@@ -232,8 +248,19 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
       fTrackLength= -999;
       fTrackTheta = -999;
       fTrackPhi   = -999;
+      fTrackStartT= 10000;
+      fTrackStartX= -999;
+      fTrackStartY= -999;
+      fTrackStartZ= -999;
+      fTrackEndT  = -999;
+      fTrackEndX  = -999;
+      fTrackEndY  = -999;
+      fTrackEndZ  = -999;
 
       for (unsigned plane_i = 0; plane_i < fNplanes; plane_i++){
+        fNsnippets[plane_i]  = 0;
+        fNvalid[plane_i]     = 0;
+        fTrackQ[plane_i]     = -999;
         fPosX[plane_i].resize(1,-999);
         fPosY[plane_i].resize(1,-999);
         fPosZ[plane_i].resize(1,-999);
@@ -246,41 +273,42 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
       if(track.Length() < fTrackLenMin || track.Length() > fTrackLenMax) continue;
 
       // Retrieve begining and end of the track
-      float fStartX = track.Start().X();
-      float fStartY = track.Start().Y();
-      float fStartZ = track.Start().Z();
-      float fEndX   = track.End().X();
-      float fEndY   = track.End().Y();
-      float fEndZ   = track.End().Z();
+      fTrackStartX = track.Start().X();
+      fTrackStartY = track.Start().Y();
+      fTrackStartZ = track.Start().Z();
+      fTrackEndX   = track.End().X();
+      fTrackEndY   = track.End().Y();
+      fTrackEndZ   = track.End().Z();
 
       // Remove tracks that start outside the detector in the horizontal plane
-      if(fStartY < fYmin || fStartY > fYmax) continue;
-      if(fStartZ < fZmin || fStartZ > fZmax) continue;
+      if(fTrackStartY < fYmin || fTrackStartY > fYmax) continue;
+      if(fTrackStartZ < fZmin || fTrackStartZ > fZmax) continue;
 
       // Remove tracks that end   outside the detector in the horizontal plane
-      if(fEndY < fYmin   || fEndY > fYmax)   continue;
-      if(fEndZ < fZmin   || fEndZ > fZmax)   continue;
+      if(fTrackEndY < fYmin   || fTrackEndY > fYmax)   continue;
+      if(fTrackEndZ < fZmin   || fTrackEndZ > fZmax)   continue;
      
       // Remove tracks that are not crossing the anode/cathode planes
       // -> unknown drift time
-      if(fabs(fStartX - fEndX) < 0.95*fHeight || fabs(fStartX - fEndX) > 1.05*fHeight) continue;
+      if(fabs(fTrackStartX - fTrackEndX) < 0.95*fHeight || fabs(fTrackStartX - fTrackEndX) > 1.05*fHeight) continue;
 
       // Check if the track is reconstructed upwards or downwards
       // for now, assume all reconstructed muons should be going downwards
       bool isRevert = false;
-      if(fEndX - fStartX > 0) isRevert = true;
+      if(fTrackEndX - fTrackStartX > 0) isRevert = true;
  
       fTrackLength = track.Length();
       GetAngles(track,isRevert,fTrackTheta,fTrackPhi);
 
       if( fLogLevel >= 3 ) std::cout << "    track " << trk << " -> length:    " << track.Length() << " - theta: " << fTrackTheta << " - phi: " << fTrackPhi << std::endl;
+      if( fLogLevel >= 4 ) std::cout << "    track first/last valid point: " <<  track.FirstValidPoint() << "/" << track.LastValidPoint() << std::endl;
 
       // if the track passed selection criteria, loop over hits to retrieve pulse width
       const std::vector<art::Ptr<recob::Hit>>& Hits       = fmHits.at(trk);
       const std::vector<const recob::TrackHitMeta*>& thms = fmHits.data(trk);
 
       // follow GnocchiCalorimatery module to sort hits by plane and snippets
-      std::vector<std::vector<unsigned>> hit_indices = OrganizeHitsSnippets(Hits, thms, track, fNplanes);
+      std::vector<std::vector<unsigned>> hit_indices = OrganizeHitsSnippets(Hits, thms, track, fNplanes, fNhits);
 
 
       // Loop over planes
@@ -291,6 +319,8 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
 
         unsigned Nhits = hit_indices[plane_i].size();
 
+        fNsnippets[plane_i] = Nhits;
+        fTrackQ[plane_i]    = 0;
         fPosX[plane_i].clear();    fPosX[plane_i].resize(Nhits,-999);
         fPosY[plane_i].clear();    fPosY[plane_i].resize(Nhits,-999);
         fPosZ[plane_i].clear();    fPosZ[plane_i].resize(Nhits,-999);
@@ -305,7 +335,7 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
           unsigned hit_index = hit_indices[plane_i][hit_i];
           unsigned tms_index = thms[hit_index]->Index();
 
-          if( fLogLevel >= 4 ) std::cout << "        -> indexes: " << hit_index << "/" << tms_index << std::endl;
+          if( fLogLevel >= 4 ) std::cout << "        -> indexes: " << hit_index << "/" << tms_index << "-" << tms_index << " -> time: " << Hits[hit_index]->PeakTime()  << " start/end: " << fTrackStartT << "/" << fTrackEndT << std::endl;
 
           //////////////////
           // CUT BLOCK
@@ -313,14 +343,14 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
 
           // Remove hits associated to the track that are not valid points
           if(!track.HasValidPoint(tms_index)){if( fLogLevel >= 4 ) std::cout << "        #1 nok" << std::endl;      continue;}
-          if( fLogLevel >= 4 ) std::cout << "        #1 ok" << std::endl;
+          if( fLogLevel >= 6 ) std::cout << "        #1 ok" << std::endl;
 
           // Remove first and last valid point that are most probably 
           // starting/ending in the anode/cathode/field cage
           if(tms_index == track.FirstValidPoint()){if( fLogLevel >= 4 ) std::cout << "        #2 nok" << std::endl; continue;}
-          if( fLogLevel >= 4 ) std::cout << "        #2 ok" << std::endl;
+          if( fLogLevel >= 6 ) std::cout << "        #2 ok" << std::endl;
           if(tms_index == track.LastValidPoint()){ if( fLogLevel >= 4 ) std::cout << "        #3 nok" << std::endl; continue;}
-          if( fLogLevel >= 4 ) std::cout << "        #3 ok" << std::endl;
+          if( fLogLevel >= 6 ) std::cout << "        #3 ok" << std::endl;
           
           ////////////////
 
@@ -334,30 +364,35 @@ void pdvdana::FitdQdx::analyze(art::Event const& e)
 
           // Shift the vertical hits coordinate assuming all muons are going downwards
           // due to prefered reconstructed direction along the beam axis (Z coordinate) in pandora
-          if(isRevert) fX = fHeight + fStartX - fX;
-          else         fX = fStartX - fX;
+          if(isRevert) fX = fHeight + fTrackStartX - fX;
+          else         fX = fTrackStartX - fX;
 
-          if( fLogLevel >= 4 ) 
+          if( fLogLevel >= 5 ) 
             std::cout << "        -> ( " << fX << "," << fY << "," << fZ << ") - pitch: " << pitch << " - charge:" << charge << " - dQdx: " << charge/pitch << std::endl; 
 
           // Store quantities of interest into vector -> output file
+          fNvalid[plane_i]++;         
           fPosX[plane_i][hit_i]    = fX;    
           fPosY[plane_i][hit_i]    = fY;    
           fPosZ[plane_i][hit_i]    = fZ;    
+          fTrackQ[plane_i]        += charge;
           fQ[plane_i][hit_i]       = charge;
           fDqdx[plane_i][hit_i]    = charge/pitch;
           fCut[plane_i][hit_i]     = 2;
 
-          if( fLogLevel >= 4 ) std::cout << "        vectors set... " << std::endl;
+          if(fTrackStartT > Hits[hit_index]->PeakTime()) fTrackStartT = Hits[hit_index]->PeakTime();
+          if(fTrackEndT   < Hits[hit_index]->PeakTime()) fTrackEndT   = Hits[hit_index]->PeakTime();
+
+          if( fLogLevel >= 6 ) std::cout << "        vectors set... " << std::endl;
 
           // Remove hits from noise pedestal
           if(charge < fQMin){if( fLogLevel >= 4 ) std::cout << "        #4 nok" << std::endl;                       continue;}
-          if( fLogLevel >= 4 ) std::cout << "        #4 ok" << std::endl;
+          if( fLogLevel >= 6 ) std::cout << "        #4 ok" << std::endl;
           fCut[plane_i][hit_i]  = 1;
 
           // Remove hits that reconstructed outside the fiducial volume
           if(!HitsInFiducialVolume(fX,fY,fZ)){if( fLogLevel >= 4 ) std::cout << "        #5 nok" << std::endl;      continue;}
-          if( fLogLevel >= 4 ) std::cout << "        #5 ok" << std::endl;
+          if( fLogLevel >= 6 ) std::cout << "        #5 ok" << std::endl;
 
           // Fill 2D histogram later used for drift time-wise fitting of dQ/dx distributions
           h2_dqdx_dt[plane_i]->Fill(fX/fDriftSpeed,charge/pitch);
@@ -444,6 +479,12 @@ void pdvdana::FitdQdx::beginJob()
       if(fZmin > fGeom->TPC(tpcid).BoundingBox().MinZ()) fZmin = fGeom->TPC(tpcid).BoundingBox().MinZ();
       if(fZmax < fGeom->TPC(tpcid).BoundingBox().MaxZ()) fZmax = fGeom->TPC(tpcid).BoundingBox().MaxZ();
     }
+    for(unsigned vw=0;vw<fNplanes;vw++){
+      std::cout << "  pitch in view: " << vw << " ";
+      if(vw == 0)      std::cout << fGeom->WirePitch(geo::kU) << std::endl;
+      else if(vw == 1) std::cout << fGeom->WirePitch(geo::kV) << std::endl;
+      else if(vw == 2) std::cout << fGeom->WirePitch(geo::kZ) << std::endl;
+    }
   }
   fHeight = fXmax-fXmin;
 
@@ -470,6 +511,9 @@ void pdvdana::FitdQdx::beginJob()
   h2_dqdx_p.resize(fNplanes);  
   f_dqdx_z.resize(fNplanes);
   g_dqdx_z.resize(fNplanes);
+  fTrackQ.resize(fNplanes);
+  fNsnippets.resize(fNplanes);
+  fNvalid.resize(fNplanes);
   fPosX.resize(fNplanes);
   fPosY.resize(fNplanes);
   fPosZ.resize(fNplanes);
@@ -495,18 +539,30 @@ void pdvdana::FitdQdx::beginJob()
     h_dqdx_cor[plane_i] = tfs->make<TH1F>(Form("h_dqdx_cor_%d",plane_i),Form("Plane %d;dQ/dx (fC/cm); Counts (/%.1f fC/cm)",plane_i,(fDQdxMax-iDQdxBins)/iDQdxBins),iDQdxBins,fDQdxMin,fDQdxMax);
   }
 
-  fTree = tfs->make<TTree>("fitdqdxTree","Store dqdx info");
-  fTree->Branch("EventNum",  &fEventNum,   "EventNum/i"  );
-  fTree->Branch("TrackId",   &fTrackId,    "TrackId/i"   );
-  fTree->Branch("TrackLen",  &fTrackLength,"TrackLen/F"  );
-  fTree->Branch("TrackTheta",&fTrackTheta, "TrackTheta/F");
-  fTree->Branch("TrackPhi",  &fTrackPhi,   "TrackPhi/F"  );
-  fTree->Branch("HitCut",    &fCut);
-  fTree->Branch("HitX",      &fPosX);
-  fTree->Branch("HitY",      &fPosY);
-  fTree->Branch("HitZ",      &fPosZ);
-  fTree->Branch("HitQ",      &fQ);
-  fTree->Branch("HitDqdx",   &fDqdx);
+  fTree = tfs->make<TTree>("fitdqdxTree","Store dqdx info" );
+  fTree->Branch("EventNum",   &fEventNum,   "EventNum/i"   );
+  fTree->Branch("TrackId",    &fTrackId,    "TrackId/i"    );
+  fTree->Branch("TrackLen",   &fTrackLength,"TrackLen/F"   );
+  fTree->Branch("TrackTheta", &fTrackTheta, "TrackTheta/F" );
+  fTree->Branch("TrackPhi",   &fTrackPhi,   "TrackPhi/F"   );
+  fTree->Branch("TrackStartT",&fTrackStartT,"TrackStartT/F");
+  fTree->Branch("TrackStartX",&fTrackStartX,"TrackStartX/F");
+  fTree->Branch("TrackStartY",&fTrackStartY,"TrackStartY/F");
+  fTree->Branch("TrackStartZ",&fTrackStartZ,"TrackStartZ/F");
+  fTree->Branch("TrackEndT",  &fTrackEndT,  "TrackEndT/F"  );
+  fTree->Branch("TrackEndX",  &fTrackEndX,  "TrackEndX/F"  );
+  fTree->Branch("TrackEndY",  &fTrackEndY,  "TrackEndY/F"  );
+  fTree->Branch("TrackEndZ",  &fTrackEndZ,  "TrackEndZ/F"  );
+  fTree->Branch("TrackQ",     &fTrackQ   );
+  fTree->Branch("nSnippets",  &fNsnippets);
+  fTree->Branch("nHits",      &fNhits    );
+  fTree->Branch("nValid",     &fNvalid   );
+  fTree->Branch("HitCut",     &fCut      );
+  fTree->Branch("HitX",       &fPosX     );
+  fTree->Branch("HitY",       &fPosY     );
+  fTree->Branch("HitZ",       &fPosZ     );
+  fTree->Branch("HitQ",       &fQ        );
+  fTree->Branch("HitDqdx",    &fDqdx     );
 }
 
 double langaufun(double *x, double *par) {
@@ -906,6 +962,8 @@ float pdvdana::FitdQdx::GetPitch(const recob::Track& track,
 }
 
 void pdvdana::FitdQdx::GetAngles(const recob::Track& track, bool isRevert, float &theta, float &phi){
+  // Theta is 90(180) deg. for horizontal(vertical down-going) tracks
+  // Phi is 0(90) deg. for tracks along the beam(collection strips) direction
 
   float x_len = track.End().X()-track.Start().X();
   float y_len = track.End().Y()-track.Start().Y();
@@ -928,6 +986,7 @@ void pdvdana::FitdQdx::GetAngles(const recob::Track& track, bool isRevert, float
 geo::Point_t pdvdana::FitdQdx::TrajectoryToWirePosition(const geo::Point_t& loc,
                                                         const geo::TPCID& tpc)
 {
+  // See Gnocchi calorimetry module for reference
   auto const* sce = lar::providerFrom<spacecharge::SpaceChargeService>();
   art::ServiceHandle<geo::Geometry const> geom;
 
@@ -951,6 +1010,7 @@ geo::Point_t pdvdana::FitdQdx::GetLocationAtWires(const recob::Track& track,
                                                   const art::Ptr<recob::Hit> hit,
                                                   const recob::TrackHitMeta* meta)
 {
+  // See Gnocchi calorimetry module for reference
   geo::Point_t loc = track.LocationAtPoint(meta->Index());
   return bTrackIsFieldDistortionCorrected ? TrajectoryToWirePosition(loc, hit->WireID()) :
                                                      loc;
@@ -959,6 +1019,7 @@ geo::Point_t pdvdana::FitdQdx::GetLocationAtWires(const recob::Track& track,
 geo::Point_t pdvdana::FitdQdx::WireToTrajectoryPosition(const geo::Point_t& loc,
                                                                 const geo::TPCID& tpc)
 {
+  // See Gnocchi calorimetry module for reference
   auto const* sce = lar::providerFrom<spacecharge::SpaceChargeService>();
 
   geo::Point_t ret = loc;
@@ -975,10 +1036,12 @@ geo::Point_t pdvdana::FitdQdx::WireToTrajectoryPosition(const geo::Point_t& loc,
 }
 
 std::vector<std::vector<unsigned>> pdvdana::FitdQdx::OrganizeHitsSnippets(
+  // See Gnocchi calorimetry module for reference
   const std::vector<art::Ptr<recob::Hit>>& hits,
   const std::vector<const recob::TrackHitMeta*>& thms,
   const recob::Track& track,
-  unsigned nplanes)
+  unsigned nplanes,
+  vector<int> &nhits)
 {
   // In this case, we need to only accept one hit in each snippet
   // Snippets are counted by the Start, End, and Wire. If all these are the same for a hit, then they are on the same snippet.
@@ -1009,6 +1072,8 @@ std::vector<std::vector<unsigned>> pdvdana::FitdQdx::OrganizeHitsSnippets(
     inline bool operator>(const HitIdentifier& rhs) const { return integral > rhs.integral; }
   };
 
+  nhits.resize(nplanes,0);
+  
   std::vector<std::vector<unsigned>> ret(nplanes);
   std::vector<std::vector<HitIdentifier>> hit_idents(nplanes);
   for (unsigned i = 0; i < hits.size(); i++) {
@@ -1021,6 +1086,7 @@ std::vector<std::vector<unsigned>> pdvdana::FitdQdx::OrganizeHitsSnippets(
       for (unsigned j = 0; j < ret[plane].size(); j++) {
         if (this_ident == hit_idents[plane][j]) {
           found_snippet = true;
+          nhits[plane]++;
           if (this_ident > hit_idents[plane][j]) {
             ret[plane][j] = i;
             hit_idents[plane][j] = this_ident;
@@ -1031,6 +1097,7 @@ std::vector<std::vector<unsigned>> pdvdana::FitdQdx::OrganizeHitsSnippets(
       if (!found_snippet) {
         ret[plane].push_back(i);
         hit_idents[plane].push_back(this_ident);
+        nhits[plane]++;
       }
     }
   }
@@ -1041,6 +1108,7 @@ bool pdvdana::FitdQdx::HitIsValid(const art::Ptr<recob::Hit> hit,
                                   const recob::TrackHitMeta* thm,
                                   const recob::Track& track)
 {
+  // See Gnocchi calorimetry module for reference
   if (thm->Index() == int_max_as_unsigned_int) return false;
   if (!track.HasValidPoint(thm->Index())) return false;
   return true;
