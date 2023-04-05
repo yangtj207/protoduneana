@@ -209,7 +209,6 @@ pdvdana::FitdQdx::FitdQdx(fhicl::ParameterSet const& p)
   fTrackLenMax(                    p.get< float >("TrackLenMax")),
   fYZfid(                          p.get< float >("YZfid")),
   fQMin(                           p.get< float >("QMin")),
-  fDriftSpeed(                     p.get< float >("DriftSpeed") ),
   iDtBins(                         p.get< int   >("DtBins") ),
   fDtMin(                          p.get< float >("DtMin") ),
   fDtMax(                          p.get< float >("DtMax") ),
@@ -495,6 +494,11 @@ void pdvdana::FitdQdx::beginJob()
   int iZbins =   int(fZmax-fZmin)+1;
 
   std::cout << "  Geometry binning: (" << iXbins << "," << iYbins << "," << iZbins << ")" << std::endl;
+
+  auto const detProp   = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataForJob();
+  fDriftSpeed = detProp.DriftVelocity();
+
+  std::cout << "  Detector drift speed: " << fDriftSpeed << " cm/us" << std::endl;
 
   // Set size of output vectors (# of planes)
   c_dqdx.resize(fNplanes);

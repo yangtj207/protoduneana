@@ -3,7 +3,7 @@
 process_name: PDVPfitDqDx
 
 services:{
-    TFileService:                 { fileName: "fit_dqdx_results.root" }
+    TFileService:                 { fileName: "fit_dqdx_results-v09_69_01d00.root" }
     TimeTracker:                  {}
     RandomNumberGenerator:        {} 
     ExptGeoHelperInterface:       @local::dune_geometry_helper 
@@ -33,13 +33,12 @@ physics:
     fitdqdx:
     {
         module_type:                     "FitdQdx"
-        LogLevel:                        1 
+        LogLevel:                        1
         TrackModuleLabel:                "pandoraTrack"
         TrackLenMin:                     23  
         TrackLenMax:                     430
         YZfid:                           25
         QMin:                             3
-        DriftSpeed:                      0.1479
         DtBins:                          81
         DtMin:                           -2
         DtMax:                           160 
