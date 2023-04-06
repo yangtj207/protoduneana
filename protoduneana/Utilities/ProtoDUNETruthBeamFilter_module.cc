@@ -107,25 +107,22 @@ bool protoana::ProtoDUNETruthBeamFilter::filter(art::Event& evt){
 
   bool found = false;  
   // Access truth info
-  std::vector< art::Ptr<simb::MCTruth> > mclist;
   auto mctruthhandle = evt.getHandle< std::vector<simb::MCTruth> >("generator");
-  if (mctruthhandle){
-    art::fill_ptr_vector(mclist,mctruthhandle);
-  }
-  else{
+  if (!mctruthhandle){
     mf::LogError("protoana::ProtoDUNETruthBeamParticle::analyze") << "Requested protoDUNE beam generator information does not exist!";
     return found;
   }
+
   fTotalEvents->Fill(1); //count total events
 
-  art::Ptr<simb::MCTruth> mctruth;
-  mctruth = mclist[0];
   
+  simb::MCTruth const& mctruth = mctruthhandle->front();
 
-  for(int i = 0; i < mctruth->NParticles(); ++i){
-    const simb::MCParticle& part(mctruth->GetParticle(i));
   
-    bool isgoodparticle   = (part.Process() == "primary" && mctruth->Origin()==4); //primary particle and beam origin
+  for(int i = 0; i < mctruth.NParticles(); ++i){
+    const simb::MCParticle& part(mctruth.GetParticle(i));
+
+    bool isgoodparticle   = (part.Process() == "primary" && mctruth.Origin()==4); //primary particle and beam origin
     if(!isgoodparticle) continue;
     // Select partciles with the chosen pdg
     for(unsigned int j = 0; j < fPDG.size(); j++){
@@ -146,4 +143,3 @@ bool protoana::ProtoDUNETruthBeamFilter::filter(art::Event& evt){
 void protoana::ProtoDUNETruthBeamFilter::endJob() {}
  
 DEFINE_ART_MODULE(protoana::ProtoDUNETruthBeamFilter)
-

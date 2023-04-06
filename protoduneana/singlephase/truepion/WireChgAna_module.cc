@@ -88,46 +88,36 @@ void pdsp::WireChgAna::analyze(art::Event const& e)
   }
 
   // Implementation of required member function here.
-  std::vector<art::Ptr<raw::RawDigit> > rawlist;
   art::InputTag itag("tpcrawdecoder","daq");
   auto rawListHandle = e.getHandle< std::vector<raw::RawDigit> >(itag);
-  if (rawListHandle) art::fill_ptr_vector(rawlist, rawListHandle);
 
-  std::vector < art::Ptr < recob::Wire > > wires;
   art::InputTag itag2("wclsdatanfsp","gauss");
   auto wireListHandle = e.getHandle< std::vector < recob::Wire > >(itag2);
-  if (wireListHandle) {
-    art::fill_ptr_vector(wires, wireListHandle);
-  }
 
-  std::vector <art::Ptr<recob::Hit> > hits;
   auto hitListHandle = e.getHandle<std::vector<recob::Hit> >("gaushit");
-  if (hitListHandle) {
-    art::fill_ptr_vector(hits, hitListHandle);
-  }
 
   auto const* geo = lar::providerFrom<geo::Geometry>();
 
-  auto simChannelHandle = e.getValidHandle<std::vector<sim::SimChannel>>("tpcrawdecoder:simpleSC");
-
-  for (unsigned int ich = 0; ich < rawlist.size(); ++ich){
-    const auto & digitVec = rawlist[ich];
-    const auto & wireid = geo->ChannelToWire(digitVec->Channel());
+  if (rawListHandle) {
+    for (raw::RawDigit const& digit : *rawListHandle) {
+      const auto & wireid = geo->ChannelToWire(digit.Channel());
     if (wireid[0].TPC != 1) continue;
     //if (wireid[0].Plane != 2) continue;
     int wire = wireid[0].Wire;
     int plane = wireid[0].Plane;
     double this_charge = 0;
     std::vector<short> rawadc(6000);
-    raw::Uncompress(digitVec->ADCs(), rawadc, digitVec->GetPedestal(), digitVec->Compression());
+      raw::Uncompress(digit.ADCs(), rawadc, digit.GetPedestal(), digit.Compression());
     for (size_t itck = 0; itck < rawadc.size(); ++itck){
-      this_charge += rawadc[itck] - digitVec->GetPedestal();
-      rawwf[plane][wire]->SetBinContent(itck, rawadc[itck] - digitVec->GetPedestal());
+        this_charge += rawadc[itck] - digit.GetPedestal();
+        rawwf[plane][wire]->SetBinContent(itck, rawadc[itck] - digit.GetPedestal());
     }
     charge[plane][wire] = this_charge;
   }
+  }
 
-  for ( auto const& channel : (*simChannelHandle) ){
+  auto const& simChannels = e.getProduct<std::vector<sim::SimChannel>>("tpcrawdecoder:simpleSC");
+  for ( auto const& channel : simChannels ){
     const auto & wireid = geo->ChannelToWire(channel.Channel());
     if (wireid[0].TPC != 1) continue;
     //if (wireid[0].Plane != 2) continue;
@@ -144,28 +134,32 @@ void pdsp::WireChgAna::analyze(art::Event const& e)
     nelec[plane][wire] = this_nelec;
   }
 
-  for (unsigned int ich = 0; ich < wires.size(); ++ich){
-    const auto & wireid = geo->ChannelToWire(wires[ich]->Channel());
+  if (wireListHandle) {
+    for (recob::Wire const& wire : *wireListHandle) {
+      const auto & wireid = geo->ChannelToWire(wire.Channel());
     if (wireid[0].TPC != 1) continue;
     //if (wireid[0].Plane != 2) continue;
-    int wire = wireid[0].Wire;
+      int wire_num = wireid[0].Wire;
     int plane = wireid[0].Plane;
     double this_charge = 0;
-    const auto & signal = wires[ich]->Signal();
+      const auto & signal = wire.Signal();
 
     for (size_t itck = 0; itck < signal.size(); ++itck){
       this_charge += signal[itck];
-      deconwf[plane][wire]->SetBinContent(itck, signal[itck]);
+        deconwf[plane][wire_num]->SetBinContent(itck, signal[itck]);
+      }
+      deconchg[plane][wire_num] = this_charge;
     }
-    deconchg[plane][wire] = this_charge;
   }
 
-  for (auto const & hit : hits){
-    if (hit->WireID().TPC != 1) continue;
-    int wire = hit->WireID().Wire;
-    int plane = hit->WireID().Plane;
-    hitchg[plane][wire] += hit->Integral();
-    hitsumadc[plane][wire] += hit->SummedADC();
+  if (hitListHandle) {
+    for (recob::Hit const & hit : *hitListHandle){
+      if (hit.WireID().TPC != 1) continue;
+      int wire = hit.WireID().Wire;
+      int plane = hit.WireID().Plane;
+      hitchg[plane][wire] += hit.Integral();
+      hitsumadc[plane][wire] += hit.SummedADC();
+    }
   }
 
   ftree->Fill();
