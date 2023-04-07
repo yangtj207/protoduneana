@@ -1,0 +1,67 @@
+## same as protoDUNE_refactored_reco_stage1.fcl, no sce; no lifetime correction; no yz, x, t correction; *calinoxyzt<->*cali; *calipidnoxyzt<->*calipid
+## this fcl is currently kept; we use two stage recos once we have calibration done: protoDUNE_refactored_reco_stage1.fcl and protoDUNE_refactored_reco_stage2.fcl
+
+#include "services_refactored_pdune.fcl"
+#include "caldata_dune.fcl"
+#include "wirecell_dune.fcl"
+#include "hitfindermodules_dune.fcl"
+#include "SpacePointSolver_dune.fcl"
+#include "cluster_dune.fcl"
+#include "trackfindermodules_dune.fcl"
+#include "pandoramodules_dune.fcl"
+#include "calorimetry_pdune.fcl"
+#include "calorimetry_vdcb.fcl"
+#include "calibration_dune.fcl"
+#include "featurelabelingmodules.fcl"
+#include "particleid.fcl"
+#include "mctrutht0matching.fcl"
+#include "t0reco.fcl"
+#include "opticaldetectormodules_dune.fcl"
+#include "showerfindermodules_dune.fcl"
+#include "emshower3d.fcl"
+#include "ProtoDUNETriggerFilter.fcl"
+#include "OpSlicer.fcl"
+#include "CRT.fcl"
+#include "T0RecoAnodePiercers.fcl"
+#include "numberofhitsfilter.fcl"
+#include "protodune_tools_dune.fcl"
+
+process_name: PDVDHitsAndTracksCheck
+
+services:
+{
+  TFileService: { fileName: "hits_and_tracks_results.root" }
+  TimeTracker:       {}
+  RandomNumberGenerator: {}
+  ExptGeoHelperInterface:         @local::dune_geometry_helper
+  DetectorPropertiesService:      @local::protodunevd_detproperties
+  FileCatalogMetadata:            @local::art_file_catalog_mc
+                                  @table::protodunevd_reco_services
+  LArPropertiesService:           @local::dunefd_properties
+}
+
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+  fileNames: [ "detsim.root" ]
+}
+
+outputs: {}
+
+physics:
+{
+  analyzers:
+  {
+    crana:
+    {
+      module_type:  "CheckHitsAndTracks"
+      LogLevel:     2
+      HitModuleLabel: "gaushit"
+      TrackModuleLabel:  "pandoraTrack"
+      TrackMinLen:   20.0
+     }
+   }
+  analysis: [ crana ]
+  end_paths: [ analysis ]
+}
