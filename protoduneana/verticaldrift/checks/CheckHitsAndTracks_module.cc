@@ -131,7 +131,7 @@ private:
   //
   unsigned fEventNum;
   unsigned fTrackId;
-  unsigned fTrajPoints;
+  //unsigned fTrajPoints; //commented out because it's unused
   unsigned fNtpcs, fNplanes;
   unsigned ftrackStartTick;
   unsigned ftrackEndTick;
@@ -568,7 +568,7 @@ void pdvdana::CheckHitsAndTracks::beginJob()
 
   for(unsigned t_tpc_id=0;t_tpc_id<fNtpcs;t_tpc_id++){
 
-    geo::TPCID tpcid{{0}, t_tpc_id};
+    geo::TPCID tpcid{0, t_tpc_id};
     geo::PlaneID const uplane_id{tpcid, geo::View_t::kU};
     geo::PlaneID const vplane_id{tpcid, geo::View_t::kV};
     geo::PlaneID const zplane_id{tpcid, geo::View_t::kZ};

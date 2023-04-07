@@ -465,7 +465,7 @@ void pdvdana::FitdQdx::beginJob()
     std::cout << "  #TPCs:       "  << fNtpcs   << std::endl;
     std::cout << "  #planes:     "  << fNplanes << std::endl;
     for(unsigned i=0;i<fNtpcs;i++){
-      geo::TPCID tpcid{{0}, i};
+      geo::TPCID tpcid{0, i};
       std::cout << "  TPC " << i << " center: ("<< fGeom->TPC(tpcid).GetCenter().X()      << "," << fGeom->TPC(tpcid).GetCenter().Y()      << ","<< fGeom->TPC(tpcid).GetCenter().Z() << ")"
                                  << " box:  ["  << fGeom->TPC(tpcid).BoundingBox().MinX() << "," << fGeom->TPC(tpcid).BoundingBox().MaxX() << "]" 
                                         << "["  << fGeom->TPC(tpcid).BoundingBox().MinY() << "," << fGeom->TPC(tpcid).BoundingBox().MaxY() << "]"
