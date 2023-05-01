@@ -27,6 +27,9 @@ art_make(BASENAME_ONLY
   art::Persistency_Provenance
   art::Utilities
   messagefacility::MF_MessageLogger
+  hep_hpc_hdf5
+  hep_hpc_Utilities
+  ${HDF5_LIBRARIES}
   )
 install_headers()
 install_fhicl()

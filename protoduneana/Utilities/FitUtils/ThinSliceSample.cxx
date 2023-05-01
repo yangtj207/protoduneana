@@ -215,3 +215,29 @@ void protoana::ThinSliceSample::RefillRebinnedHists() {
     }
   }
 }
+
+void protoana::ThinSliceSample::CalculateStatVariations() {
+  //std::map<int, std::vector<double>> stat_vars;
+  for (auto & sel_hist : fSelectionHists) {
+    auto * hist = sel_hist.second;
+    fStatVariations[sel_hist.first] = std::vector<double>(hist->GetNbinsX());
+    for (int i = 1; i <= hist->GetNbinsX(); ++i) {
+      double val = hist->GetBinContent(i);
+      fStatVariations[sel_hist.first][i-1] = (
+        val > 0. ? fRNG.PoissonD(val)/val : 0.);
+      //std::cout << fStatVariations[sel_hist.first][i-1] << std::endl;
+    }
+  }
+}
+
+double protoana::ThinSliceSample::GetStatVarWeight(int sel, double val) const {
+  int bin = GetSelectionHistBin(sel, val);
+  if (bin < 1) {
+    std::cout << "Warning found bin " << bin << " for " << sel << " " << val <<
+                 std::endl;
+    return 1.;
+  }
+
+  //bin-1 --> hists are 1-indexed vector is 0-indexed
+  return fStatVariations.at(sel)[bin-1];
+}

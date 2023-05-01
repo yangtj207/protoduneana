@@ -60,19 +60,31 @@ void plotXCaloLifetime(std::string runNumber, std::string txtLabel)
 	TH1F* rebinHistL=new TH1F("rebinHistL","rebinHistL",nBins/2,0.0,2.3);
 	TH1F* rebinHistR=new TH1F("rebinHistR","rebinHistR",nBins/2,0.0,2.3);
 	double velocity=156;
-    for (int i=1; i<=x_correction_factor->GetNbinsX();i++){
+    std::vector<double> time_BL;
+    std::vector<double> time_BR;
+    std::vector<double> beamLeft;
+    std::vector<double> beamRight;
+    
+for (int i=1; i<=x_correction_factor->GetNbinsX();i++){
     
     double x_value=(abs(x_correction_factor->GetBinCenter(1))-abs(x_correction_factor->GetBinCenter(i)))/velocity;
     double position=rebinHist->FindBin(x_value);
-    if (x_correction_factor->GetBinContent(i)<10 || x_correction_factor->GetBinContent(i)>200) continue;
-    std::cout<<x_correction_factor->GetBinContent(i)<<std::endl;
+    
+
+     if (x_correction_factor->GetBinContent(i)<10 || x_correction_factor->GetBinContent(i)>200) continue;
+    
     
     rebinHist->Fill(x_value,x_correction_factor->GetBinContent(i));
     if (x_correction_factor->GetBinCenter(i)>0) {rebinHistL->SetBinContent(position,x_correction_factor->GetBinContent(i));
 rebinHistL->SetBinError(position,x_correction_factor->GetBinError(i));
+    time_BL.push_back(rebinHistL->GetBinCenter(position));
+    beamLeft.push_back(rebinHistL->GetBinContent(position));    
+    
     }
     if (x_correction_factor->GetBinCenter(i)<0){ rebinHistR->SetBinContent(position,x_correction_factor->GetBinContent(i));
  rebinHistR->SetBinError(position,x_correction_factor->GetBinError(i));
+   time_BR.push_back(rebinHistR->GetBinCenter(position));
+   beamRight.push_back(rebinHistR->GetBinContent(position));
     }
     }
 
@@ -86,12 +98,22 @@ rebinHistL->SetBinError(position,x_correction_factor->GetBinError(i));
 	rebinHistR->GetYaxis()->CenterTitle(); 
 	rebinHistR->SetTitle(Form("Run %s BR",s.c_str()));
 	if (runNumber.find(Form("MC"))!=std::string::npos)  rebinHist->SetTitle(Form("Prod. 4 %s BR",s.c_str()));
-	rebinHistR->Draw("p e0");
+	double lifetimeEst_BR=(time_BR.at(time_BR.size()-1)-time_BR.at(0))/(TMath::Log(beamRight.at(0)/beamRight.at(beamRight.size()-1)));
+        
+        double initial_BR=beamRight.at(0);
+        //std::reverse(beamLeft.begin(),beamLeft.end());
+        //std::reverse(time_BL.begin(),time_BL.end());
+        double initial_BL=beamLeft.at(5);
+        double lifetimeEst_BL=(time_BL.at(time_BL.size()-1)-time_BL.at(0))/(TMath::Log(beamLeft.at(0)/beamLeft.at(beamLeft.size()-1)));
+        if(lifetimeEst_BL<0) lifetimeEst_BL=100;
+        if(lifetimeEst_BR<0) lifetimeEst_BR=100;
+        std::cout<<initial_BL<<","<<lifetimeEst_BL<<std::endl;
+        rebinHistR->Draw("p e0");
 	TF1 *fit= new TF1("exp","[0]*exp(x/(-[1]))",0.0,2.0);
 	fit->SetParName(0,"Constant");
 	fit->SetParName(1,"e^{-} Lifetime [ms]");
-	fit->SetParameter(0,50);
-	fit->SetParameter(1,30);
+	fit->SetParameter(0,initial_BR);
+	fit->SetParameter(1,lifetimeEst_BR);
 	TLatex tL;
 	tL.SetNDC();  
 	tL.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
@@ -109,8 +131,8 @@ rebinHistL->SetBinError(position,x_correction_factor->GetBinError(i));
 	rebinHistL->SetTitle(Form("Run %s BL",s.c_str()));
 	if (runNumber.find(Form("MC"))!=std::string::npos)  rebinHist->SetTitle(Form("Prod. 4 %s BL",s.c_str()));
 	rebinHistL->Draw("p e0");
-	fit->SetParameter(0,50);
-	fit->SetParameter(1,30); 
+	fit->SetParameter(0,initial_BL);
+	fit->SetParameter(1,lifetimeEst_BL); 
 	tL.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
 	tL.Draw("SAME");
 	rebinHistL->Fit("exp","WQ");
@@ -126,8 +148,8 @@ rebinHistL->SetBinError(position,x_correction_factor->GetBinError(i));
 	rebinHist->SetTitle(Form("Run %s",s.c_str()));
 	if (runNumber.find(Form("MC"))!=std::string::npos)  rebinHist->SetTitle(Form("Prod. 4 %s",s.c_str()));
 	rebinHist->Draw("p e0");
-	fit->SetParameter(0,50);
-	fit->SetParameter(1,30);
+	fit->SetParameter(0,initial_BL);
+	fit->SetParameter(1,lifetimeEst_BL);
 	tL.DrawLatex(0.10,0.94,"#bf{DUNE:ProtoDUNE-SP}");
 	tL.Draw("SAME"); 
 	rebinHist->Fit("exp","QW");

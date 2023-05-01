@@ -1,0 +1,16 @@
+#include "asimov.fcl"
+GetMeanXSec: true
+SetSigLimits: true 
+
+SetSystLimits: true
+SetSelVarLimits: true 
+XSecCalcStyle: "Approx"
+
+AnalysisOptions.FakeDataRoutine: "Toy"
+AnalysisOptions.BarlowBeeston: false 
+MaxEntries: -1 #20000
+SplitMC: false 
+Shuffle: false 
+FluctuateStats: true
+FluctuateInSamples: false 
+#FitType: "None"

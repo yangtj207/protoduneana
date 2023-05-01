@@ -1,0 +1,2 @@
+#include "standard_data_fit.fcl"
+AnalysisOptions.BarlowBeeston: false

@@ -24,8 +24,8 @@ class ThinSliceDriver {
   virtual void FillMCEvents(
     TTree * tree, std::vector<ThinSliceEvent> & events,
     std::vector<ThinSliceEvent> & fake_data_events,
-    int & split_val, const bool & do_split, int max_entries,
-    const bool & do_fake_data) = 0;
+    int & split_val, const bool & do_split, const bool & shuffle,
+    int max_entries, const bool & do_fake_data) = 0;
 
   virtual void BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,
@@ -142,7 +142,6 @@ class ThinSliceDriver {
       TFile & output_file) = 0;
   //virtual void WrapUpSysts(TFile & output_file) = 0;
 
-
   virtual void ConstructCovariances(
     const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
@@ -162,11 +161,14 @@ class ThinSliceDriver {
        std::map<int, double> & nominal_fluxes,
        std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
        std::vector<double> & beam_energy_bins, bool use_beam_inst_P*/) = 0;
+
+  void SetStatVar(bool set) {fStatVar = set;};
  protected:
   fhicl::ParameterSet fExtraOptions;
 
   void ResetSamples(
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples);
+  bool fStatVar = false;
  private:
 };
 }
