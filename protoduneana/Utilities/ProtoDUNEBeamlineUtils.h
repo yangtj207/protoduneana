@@ -84,7 +84,7 @@ namespace protoana {
 
 
     //GetBeamEvent(art::Event const & evt, std::string beamEventTag) 
-    const beam::ProtoDUNEBeamEvent GetBeamEvent(art::Event const & evt) const;
+    const beam::ProtoDUNEBeamEvent& GetBeamEvent(art::Event const & evt) const;
 
     //GetFibers(art::Event const & evt, std::string beamEventTag, std::string monitorName)
     //Replace with return double
@@ -310,4 +310,3 @@ namespace protoana {
 }
 
 #endif
-

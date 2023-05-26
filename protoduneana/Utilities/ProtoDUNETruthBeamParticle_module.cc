@@ -117,22 +117,17 @@ void protoana::ProtoDUNETruthBeamParticle::reconfigure(fhicl::ParameterSet const
 void protoana::ProtoDUNETruthBeamParticle::analyze(const art::Event& evt){
     
   // Access truth info
-  std::vector< art::Ptr<simb::MCTruth> > mclist;
   auto mctruthhandle = evt.getHandle< std::vector<simb::MCTruth> >("generator");
-  if (mctruthhandle){ 
-    art::fill_ptr_vector(mclist,mctruthhandle);
-  }
-  else{
+  if (!mctruthhandle){
     mf::LogError("protoana::ProtoDUNETruthBeamParticle::analyze") << "Requested protoDUNE beam generator information does not exist!";
     return;
   }
   
-  art::Ptr<simb::MCTruth> mctruth;
-  mctruth = mclist[0];
+  simb::MCTruth const& mctruth = mctruthhandle->front();
   
   nbeamparticles = 0;
-  for(int i = 0; i < mctruth->NParticles(); ++i){
-    const simb::MCParticle& part(mctruth->GetParticle(i));
+  for(int i = 0; i < mctruth.NParticles(); ++i){
+    const simb::MCParticle& part(mctruth.GetParticle(i));
 
     // Select partciles with the chosen pdg
     if(!selectall){

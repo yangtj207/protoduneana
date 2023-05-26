@@ -5057,14 +5057,14 @@ void pduneana::PDSPAnalyzer::DaughterPFPInfo(
         else {
           double total_shower_energy = 0.;
           for (size_t iHit = 0; iHit < good_hits.size(); ++iHit) {
-            auto theHit = good_hits[iHit];
+            auto const& theHit = good_hits[iHit];
             if (theHit->View() != 2) continue; //skip induction planes
 
             if (y_vec[iHit] < -100.)
               y_vec[iHit] = total_y / n_good_y;
 
             total_shower_energy += calibration_SCE.HitToEnergy(
-                good_hits[iHit], x_vec[iHit], y_vec[iHit], z_vec[iHit]);
+                *good_hits[iHit], x_vec[iHit], y_vec[iHit], z_vec[iHit]);
           }
           reco_daughter_allShower_energy.push_back(total_shower_energy);
         }

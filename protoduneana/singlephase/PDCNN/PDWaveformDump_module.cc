@@ -71,23 +71,19 @@ pdsp::PDWaveformDump::PDWaveformDump(fhicl::ParameterSet const& p)
 void pdsp::PDWaveformDump::analyze(art::Event const& e)
 {
   // Get OpDetWaveform
-  std::vector<art::Ptr<raw::OpDetWaveform>> wflist;
   auto wfListHandle = e.getHandle< std::vector<raw::OpDetWaveform> >("ssprawdecoder:external");
-  if (wfListHandle){
-    art::fill_ptr_vector(wflist, wfListHandle);
-  }
-  else{
+  if (!wfListHandle){
     cout<<"wfListHandle invalid"<<endl;
     return;
   }
 
   run = e.run();
   event = e.id().event();
-  for (auto const & wf : wflist){
-    daqch = wf->ChannelNumber();
+  for (auto const & wf : *wfListHandle){
+    daqch = wf.ChannelNumber();
     onda.clear();
-    for (unsigned short i = 0; i<wf->Waveform().size(); ++i){
-      onda.push_back(wf->Waveform()[i]);
+    for (unsigned short i = 0; i<wf.Waveform().size(); ++i){
+      onda.push_back(wf.Waveform()[i]);
     }
     pdtree->Fill();
   }
