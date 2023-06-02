@@ -90,7 +90,7 @@ private:
   int      fFlagInfos = 2;
   int      fFlagWarning = 3;
   int      fFlagDetails = 4;
-  int      fFlagDebug = 5;
+  //int      fFlagDebug = 5;
 
   string   fHitModuleLabel;
   string   fTrackModuleLabel;
@@ -107,7 +107,6 @@ private:
   //
   unsigned fEventNum;
   unsigned fTrackId;
-  unsigned fTrajPoints;
   unsigned fNtpcs, fNplanes;
   unsigned ftrackStartTick;
   unsigned ftrackEndTick;
@@ -396,7 +395,7 @@ void pdvdana::CheckHitsAndTracks::beginJob()
   
   for(unsigned t_tpc_id=0;t_tpc_id<fNtpcs;t_tpc_id++){
 
-    geo::TPCID tpcid{{0}, t_tpc_id};
+    geo::TPCID tpcid{0, t_tpc_id};
     geo::PlaneID const uplane_id{tpcid, geo::View_t::kU};
     geo::PlaneID const vplane_id{tpcid, geo::View_t::kV};
     geo::PlaneID const zplane_id{tpcid, geo::View_t::kZ};
@@ -580,7 +579,7 @@ void pdvdana::CheckHitsAndTracks::Drawing3D_HitsAndTracks(TCanvas* canvas_3D, ve
   otherPoly->Draw();   
   
   for(unsigned t_tpc_id=0;t_tpc_id<fNtpcs;t_tpc_id++){
-    geo::TPCID tpcid{{0}, t_tpc_id};
+    geo::TPCID tpcid{0, t_tpc_id};
     TPolyLine3D* TPC_3D = new TPolyLine3D(17);
     DrawCube(TPC_3D, fGeom->TPC(tpcid).BoundingBox().MinX(), fGeom->TPC(tpcid).BoundingBox().MinY(), fGeom->TPC(tpcid).BoundingBox().MinZ(), 
             fGeom->TPC(tpcid).BoundingBox().MaxX(), fGeom->TPC(tpcid).BoundingBox().MaxY(), fGeom->TPC(tpcid).BoundingBox().MaxZ());
@@ -646,7 +645,7 @@ void pdvdana::CheckHitsAndTracks::Drawing2D_HitsAndTracks(TCanvas* l_canvas_xy, 
   HitsYZ->Draw();
 
   for(unsigned t_tpc_id=0;t_tpc_id<fNtpcs;t_tpc_id++){
-    geo::TPCID tpcid{{0}, t_tpc_id};
+    geo::TPCID tpcid{0, t_tpc_id};
     TPolyLine* Rectangle_tpc_xy = new TPolyLine(5);
     TPolyLine* Rectangle_tpc_yz = new TPolyLine(5);
     TPolyLine* Rectangle_tpc_xz = new TPolyLine(5);
