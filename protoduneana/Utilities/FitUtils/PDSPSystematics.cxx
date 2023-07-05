@@ -15,6 +15,8 @@ std::map<int, std::vector<double>> protoana::PDSPSystematics::fEndZFractions = {
 
 std::map<int, std::vector<double>> protoana::PDSPSystematics::fBeamMatchFractions = {};
 const protoana::ThinSliceSystematic * protoana::PDSPSystematics::fBeamMatchPar = 0x0;
+double protoana::PDSPSystematics::fBeamMatchFraction = 0.;
+bool protoana::PDSPSystematics::fBeamMatchUseSingleFrac = false;
 
 double protoana::PDSPSystematics::fBeamMatchLowLimit = 0.;
 double protoana::PDSPSystematics::fBeamMatchLowFraction = 0.;
@@ -496,8 +498,13 @@ void protoana::PDSPSystematics::SetupSyst_BeamMatch(
   //    .GetOption<std::vector<double>>("Fractions");
   auto temp = pars.at("beam_match_weight")
       .GetOption<std::vector<std::pair<int, std::vector<double>>>>("Fractions");
+  fBeamMatchFraction = pars.at("beam_match_weight")
+      .GetOption<double>("Fraction");
   fBeamMatchFractions
       = std::map<int, std::vector<double>>(temp.begin(), temp.end()); 
+  fBeamMatchUseSingleFrac = pars.at("beam_match_weight")
+      .GetOption<bool>("UseSingleFrac");
+  if (fBeamMatchUseSingleFrac) std::cout << "UseSingleFrac" << std::endl;
   fBeamMatchPar = &(pars.at("beam_match_weight"));
   fActiveSystematics.push_back(
       {"beam_match_weight", GetSystWeight_BeamMatchNoPar});
@@ -507,22 +514,30 @@ double protoana::PDSPSystematics::GetSystWeight_BeamMatch(
     const ThinSliceEvent & event,
     int signal_index,
     const ThinSliceSystematic & par) {
-  ////Upstream Interactions
-  //if (event.GetSampleID() == fUpstreamID) return 1.;
+
+  //Upstream Interactions
+  if (event.GetSampleID() == fUpstreamID) return 1.;
 
   //No reco track
   if (event.GetSelectionID() == fNoTrackID) return 1.;
 
+  /*
   bool matched_to_cosmic = (event.GetRecoOrigin() == 2);
   double variation = par.GetValue();
 
   double fraction = GetFractionBySample(fBeamMatchFractions,
                                         event.GetSampleID(),
-                                        signal_index);
+                                        signal_index);*/
 
+  bool matched = (event.GetTrueID() == event.GetRecoToTrueID());
+  double variation = par.GetValue();
+
+  double fraction = GetFractionBySample(fBeamMatchFractions,
+                                        event.GetSampleID(),
+                                        signal_index);
   //std::cout << event.GetSampleID() << " " << signal_index << " " << fraction <<
   //             std::endl;
-  double weight = (matched_to_cosmic ?
+  double weight = (matched ?
                    variation : (1. - variation*fraction)/(1. - fraction));
   return CheckAndReturn(weight, "BeamMatch", par, event);
 }
@@ -530,17 +545,27 @@ double protoana::PDSPSystematics::GetSystWeight_BeamMatch(
 double protoana::PDSPSystematics::GetSystWeight_BeamMatchNoPar(
     const ThinSliceEvent & event,
     int signal_index) {
+
+  //Upstream Interactions
+  //if (event.GetSampleID() == fUpstreamID) return 1.;
+
   //No reco track
   if (event.GetSelectionID() == fNoTrackID) return 1.;
 
-  bool matched_to_cosmic = (event.GetRecoOrigin() == 2);
+  bool matched = (event.GetRecoOrigin() == 2);
+  //bool matched = (event.GetTrueID() == event.GetRecoToTrueID());
   double variation = fBeamMatchPar->GetValue();
 
-  double fraction = GetFractionBySample(fBeamMatchFractions,
-                                        event.GetSampleID(),
-                                        signal_index);
+  //double fraction = GetFractionBySample(fBeamMatchFractions,
+  //                                      event.GetSampleID(),
+  //                                      signal_index);
+  double fraction = (fBeamMatchUseSingleFrac ?
+                     fBeamMatchFraction :
+                     GetFractionBySample(
+                         fBeamMatchFractions, event.GetSampleID(),
+                         signal_index));
 
-  double weight = (matched_to_cosmic ?
+  double weight = (matched ?
                    variation : (1. - variation*fraction)/(1. - fraction));
   //return weight;
   return CheckAndReturn(weight, "BeamMatch", (*fBeamMatchPar), event);

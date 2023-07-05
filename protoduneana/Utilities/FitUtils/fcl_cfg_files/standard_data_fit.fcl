@@ -2,6 +2,7 @@
 #include "ProtoDUNECalibration.fcl"
 #include "FitSystematics.fcl"
 #include "SelectionVarSysts.fcl"
+#include "ExtraHists.fcl"
 
 MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_31_22/eventSelection_mc_all.root"
 DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_4_22/AltSCE/eventSelection_data_BeamQuality.root"
@@ -19,6 +20,8 @@ AnalysisOptions: {
   Z0: 0.56035
 
   Multinomial: false 
+
+  ExtraHists: @local::AbsCexExtraHists
 
   SliceMethod: "Traj" #E, Alt, Default
 
@@ -56,7 +59,7 @@ Systematics: [
   ,@local::SystematicsList.beam_scraper_weight
 ]
 
-Systematics[2].Central: 1.46
+Systematics[2].Central: 1.71
 Systematics[0].Options.F: .65078 #restricted P
 Systematics[0].ThrowLimitUp: 1.536
 Systematics[0].UpperLimit: 1.536
@@ -93,7 +96,7 @@ CovarianceBins: [
  ,["beam_scraper_weight", 6] #50%
 ]
 
-CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/scraper_onebeam.root"
+CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/new_centrals.root"
 CovarianceMatrix: "m"
 
 SelectionVarSysts: [
@@ -260,7 +263,7 @@ RegFactor: 5.
 
 FitFunctionType: 2
 
-SetSigLimits: true 
+SetSigLimits: true
 SetSystLimits: true
 SetSelVarLimits: true
 #####################
@@ -278,6 +281,8 @@ PlotRebinned: true
 DrawXSecUnderflow: false 
 #####################
 
+#CoutLevel: 1
+
 ## Validation
 RandomStart: false 
 SplitMC:  false 
@@ -285,14 +290,14 @@ MaxEntries: -1
 MaxDataEntries: -1 #54000
 DoFakeData: false 
 FluctuateStats: false 
-DoThrows: true
-NThrows: 1000
+DoThrows: true 
+NThrows: 10000
 DoScans: false
 OnlySystScans: false
 RunHesse: true
 Do1DShifts: false 
 DoSysts: true
-MaxRethrows: 1000
+MaxRethrows: 100000
 #####################
 
 FitType: "Normal"

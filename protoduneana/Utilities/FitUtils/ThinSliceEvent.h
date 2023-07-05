@@ -16,6 +16,9 @@ class ThinSliceEvent {
     true_beam_mass = -999;
     reco_beam_endZ = -999;
     reco_beam_startY = -999.;
+    reco_beam_startX_SCE = -999.;
+    reco_beam_startY_SCE = -999.;
+    reco_beam_startZ_SCE = -999.;
     beam_inst_P = -999;
     pdg = -999;
     reco_beam_incidentEnergies = std::vector<double>();
@@ -36,6 +39,9 @@ class ThinSliceEvent {
     has_pi0_shower = false;
     true_daughter_PDGs = std::vector<int>();
     reco_beam_origin = -999;
+    reco_daughter_truncated_dEdX = std::vector<double>();
+    reco_daughter_chi2s_perhit = std::vector<double>();
+
   };
   /*
   ~ThinSliceEvent() {
@@ -99,6 +105,25 @@ class ThinSliceEvent {
     reco_beam_startY = y;
   };
 
+  double GetRecoStartX_SCE() const {
+    return reco_beam_startX_SCE;
+  };
+  void SetRecoStartX_SCE(double x) {
+    reco_beam_startX_SCE = x;
+  };
+  double GetRecoStartY_SCE() const {
+    return reco_beam_startY_SCE;
+  };
+  void SetRecoStartY_SCE(double y) {
+    reco_beam_startY_SCE = y;
+  };
+  double GetRecoStartZ_SCE() const {
+    return reco_beam_startZ_SCE;
+  };
+  void SetRecoStartZ_SCE(double z) {
+    reco_beam_startZ_SCE = z;
+  };
+
   double GetTrueEndP() const {
     return true_beam_endP;
   };
@@ -132,6 +157,19 @@ class ThinSliceEvent {
   };
   void SetTrueMass(double m) {
     true_beam_mass = m;
+  };
+
+  double GetVertexMichelScore() const {
+    return vertex_michel_score;
+  };
+  void SetVertexMichelScore(double v) {
+    vertex_michel_score = v;
+  };
+  double GetVertexNHits() const {
+    return vertex_nhits;
+  };
+  void SetVertexNHits(int v) {
+    vertex_nhits = v;
   };
 
   const std::vector<double> & GetRecoIncidentEnergies() const {
@@ -419,6 +457,18 @@ class ThinSliceEvent {
   void SetIsBeamScraper(bool val) {is_beam_scraper = val;};
   bool GetIsBeamScraper() const {return is_beam_scraper;};
 
+  void AddOneChi2PerHit(double val) {
+    reco_daughter_chi2s_perhit.push_back(val);
+  };
+  void SetChi2PerHit(std::vector<double> & vals) {reco_daughter_chi2s_perhit = vals;};
+  const std::vector<double> & GetChi2sPerHit() const {return reco_daughter_chi2s_perhit;};
+
+  void AddOneTrunc_dEdX(double val) {
+    reco_daughter_truncated_dEdX.push_back(val);
+  };
+  void SetTrunc_dEdXs(std::vector<double> & vals) {reco_daughter_truncated_dEdX = vals;};
+  const std::vector<double> & GetTrunc_dEdXs() const {return reco_daughter_truncated_dEdX;};
+
  private:
   int event_ID, subrun_ID, run_ID;
   int sample_ID;
@@ -428,6 +478,7 @@ class ThinSliceEvent {
   double true_beam_endP, true_beam_mass;
   double reco_beam_endZ, true_beam_startP, true_beam_endZ;
   double reco_beam_startY;
+  double reco_beam_startX_SCE, reco_beam_startY_SCE, reco_beam_startZ_SCE;
   double beam_inst_P;
   bool has_pi0_shower;
   std::vector<double> reco_beam_incidentEnergies,
@@ -455,6 +506,11 @@ class ThinSliceEvent {
   double leading_p_costheta, leading_piplus_costheta, leading_pi0_costheta;
   int reco_beam_origin = -999;
   bool is_beam_scraper;
+
+  std::vector<double> reco_daughter_truncated_dEdX,
+                      reco_daughter_chi2s_perhit;
+  double vertex_michel_score;
+  int vertex_nhits;
 };
 }
 #endif

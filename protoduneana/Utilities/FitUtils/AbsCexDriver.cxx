@@ -22,7 +22,21 @@
 #include "valgrind/callgrind.h"
 
 #include "ThinSliceDriverFactory.h"
+
 DECLARE_THINSLICEDRIVER_FACTORY_NS(protoana::AbsCexDriver, protoana, AbsCexDriver)
+
+double protoana::AbsCexDriver::fStartXDataMean = 0.;
+double protoana::AbsCexDriver::fStartXDataSigma = 0.;
+double protoana::AbsCexDriver::fStartYDataMean = 0.;
+double protoana::AbsCexDriver::fStartYDataSigma = 0.;
+double protoana::AbsCexDriver::fStartZDataMean = 0.;
+double protoana::AbsCexDriver::fStartZDataSigma = 0.;
+double protoana::AbsCexDriver::fStartXMCMean = 0.;
+double protoana::AbsCexDriver::fStartXMCSigma = 0.;
+double protoana::AbsCexDriver::fStartYMCMean = 0.;
+double protoana::AbsCexDriver::fStartYMCSigma = 0.;
+double protoana::AbsCexDriver::fStartZMCMean = 0.;
+double protoana::AbsCexDriver::fStartZMCSigma = 0.;
 
 protoana::AbsCexDriver::~AbsCexDriver() {}
 
@@ -46,7 +60,9 @@ protoana::AbsCexDriver::AbsCexDriver(
       fDebugRestrictBeamP(extra_options.get<bool>("DebugRestrictBeamP", false)),
       fVaryDataCalibration(extra_options.get<bool>("VaryDataCalibration", false)),
       fDataCalibrationFactor(extra_options.get<double>("DataCalibrationFactor", 1.)),
-      fNThreads(extra_options.get<int>("NThreads", 1)) {
+      fNThreads(extra_options.get<int>("NThreads", 1)),
+      fExtraHistSets(extra_options.get<std::vector<fhicl::ParameterSet>>(
+          "ExtraHists", {})) {
   if (fSliceMethod == "Alt") {
     fIn = new TFile("end_slices.root", "OPEN");
     fEndSlices = (TH2D*)fIn->Get("h2D")->Clone();
@@ -113,6 +129,9 @@ void protoana::AbsCexDriver::FillMCEvents(
   double true_beam_interactingEnergy, reco_beam_interactingEnergy;
   double true_beam_endP, true_beam_mass, true_beam_endZ;
   double reco_beam_endZ, true_beam_startP, reco_beam_startY;
+  double reco_beam_startX_SCE, reco_beam_startY_SCE, reco_beam_startZ_SCE;
+  double vertex_michel_score;
+  int vertex_nhits;
   double beam_inst_P;
   double leading_p_costheta, leading_piplus_costheta, leading_pi0_costheta;
   std::vector<double> * reco_beam_incidentEnergies = 0x0,
@@ -144,6 +163,11 @@ void protoana::AbsCexDriver::FillMCEvents(
   tree->SetBranchAddress("reco_beam_interactingEnergy", //good
                          &reco_beam_interactingEnergy);
   tree->SetBranchAddress("reco_beam_endZ", &reco_beam_endZ); //good
+  tree->SetBranchAddress("reco_beam_calo_startX", &reco_beam_startX_SCE);
+  tree->SetBranchAddress("reco_beam_calo_startY", &reco_beam_startY_SCE);
+  tree->SetBranchAddress("reco_beam_calo_startZ", &reco_beam_startZ_SCE);
+  tree->SetBranchAddress("reco_beam_vertex_michel_score", &vertex_michel_score);
+  tree->SetBranchAddress("reco_beam_vertex_nHits", &vertex_nhits);
   tree->SetBranchAddress("reco_beam_startY", &reco_beam_startY); //good
   tree->SetBranchAddress("reco_beam_incidentEnergies", //good
                          &reco_beam_incidentEnergies);
@@ -198,6 +222,16 @@ void protoana::AbsCexDriver::FillMCEvents(
   tree->SetBranchAddress("leading_pi0_costheta", &leading_pi0_costheta);//good
   bool is_beam_scraper;
   tree->SetBranchAddress("true_beam_is_scraper", &is_beam_scraper);//good
+
+  std::vector<double> * reco_daughter_chi2 = 0x0,
+                      * reco_daughter_truncated_dEdX = 0x0;
+  std::vector<int> * reco_daughter_chi2_nhits = 0x0;
+  tree->SetBranchAddress("reco_daughter_allTrack_Chi2_proton",
+                         &reco_daughter_chi2);
+  tree->SetBranchAddress("reco_daughter_allTrack_Chi2_ndof",
+                         &reco_daughter_chi2_nhits);
+  tree->SetBranchAddress("reco_daughter_allTrack_truncLibo_dEdX_pos",
+                         &reco_daughter_truncated_dEdX);
 
   int nentries = (max_entries < 0 ? tree->GetEntries() : max_entries);
   if (max_entries > tree->GetEntries()) {
@@ -414,6 +448,12 @@ void protoana::AbsCexDriver::FillMCEvents(
     events.back().SetTrueMass(true_beam_mass);
     events.back().SetRecoEndZ(reco_beam_endZ);
     events.back().SetRecoStartY(reco_beam_startY);
+    events.back().SetRecoStartX_SCE(reco_beam_startX_SCE);
+    events.back().SetRecoStartY_SCE(reco_beam_startY_SCE);
+    events.back().SetRecoStartZ_SCE(reco_beam_startZ_SCE);
+
+    events.back().SetVertexMichelScore(vertex_michel_score);
+    events.back().SetVertexNHits(vertex_nhits);
 
     events.back().SetTrueID(true_beam_ID);
     events.back().SetRecoToTrueID(reco_beam_true_byHits_ID);
@@ -435,10 +475,20 @@ void protoana::AbsCexDriver::FillMCEvents(
     events.back().SetLeadingPiPlusCostheta(leading_piplus_costheta);
     events.back().SetLeadingPi0Costheta(leading_pi0_costheta);
     events.back().SetIsBeamScraper(is_beam_scraper);
+
     for (size_t j = 0; j < daughter_dQdXs->size(); ++j) {
       events.back().AddRecoDaughterTrackdQdX((*daughter_dQdXs)[j]);
       events.back().AddRecoDaughterTrackResRange((*daughter_resRanges)[j]);
       events.back().AddRecoDaughterEField((*daughter_EFields)[j]);
+      auto nhits = (*reco_daughter_chi2_nhits)[j];
+      events.back().AddOneChi2PerHit(
+          (nhits > 0) ?
+          (*reco_daughter_chi2)[j]/nhits :
+          -999.
+      );
+      events.back().AddOneTrunc_dEdX(
+        (*reco_daughter_truncated_dEdX)[j]
+      );
     }
 
     for (size_t j = 0; j < g4rw_downstream_grid_piplus_coeffs->size(); ++j) {
@@ -488,6 +538,11 @@ void protoana::AbsCexDriver::FillMCEvents(
       fake_data_events.back().SetTrueStartP(true_beam_startP);
       fake_data_events.back().SetTrueMass(true_beam_mass);
       fake_data_events.back().SetRecoEndZ(reco_beam_endZ);
+      fake_data_events.back().SetRecoStartX_SCE(reco_beam_startX_SCE);
+      fake_data_events.back().SetRecoStartY_SCE(reco_beam_startY_SCE);
+      fake_data_events.back().SetRecoStartZ_SCE(reco_beam_startZ_SCE);
+      fake_data_events.back().SetVertexMichelScore(vertex_michel_score);
+      fake_data_events.back().SetVertexNHits(vertex_nhits);
 
       fake_data_events.back().SetRecoIncidentEnergies(*reco_beam_incidentEnergies);
       fake_data_events.back().SetTrueIncidentEnergies(*true_beam_incidentEnergies);
@@ -524,6 +579,15 @@ void protoana::AbsCexDriver::FillMCEvents(
         fake_data_events.back().AddRecoDaughterTrackdQdX((*daughter_dQdXs)[j]);
         fake_data_events.back().AddRecoDaughterTrackResRange((*daughter_resRanges)[j]);
         fake_data_events.back().AddRecoDaughterEField((*daughter_EFields)[j]);
+        auto nhits = (*reco_daughter_chi2_nhits)[j];
+        fake_data_events.back().AddOneChi2PerHit(
+            (nhits > 0) ?
+            (*reco_daughter_chi2)[j]/nhits :
+            -999.
+        );
+        fake_data_events.back().AddOneTrunc_dEdX(
+          (*reco_daughter_truncated_dEdX)[j]
+        );
       }
 
       for (size_t j = 0; j < g4rw_downstream_grid_piplus_coeffs->size(); ++j) {
@@ -766,6 +830,8 @@ void protoana::AbsCexDriver::BuildMCSamples(
         {(true_beam_incidentEnergies)[0],
          end_energy});
     }
+
+    FillExtraHistsMC(*this_sample, event, 1.);
 
     this_sample->CalculateStatVariations();
 
@@ -1059,6 +1125,8 @@ void protoana::AbsCexDriver::RefillSampleLoop(
       }
     }
     this_sample->AddVariedFlux(weight);
+
+    FillExtraHistsMC(*this_sample, event, weight);
   }
 }
 
@@ -1940,13 +2008,298 @@ double protoana::AbsCexDriver::GetSystWeight_BeamShift2D(
   return weight;//fSystBeamShiftMap->Interpolate(x_val, y_val);
 }*/
 
+
+void protoana::AbsCexDriver::SetupExtraHists(
+    ThinSliceDataSet & data_set, 
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & fake_samples) {
+
+  data_set.SetupExtraHists(fExtraHistSets);
+
+  /*for (auto & hist_set : fExtraHistSets) {
+    std::string category = hist_set.get<std::string>("Category");
+    fActiveExtraHistsData.push_back({category, fStoredExtraHistsData[category]});
+    fActiveExtraHistsMC.push_back({category, fStoredExtraHistsMC[category]});
+  }*/
+
+  for (auto & hist_set : fExtraHistSets) {
+    std::string category = hist_set.get<std::string>("Category");
+    if (category == "EndZ") {
+      fActiveExtraHistsData.push_back({category, FillExtraHistDataEndZ});
+      fActiveExtraHistsMC.push_back({category, FillExtraHistMCEndZ});
+    }
+    if (category == "EndZGoodReco") {
+      fActiveExtraHistsData.push_back({category, FillExtraHistDataEndZGoodReco});
+      fActiveExtraHistsMC.push_back({category, FillExtraHistMCEndZGoodReco});
+    }
+    if (category == "StartX") {
+      fActiveExtraHistsData.push_back({category, FillExtraHistDataStartX});
+      fActiveExtraHistsMC.push_back({category, FillExtraHistMCStartX});
+      auto options = hist_set.get<fhicl::ParameterSet>("Options");
+      fStartXDataMean = options.get<double>("DataMean", 0.);
+      fStartXMCMean = options.get<double>("MCMean", 0.);
+      fStartXDataSigma = options.get<double>("DataSigma", 0.);
+      fStartXMCSigma = options.get<double>("MCSigma", 0.);
+    }
+    if (category == "StartY") {
+      fActiveExtraHistsData.push_back({category, FillExtraHistDataStartY});
+      fActiveExtraHistsMC.push_back({category, FillExtraHistMCStartY});
+      auto options = hist_set.get<fhicl::ParameterSet>("Options");
+      fStartYDataMean = options.get<double>("DataMean", 0.);
+      fStartYMCMean = options.get<double>("MCMean", 0.);
+      fStartYDataSigma = options.get<double>("DataSigma", 0.);
+      fStartYMCSigma = options.get<double>("MCSigma", 0.);
+    }
+    if (category == "StartZ") {
+      fActiveExtraHistsData.push_back({category, FillExtraHistDataStartZ});
+      fActiveExtraHistsMC.push_back({category, FillExtraHistMCStartZ});
+      auto options = hist_set.get<fhicl::ParameterSet>("Options");
+      fStartZDataMean = options.get<double>("DataMean", 0.);
+      fStartZMCMean = options.get<double>("MCMean", 0.);
+      fStartZDataSigma = options.get<double>("DataSigma", 0.);
+      fStartZMCSigma = options.get<double>("MCSigma", 0.);
+    }
+    else if (category == "VertexMichel") {
+      fActiveExtraHistsData.push_back({category, FillExtraHistDataVertexMichel});
+      fActiveExtraHistsMC.push_back({category, FillExtraHistMCVertexMichel});
+    }
+    else if (category == "TrackScore") {
+      fActiveExtraHistsData.push_back({category, FillExtraHistDataTrackScore});
+      fActiveExtraHistsMC.push_back({category, FillExtraHistMCTrackScore});
+    }
+    else if (category == "Trunc_dEdX") {
+      fActiveExtraHistsData.push_back({category, FillExtraHistDataTrunc_dEdX});
+      fActiveExtraHistsMC.push_back({category, FillExtraHistMCTrunc_dEdX});
+    }
+    else if (category == "Chi2PerHit") {
+      fActiveExtraHistsData.push_back({category, FillExtraHistDataChi2PerHit});
+      fActiveExtraHistsMC.push_back({category, FillExtraHistMCChi2PerHit});
+    }
+  }
+
+  for (auto & it : samples) {
+    int i = 0;
+    for (auto & sample_vec : it.second) {
+      int j = 0;
+      for (auto & sample : sample_vec) {
+        sample.SetupExtraHists(fExtraHistSets, i, j);
+        ++j;
+      }
+      ++i;
+    }
+  }
+  for (auto & it : fake_samples) {
+    int i = 0;
+    for (auto & sample_vec : it.second) {
+      int j = 0;
+      for (auto & sample : sample_vec) {
+        sample.SetupExtraHists(fExtraHistSets, i, j);
+        ++j;
+      }
+      ++i;
+    }
+  }
+}
+
+void protoana::AbsCexDriver::FillExtraHistDataEndZ(ThinSliceDataSet & data_set,
+                                               const ExtraHistDataVars & vars) {
+  std::string category = "EndZ";
+  data_set.FillExtraHist(category, vars.reco_endz);
+}
+void protoana::AbsCexDriver::FillExtraHistDataEndZGoodReco(ThinSliceDataSet & data_set,
+                                               const ExtraHistDataVars & vars) {
+
+  //Skip bad-reco events
+  if (vars.selection_ID == 5 || vars.selection_ID == 6) return;
+
+  std::string category = "EndZGoodReco";
+  data_set.FillExtraHist(category, vars.reco_endz);
+}
+
+void protoana::AbsCexDriver::FillExtraHistDataStartX(ThinSliceDataSet & data_set,
+                                               const ExtraHistDataVars & vars) {
+  std::string category = "StartX";
+  double val = (vars.reco_startx_sce - fStartXDataMean)/fStartXDataSigma;
+  data_set.FillExtraHist(category, val);
+}
+void protoana::AbsCexDriver::FillExtraHistDataStartY(ThinSliceDataSet & data_set,
+                                               const ExtraHistDataVars & vars) {
+  std::string category = "StartY";
+  double val = (vars.reco_starty_sce - fStartYDataMean)/fStartYDataSigma;
+  data_set.FillExtraHist(category, val);
+}
+void protoana::AbsCexDriver::FillExtraHistDataStartZ(ThinSliceDataSet & data_set,
+                                               const ExtraHistDataVars & vars) {
+  std::string category = "StartZ";
+  double val = (vars.reco_startz_sce - fStartZDataMean)/fStartZDataSigma;
+  data_set.FillExtraHist(category, val);
+}
+
+void protoana::AbsCexDriver::FillExtraHistDataTrackScore(ThinSliceDataSet & data_set,
+                                               const ExtraHistDataVars & vars) {
+  //Skip non-interaction selected events
+  if (vars.selection_ID > 3) return;
+
+  std::string category = "TrackScore";
+  for (auto & score : vars.reco_product_track_scores)
+    data_set.FillExtraHist(category, score);
+}
+
+void protoana::AbsCexDriver::FillExtraHistDataVertexMichel(ThinSliceDataSet & data_set,
+                                               const ExtraHistDataVars & vars) {
+  if (vars.selection_ID > 3 && vars.selection_ID < 7) return;
+
+  std::string category = "VertexMichel";
+  if (vars.vertex_nhits == 0) {
+    auto * h = (TH1D*)data_set.GetExtraHist(category);
+    h->AddBinContent(1);
+  }
+  else {
+    data_set.FillExtraHist(category,
+                           vars.vertex_michel_score/vars.vertex_nhits);
+  }
+}
+void protoana::AbsCexDriver::FillExtraHistDataTrunc_dEdX(
+    ThinSliceDataSet & data_set, const ExtraHistDataVars & vars) {
+  //Skip non-interaction selected events
+  if (vars.selection_ID > 3) return;
+
+  std::string category = "Trunc_dEdX";
+  for (auto & val : vars.reco_product_truncated_dEdXs)
+    data_set.FillExtraHist(category, val);
+}
+
+void protoana::AbsCexDriver::FillExtraHistDataChi2PerHit(
+    ThinSliceDataSet & data_set, const ExtraHistDataVars & vars) {
+  //Skip non-interaction selected events
+  if (vars.selection_ID > 3) return;
+
+  std::string category = "Chi2PerHit";
+  for (size_t i = 0; i < vars.reco_product_chi2s_per_hit.size(); ++i) {
+    double trunc_dedx = vars.reco_product_truncated_dEdXs[i];
+    if (((trunc_dedx < 0.5) || (trunc_dedx > 2.8 && trunc_dedx < 3.4)) &&
+        (vars.reco_product_chi2s_per_hit[i] > 0)) {
+      data_set.FillExtraHist(category, vars.reco_product_chi2s_per_hit[i]);
+    }
+  }
+}
+
+void protoana::AbsCexDriver::FillExtraHistMCEndZ(ThinSliceSample & sample,
+                                                 const ThinSliceEvent & event,
+                                                 double weight) {
+  std::string category = "EndZ";
+  sample.FillExtraHist(category, event.GetRecoEndZ(), weight);
+}
+void protoana::AbsCexDriver::FillExtraHistMCEndZGoodReco(ThinSliceSample & sample,
+                                                 const ThinSliceEvent & event,
+                                                 double weight) {
+  if (event.GetSelectionID() == 5 || event.GetSelectionID() == 6) return;
+
+  std::string category = "EndZGoodReco";
+  sample.FillExtraHist(category, event.GetRecoEndZ(), weight);
+}
+
+void protoana::AbsCexDriver::FillExtraHistMCStartX(ThinSliceSample & sample,
+                                                 const ThinSliceEvent & event,
+                                                 double weight) {
+  std::string category = "StartX";
+  double val = (event.GetRecoStartX_SCE() - fStartXMCMean)/fStartXMCSigma;
+  sample.FillExtraHist(category, val, weight);
+}
+void protoana::AbsCexDriver::FillExtraHistMCStartY(ThinSliceSample & sample,
+                                                 const ThinSliceEvent & event,
+                                                 double weight) {
+  std::string category = "StartY";
+  double val = (event.GetRecoStartY_SCE() - fStartYMCMean)/fStartYMCSigma;
+  sample.FillExtraHist(category, val, weight);
+}
+void protoana::AbsCexDriver::FillExtraHistMCStartZ(ThinSliceSample & sample,
+                                                 const ThinSliceEvent & event,
+                                                 double weight) {
+  std::string category = "StartZ";
+  double val = (event.GetRecoStartZ_SCE() - fStartZMCMean)/fStartZMCSigma;
+  sample.FillExtraHist(category, val, weight);
+}
+
+void protoana::AbsCexDriver::FillExtraHistMCTrackScore(ThinSliceSample & sample,
+                                                 const ThinSliceEvent & event,
+                                                 double weight) {
+  if (event.GetSelectionID() > 3) return;
+
+  std::string category = "TrackScore";
+  for (auto & score : event.GetRecoDaughterTrackScores())
+    sample.FillExtraHist(category, score, weight);
+}
+
+void protoana::AbsCexDriver::FillExtraHistMCVertexMichel(ThinSliceSample & sample,
+                                                 const ThinSliceEvent & event,
+                                                 double weight) {
+  if (event.GetSelectionID() > 3 && event.GetSelectionID() < 7) return;
+
+  std::string category = "VertexMichel";
+  if (event.GetVertexNHits() == 0) {
+    auto * h = (TH1D*)sample.GetExtraHist(category);
+    h->AddBinContent(1, weight);
+  }
+  else {
+    sample.FillExtraHist(
+        category,
+        event.GetVertexMichelScore()/event.GetVertexNHits(),
+        weight);
+  }
+}
+
+void protoana::AbsCexDriver::FillExtraHistMCTrunc_dEdX(ThinSliceSample & sample,
+                                                 const ThinSliceEvent & event,
+                                                 double weight) {
+  if (event.GetSelectionID() > 3) return;
+
+  std::string category = "Trunc_dEdX";
+  for (auto & val : event.GetTrunc_dEdXs())
+    sample.FillExtraHist(category, val, weight);
+}
+
+void protoana::AbsCexDriver::FillExtraHistMCChi2PerHit(ThinSliceSample & sample,
+                                                       const ThinSliceEvent & event,
+                                                       double weight) {
+  if (event.GetSelectionID() > 3) return;
+
+  std::string category = "Chi2PerHit";
+  auto & truncated_dEdXs = event.GetTrunc_dEdXs();
+  auto & chi2s_per_hit = event.GetChi2sPerHit();
+  for (size_t i = 0; i < chi2s_per_hit.size(); ++i) {
+    double trunc_dedx = truncated_dEdXs[i];
+    if (((trunc_dedx < 0.5) || (trunc_dedx > 2.8 && trunc_dedx < 3.4))
+        && (chi2s_per_hit[i] > 0)) {
+      sample.FillExtraHist(category, chi2s_per_hit[i], weight);
+    }
+  }
+}
+
+void protoana::AbsCexDriver::FillExtraHistsData(ThinSliceDataSet & data_set,
+                                            const ExtraHistDataVars & vars) {
+  for (auto & filler : fActiveExtraHistsData) {
+    filler.second(data_set, vars);
+  }
+}
+
+void protoana::AbsCexDriver::FillExtraHistsMC(ThinSliceSample & sample,
+                                              const ThinSliceEvent & event,
+                                              double weight) {
+  for (auto & filler : fActiveExtraHistsMC) {
+    //std::cout << "Filling extra " << filler.first << std::endl;
+    filler.second(sample, event, weight);
+  }
+}
+
 void protoana::AbsCexDriver::BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,
     const std::vector<double> & beam_energy_bins,
     std::vector<double> & beam_fluxes,
     int split_val) {
   int selection_ID; 
-  double reco_beam_interactingEnergy, reco_beam_endZ;
+  double reco_beam_interactingEnergy, reco_beam_endZ,
+         reco_beam_startX, reco_beam_startY, reco_beam_startZ;
   std::vector<double> * reco_beam_incidentEnergies = 0x0;
   if (!fInclusive) {
     tree->SetBranchAddress("selection_ID", &selection_ID);
@@ -1957,10 +2310,35 @@ void protoana::AbsCexDriver::BuildDataHists(
   tree->SetBranchAddress("reco_beam_interactingEnergy",
                         &reco_beam_interactingEnergy);
   tree->SetBranchAddress("reco_beam_endZ", &reco_beam_endZ);
+  tree->SetBranchAddress("reco_beam_calo_startX", &reco_beam_startX);
+  tree->SetBranchAddress("reco_beam_calo_startY", &reco_beam_startY);
+  tree->SetBranchAddress("reco_beam_calo_startZ", &reco_beam_startZ);
   tree->SetBranchAddress("reco_beam_incidentEnergies",
                         &reco_beam_incidentEnergies);
+  double vertex_michel_score;
+  int vertex_nhits;
+  tree->SetBranchAddress("reco_beam_vertex_michel_score", &vertex_michel_score);
+  tree->SetBranchAddress("reco_beam_vertex_nHits", &vertex_nhits);
   double beam_inst_P;
   tree->SetBranchAddress("beam_inst_P", &beam_inst_P);
+
+  std::vector<double> * reco_daughter_track_scores = 0x0;
+  tree->SetBranchAddress("reco_daughter_PFP_trackScore_collection",
+                         &reco_daughter_track_scores);
+
+  std::vector<double> * reco_daughter_truncated_dEdXs = 0x0,
+                      * reco_daughter_chi2s = 0x0;
+  tree->SetBranchAddress("reco_daughter_allTrack_truncLibo_dEdX_pos",
+                         &reco_daughter_truncated_dEdXs);
+  tree->SetBranchAddress("reco_daughter_allTrack_Chi2_proton",
+                         &reco_daughter_chi2s);
+
+  std::vector<int> * reco_daughter_chi2_nhits = 0x0;
+  tree->SetBranchAddress("reco_daughter_allTrack_Chi2_ndof",
+                         &reco_daughter_chi2_nhits);
+
+  //SetupExtraHists(data_set);
+  //data_set.SetupExtraHists(fExtraHistSets);
 
   TH1D & incident_hist = data_set.GetIncidentHist();
   std::map<int, TH1 *> & selected_hists = data_set.GetSelectionHists();
@@ -1993,6 +2371,27 @@ void protoana::AbsCexDriver::BuildDataHists(
                sqrt(std::pow(beam_inst_P*1.e3, 2) + pi_mass_sq);
     //std::cout << "deltaE_scale: " << deltaE_scale << std::endl; 
     beam_fluxes[beam_bin] += 1.;
+
+    ExtraHistDataVars extra_vars(selection_ID, reco_beam_endZ,
+                                 reco_beam_startX, reco_beam_startY,
+                                 reco_beam_startZ, vertex_michel_score,
+                                 vertex_nhits);
+    extra_vars.AddRecoProductTrackScores((*reco_daughter_track_scores));
+    extra_vars.AddRecoProductTrunc_dEdXs((*reco_daughter_truncated_dEdXs));
+
+    auto chi2_vec = (*reco_daughter_chi2s);
+    for (size_t j = 0; j < chi2_vec.size(); ++j) {
+      int nhits = (*reco_daughter_chi2_nhits)[j];
+      if (nhits > 0) {
+        chi2_vec[j] /= nhits;
+      }
+      else {
+        chi2_vec[j] = -999.;
+      }
+    } 
+    extra_vars.AddRecoProductChi2sPerHit(chi2_vec);
+
+    FillExtraHistsData(data_set, extra_vars);
 
     double val = 0.;
     if (std::find(fEndZSelections.begin(), fEndZSelections.end(), selection_ID)
@@ -5088,6 +5487,7 @@ void protoana::AbsCexDriver::PlotThrows(
   }
 }
 
+//Can Be removed
 int protoana::AbsCexDriver::RecalculateSelectionID(
     const ThinSliceEvent & event,
     double C_cal,
@@ -5769,4 +6169,113 @@ void protoana::AbsCexDriver::GenerateBeamShiftUniverse() {
     std::cout << /*gen_i <<*/ "Beam shift pars: " << fCurrentBeamShiftP0 <<
                  " " << fCurrentBeamShiftP1 << " " << fCurrentBeamShiftP2 <<
                  std::endl;
+}
+
+void protoana::AbsCexDriver::FillDataHistsFromSamples(
+    ThinSliceDataSet & data_set,
+    const std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    double & flux, std::vector<double> & fluxes_by_beam, bool fluctuate) {
+
+  auto & selection_hists = data_set.GetSelectionHists();
+
+  flux = 0.;
+  //std::vector<double> temp_flux(/*fluxes_by_beam.size()*/);
+  fluxes_by_beam.clear();
+  for (auto it = selection_hists.begin(); it != selection_hists.end(); ++it) {
+    it->second->Reset();
+  }
+
+
+  if (fluctuate) {
+    //Get total
+    double total = 0.;
+    int a = 0;
+    for (auto & sample : samples ) {
+      for (size_t i = 0; i < sample.second.size(); ++i) {
+        for (size_t j = 0; j < sample.second[i].size(); ++j) {
+          const auto & hists = sample.second[i][j].GetSelectionHists();
+          for (auto & hist : hists) {
+            total += hist.second->Integral();
+            std::cout << a << " " << i << " "  << j << " " << hist.second->Integral() << std::endl;
+            //std::cout << temp_flux.size() << std::endl;
+            //temp_flux[i] += hist.second->Integral();
+          }
+        }
+      }
+      ++a;
+    }
+    std::cout << "Total: " << total << std::endl;
+    //for (auto & f : temp_flux) {std::cout << f << " ";} std::cout << std::endl;
+
+
+    //First, iterate through all samples/hists. Vary the contents
+    //Skip accordingly. Get varied total
+    double varied_total = 0.;
+    double nominal_skip_total = 0.;
+    //std::map<int, double> nominal_skip_vals;
+    //for (auto i : fToSkip) nominal_skip_vals[i] = 0.;
+
+    for (auto & sample : samples ) {
+      auto & sample_vec = sample.second;
+      for (size_t i = 0; i < sample_vec.size(); ++i) {
+        for (size_t j = 0; j < sample_vec[i].size(); ++j) {
+          const auto & hists = sample_vec[i][j].GetSelectionHists();
+          for (auto & hist : hists) {
+            if (std::find(fToSkip.begin(), fToSkip.end(), hist.first)
+                != fToSkip.end()) {
+              nominal_skip_total += hist.second->Integral();
+              //nominal_skip_vals[hist.first] += hist.second->Integral();
+              continue;
+            }
+            for (int k = 1; k <= hist.second->GetNbinsX(); ++k) {
+              double val = hist.second->GetBinContent(k);
+              double rand = fRNG.PoissonD(val);
+              hist.second->SetBinContent(k, rand);
+            }
+            varied_total += hist.second->Integral();
+          }
+        }
+      }
+    }
+
+    double leftover = total - varied_total;
+    double ratio = leftover/nominal_skip_total;
+    std::cout << "Leftover: " << leftover << std::endl;
+    std::cout << "Nominal skip total " << nominal_skip_total << std::endl;
+
+    for (auto & sample : samples ) {
+      auto & sample_vec = sample.second;
+      for (size_t i = 0; i < sample_vec.size(); ++i) {
+        for (size_t j = 0; j < sample_vec[i].size(); ++j) {
+          const auto & hists = sample_vec[i][j].GetSelectionHists();
+          for (auto k : fToSkip) {
+            if (hists.find(k) == hists.end()) continue;
+            //std::cout << "Scaling " << k << " " << hists.at(k)->Integral() <<
+            //             " " << ratio << std::endl;
+            hists.at(k)->Scale(ratio);
+          }
+        }
+      }
+    }
+  }
+
+  int a = 0;
+  for (auto it = samples.begin(); it != samples.end(); ++it) {
+    for (size_t i = 0; i < it->second.size(); ++i) {
+      if (a == 0) fluxes_by_beam.push_back(0.);
+      for (size_t j = 0; j < it->second[i].size(); ++j) {
+        const auto & hists = it->second[i][j].GetSelectionHists();
+
+        for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
+
+          selection_hists[it2->first]->Add(it2->second);
+          flux += it2->second->Integral();
+          fluxes_by_beam[i] += it2->second->Integral();
+          //std::cout << "Adding " << it2->second->Integral() << " to " << i << std::endl;
+        }
+      }
+    }
+    ++a;
+  }
+  std::cout << "Flux: " << flux << std::endl;
 }

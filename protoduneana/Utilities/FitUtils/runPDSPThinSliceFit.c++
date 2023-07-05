@@ -42,7 +42,7 @@ int main(int argc, char ** argv){
   protoana::PDSPThinSliceFitter * fit
       = new protoana::PDSPThinSliceFitter(fcl_file, output_file, mc_file,
                                           data_file);
-  fit->InitializeMCSamples();
+  //fit->InitializeMCSamples();
   fit->BuildMCSamples();
   fit->RunFitAndSave();
 

@@ -33,6 +33,12 @@ class ThinSliceDriver {
     std::vector<double> & beam_fluxes,
     int split_val = 0) = 0;
 
+  virtual void FillDataHistsFromSamples(
+    ThinSliceDataSet & data_set,
+    const std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    double & flux, std::vector<double> & fluxes_by_beam, bool fluctuate
+  ) = 0;
+
   virtual void BuildFakeData(
     TTree * tree, const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -161,8 +167,22 @@ class ThinSliceDriver {
        std::map<int, double> & nominal_fluxes,
        std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
        std::vector<double> & beam_energy_bins, bool use_beam_inst_P*/) = 0;
+ virtual void SetupExtraHists(
+    ThinSliceDataSet & data_set, 
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & fake_samples) = 0;
 
-  void SetStatVar(bool set) {fStatVar = set;};
+ void SaveExtraHists(ThinSliceDataSet & data_set,
+                     TDirectory * plot_dir) {
+   plot_dir->cd();
+   for (auto & hist : data_set.GetExtraHists()) {
+     std::cout << "Writing " << hist.first << " " << hist.second << " " << hist.second->GetName() << std::endl;
+
+     hist.second->Write();
+   }
+ };
+
+ void SetStatVar(bool set) {fStatVar = set;};
  protected:
   fhicl::ParameterSet fExtraOptions;
 

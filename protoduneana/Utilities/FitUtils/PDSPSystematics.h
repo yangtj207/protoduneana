@@ -191,6 +191,8 @@ class PDSPSystematics {
   //BeamMatch
   static const ThinSliceSystematic * fBeamMatchPar;
   static std::map<int, std::vector<double>> fBeamMatchFractions;
+  static double fBeamMatchFraction;
+  static bool fBeamMatchUseSingleFrac;
 
   //BeamMatchLow
   static double fBeamMatchLowLimit, fBeamMatchLowFraction;

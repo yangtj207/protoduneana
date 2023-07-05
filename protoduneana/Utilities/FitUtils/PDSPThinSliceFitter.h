@@ -75,9 +75,18 @@ class PDSPThinSliceFitter {
   void CalcApproxCrossSection(TH1D * xsec_hist);
   void GetFixFactors();
   void MakeThrowsTree(TTree & tree, std::vector<double> & branches);
+  void DoHesse();
+  void DoMinos1D();
+  void DoMinosConts();
+  void RunOneContour(size_t i, size_t j, unsigned int & npoints);
+  void GetCovarianceVals(TString dir);
   //void MakeThrowsArrays(std::vector<TVectorD *> & arrays);
 
   std::vector<double> GetBestFitParsVec();
+  void SetupExtraHists();
+  void SetupExtraHistsThrows();
+  void SaveExtraHists(TDirectory * dir);
+  void MakeTotalExtraHist(std::string category);
 
   ThinSliceDriver * fThinSliceDriver;
   std::map<int, std::vector<std::vector<ThinSliceSample>>> fSamples,
@@ -174,8 +183,14 @@ class PDSPThinSliceFitter {
   std::map<int, int> fSelectionBins;
   std::vector<double> fSelVarSystVals;
   std::vector<fhicl::ParameterSet> fSampleSets;
+  std::vector<fhicl::ParameterSet> fExtraHistSets;
+  std::vector<std::string> fExtraHistCategories;
+  std::map<std::string, TH1 *> fExtraHistsTotal;
+  std::map<std::string, TH1 *> fExtraHistsThrows;
+  std::map<std::string, TMatrixD*> fExtraArraysThrows;
   std::map<int, std::string> fFluxTypes;
   int fMaxCalls, fMaxIterations, fPrintLevel;
+  int fCoutLevel;
   size_t fNFitSteps = 0;
   std::chrono::high_resolution_clock::time_point fTime;
   unsigned int fNScanSteps;
@@ -190,7 +205,9 @@ class PDSPThinSliceFitter {
   std::string fSliceMethod;
   bool fMultinomial;
   bool fDoFakeData, fDoThrows, fDoScans, fOnlySystScans, fDo1DShifts, fDoSysts,
-       fRunHesse, fSetSigLimits, fSetSystLimits, fSetSelVarLimits;
+       fRunHesse, fRunMinos1D, fRunMinosConts, fSetSigLimits, fSetSystLimits,
+       fSetSelVarLimits;
+  unsigned int fNContourPoints;
   bool fFixVariables;
   bool fSetValsPreFit;
   std::vector<double> fPreFitVals;
