@@ -50,7 +50,7 @@ class PDSPThinSliceFitter {
   void NormalFit();
   void SetupTree();
   void WrapUpTree();
-  void Pulls();
+  //void Pulls();
   void Configure(std::string fcl_file);
   void DefineFitFunction();
   void MakeMinimizer();
@@ -75,9 +75,13 @@ class PDSPThinSliceFitter {
   void CalcApproxCrossSection(TH1D * xsec_hist);
   void GetFixFactors();
   void MakeThrowsTree(TTree & tree, std::vector<double> & branches);
-  void DoHesse();
+  bool DoHesse();
+  void SaveHesse();
+  void AdjustInitConds(size_t fit_attempt);
+  void ResetParameters();
   void DoMinos1D();
   void DoMinosConts();
+  void DoMultiConts();
   void RunOneContour(size_t i, size_t j, unsigned int & npoints);
   void GetCovarianceVals(TString dir);
   //void MakeThrowsArrays(std::vector<TVectorD *> & arrays);
@@ -206,7 +210,9 @@ class PDSPThinSliceFitter {
   bool fMultinomial;
   bool fDoFakeData, fDoThrows, fDoScans, fOnlySystScans, fDo1DShifts, fDoSysts,
        fRunHesse, fRunMinos1D, fRunMinosConts, fSetSigLimits, fSetSystLimits,
-       fSetSelVarLimits;
+       fSetSelVarLimits, fRerunFit, fRemoveSigThrowLimits, fRunMultiConts,
+       fSignalContoursOnly;
+  size_t fFitAttempts;
   unsigned int fNContourPoints;
   bool fFixVariables;
   bool fSetValsPreFit;
