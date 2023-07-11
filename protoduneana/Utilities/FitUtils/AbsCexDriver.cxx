@@ -38,6 +38,9 @@ double protoana::AbsCexDriver::fStartYMCSigma = 0.;
 double protoana::AbsCexDriver::fStartZMCMean = 0.;
 double protoana::AbsCexDriver::fStartZMCSigma = 0.;
 
+std::vector<double> fG4RWVars = {};
+std::vector<std::string> fG4RWBranches = {};
+
 protoana::AbsCexDriver::~AbsCexDriver() {}
 
 protoana::AbsCexDriver::AbsCexDriver(
@@ -114,6 +117,11 @@ protoana::AbsCexDriver::AbsCexDriver(
     if (name == "BeamShift") {
       SetupBeamShiftCovRoutine(routine);
     }
+  }
+
+  if (fFakeDataRoutine == "G4RWGrid") {
+    SetupFakeDataG4RW();
+    FakeDataWeight = GetFakeWeight_G4RWCoeff;
   }
 }
 
@@ -1050,38 +1058,17 @@ void protoana::AbsCexDriver::RefillSampleLoop(
     else if (reco_beam_incidentEnergies.size()) {
 
       double energy[1] = {0.};
-      /*if (syst_pars.find("dEdX_Cal") != syst_pars.end()) {
-        energy[0] = sqrt(beam_inst_P*beam_inst_P*1.e6 + 139.57*139.57) -
-                        139.57;
-        //limits?
-        for (size_t k = 0; k < calibrated_dQdX.size()-1; ++k) {
-          if ((calibrated_dQdX)[k] < 0.) continue;
-
-          double dedx = (1./(syst_pars.at("dEdX_Cal").GetValue()));
-          dedx *= (calibrated_dQdX)[k];
-          dedx *= (fBetaP / ( fRho * (beam_EField)[k] ) * fWion);
-          dedx = exp(dedx);
-          dedx -= fAlpha;
-          dedx *= ((fRho*(beam_EField)[k])/fBetaP);
-
-          if (dedx*(track_pitch)[k] > fEnergyFix)
-            continue;
-          energy[0] -= dedx*(track_pitch)[k];
+      energy[0] = {reco_beam_interactingEnergy + beam_energy_delta};
+      if (fDoEnergyFix) {
+        for (size_t k = 1; k < reco_beam_incidentEnergies.size(); ++k) {
+          double deltaE = ((reco_beam_incidentEnergies)[k-1] -
+                           (reco_beam_incidentEnergies)[k]);
+          if (deltaE > fEnergyFix) {
+            energy[0] += deltaE; 
+          }
         }
       }
 
-      else {*/
-        energy[0] = {reco_beam_interactingEnergy + beam_energy_delta};
-        if (fDoEnergyFix) {
-          for (size_t k = 1; k < reco_beam_incidentEnergies.size(); ++k) {
-            double deltaE = ((reco_beam_incidentEnergies)[k-1] -
-                             (reco_beam_incidentEnergies)[k]);
-            if (deltaE > fEnergyFix) {
-              energy[0] += deltaE; 
-            }
-          }
-        }
-      //}
 
       if (selected_hist->FindBin(energy[0]) == 0) {
         val[0] = selected_hist->GetBinCenter(1);
@@ -1103,6 +1090,10 @@ void protoana::AbsCexDriver::RefillSampleLoop(
     if (fix_factors != 0x0) {
       int bin = fix_factors->at(new_selection)->FindBin(val[0]);
       weight *= fix_factors->at(new_selection)->GetBinContent(bin);
+    }
+
+    if (fFillFakeDataInMain) {
+      weight *= FakeDataWeight(event);
     }
 
     //HERE ADD THE VARIED STATS weight
@@ -1129,6 +1120,8 @@ void protoana::AbsCexDriver::RefillSampleLoop(
     FillExtraHistsMC(*this_sample, event, weight);
   }
 }
+
+
 
 void protoana::AbsCexDriver::RefillMCSamples(
     const std::vector<ThinSliceEvent> & events,
@@ -1846,14 +1839,14 @@ double protoana::AbsCexDriver::GetSystWeight_BeamEffs(
 }*/
 
 double protoana::AbsCexDriver::GetFakeWeight_G4RWCoeff(
-    const ThinSliceEvent & event,
+    const ThinSliceEvent & event/*,
     const std::vector<std::string> & branches,
-    const std::vector<double> & vars) {
+    const std::vector<double> & vars*/) {
   double weight = 1.;
 
-  for (size_t i = 0; i < vars.size(); ++i) {
+  for (size_t i = 0; i < fG4RWVars.size(); ++i) {
     weight *= event.GetG4RWCoeffWeight(
-        branches[i], vars[i]);
+        fG4RWBranches[i], fG4RWVars[i]);
   }
   return weight;
 }
@@ -2473,47 +2466,47 @@ void protoana::AbsCexDriver::BuildFakeData(
     std::vector<double> & beam_energy_bins,
     std::vector<double> & beam_fluxes,
     int split_val, bool scale_to_data_beam_p) {
-  std::string routine = fExtraOptions.get<std::string>("FakeDataRoutine");
-  if (routine == "SampleScales") {
+  //std::string routine = fExtraOptions.get<std::string>("FakeDataRoutine");
+  if (fFakeDataRoutine == "SampleScales") {
     FakeDataSampleScales(events, samples, signal_sample_checks, data_set, flux,
                          sample_scales, beam_energy_bins, beam_fluxes,
                          split_val, scale_to_data_beam_p);
   }
-  else if (routine == "G4RWGrid") {
+  else if (fFakeDataRoutine == "G4RWGrid") {
     FakeDataG4RWGrid(events, samples, signal_sample_checks, data_set, flux,
                  sample_scales, beam_energy_bins, beam_fluxes,
                  split_val, scale_to_data_beam_p);
   }
-  else if (routine == "EffVar") {
+  else if (fFakeDataRoutine == "EffVar") {
     FakeDataEffVar(events, samples, signal_sample_checks, data_set, flux,
                  sample_scales, split_val);
   }
-  else if (routine == "LowP") {
+  else if (fFakeDataRoutine == "LowP") {
     FakeDataLowP(events, samples, signal_sample_checks, data_set, flux,
                  sample_scales, split_val);
   }
-  else if (routine == "BinnedScales") {
+  else if (fFakeDataRoutine == "BinnedScales") {
     FakeDataBinnedScales(tree, samples, signal_sample_checks, data_set, flux,
                          sample_scales, split_val);
   }
-  else if (routine == "dEdX") {
+  else if (fFakeDataRoutine == "dEdX") {
     FakeDatadEdX(tree, samples, signal_sample_checks, data_set, flux,
                  sample_scales, split_val);
   }
-  else if (routine == "PionAngle") {
+  else if (fFakeDataRoutine == "PionAngle") {
     FakeDataPionAngle(tree, samples, signal_sample_checks, data_set, flux,
                       sample_scales, split_val);
   }
-  else if (routine == "AngleVar") {
+  else if (fFakeDataRoutine == "AngleVar") {
     FakeDataAngleVar(events/*tree*/, samples, signal_sample_checks, data_set, flux,
                      beam_energy_bins, beam_fluxes,
                      sample_scales, split_val, scale_to_data_beam_p);
   }
-  else if (routine == "BeamWeight") {
+  else if (fFakeDataRoutine == "BeamWeight") {
     FakeDataBeamWeight(events, samples, signal_sample_checks, data_set, flux,
                       sample_scales, split_val);
   }
-  else if (routine == "BeamScale") {
+  else if (fFakeDataRoutine == "BeamScale") {
     std::cout << "Beam scale" << std::endl;
     FakeDataBeamScale(events, samples, signal_sample_checks, data_set, flux,
                       beam_energy_bins, beam_fluxes,
@@ -2935,6 +2928,28 @@ void protoana::AbsCexDriver::FakeDataBinnedScales(
 }
 
 
+void protoana::AbsCexDriver::SetupFakeDataG4RW() {
+  //Build the map for fake data scales
+  fhicl::ParameterSet g4rw_options 
+      = fExtraOptions.get<fhicl::ParameterSet>("FakeDataG4RWGrid");
+
+  std::string branch = g4rw_options.get<std::string>("Branch");
+
+  std::vector<size_t> g4rw_pos = g4rw_options.get<std::vector<size_t>>("Position");
+  fG4RWVars = g4rw_options.get<std::vector<double>>("Var", {});
+
+  //std::vector<std::string> branches;
+  if (g4rw_options.get<bool>("SingleBranch")) {
+    fG4RWBranches.push_back(branch);
+  }
+  else {
+    for (size_t & i : g4rw_pos) {
+      fG4RWBranches.push_back(branch + "_" + std::to_string(i));
+    }
+  }
+
+}
+
 void protoana::AbsCexDriver::FakeDataG4RWGrid(
     const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -3031,7 +3046,7 @@ void protoana::AbsCexDriver::FakeDataG4RWGrid(
       }
     }
     else {
-      scale *= GetFakeWeight_G4RWCoeff(event, branches, g4rw_var);
+      scale *= GetFakeWeight_G4RWCoeff(event/*, branches, g4rw_var*/);
     }
     }
 

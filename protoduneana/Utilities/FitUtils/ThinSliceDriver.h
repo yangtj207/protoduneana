@@ -183,12 +183,15 @@ class ThinSliceDriver {
  };
 
  void SetStatVar(bool set) {fStatVar = set;};
+ void SetFillFakeInMain(bool set) {fFillFakeDataInMain = set;};
  protected:
   fhicl::ParameterSet fExtraOptions;
+  std::string fFakeDataRoutine;
 
   void ResetSamples(
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples);
   bool fStatVar = false;
+  bool fFillFakeDataInMain = false;
  private:
 };
 }

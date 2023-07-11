@@ -488,10 +488,12 @@ class AbsCexDriver : public ThinSliceDriver {
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
       double scale);
 
-   double GetFakeWeight_G4RWCoeff(
-      const ThinSliceEvent & event,
+   void SetupFakeDataG4RW();
+
+   static double GetFakeWeight_G4RWCoeff(
+      const ThinSliceEvent & event/*,
       const std::vector<std::string> & branches,
-      const std::vector<double> & vars);
+      const std::vector<double> & vars*/);
 
    //void SetupExtraHists(ThinSliceDataSet & data_set);
    //void SetupExtraHistEndZ();
@@ -613,6 +615,8 @@ class AbsCexDriver : public ThinSliceDriver {
     {"Trunc_dEdX", FillExtraHistMCTrunc_dEdX},
     {"Chi2PerHit", FillExtraHistMCChi2PerHit}
   };
+
+  std::function<double(const ThinSliceEvent & event)> FakeDataWeight;
 
   static double fStartXDataMean, fStartXMCMean, 
                 fStartYDataMean, fStartYMCMean,

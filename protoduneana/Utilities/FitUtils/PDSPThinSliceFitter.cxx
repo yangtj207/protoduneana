@@ -1082,6 +1082,70 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
     fFitFunction(&vals[0]); 
     fFillIncidentInFunction = false;
   }
+  else if (fFakeDataRoutine == "G4RWGrid") { // For now just do this one. Replace with general
+    std::cout << "Building G4RW Grid" << std::endl;
+    for (auto it = fFakeSamples.begin(); it != fFakeSamples.end(); ++it) {
+      for (size_t i = 0; i < it->second.size(); ++i) {
+        for (size_t j = 0; j < it->second[i].size(); ++j) {
+          it->second[i][j].Reset();
+        }
+      }
+    }
+
+    std::vector<double> nominal_vals; //Will eventually Set if needed
+    for (auto it = fSignalParameters.begin();
+         it != fSignalParameters.end(); ++it) {
+      for (size_t i = 0; i < it->second.size(); ++i) {
+        nominal_vals.push_back(it->second[i]);
+      }
+    }
+    for (auto it = fFluxParameters.begin();
+         it != fFluxParameters.end(); ++it) {
+      nominal_vals.push_back(it->second);
+    }
+
+    for (auto it = fSystParameters.begin();
+         it != fSystParameters.end(); ++it) {
+      nominal_vals.push_back(it->second.GetValue());
+    }
+
+    for (auto & sel_var_vec : fSelVarSystPars) {
+      for (auto & par : sel_var_vec) {
+        nominal_vals.push_back(par.GetValue());
+      }
+    }
+
+    auto vals = nominal_vals;
+    auto set_vals = fAnalysisOptions.get<std::vector<std::pair<int, double>>>(
+      "SetValsFakeData", {}
+    );
+    //ADD CHECK HERE FOR SIZE
+    for (const auto & par : set_vals) {
+      std::cout << "Setting: " << par.first << " " << par.second << std::endl;
+      vals[par.first] = par.second;
+    }
+    for (size_t i = 0; i < vals.size(); ++i) {
+      std::cout << vals[i] << std::endl;
+    }
+
+    fFillIncidentInFunction = true;
+    fUseFakeSamples = true;
+    fThinSliceDriver->SetFillFakeInMain(true);
+    std::cout << fDataBeamFluxes.size() << std::endl;
+    fFitFunction(&vals[0]);
+    fDataSet.FillHistsFromSamples(fFakeSamples, fDataFlux, fDataBeamFluxes,
+                                  (fDoFluctuateStats && fFluctuateInSamples));
+    std::cout << "Fake Data fluxes: " << std::endl;
+    for (const auto & f: fDataBeamFluxes) std::cout << f << " ";
+    std::cout << std::endl;
+    BuildFakeDataXSecs(false);
+
+    fUseFakeSamples = false;
+    fThinSliceDriver->SetFillFakeInMain(false);
+    //Refill the hists for comparisons
+    fFitFunction(&nominal_vals[0]); 
+    fFillIncidentInFunction = false;
+  }
   else {
     for (auto it = fFakeSamples.begin(); it != fFakeSamples.end(); ++it) {
       for (size_t i = 0; i < it->second.size(); ++i) {
