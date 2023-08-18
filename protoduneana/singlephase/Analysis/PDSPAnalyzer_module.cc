@@ -813,6 +813,11 @@ private:
                                    g4rw_primary_grid_coeffs;
   //std::vector<double> g4rw_primary_grid_pair_weights;
 
+  std::vector<std::vector<double>> g4rw_piplus_traj_ps,
+                                   g4rw_piplus_traj_lens;
+  std::vector<int> g4rw_piplus_traj_npiplus,
+                   g4rw_piplus_traj_npiminus,
+                   g4rw_piplus_traj_npi0;
   std::vector<std::vector<double>> g4rw_full_grid_piplus_weights,
                                    g4rw_full_grid_piplus_coeffs;
   std::vector<std::vector<double>> g4rw_full_grid_piplus_weights_fake_data,
@@ -1595,6 +1600,34 @@ void pduneana::PDSPAnalyzer::analyze(art::Event const & evt) {
         = BuildHierarchy(true_beam_ID, 211, plist, fGeometryService,
                          event, "LAr", false);
 
+    //std::cout << "Primary hierarchy" << std::endl; 
+    int ipart = 0;
+    for (auto & traj_vec : piplus_hierarchy) {
+      g4rw_piplus_traj_ps.push_back(std::vector<double>());
+      g4rw_piplus_traj_lens.push_back(std::vector<double>());
+      int itraj = 0;
+      for (auto * traj : traj_vec) {
+        //std::cout << "Part " << ipart << " Traj " << itraj << std::endl;
+        for (size_t istep = 0; istep < traj->GetNSteps(); ++istep) {
+          auto * step = traj->GetStep(istep);
+          /*std::cout << "\t" << step->GetStepLength() << " " <<
+                       step->GetFullPreStepP() <<
+                       " " << " "  << std::endl;*/
+          g4rw_piplus_traj_ps.back().push_back(step->GetFullPreStepP());
+          g4rw_piplus_traj_lens.back().push_back(step->GetStepLength());
+        }
+        /*std::cout << "\t" << traj->HasChild(211).size() << " " <<
+                     traj->HasChild(-211).size() << " " <<
+                     traj->HasChild(111).size() << std::endl;*/
+        ++itraj;
+      }
+      //Children should only be at the last traj
+      g4rw_piplus_traj_npiplus.push_back(traj_vec.back()->HasChild(211).size());
+      g4rw_piplus_traj_npiminus.push_back(traj_vec.back()->HasChild(-211).size());
+      g4rw_piplus_traj_npi0.push_back(traj_vec.back()->HasChild(111).size());
+      ++ipart;
+    }
+
     G4RWGridWeights(piplus_hierarchy, ParSet, g4rw_full_grid_piplus_weights,
                     MultiRW);
     for (auto weights : g4rw_full_grid_piplus_weights) {
@@ -2318,6 +2351,11 @@ void pduneana::PDSPAnalyzer::beginJob() {
   fTree->Branch("g4rw_primary_grid_exp_fit_chi2", &g4rw_primary_grid_exp_fit_chi2);
   //fTree->Branch("g4rw_primary_grid_pair_weights", &g4rw_primary_grid_pair_weights);
 
+  fTree->Branch("g4rw_piplus_traj_ps", &g4rw_piplus_traj_ps);
+  fTree->Branch("g4rw_piplus_traj_lens", &g4rw_piplus_traj_lens);
+  fTree->Branch("g4rw_piplus_traj_npiplus", &g4rw_piplus_traj_npiplus);
+  fTree->Branch("g4rw_piplus_traj_npiminus", &g4rw_piplus_traj_npiminus);
+  fTree->Branch("g4rw_piplus_traj_npi0", &g4rw_piplus_traj_npi0);
   if( fSaveHits ){
     fTree->Branch( "reco_beam_spacePts_X", &reco_beam_spacePts_X );
     fTree->Branch( "reco_beam_spacePts_Y", &reco_beam_spacePts_Y );
@@ -2932,6 +2970,12 @@ void pduneana::PDSPAnalyzer::reset()
   g4rw_full_grid_kplus_exp_fit_chi2.clear();
   g4rw_downstream_grid_piplus_exp_fit_chi2.clear();
   g4rw_full_fine_piplus_exp_fit_chi2.clear();
+
+  g4rw_piplus_traj_ps.clear();
+  g4rw_piplus_traj_lens.clear();
+  g4rw_piplus_traj_npiplus.clear();
+  g4rw_piplus_traj_npiminus.clear();
+  g4rw_piplus_traj_npi0.clear();
 }
 
 
