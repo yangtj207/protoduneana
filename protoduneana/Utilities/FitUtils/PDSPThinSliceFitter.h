@@ -148,11 +148,11 @@ class PDSPThinSliceFitter {
   size_t fTotalFluxParameters = 0;
 
   //std::map<int, std::string> fSystParameterNames;
-  std::map<std::string, ThinSliceSystematic> fSystParameters;
+  std::map<std::string, ThinSliceSystematic> fSystParameters, fG4RWParameters;
   std::vector<std::vector<ThinSliceSystematic>> fSelVarSystPars;
   std::vector<std::string> fSystParameterNames;
   std::vector<double> fParLimits, fParLimitsUp;
-  size_t fTotalSystParameters = 0;
+  size_t fTotalSystParameters = 0, fTotalG4RWParameters = 0;
   std::map<std::string, size_t> fCovarianceBins;
   std::vector<size_t> fCovarianceBinsSimple;
   bool fAddSystTerm, fAddRegTerm, fAddDiffInQuadrature;
@@ -168,7 +168,7 @@ class PDSPThinSliceFitter {
   TRandom3 fRNG;
   std::map<int, std::vector<double>> fFakeDataScales;
   std::map<int, std::vector<double>> fBestFitSignalPars;
-  std::map<std::string, ThinSliceSystematic> fBestFitSystPars;
+  std::map<std::string, ThinSliceSystematic> fBestFitSystPars, fBestFitG4RWPars;
   std::map<int, double> fBestFitFluxPars;
   std::map<int, TH1*> fNominalXSecs, fNominalIncs;
   std::map<int, TH1*> fBestFitXSecs, fBestFitIncs;
@@ -208,9 +208,10 @@ class PDSPThinSliceFitter {
   double fPitch, fPitchCorrection;
   std::string fSliceMethod;
   bool fMultinomial;
-  bool fDoFakeData, fDoThrows, fDoScans, fOnlySystScans, fDo1DShifts, fDoSysts,
+  bool fDoFakeData, fDoThrows, fDoScans, fOnlySystScans, fOnlyG4RWScans, fDo1DShifts, fDoSysts,
        fRunHesse, fRunMinos1D, fRunMinosConts, fSetSigLimits, fSetSystLimits,
-       fSetSelVarLimits, fRerunFit, fRemoveSigThrowLimits, fRunMultiConts,
+       fSetSelVarLimits, fRerunFit, fRequireGoodHesse,
+       fRemoveSigThrowLimits, fRunMultiConts,
        fSignalContoursOnly;
   size_t fFitAttempts;
   unsigned int fNContourPoints;

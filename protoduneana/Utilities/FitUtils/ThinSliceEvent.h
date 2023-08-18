@@ -41,6 +41,7 @@ class ThinSliceEvent {
     reco_beam_origin = -999;
     reco_daughter_truncated_dEdX = std::vector<double>();
     reco_daughter_chi2s_perhit = std::vector<double>();
+    stored_reco_energy = -999.;
 
   };
   /*
@@ -294,6 +295,9 @@ class ThinSliceEvent {
     return pdg;
   };
 
+  void SetStoredRecoEnergy(double e) {stored_reco_energy = e;};
+  double GetStoredRecoEnergy() {return stored_reco_energy;};
+
   void MakeG4RWBranch(const std::string & br, const std::vector<double> & ws) {
     g4rw_weights[br] = ws;
   };
@@ -511,6 +515,7 @@ class ThinSliceEvent {
                       reco_daughter_chi2s_perhit;
   double vertex_michel_score;
   int vertex_nhits;
+  double stored_reco_energy = -999.;
 };
 }
 #endif

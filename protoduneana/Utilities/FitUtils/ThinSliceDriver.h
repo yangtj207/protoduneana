@@ -66,6 +66,7 @@ class ThinSliceDriver {
       const std::map<int, std::vector<double>> & signal_pars,
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
+      const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
       bool fit_under_over, bool tie_under_over, bool use_beam_inst_P,
       bool fill_incident = false, std::map<int, TH1*> * fix_factors = 0x0) = 0;
 
@@ -145,6 +146,7 @@ class ThinSliceDriver {
       const std::map<int, bool> & signal_sample_checks,
       std::vector<double> & beam_energy_bins,
       const std::map<std::string, ThinSliceSystematic> & pars,
+      const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
       TFile & output_file) = 0;
   //virtual void WrapUpSysts(TFile & output_file) = 0;
 
@@ -159,6 +161,7 @@ class ThinSliceDriver {
     const std::map<int, std::vector<double>> & signal_pars,
     const std::map<int, double> & flux_pars,
     const std::map<std::string, ThinSliceSystematic> & syst_pars,
+    const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
     bool fit_under_over, bool tie_under_over, bool use_beam_inst_P
     /*   const std::vector<ThinSliceEvent> & events,
        std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,

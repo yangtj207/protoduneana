@@ -6,6 +6,10 @@ double protoana::PDSPSystematics::fEDivCut = 0.;
 const protoana::ThinSliceSystematic * protoana::PDSPSystematics::fEDivPar = 0x0;
 int protoana::PDSPSystematics::fPastFVSelectionID = 0;
 std::vector<const protoana::ThinSliceSystematic *> protoana::PDSPSystematics::fActiveG4RWPars = {};
+std::vector<const protoana::ThinSliceSystematic *> protoana::PDSPSystematics::fActiveTiedG4RWPars = {};
+
+std::vector<const protoana::ThinSliceSystematic *> protoana::PDSPSystematics::fActiveSignalG4RWPars = {};
+std::vector<const protoana::ThinSliceSystematic *> protoana::PDSPSystematics::fActiveTiedSignalG4RWPars = {};
 
 int protoana::PDSPSystematics::fUpstreamID = 0;
 int protoana::PDSPSystematics::fNoTrackID = 0;
@@ -38,6 +42,7 @@ protoana::PDSPSystematics::PDSPSystematics(
     const std::map<int, bool> & signal_sample_checks,
     std::vector<double> & beam_energy_bins,
     const std::map<std::string, ThinSliceSystematic> & pars,
+    const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
     TFile & output_file, int upstream_ID, int no_track_ID, int decay_ID,
     int past_FV_ID, int beam_cut_ID, int past_FV_sel_ID)
     : /*fUpstreamID(upstream_ID), fNoTrackID(no_track_ID),*/ fDecayID(decay_ID),
@@ -50,6 +55,7 @@ protoana::PDSPSystematics::PDSPSystematics(
 
 
   SetupSyst_G4RWCoeff(pars);
+  SetupSyst_TiedG4RWCoeff(pars);
   SetupSyst_BeamShift(pars, output_file);//Trim
   SetupSyst_EDivWeight(pars);//Done
   SetupSyst_EndZNoTrackWeight(pars);//Done
@@ -64,6 +70,8 @@ protoana::PDSPSystematics::PDSPSystematics(
   SetupSyst_BeamShiftBins(pars);//Trim
   SetupSyst_BeamScraper(pars);
 
+  SetupSignal_G4RWCoeff(g4rw_pars);
+  SetupSignal_TiedG4RWCoeff(g4rw_pars);
 }
 
 double protoana::PDSPSystematics::GetEventWeight(
@@ -129,10 +137,10 @@ double protoana::PDSPSystematics::GetEventWeight(
 void protoana::PDSPSystematics::SetupSyst_G4RWCoeff(
     const std::map<std::string, ThinSliceSystematic> & pars) {
   for (auto it = pars.begin(); it != pars.end(); ++it) {
-    if ((it->first.find("g4rw") != std::string::npos ||
+    if (it->second.GetIsG4RWCoeff()/*(it->first.find("g4rw") != std::string::npos ||
          it->first.find("G4RW") != std::string::npos) &&
         (it->first.find("oeff") != std::string::npos) &&
-        (it->first.find("tied") == std::string::npos)) {
+        (it->first.find("tied") == std::string::npos)*/) {
       std::cout << "Setting up g4rw coeffsyst: " << it->first << std::endl;
     }
     else {
@@ -143,6 +151,51 @@ void protoana::PDSPSystematics::SetupSyst_G4RWCoeff(
     std::cout << "Added " << it->first << " " << fG4RWCoeffBranches[it->first] << std::endl;
   }
   fActiveSystematics.push_back({"G4RWCoeff", GetSystWeight_G4RWCoeffNoPar});
+}
+
+void protoana::PDSPSystematics::SetupSignal_G4RWCoeff(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  for (auto it = pars.begin(); it != pars.end(); ++it) {
+    if (it->second.GetIsG4RWCoeff()) {
+      std::cout << "Setting up g4rw coeffsyst: " << it->first << std::endl;
+    }
+    else {
+      continue;
+    }
+    fActiveSignalG4RWPars.push_back(&(it->second));
+  }
+}
+
+void protoana::PDSPSystematics::SetupSyst_TiedG4RWCoeff(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  for (auto it = pars.begin(); it != pars.end(); ++it) {
+    if (it->second.GetIsTiedG4RWCoeff()/*(it->first.find("g4rw") != std::string::npos ||
+         it->first.find("G4RW") != std::string::npos) &&
+        (it->first.find("oeff") != std::string::npos) &&
+        (it->first.find("tied") == std::string::npos)*/) {
+      std::cout << "Setting up g4rw tied coeffsyst: " << it->first << std::endl;
+    }
+    else {
+      continue;
+    }
+    //fG4RWCoeffBranches[it->first] = it->second.GetOption<std::string>("Branches");
+    fActiveTiedG4RWPars.push_back(&(it->second));
+    std::cout << "Added " << it->first << " " << fG4RWCoeffBranches[it->first] << std::endl;
+  }
+  fActiveSystematics.push_back({"TiedG4RWCoeff", GetSystWeight_TiedG4RWCoeffNoPar});
+}
+
+void protoana::PDSPSystematics::SetupSignal_TiedG4RWCoeff(
+    const std::map<std::string, ThinSliceSystematic> & pars) {
+  for (auto it = pars.begin(); it != pars.end(); ++it) {
+    if (it->second.GetIsTiedG4RWCoeff()) {
+      std::cout << "Setting up g4rw tied coeffsyst: " << it->first << std::endl;
+    }
+    else {
+      continue;
+    }
+    fActiveTiedSignalG4RWPars.push_back(&(it->second));
+  }
 }
 
 void protoana::PDSPSystematics::SetupSyst_BeamShiftBins(
@@ -226,6 +279,21 @@ double protoana::PDSPSystematics::GetSystWeight_G4RWCoeffNoPar(
   //return CheckAndReturn(weight, "G4RWCoeff", par, event);
 }
 
+double protoana::PDSPSystematics::GetSignalWeight_G4RWCoeffNoPar(
+    const ThinSliceEvent & event, int signal_index) {
+  double weight = 1.;
+
+  for (const auto * par : fActiveSignalG4RWPars) {
+    double subweight = event.GetG4RWCoeffWeight(
+        par->GetG4RWCoeffBranch(), par->GetValue(), par->GetG4RWExtend());
+    weight *= CheckAndReturn(subweight, "SignalG4RWCoeff", (*par), event);
+    //weight *= subweight;
+    //std::cout << "\t" << par->GetG4RWCoeffBranch() << std::endl;
+  }
+  return weight;
+  //return CheckAndReturn(weight, "G4RWCoeff", par, event);
+}
+
 double protoana::PDSPSystematics::GetSystWeight_TiedG4RWCoeff(
     const ThinSliceEvent & event,
     const ThinSliceSystematic & par) {
@@ -240,6 +308,44 @@ double protoana::PDSPSystematics::GetSystWeight_TiedG4RWCoeff(
   }
   return weight;
   //return CheckAndReturn(weight, "G4RWCoeffTied", par);
+}
+
+double protoana::PDSPSystematics::GetSystWeight_TiedG4RWCoeffNoPar(
+    const ThinSliceEvent & event, int signal_index) {
+  double weight = 1.;
+
+  for (const auto * par : fActiveTiedG4RWPars) {
+    const auto & branches = par->GetTiedG4RWBranches();
+    //std::cout << "Tied g4rw: " << par->GetName() << std::endl;
+    for (const auto & br : branches) {
+      //std::cout << "\t" << br << " ";
+      double subweight = event.GetG4RWCoeffWeight(br, par->GetValue(), false);
+      //std::cout << subweight << std::endl;
+      weight *= CheckAndReturn(subweight, "G4RWTiedCoeff", (*par), event);
+    }
+  }
+
+  //std::cout << "\tTotal: " << weight << std::endl;
+  return weight;
+}
+
+double protoana::PDSPSystematics::GetSignalWeight_TiedG4RWCoeffNoPar(
+    const ThinSliceEvent & event, int signal_index) {
+  double weight = 1.;
+
+  for (const auto * par : fActiveTiedSignalG4RWPars) {
+    const auto & branches = par->GetTiedG4RWBranches();
+    //std::cout << "Tied g4rw: " << par->GetName() << std::endl;
+    for (const auto & br : branches) {
+      //std::cout << "\t" << br << " ";
+      double subweight = event.GetG4RWCoeffWeight(br, par->GetValue(), false);
+      //std::cout << subweight << std::endl;
+      weight *= CheckAndReturn(subweight, "SignalG4RWTiedCoeff", (*par), event);
+    }
+  }
+
+  //std::cout << "\tTotal: " << weight << std::endl;
+  return weight;
 }
 
 

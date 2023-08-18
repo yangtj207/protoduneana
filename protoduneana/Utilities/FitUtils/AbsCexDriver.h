@@ -180,6 +180,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<int, std::vector<double>> & signal_pars,
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
+      const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
       bool fit_under_over, bool tie_under_over, bool use_beam_inst_P,
       bool fill_incident, std::map<int, TH1 *> * fix_factors,
       size_t worker_id, std::vector<size_t> n_events);
@@ -193,6 +194,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<int, std::vector<double>> & signal_pars,
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
+      const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
       bool fit_under_over, bool tie_under_over,
       bool use_beam_inst_P, bool fill_incident = false,
       std::map<int, TH1*> * fix_factors = 0x0) override;
@@ -278,6 +280,7 @@ class AbsCexDriver : public ThinSliceDriver {
       const std::map<int, bool> & signal_sample_checks,
       std::vector<double> & beam_energy_bins,
       const std::map<std::string, ThinSliceSystematic> & pars,
+      const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
       TFile & output_file) override;
 
   /*void SetupSyst_BeamRes(
@@ -389,6 +392,7 @@ class AbsCexDriver : public ThinSliceDriver {
     const std::map<int, std::vector<double>> & signal_pars,
     const std::map<int, double> & flux_pars,
     const std::map<std::string, ThinSliceSystematic> & syst_pars,
+    const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
     bool fit_under_over, bool tie_under_over, bool use_beam_inst_P
 
     /*   const std::vector<ThinSliceEvent> & events,
@@ -471,6 +475,7 @@ class AbsCexDriver : public ThinSliceDriver {
     const std::map<int, std::vector<double>> & signal_pars,
     const std::map<int, double> & flux_pars,
     const std::map<std::string, ThinSliceSystematic> & syst_pars,
+    const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
     bool fit_under_over, bool tie_under_over, bool use_beam_inst_P);
     //   const std::vector<ThinSliceEvent> & events,
     //   std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
@@ -555,6 +560,7 @@ class AbsCexDriver : public ThinSliceDriver {
 
    std::vector<double> fBeamMatchLimits, fBeamMatchFractions;
    PDSPSystematics * fSystematics = 0x0;
+   PDSPSystematics * fG4RWPars = 0x0;
 
    bool fInclusive;
    std::vector<int> fERecoSelections, fEndZSelections, fOneBinSelections;
@@ -583,6 +589,9 @@ class AbsCexDriver : public ThinSliceDriver {
    std::mutex fRefillMutex, fFillMutex;
    int fNThreads;
    std::vector<fhicl::ParameterSet> fExtraHistSets;
+   double fFakeResolution = -999.;
+   std::vector<std::vector<double>> fStoredEnergies;
+   bool fUseStoredEnergies = false;
 
    std::vector<std::pair<std::string, std::function<void(
        ThinSliceDataSet & data_set, const ExtraHistDataVars & vars)>>>

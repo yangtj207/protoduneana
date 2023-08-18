@@ -76,7 +76,8 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                    new_interaction_topology(pset.get<double>("EndZLow"),
                                             pset.get<double>("EndZHigh"),
                                             pset.get<double>("Threshold"),
-                                            pset.get<bool>("CexNPi0")),
+                                            pset.get<bool>("CexNPi0"),
+                                            pset.get<bool>("SignalPastFV", true)),
                    {"true_beam_PDG",
                     "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
                     "true_beam_daughter_PDG", "true_beam_daughter_startP"})

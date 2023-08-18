@@ -19,8 +19,19 @@ names = ['grXSecThrowAbsUnderflow', 'grXSecThrowCexUnderflow',
          'grXSecThrowOtherInelUnderflow']
 
 fN = RT.TFile(args.i, 'open')
-gNs = [fN.Get('Throws/%s'%n) for n in names]
-xs = [array('d', [gN.GetX()[i] for i in range(gN.GetN())]) for gN in gNs]
+if args.post:
+  hNs = [fN.Get('PostFitXSec/PostFitAbsXSec'),
+         fN.Get('PostFitXSec/PostFitCexXSec'),
+         fN.Get('PostFitXSec/PostFitOtherInelXSec')] 
+  xs = [array('d', [h.GetBinCenter(i) for i in range(1, h.GetNbinsX()+1)]) for h in hNs]
+  yNs = [array('d', [h.GetBinContent(i) for i in range(1, h.GetNbinsX()+1)]) for h in hNs]
+  gNs = [RT.TGraph(len(x), x, y) for x,y in zip(xs, yNs)]
+
+
+else:
+  gNs = [fN.Get('Throws/%s'%n) for n in names]
+
+  xs = [array('d', [gN.GetX()[i] for i in range(gN.GetN())]) for gN in gNs]
 fP = RT.TFile(args.p, 'open')
 fM = RT.TFile(args.m, 'open')
 
