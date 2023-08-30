@@ -278,6 +278,19 @@ std::vector<G4ReweightTraj *> protoana::G4ReweightUtils::CreateNRWTrajs(
 
       results.back()->AddChild(new G4ReweightTraj(d_ID, d_PDG,
                                results.size() - 1, event, {0,0}));
+
+      auto * child = results.back()->GetChildren().back();
+      const auto & pos0 = d_part->GetPosition(0);
+      const auto & pos1 = d_part->GetPosition(1);
+      double d_len = sqrt(
+        std::pow((pos0.X() - pos1.X()), 2) +
+        std::pow((pos0.Y() - pos1.Y()), 2) +
+        std::pow((pos0.Z() - pos1.Z()), 2)
+      );
+      double d_p0 = d_par->Momentum(0)*1.e3;
+      double d_p1 = d_par->Momentum(1)*1.e3;
+      child->AddStep(
+          new G4ReweightStep(i, d_PDG, 0, event, d_p0, d_p1, d_len, "default"));
     }
   }
   return results;
