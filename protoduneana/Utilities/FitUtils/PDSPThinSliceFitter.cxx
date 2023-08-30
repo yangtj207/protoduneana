@@ -1129,6 +1129,7 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
     std::cout << "Vary stats: " << fVaryMCStatsForFakeData << std::endl;
     std::cout << fDataBeamFluxes.size() << std::endl;
     fThinSliceDriver->SetStatVar(fVaryMCStatsForFakeData); //Force on stat vars in driver
+    fThinSliceDriver->SetFillFakeInMain(true);
     fFitFunction(&vals[0]);
     fDataSet.FillHistsFromSamples(fFakeSamples, fDataFlux, fDataBeamFluxes,
                                   (fDoFluctuateStats && fFluctuateInSamples));
@@ -1139,6 +1140,7 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
 
     fUseFakeSamples = false;
     fThinSliceDriver->SetStatVar(false);
+    fThinSliceDriver->SetFillFakeInMain(false);
     //Refill the hists for comparisons
     fFitFunction(&vals[0]); 
     fFillIncidentInFunction = false;

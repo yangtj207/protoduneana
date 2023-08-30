@@ -126,6 +126,17 @@ protoana::AbsCexDriver::AbsCexDriver(
     SetupFakeDataG4RW();
     FakeDataWeight = GetFakeWeight_G4RWCoeff;
   }
+  else {
+    FakeDataWeight = DummyWeight; 
+  }
+
+  fThrowCalibration = extra_options.get<bool>("ThrowCalibration", false);
+  fVaryCalibrationFakeData = extra_options.get<bool>("VaryCalibrationFakeData",
+                                                     false);
+  if (fThrowCalibration) {
+    fDataCalibrationFactor = fRNG.Gaus(1., fDataCalibrationFactor);
+    std::cout << "New cal factor: " << fDataCalibrationFactor << std::endl;
+  }
 }
 
 void protoana::AbsCexDriver::FillMCEvents(
@@ -1088,8 +1099,16 @@ void protoana::AbsCexDriver::RefillSampleLoop(
           for (size_t k = 1; k < reco_beam_incidentEnergies.size(); ++k) {
             double deltaE = ((reco_beam_incidentEnergies)[k-1] -
                              (reco_beam_incidentEnergies)[k]);
-            if (deltaE > fEnergyFix) {
-              energy[0] += deltaE; 
+            if (fVaryCalibrationFakeData && fFillFakeDataInMain) {
+              energy[0] += deltaE;
+              if (deltaE*fDataCalibrationFactor < fEnergyFix) {
+                energy[0] -= deltaE*fDataCalibrationFactor;
+              }
+            }
+            else {
+              if (deltaE > fEnergyFix) {
+                energy[0] += deltaE; 
+              }
             }
           }
         }

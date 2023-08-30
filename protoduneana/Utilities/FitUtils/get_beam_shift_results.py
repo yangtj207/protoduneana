@@ -64,6 +64,9 @@ for i in range(0, len(gNs)):
   gP = gPs[i]
   gM = gMs[i]
 
+  themax = max([max([gN.GetY()[j], gP.GetY()[j], gM.GetY()[j]]) for j in range(gNs[i].GetN())])
+  print('Max:', themax)
+
   c = RT.TCanvas('c%i'%i, '')
   c.SetTicks()
 
@@ -72,7 +75,10 @@ for i in range(0, len(gNs)):
   gM.SetLineColor(RT.kBlue)
   gM.SetMarkerColor(RT.kBlue)
 
+  gN.SetMaximum(themax)
+  gN.SetMinimum(0.)
   gN.Draw('AP')
+  gN.Draw('P same')
   gP.SetMarkerStyle(20)
   gP.Draw('P same')
   gM.SetMarkerStyle(20)
