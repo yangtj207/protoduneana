@@ -25,7 +25,7 @@ namespace protoana{
           const std::string trackModule, const std::string caloModule,
           size_t planeID, double negativeZFix = 0.);
       double HitToEnergy(
-          const art::Ptr<recob::Hit> hit, double X, double Y, double Z,
+          const recob::Hit& hit, double X, double Y, double Z,
           double recomb_factor=.6417);
       std::vector<double> GetEFieldVector(
           const recob::Track &track, art::Event const &evt,

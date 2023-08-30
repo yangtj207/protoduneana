@@ -328,12 +328,12 @@ std::vector<double> protoana::ProtoDUNECalibration::GetEFieldVector(
 }
 
 double protoana::ProtoDUNECalibration::HitToEnergy(
-    const art::Ptr<recob::Hit> hit, double X, double Y, double Z,
+    const recob::Hit& hit, double X, double Y, double Z,
     double recomb_factor) {
 
   //Only do collection plane
-  //if( hit->View() != 2 ) return 0.;
-  size_t planeID = hit->View();
+  //if( hit.View() != 2 ) return 0.;
+  size_t planeID = hit.View();
   if (norm_factors.find(planeID) == norm_factors.end())
     return 0.;
 
@@ -349,7 +349,7 @@ double protoana::ProtoDUNECalibration::HitToEnergy(
     YZ_factor = YZ_pos_hists[planeID]->GetBinContent(YZ_bin);
   }
 
-  double energy = hit->Integral();
+  double energy = hit.Integral();
   energy *= norm_factors[planeID];
   energy *= Wion/*23.6e-6*/;
   energy /= calib_factors[planeID];

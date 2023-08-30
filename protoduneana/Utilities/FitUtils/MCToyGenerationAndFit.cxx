@@ -138,7 +138,7 @@ TTree* protoana::MCToyGenerationAndFit::GenerateAndFit(RooWorkspace* ws, int nex
   const RooArgSet* obs_set = combined_config->GetObservables();
 
   // Create mc study. Only used to store the fit result
-  RooMCStudy* mcstudy = new RooMCStudy( *pdf, *obs_set, RooFit::FitOptions("r"));
+  RooMCStudy* mcstudy = new RooMCStudy( *pdf, *obs_set, RooFit::Save());
 
   // Create test statistics object
   RooStats::ProfileLikelihoodTestStat ts(*combined_config->GetPdf());
@@ -388,7 +388,7 @@ TTree* protoana::MCToyGenerationAndFit::RooFitResultToTTree(RooWorkspace* ws, Ro
   const RooArgSet* obs_set = combined_config->GetObservables();
 
   // Create mc study. Only used to store the fit result
-  RooMCStudy* mcstudy = new RooMCStudy( *pdf, *obs_set, RooFit::FitOptions("r"));
+  RooMCStudy* mcstudy = new RooMCStudy( *pdf, *obs_set, RooFit::Save());
   mcstudy->addFitResult(*res);
 
   TTree* myTree = RooMCStudyToTTree(mcstudy);
