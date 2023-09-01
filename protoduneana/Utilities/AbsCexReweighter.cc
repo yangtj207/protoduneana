@@ -1,5 +1,6 @@
 #include "AbsCexReweighter.hh"
 #include "geant4reweight/ReweightBase/G4ReweightTraj.hh"
+#include "geant4reweight/ReweightBase/G4ReweightStep.hh"
 #include "Geant4/G4PionPlus.hh"
 
 AbsCexReweighter::AbsCexReweighter(
@@ -20,15 +21,16 @@ AbsCexReweighter::AbsCexReweighter(
 std::string AbsCexReweighter::GetInteractionSubtype(
     const G4ReweightTraj & theTraj) {
 
-  //int nPi0 = 0;
-  //int nPiPlus = 0;
-  //int nPiMinus = 0;
+  int nPi0 = 0;
+  int nPiCharged = 0;
   const auto & children = theTraj.GetChildren();
+  //std::cout << "Traj children:" << std::endl;
   for (auto * child : children) {
     int pdg = child->GetPDG();
+    //std::cout << pdg << std::endl;
     if (pdg == 111) {
-      //++nPi0;
-      continue;
+      //std::cout << "Has 111" << std::endl;
+      ++nPi0;
     }
     else if (abs(pdg) == 211) {
 
@@ -39,24 +41,25 @@ std::string AbsCexReweighter::GetInteractionSubtype(
                         step->GetPreStepPy()*step->GetPreStepPy() +
                         step->GetPreStepPz()*step->GetPreStepPz());
       }
-      std::cout << pdg << " " << momentum << std::endl;
-      if (momentum > fThreshold)
-        //++nPiCharged;
+      //std::cout << pdg << " " << momentum << std::endl;
+      if (momentum > fThreshold) {
+        //std::cout << "Above thresh" << std::endl;
+        ++nPiCharged;
+      }
     }
     else continue;
   }
 
-  int nPi0     = theTraj.HasChild(111).size();
-  int nPiPlus  = theTraj.HasChild(211).size();
-  int nPiMinus = theTraj.HasChild(-211).size();
-
-  if( (nPi0 + nPiPlus + nPiMinus) == 0){
+  if( (nPi0 + nPiCharged) == 0){
+    //std::cout << "abs" << std::endl;
     return "abs";
   }
-  else if( (nPiPlus + nPiMinus) == 0 && nPi0 > 0 ){
+  else if( (nPiCharged) == 0 && nPi0 > 0 ){
+    //std::cout << "cex" << std::endl;
     return "cex";
   }
 
+  //std::cout << "other" << std::endl;
   return "other";
 }
 

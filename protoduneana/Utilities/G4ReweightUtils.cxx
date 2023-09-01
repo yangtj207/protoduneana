@@ -276,19 +276,27 @@ std::vector<G4ReweightTraj *> protoana::G4ReweightUtils::CreateNRWTrajs(
       int d_PDG = d_part->PdgCode();
       int d_ID = d_part->TrackId();
 
+      if (IsSkippable(d_PDG)) continue;
+
       results.back()->AddChild(new G4ReweightTraj(d_ID, d_PDG,
                                results.size() - 1, event, {0,0}));
 
       auto * child = results.back()->GetChildren().back();
-      const auto & pos0 = d_part->GetPosition(0);
-      const auto & pos1 = d_part->GetPosition(1);
+      const auto & pos0 = d_part->Position(0);
+      const auto & pos1 = d_part->Position(1);
       double d_len = sqrt(
         std::pow((pos0.X() - pos1.X()), 2) +
         std::pow((pos0.Y() - pos1.Y()), 2) +
         std::pow((pos0.Z() - pos1.Z()), 2)
       );
-      double d_p0 = d_par->Momentum(0)*1.e3;
-      double d_p1 = d_par->Momentum(1)*1.e3;
+      const auto & p0_lv = d_part->Momentum(0);
+      const auto & p1_lv = d_part->Momentum(1);
+      double d_p0[3] = {p0_lv.X()*1.e3, p0_lv.Y()*1.e3, p0_lv.Z()*1.e3};
+      double d_p1[3] = {p1_lv.X()*1.e3, p1_lv.Y()*1.e3, p1_lv.Z()*1.e3};
+      if (abs(d_PDG) == 211 || d_PDG == 111)
+        /*std::cout << "Adding step to child " << i << " " << d_PDG << " " <<
+                     sqrt(d_p0[0]*d_p0[0] + d_p0[1]*d_p0[1] + d_p0[2]*d_p0[2]) <<
+                     " " << d_len << std::endl;*/
       child->AddStep(
           new G4ReweightStep(i, d_PDG, 0, event, d_p0, d_p1, d_len, "default"));
     }
@@ -375,4 +383,8 @@ std::vector<std::vector<G4ReweightTraj *>>
   }
 
   return full_created;
+}
+
+bool protoana::G4ReweightUtils::IsSkippable(int pdg) {
+  return ((abs(pdg) == 11) || (pdg == 22) || (pdg > 1000000000));
 }
