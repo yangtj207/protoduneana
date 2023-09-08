@@ -77,6 +77,7 @@ find_ups_product( systematicstools )
 find_ups_product( nusystematics )
 find_ups_product( geant4reweight )
 find_ups_product( valgrind )
+find_ups_product( nusimdata )
 
 if(DEFINED ENV{HEP_HPC_DIR} )
   find_ups_product( hdf5 )
