@@ -264,7 +264,7 @@ std::vector<std::pair<const simb::MCParticle*, double>>
   }
 
   // Fill and sort the output vector
-  for (weightedMCPair const& p : mcEMap) {
+  for (weightedMCPair const p : mcEMap) {
     outVec.push_back(p);
   }
   std::sort(outVec.begin(), outVec.end(),
@@ -303,7 +303,7 @@ std::vector<std::pair<const simb::MCParticle*, double>>
   }
 
   // Fill and sort the output vector
-  for (weightedMCPair const& p : mcEMap) {
+  for (weightedMCPair const p : mcEMap) {
     outVec.push_back(p);
   }
   std::sort(outVec.begin(), outVec.end(),
@@ -385,7 +385,7 @@ std::vector<std::pair<const recob::PFParticle*, double>>
   }
 
   // Fill and sort the output vector
-  for (weightedPFPair const& p : pfpEMap) {
+  for (weightedPFPair const p : pfpEMap) {
     outVec.push_back(p);
   }
   std::sort(outVec.begin(), outVec.end(),
@@ -461,7 +461,7 @@ std::vector<std::pair<const recob::Track*, double>>
   } // const recob::Track&
 
   // Fill and sort the output vector
-  for (std::pair<int, double> const& p : recoTrack)
+  for (std::pair<int, double> const p : recoTrack)
   {
     auto const trackIt = std::find_if(allRecoTracks->begin(), allRecoTracks->end(),
                                [&](recob::Track tr){ return tr.ID() == p.first; });
@@ -542,7 +542,7 @@ std::vector<std::pair<const recob::Shower*, double>>
   } // const recob::Shower&
 
   // Fill and sort the output vector
-  for (std::pair<int, double> const& p : recoShower)
+  for (std::pair<int, double> const p : recoShower)
   {
     auto const showerIt = std::find_if(allRecoShowers->begin(), allRecoShowers->end(),
       [&](recob::Shower sh){ return shUtils.GetShowerIndex(sh, evt, showerModule) == p.first; });
@@ -744,7 +744,7 @@ std::vector< protoana::MCParticleSharedHits >
   //std::vector< weightedMCPair > results;
   std::vector< protoana::MCParticleSharedHits > results;
 
-  for( const std::pair< const simb::MCParticle*, double > part : mcparts ){
+  for( const std::pair< const simb::MCParticle*, double > &part : mcparts ){
     //Get the non-delta ray hits
     const std::vector<const recob::Hit*> hits = GetSharedHits(clockData, *(part.first), recobj, evt, recoModule);
 
