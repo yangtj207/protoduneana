@@ -3292,10 +3292,12 @@ void protoana::AbsCexDriver::FakeDataAngleVar(
     }
   }
 
+  /* mean is set but not used
   double mean = 0.;
   for (auto s : all_scales) mean += s;
   mean /= all_scales.size();
   //std::cout << "Mean scale: " << mean << std::endl;
+  */
 
   for (auto it = sample_scales.begin(); it != sample_scales.end(); ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
@@ -4269,8 +4271,8 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
   size_t alt_nPoints = 0;
 
   std::map<int, TH1 *> & selected_data_hists = data_set.GetSelectionHists();
-  double total_data = 0., total_mc = 0.;
-  double data_integral = 0.;
+  // double total_data = 0., total_mc = 0.; // unused
+  // double data_integral = 0.; // unused
   for (auto it = selected_data_hists.begin();
        it != selected_data_hists.end(); ++it) {
     TH1D * data_hist = (TH1D*)it->second;
@@ -4288,7 +4290,7 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
     }
 
 
-    data_integral += data_hist->Integral();
+    // data_integral += data_hist->Integral(); // unused
     int start = (fSkipFirstLast ? 2 : 1);
     int end = data_hist->GetNbinsX();
     if (fSkipFirstLast) --end;
@@ -4389,8 +4391,8 @@ std::pair<double, size_t> protoana::AbsCexDriver::CalculateChi2(
                      data_val << " mc_val " << mc_val << " chi2 isnan" << std::endl;
       }
       ++nPoints;
-      total_mc += mc_val;
-      total_data += data_val;
+      // total_mc += mc_val; // unused
+      // total_data += data_val; // unused
     }
     //std::cout << "Totals: " << total_data << " " << total_mc << std::endl;
   }
@@ -4635,7 +4637,8 @@ void protoana::AbsCexDriver::CompareSelections(
     full_mc_stack.Write();
   }
 
-  double total_muons = 0.;
+  /* total and total_muons set but not used
+  double total_muons = 0.; // unused
   double total = 0.;
   for (auto it = samples.begin(); it != samples.end(); ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
@@ -4647,6 +4650,7 @@ void protoana::AbsCexDriver::CompareSelections(
       }
     }
   }
+  */
 }
 
 void protoana::AbsCexDriver::GetCurrentHists(
