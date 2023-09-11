@@ -2,8 +2,8 @@
 
 MaxEntries: -1
 SplitMC: false 
-FluctuateStats: true 
-FluctuateInSamples: true 
+FluctuateStats: false
+FluctuateInSamples: false
 
 AnalysisOptions.FakeDataRoutine: "G4RWGrid"
 

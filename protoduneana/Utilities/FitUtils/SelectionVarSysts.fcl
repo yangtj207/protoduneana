@@ -14,14 +14,60 @@ beam_shift_vars: {
     [1, 26],
     [2, 22],
     [3, 22],
-    [4, 2],
+    [4, 1],
     #[5, 1],
     #[6, 1],
     [7, 1]
   ]
   Options: {}
   IsSelVar: true
-  InputCovariance: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/No56FixedBeamShiftCovariance.root"
+  InputCovariance: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/No56FixedBeamShiftCovarianceNoAPA2.root"
 }
 
+
+coarse_lower_end_beam_shift_vars: {
+  Name: "beam_shift_vars"
+  Central: 1.
+  LowerLimit: 1.e-7
+  UpperLimit: 10.0
+  ThrowLimit: 0.1
+  ThrowLimitUp: 8.0
+  GenThrowLimit: 0.1
+  GenThrowLimitUp: 8.0
+  Sigma: .2  # unused
+  Selections: [
+    [1, 26],
+    [2, 24],
+    [3, 26],
+    [4, 1],
+    #[5, 1],
+    #[6, 1],
+    [7, 1]
+  ]
+  Options: {}
+  IsSelVar: true
+  InputCovariance: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/CoarseLowerEndCov.root"
+}
+
+coarse_500_start_beam_shift_vars: {
+  Name: "beam_shift_vars"
+  Central: 1.
+  LowerLimit: 1.e-7
+  UpperLimit: 10.0
+  ThrowLimit: 0.1
+  ThrowLimitUp: 8.0
+  GenThrowLimit: 0.1
+  GenThrowLimitUp: 8.0
+  Sigma: .2  # unused
+  Selections: [
+    [1, 12],
+    [2, 12],
+    [3, 12],
+    [4, 1],
+    [7, 1]
+  ]
+  Options: {}
+  IsSelVar: true
+  InputCovariance: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/CoarseRecoCov.root"
+}
 END_PROLOG

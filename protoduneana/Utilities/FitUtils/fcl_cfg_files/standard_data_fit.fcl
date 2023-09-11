@@ -2,6 +2,7 @@
 #include "ProtoDUNECalibration.fcl"
 #include "FitSystematics.fcl"
 #include "SelectionVarSysts.fcl"
+#include "ExtraHists.fcl"
 
 MCFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_31_22/eventSelection_mc_all.root"
 DataFileName: "/dune/data2/users/calcuttj/pduneana_ntuples/1_4_22/AltSCE/eventSelection_data_BeamQuality.root"
@@ -14,11 +15,13 @@ AnalysisOptions: {
   FakeDataRoutine: "Asimov"
 
   EndZCut: 222.10561
-  SliceCut: 464
+  SliceCut: 1e5 #464
   WirePitch: .47974
   Z0: 0.56035
 
   Multinomial: false 
+
+  ExtraHists: @local::AbsCexExtraHists
 
   SliceMethod: "Traj" #E, Alt, Default
 
@@ -45,24 +48,22 @@ AnalysisOptions: {
 }
 
 Systematics: [
-  @local::SystematicsList.ediv_weight
-  ,@local::g4rw_proton_coeff
+  #@local::SystematicsList.ediv_weight
+  @local::g4rw_proton_coeff
   ,@local::SystematicsList.end_z_no_track_weight
   ,@local::SystematicsList.beam_match_weight
-  #,@local::SystematicsList.beam_match_low_weight
-  #,@local::SystematicsList.beam_match_high_weight
   ,@local::g4rw_downstream_piplus_low_coeff
   ,@local::g4rw_downstream_piplus_high_coeff
   ,@local::SystematicsList.beam_scraper_weight
 ]
 
-Systematics[2].Central: 1.46
-Systematics[0].Options.F: .65078 #restricted P
-Systematics[0].ThrowLimitUp: 1.536
-Systematics[0].UpperLimit: 1.536
+Systematics[1].Central: 1.71
+#Systematics[0].Options.F: .65078 #restricted P
+#Systematics[0].ThrowLimitUp: 1.536
+#Systematics[0].UpperLimit: 1.536
 
 
-Systematics[2].Options.Fractions: [
+Systematics[1].Options.Fractions: [
 [1, [-1., -1., -1., 0.4,  0.2028985507246377, 0.24324324324324323, 0.22010869565217392, 0.15562248995983935, 0.17752234993614305, 0.19827299900365325, 0.22109443954104147, 0.2775628626692457] ],
 [2, [0.0, 0.25, 0.20512820512820515, 0.24705882352941178, 0.291866028708134, 0.23363095238095238, 0.23853711790393015, 0.26844411979547117, 0.2839335180055402, 0.3261278195488722] ],
 [3, [0.28571428571428575, 0.14285714285714288, 0.21176470588235294, 0.17842323651452283, 0.18452380952380953, 0.1461495222034851, 0.14193936960449707, 0.15475564897530217, 0.1736037535946723, 0.1944606413994169] ],
@@ -71,9 +72,9 @@ Systematics[2].Options.Fractions: [
 [6, [] ],
 [7, [0.0704647676161919] ]]
 
-Systematics[2].UpperLimit: 1.7391304347826089
-Systematics[2].ThrowLimitUp: 1.7391304347826089
-Systematics[2].GenThrowLimitUp: 1.7391304347826089
+Systematics[1].UpperLimit: 1.7391304347826089
+Systematics[1].ThrowLimitUp: 1.7391304347826089
+Systematics[1].GenThrowLimitUp: 1.7391304347826089
 
 #Systematics[3].Options.Fractions: [0.24389853564855565, 0.5704915377763382, 0.6986620630125162, 0.7641277641277642, 0.873414146435148]
 
@@ -82,18 +83,16 @@ Systematics[2].GenThrowLimitUp: 1.7391304347826089
 AddSystTerm: true
 
 CovarianceBins: [
-  ["ediv_weight", 0] #, #20%
- ,["end_z_no_track_weight", 1] #10%
- ,["g4rw_proton_coeff", 2] #33%
- ,["beam_match_weight", 3] #20%
- #,["beam_match_low_weight", 3] #20%
- #,["beam_match_high_weight", 4] #20%
- ,["g4rw_downstream_piplus_low_coeff", 4] #33%
- ,["g4rw_downstream_piplus_high_coeff", 5] #33%
- ,["beam_scraper_weight", 6] #50%
+  #["ediv_weight", 0] #, #20%
+ ,["end_z_no_track_weight", 0] #10%
+ ,["g4rw_proton_coeff", 1] #33%
+ ,["beam_match_weight", 2] #20%
+ ,["g4rw_downstream_piplus_low_coeff", 3] #33%
+ ,["g4rw_downstream_piplus_high_coeff", 4] #33%
+ ,["beam_scraper_weight", 5] #50%
 ]
 
-CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/scraper_onebeam.root"
+CovarianceFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/new_centrals_no_ediv.root"
 CovarianceMatrix: "m"
 
 SelectionVarSysts: [
@@ -141,7 +140,7 @@ Selections: [
   {
     Name: "APA2"
     ID: 4
-    RecoBins: [[222, 234, 580]]
+    RecoBins: [[222, 580]]
     AxisTitles: ["Reconstructed End Z (cm)"]
   },
   {
@@ -254,13 +253,15 @@ ReducedIncidentChi2: false
 FitFlux: true
 ScaleDataToNorm: false
 ScaleToDataBeamProfile: true
+RerunFit: true
+FitAttempts: 6
 
 AddRegTerm: false 
 RegFactor: 5.
 
 FitFunctionType: 2
 
-SetSigLimits: true 
+SetSigLimits: true
 SetSystLimits: true
 SetSelVarLimits: true
 #####################
@@ -278,6 +279,8 @@ PlotRebinned: true
 DrawXSecUnderflow: false 
 #####################
 
+#CoutLevel: 1
+
 ## Validation
 RandomStart: false 
 SplitMC:  false 
@@ -285,14 +288,14 @@ MaxEntries: -1
 MaxDataEntries: -1 #54000
 DoFakeData: false 
 FluctuateStats: false 
-DoThrows: true
-NThrows: 1000
+DoThrows: true 
+NThrows: 10000
 DoScans: false
 OnlySystScans: false
 RunHesse: true
 Do1DShifts: false 
 DoSysts: true
-MaxRethrows: 1000
+MaxRethrows: 100000
 #####################
 
 FitType: "Normal"
