@@ -219,6 +219,8 @@ void protoana::AbsCexDriver::FillMCEvents(
   std::vector<std::vector<double>> * g4rw_full_grid_proton_coeffs = 0x0,
                                    * g4rw_full_grid_piplus_coeffs = 0x0,
                                    * g4rw_full_fine_piplus_coeffs = 0x0,
+                                   * g4rw_full_grid_abscex_coeffs = 0x0,
+                                   * g4rw_primary_grid_abscex_coeffs = 0x0,
                                    * g4rw_downstream_grid_piplus_coeffs = 0x0;
   tree->SetBranchAddress("g4rw_full_grid_proton_coeffs", //good
                          &g4rw_full_grid_proton_coeffs);
@@ -226,6 +228,10 @@ void protoana::AbsCexDriver::FillMCEvents(
                          &g4rw_full_grid_piplus_coeffs);
   tree->SetBranchAddress("g4rw_full_fine_piplus_coeffs",
                          &g4rw_full_fine_piplus_coeffs);
+  tree->SetBranchAddress("g4rw_full_grid_abscex_coeffs",
+                         &g4rw_full_grid_abscex_coeffs);
+  tree->SetBranchAddress("g4rw_primary_grid_abscex_coeffs",
+                         &g4rw_primary_grid_abscex_coeffs);
   tree->SetBranchAddress("g4rw_downstream_grid_piplus_coeffs", //good
                          &g4rw_downstream_grid_piplus_coeffs);
 
@@ -525,13 +531,23 @@ void protoana::AbsCexDriver::FillMCEvents(
       std::string name_full = "g4rw_full_grid_piplus_coeffs_" + std::to_string(j);
       events.back().MakeG4RWCoeff(name_full, (*g4rw_full_grid_piplus_coeffs)[j]);
 
-      std::string fine_full = "g4rw_full_fine_piplus_coeffs_" + std::to_string(j);
-      events.back().MakeG4RWCoeff(fine_full, (*g4rw_full_fine_piplus_coeffs)[j]);
+      //std::string fine_full = "g4rw_full_fine_piplus_coeffs_" + std::to_string(j);
+      //events.back().MakeG4RWCoeff(fine_full, (*g4rw_full_fine_piplus_coeffs)[j]);
     }
 
     for (size_t j = 0; j < g4rw_full_fine_piplus_coeffs->size(); ++j) {
       std::string fine_full = "g4rw_full_fine_piplus_coeffs_" + std::to_string(j);
       events.back().MakeG4RWCoeff(fine_full, (*g4rw_full_fine_piplus_coeffs)[j]);
+    }
+
+    for (size_t j = 0; j < g4rw_full_grid_abscex_coeffs->size(); ++j) {
+      std::string abscex = "g4rw_full_grid_abscex_coeffs_" + std::to_string(j);
+      events.back().MakeG4RWCoeff(abscex, (*g4rw_full_grid_abscex_coeffs)[j]);
+    }
+
+    for (size_t j = 0; j < g4rw_primary_grid_abscex_coeffs->size(); ++j) {
+      std::string abscex = "g4rw_primary_grid_abscex_coeffs_" + std::to_string(j);
+      events.back().MakeG4RWCoeff(abscex, (*g4rw_primary_grid_abscex_coeffs)[j]);
     }
 
     events.back().MakeG4RWCoeff("g4rw_full_grid_proton_coeffs",
@@ -630,6 +646,15 @@ void protoana::AbsCexDriver::FillMCEvents(
       for (size_t j = 0; j < g4rw_full_fine_piplus_coeffs->size(); ++j) {
         std::string fine_full = "g4rw_full_fine_piplus_coeffs_" + std::to_string(j);
         fake_data_events.back().MakeG4RWCoeff(fine_full, (*g4rw_full_fine_piplus_coeffs)[j]);
+      }
+      for (size_t j = 0; j < g4rw_full_grid_abscex_coeffs->size(); ++j) {
+        std::string abscex = "g4rw_full_grid_abscex_coeffs_" + std::to_string(j);
+        fake_data_events.back().MakeG4RWCoeff(abscex, (*g4rw_full_grid_abscex_coeffs)[j]);
+
+      }
+      for (size_t j = 0; j < g4rw_primary_grid_abscex_coeffs->size(); ++j) {
+        std::string abscex = "g4rw_primary_grid_abscex_coeffs_" + std::to_string(j);
+        fake_data_events.back().MakeG4RWCoeff(abscex, (*g4rw_primary_grid_abscex_coeffs)[j]);
       }
 
       for (size_t j = 0; j < g4rw_downstream_grid_piplus_coeffs->size(); ++j) {
