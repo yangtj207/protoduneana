@@ -26,6 +26,7 @@ parser.add_argument('--sites', type=str, nargs='+')
 parser.add_argument('--memory', type=str, default=None)
 parser.add_argument('--blacklist', type=str, nargs='+')
 parser.add_argument('--multiple', action='store_true')
+parser.add_argument('--extra_life', type=str, default=None)
 
 parser.add_argument('--pduneana_tar', type=str, default='',
                     help='Optional Protoduneana tarball to be set up before NTupleProd')
@@ -110,6 +111,13 @@ if args.memory:
 if args.copy_input:
   cmd += ['-Osubmit.f_4=%(input_file)s',
           '-Ojob_setup.prescript_3=ln -s ${CONDOR_DIR_INPUT}/eventSelection_mc_all.root eventSelection_mc_all.root']
+if args.extra_life:
+  if 'h' in args.extra_life:
+    extra_life = 3600*int(args.extra_life.replace('h', ''))
+  elif 'd' in args.extra_life:
+    extra_life = 3600*24*int(args.extra_life.replace('d', ''))
+  cmd +=[f'-Oglobal.extra_life={extra_life}']
+
 print(cmd)
 
 subprocess.run(cmd)

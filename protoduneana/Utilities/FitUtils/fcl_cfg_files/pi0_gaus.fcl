@@ -3,8 +3,8 @@
 MaxEntries: -1 
 
 SplitMC: false 
-FluctuateStats: true 
-FluctuateInSamples: true 
+FluctuateStats: false
+FluctuateInSamples: false 
 #VaryMCStatsForFakeData: true
 
 AnalysisOptions.FakeDataRoutine: "AngleVar"

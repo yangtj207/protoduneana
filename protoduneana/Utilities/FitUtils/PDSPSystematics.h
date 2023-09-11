@@ -17,6 +17,7 @@ class PDSPSystematics {
       const std::map<int, bool> & signal_sample_checks,
       std::vector<double> & beam_energy_bins,
       const std::map<std::string, ThinSliceSystematic> & pars,
+      const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
       TFile & output_file, int upstream_ID, int no_track_ID, int decay_ID,
       int past_FV_ID, int beam_cut_ID, int past_FV_sel_ID);
   virtual ~PDSPSystematics(){};
@@ -29,12 +30,25 @@ class PDSPSystematics {
 
   void SetupSyst_G4RWCoeff(
       const std::map<std::string, ThinSliceSystematic> & pars);
+  void SetupSyst_TiedG4RWCoeff(
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  void SetupSignal_G4RWCoeff(
+      const std::map<std::string, ThinSliceSystematic> & pars);
+  void SetupSignal_TiedG4RWCoeff(
+      const std::map<std::string, ThinSliceSystematic> & pars);
   double GetSystWeight_G4RWCoeff(
       const ThinSliceEvent & event,
       const ThinSliceSystematic & par);
       //const std::map<std::string, ThinSliceSystematic> & pars);
 
   static double GetSystWeight_G4RWCoeffNoPar(
+      const ThinSliceEvent & event, int signal_index);
+  static double GetSystWeight_TiedG4RWCoeffNoPar(
+      const ThinSliceEvent & event, int signal_index);
+
+  static double GetSignalWeight_G4RWCoeffNoPar(
+      const ThinSliceEvent & event, int signal_index);
+  static double GetSignalWeight_TiedG4RWCoeffNoPar(
       const ThinSliceEvent & event, int signal_index);
 
   void SetupSyst_BeamShiftBins(
@@ -180,6 +194,9 @@ class PDSPSystematics {
 
   //G4RW
   static std::vector<const ThinSliceSystematic *> fActiveG4RWPars;
+  static std::vector<const ThinSliceSystematic *> fActiveTiedG4RWPars;
+  static std::vector<const ThinSliceSystematic *> fActiveSignalG4RWPars;
+  static std::vector<const ThinSliceSystematic *> fActiveTiedSignalG4RWPars;
 
   static int fUpstreamID, fNoTrackID;
 
@@ -191,6 +208,8 @@ class PDSPSystematics {
   //BeamMatch
   static const ThinSliceSystematic * fBeamMatchPar;
   static std::map<int, std::vector<double>> fBeamMatchFractions;
+  static double fBeamMatchFraction;
+  static bool fBeamMatchUseSingleFrac;
 
   //BeamMatchLow
   static double fBeamMatchLowLimit, fBeamMatchLowFraction;

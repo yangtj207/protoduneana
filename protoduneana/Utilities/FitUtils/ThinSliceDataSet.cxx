@@ -44,6 +44,35 @@ protoana::ThinSliceDataSet::ThinSliceDataSet(
      * throw
      * }*/
   }
+
+
+}
+
+void protoana::ThinSliceDataSet::SetupExtraHists(
+    const std::vector<fhicl::ParameterSet> & extra_hists) {
+  for (const auto & hist_set : extra_hists) {
+    std::string category = hist_set.get<std::string>("Category");
+    std::string name = hist_set.get<std::string>("Name");
+    std::string title = hist_set.get<std::string>("Title");
+
+    bool fixed_bins = hist_set.get<bool>("DoFixedBins");
+
+    //NEED TO MAKE SURE THIS IS ENSURED
+    auto bins = hist_set.get<std::vector<double>>("Bins");
+    auto binning = hist_set.get<std::vector<double>>("Binning");
+
+    if (fixed_bins) {
+      fExtraHists[category] = new TH1D(
+        name.c_str(), title.c_str(), binning[0], binning[1], binning[2]
+      );
+    }
+    else {
+      fExtraHists[category] = new TH1D(
+        name.c_str(), title.c_str(), bins.size()-1, &bins[0]
+      );
+    }
+    fExtraHists[category]->SetDirectory(0);
+  }
 }
 
 void protoana::ThinSliceDataSet::MakeRebinnedHists() {
@@ -277,13 +306,14 @@ void protoana::ThinSliceDataSet::GenerateStatFluctuation(bool poisson) {
  // std::cout << std::endl;
 }
 
+//TODO chunk this out and put in the driver. Then add parts for the extra hists
 void protoana::ThinSliceDataSet::FillHistsFromSamples(
     const std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
     double & flux, std::vector<double> & fluxes_by_beam, bool fluctuate,
     const std::vector<int> & to_skip) {
 
   flux = 0.;
-  std::vector<double> temp_flux(fluxes_by_beam.size());
+  //std::vector<double> temp_flux(/*fluxes_by_beam.size()*/);
   fluxes_by_beam.clear();
   for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
     it->second->Reset();
@@ -300,15 +330,16 @@ void protoana::ThinSliceDataSet::FillHistsFromSamples(
           const auto & hists = sample.second[i][j].GetSelectionHists();
           for (auto & hist : hists) {
             total += hist.second->Integral();
-            //std::cout << a << " " << i << " "  << j << " " << hist.second->Integral() << std::endl;
-            temp_flux[i] += hist.second->Integral();
+            std::cout << a << " " << i << " "  << j << " " << hist.second->Integral() << std::endl;
+            //std::cout << temp_flux.size() << std::endl;
+            //temp_flux[i] += hist.second->Integral();
           }
         }
       }
       ++a;
     }
     std::cout << "Total: " << total << std::endl;
-    for (auto & f : temp_flux) {std::cout << f << " ";} std::cout << std::endl;
+    //for (auto & f : temp_flux) {std::cout << f << " ";} std::cout << std::endl;
 
 
     //First, iterate through all samples/hists. Vary the contents
@@ -362,13 +393,17 @@ void protoana::ThinSliceDataSet::FillHistsFromSamples(
     }
   }
 
+  for (auto & extra_hist : fExtraHists) {
+    extra_hist.second->Reset();
+  }
+
   int a = 0;
   for (auto it = samples.begin(); it != samples.end(); ++it) {
     for (size_t i = 0; i < it->second.size(); ++i) {
       if (a == 0) fluxes_by_beam.push_back(0.);
       for (size_t j = 0; j < it->second[i].size(); ++j) {
-        const auto & hists = it->second[i][j].GetSelectionHists();
 
+        const auto & hists = it->second[i][j].GetSelectionHists();
         for (auto it2 = hists.begin(); it2 != hists.end(); ++it2) {
 
           fSelectionHists[it2->first]->Add(it2->second);
@@ -376,9 +411,14 @@ void protoana::ThinSliceDataSet::FillHistsFromSamples(
           fluxes_by_beam[i] += it2->second->Integral();
           //std::cout << "Adding " << it2->second->Integral() << " to " << i << std::endl;
         }
+
+        for (auto & extra_hists : it->second[i][j].GetExtraHists()) {
+          fExtraHists[extra_hists.first]->Add(extra_hists.second);
+        }
       }
     }
     ++a;
   }
   std::cout << "Flux: " << flux << std::endl;
 }
+

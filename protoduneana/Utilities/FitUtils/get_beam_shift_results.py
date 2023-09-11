@@ -19,8 +19,19 @@ names = ['grXSecThrowAbsUnderflow', 'grXSecThrowCexUnderflow',
          'grXSecThrowOtherInelUnderflow']
 
 fN = RT.TFile(args.i, 'open')
-gNs = [fN.Get('Throws/%s'%n) for n in names]
-xs = [array('d', [gN.GetX()[i] for i in range(gN.GetN())]) for gN in gNs]
+if args.post:
+  hNs = [fN.Get('PostFitXSec/PostFitAbsXSec'),
+         fN.Get('PostFitXSec/PostFitCexXSec'),
+         fN.Get('PostFitXSec/PostFitOtherInelXSec')] 
+  xs = [array('d', [h.GetBinCenter(i) for i in range(1, h.GetNbinsX()+1)]) for h in hNs]
+  yNs = [array('d', [h.GetBinContent(i) for i in range(1, h.GetNbinsX()+1)]) for h in hNs]
+  gNs = [RT.TGraph(len(x), x, y) for x,y in zip(xs, yNs)]
+
+
+else:
+  gNs = [fN.Get('Throws/%s'%n) for n in names]
+
+  xs = [array('d', [gN.GetX()[i] for i in range(gN.GetN())]) for gN in gNs]
 fP = RT.TFile(args.p, 'open')
 fM = RT.TFile(args.m, 'open')
 
@@ -53,6 +64,9 @@ for i in range(0, len(gNs)):
   gP = gPs[i]
   gM = gMs[i]
 
+  themax = max([max([gN.GetY()[j], gP.GetY()[j], gM.GetY()[j]]) for j in range(gNs[i].GetN())])
+  print('Max:', themax)
+
   c = RT.TCanvas('c%i'%i, '')
   c.SetTicks()
 
@@ -61,7 +75,10 @@ for i in range(0, len(gNs)):
   gM.SetLineColor(RT.kBlue)
   gM.SetMarkerColor(RT.kBlue)
 
+  gN.SetMaximum(themax)
+  gN.SetMinimum(0.)
   gN.Draw('AP')
+  gN.Draw('P same')
   gP.SetMarkerStyle(20)
   gP.Draw('P same')
   gM.SetMarkerStyle(20)

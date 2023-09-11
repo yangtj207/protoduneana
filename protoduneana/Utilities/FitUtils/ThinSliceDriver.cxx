@@ -5,7 +5,9 @@
 
 protoana::ThinSliceDriver::ThinSliceDriver(
     const fhicl::ParameterSet & extra_options)
-    : fExtraOptions(extra_options) {}
+    : fExtraOptions(extra_options) {
+  fFakeDataRoutine = fExtraOptions.get<std::string>("FakeDataRoutine", "");
+}
 
 protoana::ThinSliceDriver::~ThinSliceDriver() {}
 
