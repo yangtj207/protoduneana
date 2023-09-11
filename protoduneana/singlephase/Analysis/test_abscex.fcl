@@ -32,7 +32,7 @@ physics.analyzers.pduneana.AbsCexParameterSet: [
   },
   {Cut: "other"
    Name: "fOther"
-   Range: [0., 1500.]
+   Range: [0., 2000.]
    Nominal: 1.0 
    Sigma: .2
   }
