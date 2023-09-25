@@ -267,6 +267,7 @@ class PDSPThinSliceFitter {
   
   void SetSelVarSystVals() {
     ResetSelVarSystVals();
+    if (fUseFakeSamples) std::cout << "Setting Sel var" << std::endl;
     for (auto & sel_var_vec : fSelVarSystPars) {
       for (auto & par : sel_var_vec) {
         //std::cout << par.GetName() << " " << par.GetSelectionID() << " " <<
@@ -275,6 +276,9 @@ class PDSPThinSliceFitter {
         int bin = fSelectionBins[par.GetSelectionID()] +
                   par.GetSelectionBin() - 1;
         fSelVarSystVals[bin] = par.GetValue();
+        if (fUseFakeSamples) {
+          std::cout << par.GetValue() << std::endl;
+        }
       }
     }
   };

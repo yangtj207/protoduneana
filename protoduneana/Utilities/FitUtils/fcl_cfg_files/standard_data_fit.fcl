@@ -249,9 +249,7 @@ NScanSteps: 100
 Tolerance: 1.e-2 #0.001
 UpperLimit: 10.0
 LowerLimit: 1.e-5
-ReducedIncidentChi2: false
 FitFlux: true
-ScaleDataToNorm: false
 ScaleToDataBeamProfile: true
 RerunFit: true
 FitAttempts: 6

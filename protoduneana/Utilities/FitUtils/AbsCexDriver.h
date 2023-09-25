@@ -455,9 +455,9 @@ class AbsCexDriver : public ThinSliceDriver {
 
    std::vector<double> MakeTrueIncidentEnergies(
      const std::vector<double> & true_beam_traj_Z,
-     const std::vector<double> & true_beam_traj_KE,
+     const std::vector<double> & true_beam_traj_KE/*,
      const std::vector<int> & true_beam_slices,
-     const std::vector<double> & true_beam_incidentEnergies);
+     const std::vector<double> & true_beam_incidentEnergies*/);
 
   
    int GetBeamBin(
@@ -486,7 +486,8 @@ class AbsCexDriver : public ThinSliceDriver {
     //   std::vector<double> & beam_energy_bins, bool use_beam_inst_P);
 
    void SetupBeamShiftCovRoutine(fhicl::ParameterSet & routine);
-   double GetBeamShiftDelta(const std::vector<double> & energies);
+   //double GetBeamShiftDelta(const std::vector<double> & energies);
+   double GetBeamShiftDelta(double energy);
    void GenerateBeamShiftUniverse();
 
    void ScaleSamples(

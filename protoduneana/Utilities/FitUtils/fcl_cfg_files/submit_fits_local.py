@@ -68,15 +68,18 @@ cmd += ['-Oglobal.output_name=%(process)s_' + '%s.root'%args.type]
 cmd += ['-Oglobal.fcl_name=%s.fcl'%args.type]
 cmd += ['-Oexecutable.arg_2=%(fcl_name)s']
 cmd += ['-Osubmit.expected-lifetime=%s'%args.lifetime]
-cmd += ['-Oglobal.input_file=%s'%args.input_file]
+
+input_file = args.input_file.replace('/pnfs/', 'root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/')
+cmd += ['-Oglobal.input_file=%s'%input_file]
 
 
 if 'toy' in args.type or 'alt_sce' in args.type or args.multiple:
   cmd += ['-Osubmit.N=%i'%args.N]
 
 if args.data_input != '':
+  data_input = args.data_input.replace('/pnfs/', 'root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/')
   cmd += ['-Oexecutable.arg_7=-d',
-          '-Oexecutable.arg_8=%s'%args.data_input]
+          '-Oexecutable.arg_8=%s'%data_input]
 
 ##Special commands for overriding some setup stuff
 if not args.pduneana_tar == '':

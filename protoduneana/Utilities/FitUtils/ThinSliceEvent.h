@@ -9,6 +9,7 @@ class ThinSliceEvent {
     sample_ID = -999;
     selection_ID = -999;
     true_beam_interactingEnergy = -999;
+    true_beam_initEnergy = -999.;
     reco_beam_interactingEnergy = -999;
     true_beam_endP = -999;
     true_beam_startP = -999;
@@ -21,6 +22,7 @@ class ThinSliceEvent {
     reco_beam_startZ_SCE = -999.;
     beam_inst_P = -999;
     pdg = -999;
+    is_beam_scraper = false;
     reco_beam_incidentEnergies = std::vector<double>();
     true_beam_incidentEnergies = std::vector<double>();
     true_beam_traj_Z = std::vector<double>();
@@ -90,6 +92,13 @@ class ThinSliceEvent {
   };
   void SetTrueInteractingEnergy(double e) {
     true_beam_interactingEnergy = e;
+  };
+
+  double GetTrueInitEnergy() const {
+    return true_beam_initEnergy;
+  };
+  void SetTrueInitEnergy(double e) {
+    true_beam_initEnergy = e;
   };
 
   double GetRecoInteractingEnergy() const {
@@ -479,6 +488,7 @@ class ThinSliceEvent {
   int selection_ID;
   int pdg;
   double true_beam_interactingEnergy, reco_beam_interactingEnergy;
+  double true_beam_initEnergy;
   double true_beam_endP, true_beam_mass;
   double reco_beam_endZ, true_beam_startP, true_beam_endZ;
   double reco_beam_startY;

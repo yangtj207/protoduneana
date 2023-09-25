@@ -4039,7 +4039,7 @@ void pduneana::PDSPAnalyzer::TrueBeamInfo(
                             true_beam_trajectory.Y(i),
                             true_beam_trajectory.Z(i)};
     const TGeoMaterial * test_material = geo_serv->Material(test_point);
-    std::cout << test_material->GetName() << std::endl;
+    if (fVerbose) std::cout << test_material->GetName() << std::endl;
     if (!strcmp(test_material->GetName(), "ALUMINUM_Al")) true_beam_is_scraper = true;
 
   }

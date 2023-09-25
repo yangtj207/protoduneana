@@ -1,3 +1,4 @@
+#include "TRandom3.h"
 class new_interaction_topology {
  private:
   double fEndZLow, fEndZHigh;
@@ -792,6 +793,49 @@ class exclude_runs {
     bool operator()(int run) {
       return (std::find(bad_runs.begin(), bad_runs.end(), run) ==
               bad_runs.end());
+    }
+};
+
+class fake_res_func {
+  private:
+    double fFakeRes;
+    TRandom3 fRNG = TRandom3(0);
+  public:
+    fake_res_func(double res) : fFakeRes(res) {}
+
+    double operator()(int true_beam_PDG, double true_p) {
+      if (true_beam_PDG != 211) return true_p;
+      if (true_p < 0.) return true_p;
+
+      return fRNG.Gaus(sqrt(true_p*true_p*1.e6 + 139.57*139.57) - 139.57, fFakeRes);
+    }
+};
+
+class fake_selection {
+  private:
+    double fFakeMix;
+    TRandom3 fRNG = TRandom3(0);
+    std::map<int, std::pair<int, int>> sels = {
+      {1, {2, 3}},
+      {2, {1, 3}},
+      {3, {1, 2}}
+    };
+  public:
+    fake_selection(double m) : fFakeMix(m) {}
+
+    int operator()(int id) {
+      double r = fRNG.Uniform(0., 1.);
+      if (id > 4)
+        return 4;
+      if (id == 4)
+        return 6;
+
+      if (r < fFakeMix)
+        return sels[id].first;
+      else if (r < 2*fFakeMix)
+        return sels[id].second;
+      else
+        return id;
     }
 };
 

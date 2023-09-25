@@ -5,16 +5,6 @@ import sys
 from math import sqrt
 
 
-RT.gROOT.LoadMacro("~/protoDUNEStyle.C")
-RT.gROOT.SetBatch();
-RT.gStyle.SetOptStat(00000)
-RT.gStyle.SetErrorX(1.e-4)
-RT.gStyle.SetTitleAlign(33)
-RT.gStyle.SetTitleX(.5)
-tt = RT.TLatex();
-tt.SetNDC();
-
-
 parser = ap()
 
 parser.add_argument('-o', type=str, required=True)
@@ -38,6 +28,17 @@ parser.add_argument('--fixed', action='store_true')
 parser.add_argument('-v', action='store_true')
 
 args = parser.parse_args()
+
+RT.gROOT.LoadMacro("~/protoDUNEStyle.C")
+RT.gROOT.SetBatch();
+RT.gStyle.SetOptStat(00000)
+RT.gStyle.SetErrorX(1.e-4)
+RT.gStyle.SetTitleAlign(33)
+RT.gStyle.SetTitleX(.5)
+tt = RT.TLatex();
+tt.SetNDC();
+
+
 
 if args.p:
   t_prelim = RT.TLatex()

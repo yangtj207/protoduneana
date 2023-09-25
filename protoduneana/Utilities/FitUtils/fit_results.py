@@ -4,8 +4,6 @@ from array import array
 import sys
 from argparse import ArgumentParser as ap
 
-RT.gROOT.LoadMacro("~/protoDUNEStyle.C")
-
 parser = ap()
 parser.add_argument('-o', type=str, required=True)
 parser.add_argument('-i', type=str, required=True)
@@ -14,6 +12,8 @@ parser.add_argument('--add_covs', nargs='+', default=[])
 parser.add_argument('--fixed', action='store_true')
 args = parser.parse_args()
 
+
+RT.gROOT.LoadMacro("~/protoDUNEStyle.C")
 
 
 def combine(hists, title):

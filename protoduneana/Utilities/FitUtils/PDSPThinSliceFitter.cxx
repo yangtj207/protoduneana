@@ -1293,6 +1293,11 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
     fFillIncidentInFunction = true;
     fUseFakeSamples = true;
     fThinSliceDriver->SetFillFakeInMain(true);
+
+    std::cout << "Vary stats: " << fVaryMCStatsForFakeData << std::endl;
+    std::cout << fDataBeamFluxes.size() << std::endl;
+    fThinSliceDriver->SetStatVar(fVaryMCStatsForFakeData); //Force on stat vars in driver
+
     std::cout << fDataBeamFluxes.size() << std::endl;
     fFitFunction(&vals[0]);
     fDataSet.FillHistsFromSamples(fFakeSamples, fDataFlux, fDataBeamFluxes,
@@ -1304,6 +1309,7 @@ void protoana::PDSPThinSliceFitter::BuildDataHists() {
 
     fUseFakeSamples = false;
     fThinSliceDriver->SetFillFakeInMain(false);
+    fThinSliceDriver->SetStatVar(false); //Force off stat vars in driver
     //Refill the hists for comparisons
     fFitFunction(&nominal_vals[0]); 
     fFillIncidentInFunction = false;
@@ -3569,7 +3575,7 @@ void protoana::PDSPThinSliceFitter::Configure(std::string fcl_file) {
           std::cout << syst.GetName() << " " << fCovarianceBins[syst.GetName()] << std::endl;
           if (set_sel_var_centrals) {
             syst.SetCentral((*centrals)[a]);
-            std::cout << "Setting central: " << (*centrals)[a] << std::endl;
+            syst.SetValue((*centrals)[a]);
           }
           ++a;
         }
@@ -4106,7 +4112,7 @@ void protoana::PDSPThinSliceFitter::PlotThrows(
     leg.AddEntry(&throw_gr, "Throws", "lpf");
     leg.AddEntry(&temp_nominal, "Nominal", "p");
 
-    if (fDoFakeData && fFakeDataRoutine != "Toy") {
+    if (fDoFakeData && fFakeDataRoutine != "Toy" && fFakeDataRoutine != "G4RWGrid") {
       name = "hVaried" + fSamples[sample_ID][0][0].GetName();
       TH1D * temp_varied = (TH1D*)temp_nominal.Clone(name.c_str());
       for (size_t i = 0; i < xs.size(); ++i) {
