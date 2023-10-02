@@ -182,11 +182,11 @@ void protoDUNE_YZ_calib::Loop(TString mn)
     nentries = 200000;
     real_nentries = nentries;
   }
-  Long64_t nbytes = 0, nb = 0;
+  // Long64_t nbytes = 0, nb = 0; // unused
   for (Long64_t jentry=0; jentry<nentries;jentry++){
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
-    nb = fChain->GetEntry(jentry);   nbytes += nb;
+    // nb = fChain->GetEntry(jentry);   nbytes += nb; // unused
     if(jentry%10000==0) cout<<jentry<<"/"<<real_nentries<<endl;
     for(int i=0; i<cross_trks; i++){
       if(!((TMath::Abs(trkstartx[i])>350||trkstarty[i]<50||trkstarty[i]>550||trkstartz[i]<50||trkstartz[i]>645)&&(TMath::Abs(trkendx[i])>350||trkendy[i]<50||trkendy[i]>550||trkendz[i]<50||trkendz[i]>645))) continue;

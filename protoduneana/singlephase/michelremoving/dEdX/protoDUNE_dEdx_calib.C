@@ -456,12 +456,12 @@ void protoDUNE_dEdx_calib::Loop(int hitplane, double norm_factor, double calib_f
  if (fChain == 0) return;
   //Long64_t nentries = fChain->GetEntriesFast();
   Long64_t nentries = fChain->GetEntries();
-  Long64_t nbytes = 0, nb = 0;
+  // Long64_t nbytes = 0, nb = 0; // unused
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
 //   for (Long64_t jentry=0; jentry<10000;jentry++) {
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
-    nb = fChain->GetEntry(jentry);   nbytes += nb;
+    // nb = fChain->GetEntry(jentry);   nbytes += nb; // unused
     if(jentry%1000==0) cout<<jentry<<"/"<<nentries<< endl;
     vector<float> res, dq, first5dq, last5dq;
     for(int i=0; i<cross_trks; ++i){

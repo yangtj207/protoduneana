@@ -1440,7 +1440,7 @@ void protoana::ProtoDUNEFit::ScaleMCToData(bool data_is_mc) {
 //********************************************************************
   //Get the number of incident pions from MC
   double nIncidentPionsMC = 0.;
-  double nPrimaryPionsMC = 0.;
+  // double nPrimaryPionsMC = 0.; // unused
   for (size_t i = 0; i < _IncidentMCFileNames.size(); ++i) {
     //Get the tree
     TFile incidentFile(_IncidentMCFileNames[i].c_str(), "OPEN");
@@ -1451,14 +1451,14 @@ void protoana::ProtoDUNEFit::ScaleMCToData(bool data_is_mc) {
 
     std::string cut = "passBeamCut && primary_ends_inAPA3"; // && primary_passes_chi2";
 
-    nPrimaryPionsMC += incident_tree->GetEntries(cut.c_str());
+    // nPrimaryPionsMC += incident_tree->GetEntries(cut.c_str()); // unused
     incidentFile.Close();
   }
   std::cout << "Got " << nIncidentPionsMC << " incident MC Pions" << std::endl;
   
   //Get the number of incident pions from Data
   double nIncidentPionsData = 0.;
-  double nPrimaryPionsData = 0.;
+  // double nPrimaryPionsData = 0.; // unused
   for (size_t i = 0; i < _IncidentDataFileNames.size(); ++i) {
     //Get the tree
     TFile incidentFile(_IncidentDataFileNames[i].c_str(), "OPEN");
@@ -1471,7 +1471,7 @@ void protoana::ProtoDUNEFit::ScaleMCToData(bool data_is_mc) {
 
     std::string cut = "passBeamCut && primary_ends_inAPA3";//&& primary_passes_chi2";
 
-    nPrimaryPionsData += incident_tree->GetEntries(cut.c_str());
+    // nPrimaryPionsData += incident_tree->GetEntries(cut.c_str()); // unused
 
     incidentFile.Close();
   }
