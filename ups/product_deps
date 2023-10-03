@@ -62,7 +62,7 @@ table_fragment_end
 # Add the dependent product and version
 
 product          version
-duneprototypes   v09_78_03d01
+duneprototypes   v09_78_06d00
 cetbuildtools	 v8_20_00	-	only_for_build
 geant4reweight   v01_19_00
 end_product_list
@@ -72,8 +72,12 @@ end_product_list
 # Make a table by adding columns before "notes".
 # e15  - with gcc 6.4.0 and -std=c++14
 qualifier	duneprototypes          geant4reweight          notes
+c14:debug	c14:debug               c14:debug:s120a           -nq-
+c14:prof	c14:prof                c14:prof:s120a            -nq-
 c7:debug	c7:debug                c7:debug:s120a            -nq-
 c7:prof		c7:prof                 c7:prof:s120a             -nq-
+e26:debug	e26:debug               e26:debug:s120a           -nq-
+e26:prof	e26:prof                e26:prof:s120a            -nq-
 e20:debug	e20:debug               debug:e20:s120a           -nq-
 e20:prof	e20:prof                e20:prof:s120a            -nq-
 end_qualifier_list

@@ -397,10 +397,10 @@ namespace dune{
 	}
       }
       double  maxe = -1;
-      double tote = 0;
+      // double tote = 0; // unused
       for(std::map<int,double>::iterator ii = trkide.begin(); ii!=trkide.end(); ++ii){
 	//	cout<<" trkid "<<ii->first<<"  energy deposited = "<<ii->second<<endl;
-	tote += ii->second;
+	// tote += ii->second; // unused
 	if((ii->second)>maxe){
 	  maxe = ii->second;
 	  trackid = ii->first;

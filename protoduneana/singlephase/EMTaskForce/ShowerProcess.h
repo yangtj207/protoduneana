@@ -208,7 +208,7 @@ void ShowerProcess::find_tracks() {
   // }
 
   // Fill and sort the output vector
-  for (std::pair<int, double> const& p : recoTrack)
+  for (std::pair<int, double> const p : recoTrack)
   {
     auto const trackIt = std::find_if(allRecoTracks->begin(), allRecoTracks->end(),
                                [&](recob::Track tr){ return tr.ID() == p.first; });
