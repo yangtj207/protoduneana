@@ -5,7 +5,7 @@
 
 parent protoduneana
 
-defaultqual e20
+defaultqual e26
 
 # These optional lines define where headers, libraries, and executables go and should
 # be used only if your product does not conform to the defaults.
@@ -64,7 +64,7 @@ table_fragment_end
 product          version
 duneprototypes   v09_78_06d00
 cetbuildtools	 v8_20_00	-	only_for_build
-geant4reweight   v01_19_00
+geant4reweight   v01_19_01
 end_product_list
 
 
@@ -74,12 +74,8 @@ end_product_list
 qualifier	duneprototypes          geant4reweight          notes
 c14:debug	c14:debug               c14:debug:s120a           -nq-
 c14:prof	c14:prof                c14:prof:s120a            -nq-
-c7:debug	c7:debug                c7:debug:s120a            -nq-
-c7:prof		c7:prof                 c7:prof:s120a             -nq-
 e26:debug	e26:debug               e26:debug:s120a           -nq-
 e26:prof	e26:prof                e26:prof:s120a            -nq-
-e20:debug	e20:debug               debug:e20:s120a           -nq-
-e20:prof	e20:prof                e20:prof:s120a            -nq-
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:
