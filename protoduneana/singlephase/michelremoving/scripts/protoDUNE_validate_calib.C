@@ -300,12 +300,12 @@ void protoDUNE_validate_calib::Loop(int mn)
     nentries = 200000;
     real_nentries = nentries;
   }
-  Long64_t nbytes = 0, nb = 0;
+  // Long64_t nbytes = 0, nb = 0; // unused
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
     // for (Long64_t jentry=0; jentry<10000;jentry++) {
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
-    nb = fChain->GetEntry(jentry);   nbytes += nb;
+    // nb = fChain->GetEntry(jentry);   nbytes += nb; // unused
     if(jentry%10000==0) cout<<jentry<<"/"<<real_nentries<<endl;
     
     int x_bin;

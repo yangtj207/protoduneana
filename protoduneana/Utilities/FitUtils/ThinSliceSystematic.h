@@ -11,6 +11,7 @@ class ThinSliceSystematic {
       fCentral(pset.get<double>("Central")),
       fUpperLimit(pset.get<double>("UpperLimit")),
       fLowerLimit(pset.get<double>("LowerLimit")),
+      fSetLimits(pset.get<bool>("SetLimits", true)),
       fThrowLimit(pset.get<double>("ThrowLimit")),
       fThrowLimitUp(pset.get<double>("ThrowLimitUp")),
       fGenThrowLimit(pset.get<double>("GenThrowLimit")),
@@ -25,6 +26,7 @@ class ThinSliceSystematic {
     fName = "par_" + fType + "_syst";
     if (fIsG4RWCoeff) {
       fG4RWCoeffBranch = fOptions.get<std::string>("Branch");
+      fG4RWExtend = fOptions.get<bool>("Extend", false);
     }
     if (fIsTiedG4RWCoeff) {
       fTiedG4RWCoeffBranches
@@ -50,6 +52,10 @@ class ThinSliceSystematic {
     return fG4RWCoeffBranch;
   };
 
+  const bool & GetG4RWExtend() const {
+    return fG4RWExtend;
+  };
+
   const std::vector<std::string> & GetTiedG4RWBranches() const {
     return fTiedG4RWCoeffBranches;
   };
@@ -63,6 +69,10 @@ class ThinSliceSystematic {
 
   const double GetUpperLimit() const {
     return fUpperLimit;
+  };
+
+  const bool GetSetLimits() const {
+    return fSetLimits;
   };
 
   const double GetThrowLimit() const {
@@ -130,6 +140,7 @@ class ThinSliceSystematic {
   double fCentral;
   double fUpperLimit; 
   double fLowerLimit;
+  bool fSetLimits;
   double fThrowLimit; 
   double fThrowLimitUp; 
   double fGenThrowLimit; 
@@ -139,6 +150,7 @@ class ThinSliceSystematic {
   bool fIsG4RWCoeff, fIsTiedG4RWCoeff, fIsSelVar;
   int fSelectionID, fSelectionBin;
   std::string fG4RWCoeffBranch = "";
+  bool fG4RWExtend = false;
   std::vector<std::string> fTiedG4RWCoeffBranches;
 
   fhicl::ParameterSet fOptions;

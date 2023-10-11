@@ -204,20 +204,16 @@ protoana::BeamVals protoana::ProtoDUNEBeamCuts::GetMCBeam( const art::Event & ev
 }
 
 protoana::BeamVals protoana::ProtoDUNEBeamCuts::GetDataBeam( const art::Event & evt ){
-  std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
-  auto beamHandle = evt.getValidHandle< std::vector< beam::ProtoDUNEBeamEvent > >("beamevent");
+  auto const& beamEvents = evt.getProduct< std::vector< beam::ProtoDUNEBeamEvent > >("beamevent");
                         
   BeamVals result;
   result.Valid = false;
 
-  if( beamHandle.isValid()){
-    art::fill_ptr_vector(beamVec, beamHandle);
-  }
   //Should just have one
-  const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0));
+  const beam::ProtoDUNEBeamEvent & beamEvent = beamEvents.front();
 
   const std::vector< recob::Track > & beamTracks = beamEvent.GetBeamTracks();
-  if( beamTracks.size() == 0 ){
+  if( beamTracks.empty() ){
     std::cout << "Warning: no tracks associated to beam data" << std::endl;
     return result;  
   }
@@ -227,11 +223,11 @@ protoana::BeamVals protoana::ProtoDUNEBeamCuts::GetDataBeam( const art::Event & 
   }
   
   result.Valid = true;
-  result.X = beamTracks.at(0).Trajectory().End().X();
-  result.Y = beamTracks.at(0).Trajectory().End().Y();
+  result.X = beamTracks[0].Trajectory().End().X();
+  result.Y = beamTracks[0].Trajectory().End().Y();
 
-  result.DirX = beamTracks.at(0).EndDirection().X();
-  result.DirY = beamTracks.at(0).EndDirection().Y();
-  result.DirZ = beamTracks.at(0).EndDirection().Z();
+  result.DirX = beamTracks[0].EndDirection().X();
+  result.DirY = beamTracks[0].EndDirection().Y();
+  result.DirZ = beamTracks[0].EndDirection().Z();
   return result;
 }

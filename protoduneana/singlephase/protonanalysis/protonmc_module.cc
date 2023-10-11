@@ -66,6 +66,7 @@
 #include "larsim/MCCheater/ParticleInventoryService.h"
 
 //#g4reweight
+#include "geant4reweight/src/ReweightBase/G4ReweightManager.hh"
 #include "geant4reweight/src/ReweightBase/G4ReweighterFactory.hh"
 #include "geant4reweight/src/ReweightBase/G4Reweighter.hh"
 #include "geant4reweight/src/ReweightBase/G4ReweightTraj.hh"

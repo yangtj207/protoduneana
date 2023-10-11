@@ -1,0 +1,41 @@
+#include "pduneana_Prod4a_MC_sce.fcl"
+physics.analyzers.pduneana.AbsCexParameterSet: [
+  {Cut: "abs"
+   Name: "fAbs1"
+   Range: [0., 500.]
+   Nominal: 1.0 
+   Sigma: .2
+  },
+  {Cut: "abs"
+   Name: "fAbs2"
+   Range: [500., 2000.]
+   Nominal: 1.0 
+   Sigma: .2
+  },
+  {Cut: "cex"
+   Name: "fCex1"
+   Range: [0., 400.]
+   Nominal: 1.0 
+   Sigma: .2
+  },
+  {Cut: "cex"
+   Name: "fCex2"
+   Range: [400., 800.]
+   Nominal: 1.0 
+   Sigma: .2
+  },
+  {Cut: "cex"
+   Name: "fCex3"
+   Range: [800., 2000.]
+   Nominal: 1.0 
+   Sigma: .2
+  },
+  {Cut: "other"
+   Name: "fOther"
+   Range: [0., 2000.]
+   Nominal: 1.0 
+   Sigma: .2
+  }
+]
+
+physics.analyzers.pduneana.AbsCexFile: "root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/dune/resilient/users/calcuttj/thresh_abscex_0_2000.root"

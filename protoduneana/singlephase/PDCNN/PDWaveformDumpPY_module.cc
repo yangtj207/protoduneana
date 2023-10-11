@@ -72,12 +72,8 @@ PDWaveformDumpPY::PDWaveformDumpPY(fhicl::ParameterSet const& p)
 void PDWaveformDumpPY::analyze(art::Event const& e)
 {
   // Get OpDetWaveform
-  std::vector<art::Ptr<raw::OpDetWaveform>> wflist;
   auto wfListHandle = e.getHandle< std::vector<raw::OpDetWaveform> >("ssprawdecoder:external");
-  if (wfListHandle){
-    art::fill_ptr_vector(wflist, wfListHandle);
-  }
-  else{
+  if (!wfListHandle){
     cout<<"wfListHandle invalid"<<endl;
     return;
   }
@@ -90,7 +86,7 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
 
   unsigned int mobileAVG = 4;
 
-  for (auto const & wf : wflist){
+  for (auto const & wf : *wfListHandle){
 
     fill(waveform.begin(), waveform.end(), 0);
     fill(waveformma.begin(), waveformma.end(), 0);
@@ -98,12 +94,12 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
     fill(input.begin(), input.end(), 0);
     fill(output.begin(), output.end(), 0);
 
-    int daqch = wf->ChannelNumber();
+    int daqch = wf.ChannelNumber();
 
     if ((daqch>=132 && daqch<=143) || (daqch>=96 && daqch<=107)){
 
-      for (unsigned short i = 0; i<wf->Waveform().size(); ++i){
-        waveform[i] = wf->Waveform()[i];
+      for (unsigned short i = 0; i<wf.Waveform().size(); ++i){
+        waveform[i] = wf.Waveform()[i];
       }
 
       //========= Moving average  ============================================================
@@ -167,12 +163,12 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
       base = basehelp->GetXaxis()->GetBinCenter(basebinmax);
       basehelp->Delete();
 
-      float sum = 0;
+      // float sum = 0; // unused
       for(size_t j = 0; j < waveform.size(); ++j){
         waveform[j] = waveform[j]-base;
         waveformma[j] = waveformma[j]-base;
         waveformden[j] = waveformden[j]-base;
-        if (j>=1000 && j<1500) sum += waveformden[j];
+        // if (j>=1000 && j<1500) sum += waveformden[j]; // unused
       }
     
       c2numpy_uint32(&npywriter, e.id().run());

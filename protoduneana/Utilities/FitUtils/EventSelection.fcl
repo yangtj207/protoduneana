@@ -11,6 +11,7 @@ EndZHigh: 222.10561
 EndZLow: -.49375
 Threshold: .150
 CexNPi0: true
+SignalPastFV: true
 TrackScoreCut: 0.3
 Limit: 0.16
 
@@ -28,6 +29,14 @@ MichelCut: 0.6
 RestrictBeamP: true
 BeamPLow: 750.
 BeamPHigh: 1250.
+
+RestrictBeamXY: false
+BeamYMean: 422.
+BeamXMean: -30.
+DataBeamYMean: 423.
+DataBeamXMean: -31.
+BeamXYRadius: 4.
+
 ExcludeRuns: []
 UseWeightedTrackScore: true
 

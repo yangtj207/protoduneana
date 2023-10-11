@@ -7,6 +7,7 @@
 #include "TSpline.h"
 #include "TDirectory.h"
 #include "TCanvas.h"
+#include "TRandom3.h"
 
 #include <map>
 #include <sstream>
@@ -92,6 +93,10 @@ class ThinSliceSample {
 
   TH1 * GetSelectionHist(int id) {
     return fSelectionHists.at(id);
+  };
+
+  TH1 * GetExtraHist(std::string category) {
+    return fExtraHists.at(category);
   };
 
   /*
@@ -281,7 +286,7 @@ class ThinSliceSample {
     }
   }
 
-  int GetSelectionHistBin(int id, double val) {
+  int GetSelectionHistBin(int id, double val) const {
     if (fSelectionHists.find(id) != fSelectionHists.end()) {
       return fSelectionHists.at(id)->GetXaxis()->FindBin(val);
     }
@@ -313,6 +318,10 @@ class ThinSliceSample {
     for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
       it->second->Scale(val);
     }
+    for (auto & hist : fExtraHists) {
+      hist.second->Scale(val);
+    }
+
     RefillRebinnedHists();
 
     fTrueIncidentHist.Scale(val);
@@ -332,10 +341,18 @@ class ThinSliceSample {
     }
   };
 
+  const std::map<std::string, TH1 *> & GetExtraHists() const {
+    return fExtraHists;
+  };
+
   void Reset() {
     fVariedFlux = 0.;
     for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
       it->second->Reset();
+    }
+
+    for (auto & hist : fExtraHists) {
+      hist.second->Reset();
     }
 
     fTrueIncidentHist.Reset();
@@ -413,6 +430,15 @@ class ThinSliceSample {
   void RefillRebinnedHists();
   void MakeRebinnedHists();
 
+  void CalculateStatVariations();
+  double GetStatVarWeight(int sel, double val) const;
+
+  void FillExtraHist(const std::string & name, double val, double weight=1.);
+
+  void SetupExtraHists(
+    std::vector<fhicl::ParameterSet> & extra_hist_sets,
+    int i, int j);
+
  private:
   double fFactor = 1., fBestFitFactor = 1.;
   bool fBestFitIsSet = false;
@@ -448,8 +474,13 @@ class ThinSliceSample {
   std::map<std::string, std::vector<double>> fSystematicVals;
 
 
+  std::map<int, std::vector<double>> fStatVariations;
   std::vector<std::pair<double, double>> fIncidentEnergies;
   std::vector<std::pair<std::pair<double, double>, double>> fESliceEnergies;
+
+  TRandom3 fRNG = TRandom3(0);
+
+  std::map<std::string, TH1 *> fExtraHists;
 
 };
 

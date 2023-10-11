@@ -43,9 +43,9 @@ get_eid(art::Event const& e)
   return { e.run(), e.subRun(), e.id().event() };
 }
 
-bool chIncrease(art::Ptr<recob::Wire> const & w1,
-                art::Ptr<recob::Wire> const & w2){
-  return (w1->Channel()<w2->Channel());
+bool chIncrease(recob::Wire const * w1,
+                recob::Wire const * w2){
+  return w1->Channel() < w2->Channel();
 }
 
 namespace pdune {
@@ -133,25 +133,26 @@ void pdune::DataDumpHDF::analyze(art::Event const& e) noexcept
   evtids.insert(event_id.data(), evttime);
 
   //art::InputTag itag("caldata","dataprep");
-  std::vector < art::Ptr < recob::Wire > > wires;
-  auto wireListHandle = e.getHandle < std::vector < recob::Wire > >(fWireLabel);
-  if (wireListHandle) {
-    art::fill_ptr_vector(wires, wireListHandle);
-  }
+  auto const& wires = e.getProduct < std::vector < recob::Wire > >(fWireLabel);
+  std::vector<recob::Wire const*> wire_ptrs{};
+  wire_ptrs.reserve(wires.size());
+  std::transform(begin(wires), end(wires), back_inserter(wire_ptrs),
+                 [](recob::Wire const& wire) { return &wire; });
 
-  std::sort(wires.begin(), wires.end(), chIncrease);
+  std::sort(wire_ptrs.begin(), wire_ptrs.end(), chIncrease);
 //  auto const& wires =
 //    e.getValidHandle<std::vector<recob::Wire> >("caldata:dataprep");
 //   //std::vector<recob::Wire> const& wireVector(*wires);
 
-  for (auto & wire : wires){
-    int channel = wire->Channel();
+  for (recob::Wire const* wire_ptr : wire_ptrs){
+    auto const& wire = *wire_ptr;
+    int channel = wire.Channel();
     if (!((channel>=2080 && channel < 2560)||
           (channel>=7200 && channel < 7680)||
           (channel>=12320 && channel < 12800))) continue;
     if (channel%1000==0) std::cout<<"Channel = "<<channel<<std::endl;
 
-    const recob::Wire::RegionsOfInterest_t& signalROI = wire->SignalROI();
+    const recob::Wire::RegionsOfInterest_t& signalROI = wire.SignalROI();
     int lasttick = 0;
     for(const auto& range : signalROI.get_ranges()){
       const auto& waveform = range.data();
@@ -169,9 +170,9 @@ void pdune::DataDumpHDF::analyze(art::Event const& e) noexcept
       wiresigs.insert(0.);
     }
   }
-//    int nticks = wire->Signal().size();
+//    int nticks = wire.Signal().size();
 //    for (int j = 0; j < nticks; j++){
-//      float adc = wire->Signal()[j];
+//      float adc = wire.Signal()[j];
 //      wiresigs.insert(adc);
 //    }
 //    if (nticks <6000){
@@ -180,39 +181,33 @@ void pdune::DataDumpHDF::analyze(art::Event const& e) noexcept
 //    }
 
   auto wfHandle = e.getHandle<std::vector<raw::OpDetWaveform>>(fRawOpWaveformLabel);
-  if (wfHandle.isValid()){
-    std::vector < art::Ptr < raw::OpDetWaveform > > wfList;
-    art::fill_ptr_vector(wfList, wfHandle);
-    for (auto const& wf : wfList) {
-      for (size_t idx = 0; idx < wf->Waveform().size(); ++idx){
-        rawpdsigs.insert(wf->Waveform()[idx]);
-        //std::cout<<wf->ChannelNumber()<<" "<<idx<<" "<<wf->Waveform()[idx]<<std::endl;
+  if (wfHandle){
+    for (auto const& wf : *wfHandle) {
+      for (size_t idx = 0; idx < wf.Waveform().size(); ++idx){
+        rawpdsigs.insert(wf.Waveform()[idx]);
+        //std::cout<<wf.ChannelNumber()<<" "<<idx<<" "<<wf.Waveform()[idx]<<std::endl;
       }
     }
   }
 
   auto wienerHandle = e.getHandle<std::vector<recob::OpWaveform>>(fWienerOpWaveformLabel);
-  if (wienerHandle.isValid()){
-    std::vector < art::Ptr < recob::OpWaveform > > wfList;
-    art::fill_ptr_vector(wfList, wienerHandle);
-    for (auto const& wf : wfList) {
-      auto const& signal = wf->Signal();
+  if (wienerHandle){
+    for (auto const& wf : *wienerHandle) {
+      auto const& signal = wf.Signal();
       for (size_t idx = 0; idx < signal.size(); ++idx){
         wienerpdsigs.insert(signal[idx]);
-        //std::cout<<wf->ChannelNumber()<<" "<<idx<<" "<<wf->Waveform()[idx]<<std::endl;
+        //std::cout<<wf.ChannelNumber()<<" "<<idx<<" "<<wf.Waveform()[idx]<<std::endl;
       }
     }
   }
 
   auto impulseHandle = e.getHandle<std::vector<recob::OpWaveform>>(fImpulseOpWaveformLabel);
-  if (impulseHandle.isValid()){
-    std::vector < art::Ptr < recob::OpWaveform > > wfList;
-    art::fill_ptr_vector(wfList, impulseHandle);
-    for (auto const& wf : wfList) {
-      auto const& signal = wf->Signal();
+  if (impulseHandle){
+    for (auto const& wf : *impulseHandle) {
+      auto const& signal = wf.Signal();
       for (size_t idx = 0; idx < signal.size(); ++idx){
         impulsepdsigs.insert(signal[idx]);
-        std::cout<<wf->Channel()<<" "<<idx<<" "<<wf->Signal()[idx]<<std::endl;
+        std::cout<<wf.Channel()<<" "<<idx<<" "<<wf.Signal()[idx]<<std::endl;
       }
     }
   }

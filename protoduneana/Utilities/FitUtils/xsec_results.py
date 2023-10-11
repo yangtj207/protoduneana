@@ -35,6 +35,7 @@ parser.add_argument('-m', action='store_true', help='Set max to ultimate max of 
 parser.add_argument('--LADS', type=int, help='0: Use results from Kotlinski. 1: Use results from Rowntree. 2: Both', default = 0)
 parser.add_argument('--add', action='store_true', help='Set error bars to cov') 
 parser.add_argument('--fixed', action='store_true')
+parser.add_argument('-v', action='store_true')
 
 args = parser.parse_args()
 
@@ -160,7 +161,13 @@ for i in [0, 1, 2]:
   result_xsecs[i].SetMarkerColor(RT.kBlack)
   if i == 0:
     leg = RT.TLegend()
-    leg.AddEntry(g4_xsecs[i], 'Geant4 10.6' if not args.xt else 'Geant4 10.6 Thresholds', 'l')
+    if args.xt:
+      leg.AddEntry(g4_xsecs[i], 'Geant4 10.6 Thresholds', 'l')
+    elif args.v:
+      leg.AddEntry(g4_xsecs[i], 'Geant4 10.6 Varied', 'l')
+    else:
+      leg.AddEntry(g4_xsecs[i], 'Geant4 10.6', 'l')
+
     if args.genie:
       leg.AddEntry(genie_xsecs[i], 'Genie', 'l')
     if args.xt:
@@ -182,6 +189,8 @@ xsec_corr.GetXaxis().CenterTitle()
 xsec_corr.GetYaxis().CenterTitle()
 xsec_corr.GetXaxis().SetNdivisions(13)
 xsec_corr.GetYaxis().SetNdivisions(13)
+xsec_corr.SetMaximum(1.)
+xsec_corr.SetMinimum(-1.)
 xsec_corr.Draw('colz')
 RT.gStyle.SetPaintTextFormat('.2f')
 xsec_corr.SetMarkerSize(1.5)
@@ -361,9 +370,9 @@ lines = []
 all_xs = [result_xsecs[j].GetX()[i] for j in range(0, 3) for i in range(0, result_xsecs[j].GetN())]
 all_ys = [result_xsecs[j].GetY()[i] for j in range(0, 3) for i in range(0, result_xsecs[j].GetN())]
 all_g4s = [g4_xsecs[j].Eval(result_xsecs[j].GetX()[i]) for j in range(0, 3) for i in range(0, result_xsecs[j].GetN())]
-#print(all_xs)
-#print(all_ys)
-#print(all_g4s)
+print(all_xs)
+print(all_ys)
+print(all_g4s)
 xsec_cov_mat = RT.TMatrixD(cov_hist.GetNbinsX(), cov_hist.GetNbinsX())
 for i in range(1, cov_hist.GetNbinsX()+1):
   for j in range(1, cov_hist.GetNbinsX()+1):
@@ -373,6 +382,7 @@ xsec_cov_mat = xsec_cov_mat.Invert()
 xsec_chi2 = 0.
 for i in range(0, len(all_xs)):
   for j in range(0, len(all_xs)):
+    print((all_ys[i] - all_g4s[i])*xsec_cov_mat[i][j]*(all_ys[j] - all_g4s[j]), xsec_cov_mat[i][j])
     xsec_chi2 += (all_ys[i] - all_g4s[i])*xsec_cov_mat[i][j]*(all_ys[j] - all_g4s[j])
 print('cross section chi2: %.2f'%xsec_chi2)
 leg = RT.TLegend()

@@ -33,6 +33,11 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                    beam_P_range(pset.get<double>("BeamPLow", 0.),
                                 pset.get<double>("BeamPHigh", 1.e6)),
                    {"beam_inst_P"})
+           .Define("beam_XY_cuts",
+                   beam_XY_cuts(pset.get<double>("BeamXMean", 0.),
+                                pset.get<double>("BeamYMean", 0.),
+                                pset.get<double>("BeamXYRadius", 0.)),
+                   {"beam_inst_X", "beam_inst_Y", "beam_inst_nTracks"})
            .Define("primary_isBeamType", isBeamType(pset.get<bool>("CheckCalo")),
                    {"reco_beam_type", "reco_beam_incidentEnergies"})
            .Define("primary_ends_inAPA3",
@@ -71,7 +76,8 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                    new_interaction_topology(pset.get<double>("EndZLow"),
                                             pset.get<double>("EndZHigh"),
                                             pset.get<double>("Threshold"),
-                                            pset.get<bool>("CexNPi0")),
+                                            pset.get<bool>("CexNPi0"),
+                                            pset.get<bool>("SignalPastFV", true)),
                    {"true_beam_PDG",
                     "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
                     "true_beam_daughter_PDG", "true_beam_daughter_startP"})
@@ -179,6 +185,11 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                    beam_P_range(pset.get<double>("BeamPLow", 0.),
                                 pset.get<double>("BeamPHigh", 1.e6)),
                    {"beam_inst_P"})
+           .Define("beam_XY_cuts",
+                   beam_XY_cuts(pset.get<double>("DataBeamXMean", 0.),
+                                pset.get<double>("DataBeamYMean", 0.),
+                                pset.get<double>("BeamXYRadius", 0.)),
+                   {"beam_inst_X", "beam_inst_Y", "beam_inst_nTracks"})
            .Define("passBeamQuality",
                    data_BI_quality(pset.get<bool>("DoNTracks")),
                    {"beam_inst_nMomenta", "beam_inst_nTracks"})
@@ -333,6 +344,11 @@ int main(int argc, char ** argv){
     if (pset.get<bool>("RestrictBeamP")) {
       mc = mc.Filter("beam_P_range");
     }
+
+    if (pset.get<bool>("RestrictBeamXY", false)) {
+      mc = mc.Filter("beam_XY_cuts");
+    }
+
     auto time0 = std::chrono::high_resolution_clock::now();
     mc.Snapshot(tree_name, "eventSelection_mc_all.root");
     //mc.Snapshot(tree_name, "eventSelection_mc_reconstructable.root");
@@ -358,6 +374,13 @@ int main(int argc, char ** argv){
     if (pset.get<bool>("RestrictBeamP")) {
       data = data.Filter("beam_P_range");
     }
+    if (pset.get<bool>("RestrictBeamXY", false)) {
+      data = data.Filter("beam_XY_cuts");
+    }
+
+    /*
+    if (pset.get<bool>("RestrictBeamXY", false)) {
+    }*/
 
     auto time0 = std::chrono::high_resolution_clock::now();
     data.Snapshot(tree_name, "eventSelection_data_BeamQuality.root");

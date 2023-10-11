@@ -11,6 +11,8 @@
 namespace protoana {
  namespace G4ReweightUtils {
 
+  bool IsSkippable(int pdg);
+
   //Function to create reweightable object
   bool CreateRWTraj(const simb::MCParticle & part,
                     const sim::ParticleList & plist,

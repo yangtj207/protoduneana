@@ -1,0 +1,54 @@
+## same as protoDUNE_refactored_reco_stage1.fcl, no sce; no lifetime correction; no yz, x, t correction; *calinoxyzt<->*cali; *calipidnoxyzt<->*calipid
+## this fcl is currently kept; we use two stage recos once we have calibration done: protoDUNE_refactored_reco_stage1.fcl and protoDUNE_refactored_reco_stage2.fcl
+
+#include "services_refactored_pdune.fcl"
+#include "protodune_tools_dune.fcl"
+
+process_name: PDVDHitsAndTracksCheck
+
+services:
+{
+  TFileService: { fileName: "hits_and_tracks_results.root" }
+  TimeTracker:       {}
+  RandomNumberGenerator: {}
+  ExptGeoHelperInterface:         @local::dune_geometry_helper
+  DetectorPropertiesService:      @local::protodunevd_detproperties
+  FileCatalogMetadata:            @local::art_file_catalog_mc
+                                  @table::protodunevd_reco_services
+  LArPropertiesService:           @local::dunefd_properties
+}
+
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+}
+
+physics:
+{
+  analyzers:
+  {
+    crana:
+    {
+      module_type:  "CheckHitsAndTracks"
+      ## Log levels: None : 0, Basics: 1, Infos: 2, Warning: 3, Details: 4, Debug: 5
+      LogLevel:     2
+      HitModuleLabel: "gaushit"
+      TrackModuleLabel:  "pandoraTrack"
+      TrackMinLen:   20.0
+     }
+   }
+  analysis: [ crana ]
+  end_paths: [ analysis ]
+}
+
+outputs:
+{
+ out1:
+ {
+   module_type: RootOutput
+   fileName:    "hits_and_tracks_results.root"
+   dataTier:    "generated"
+   compressionLevel: 1
+ }
+}

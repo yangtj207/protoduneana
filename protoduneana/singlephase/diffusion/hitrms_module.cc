@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
-/// Class:       hitrms                                           ///
-/// File:        hitrms_module.cc                                 /// 
+/// Class:       hitrms                                                    ///
+/// File:        hitrms_module.cc                                          /// 
 /// Description: Module for calculations with hit information saved        ///
 ///              following deconvolution. Information is taken from        ///
 ///              MC samples or data files and put into TTrees to be        ///
@@ -8,7 +8,7 @@
 /// Contact Person: ehinkle@uchicago.edu                                   ///
 /// Written by: Ajib Paudel                                                ///
 /// Modified by: Elise Hinkle                                              ///
-/// Last Date Modified: April 1, 2021                                      ///
+/// Last Date Modified: February 23, 2023                                  ///
 //////////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -146,7 +146,7 @@ namespace protoana{
     std::vector<int> TrkID; 
     std::vector<float>  xprojectedlen;
     std::vector<double> T0_values;
-    //  std::vector<double> t0crt1;
+    // std::vector<double> t0crt1;
     std::vector<double> t0crt2;
     std::vector<double> crt2tickoffset;
     std::vector<int> tot_trks;
@@ -175,7 +175,7 @@ namespace protoana{
     std::vector< std::vector<float> > hit_rms2;
     // std::vector< std::vector<float> > hit_rmsraw2; // RAWDIGITS
     // std::vector< std::vector<float> > hit_peakTraw2; // RAWDIGITS
-    // float hit_signal[10][5000][60];//[TrackIndex, hitindex,peakTindex]signal for each hit peaktime-30 to peaktime+30 ticks // RAWDIGITS
+    float hit_signal[10][5000][60]; //[TrackIndex, hitindex,peakTindex]signal for each hit peaktime-30 to peaktime+30 ticks // RAWDIGITS + new diffusion
     std::vector< std::vector<float> > hit_rms_true;
     std::vector< std::vector<float> > trkhitx2;
     std::vector< std::vector<float> > trkhity2;
@@ -273,7 +273,7 @@ namespace protoana{
     fEventTree->Branch("hit_rms2",&hit_rms2);
     // fEventTree->Branch("hit_rmsraw2",&hit_rmsraw2); // RAWDIGITS
     // fEventTree->Branch("hit_peakTraw2",&hit_peakTraw2); // RAWDIGITS
-    // fEventTree->Branch("hit_signal",hit_signal,"hit_signal[10][5000][60]/F");// RAWDIGITS
+    fEventTree->Branch("hit_signal",hit_signal,"hit_signal[10][5000][60]/F"); // RAWDIGITS + new diffusion fit
     fEventTree->Branch("hit_rms_true",&hit_rms_true);
     fEventTree->Branch("trkhitx2",&trkhitx2);
     fEventTree->Branch("trkhity2",&trkhity2);
@@ -307,19 +307,28 @@ namespace protoana{
   void hitrms::analyze( const art::Event& evt){//analyze
     reset();  
     std::cout<<"raw producer module label "<<fRawProducerLabel<<std::endl;
+    //std::cout<<"Readout Test #0"<<std::endl;   
     // art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());
+    //std::cout<<"Readout Test #1"<<std::endl;   
     //Detector properties service
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(evt);
    
     std::vector<art::Ptr<recob::Track> > tracklist;
+
+    //std::cout<<"Readout Test #2"<<std::endl;   
+
     auto trackListHandle = evt.getHandle< std::vector<recob::Track> >("pandoraTrack");
+    //std::cout<<"Readout Test #3"<<std::endl;   
     if (trackListHandle){
       art::fill_ptr_vector(tracklist, trackListHandle);
+      //std::cout<<"Readout Test #4"<<std::endl;   
     }
     else return;
 
     std::vector<art::Ptr<recob::PFParticle> > pfplist;
+
+    //std::cout<<"Readout Test #5"<<std::endl;   
 
     auto PFPListHandle = evt.getHandle< std::vector<recob::PFParticle> >("pandora");
     if (PFPListHandle) art::fill_ptr_vector(pfplist, PFPListHandle);
@@ -332,6 +341,8 @@ namespace protoana{
     art::FindManyP<anab::T0> trk_t0_assn_v(PFPListHandle, evt ,"pandora");
     art::FindManyP<recob::PFParticle> pfp_trk_assn(trackListHandle,evt,"pandoraTrack");
     art::FindManyP<anab::T0> fmT0(trackListHandle, evt ,"pmtrack");
+
+    //std::cout<<"Readout Test #6"<<std::endl;   
     // // RAWDIGITS CODE
     // std::vector<art::Ptr<raw::RawDigit> > rawlist;
     // auto rawListHandle = evt.getHandle< std::vector<raw::RawDigit> >(fRawProducerLabel);
@@ -339,15 +350,19 @@ namespace protoana{
     //   art::fill_ptr_vector(rawlist, rawListHandle);
 
     
-    // std::vector<art::Ptr<recob::Wire> > wirelist;
-    // auto wireListHandle = evt.getHandle< std::vector<recob::Wire> > (fWireProducerLabel);
-    // if (wireListHandle)
-    //   art::fill_ptr_vector(wirelist, wireListHandle);
-    // std::cout<<"rawlist size, wirelist size"<<rawlist.size()<<"  "<<wirelist.size()<<std::endl;
-    // // RAWDIGITS CODE
+    std::vector<art::Ptr<recob::Wire> > wirelist;
+    auto wireListHandle = evt.getHandle< std::vector<recob::Wire> > (fWireProducerLabel);
+    if (wireListHandle){
+      art::fill_ptr_vector(wirelist, wireListHandle);
+      // std::cout<<"rawlist size, wirelist size"<<rawlist.size()<<"  "<<wirelist.size()<<std::endl; // RAWDIGITS ONLY
+      std::cout<<"Wirelist Size: "<<wirelist.size()<<std::endl;
+    }
+    // // END: RAWDIGITS CODE
     std::vector<const sim::SimChannel*> fSimChannels;
     try{
+      //std::cout<<"Readout Test #7a"<<std::endl;
       evt.getView("largeant", fSimChannels);
+      //std::cout<<"Readout Test #7b"<<std::endl;   
     }catch (art::Exception const&e){
     }
 
@@ -358,6 +373,8 @@ namespace protoana{
     //Get 1-CRT T0
     // art::FindManyP<anab::T0> fmt0crt1(trackListHandle, evt, "crttag");
     // art::FindManyP<anab::CosmicTag> fmctcrt1(trackListHandle, evt, "crttag");
+
+    //std::cout<<"Readout Test #8"<<std::endl;   
 
     run = evt.run();
     subrun = evt.subRun();
@@ -378,6 +395,7 @@ namespace protoana{
 	fNactivefembs[k] = fDataUtils.GetNActiveFembsForAPA(evt, k);
     }
 
+    //std::cout<<"Readout Test #9"<<std::endl;   
 
     //defining the 1D temporary storage vectors
     std::vector< float> peakT_0;  std::vector< float> peakT_1;  std::vector< float> peakT_2; // std::vector<float> hit_peakTrawb; // RAWDIGITS
@@ -395,7 +413,13 @@ namespace protoana{
     float max_value;
     float min_value;
     int ntrks=0;
+    // COMMENTED OUT FOR SIMPLE MC GENERATION
     size_t NTracks = tracklist.size();
+
+    //std::cout<<"Readout Test #10"<<std::endl;   
+
+
+    // i<6 CHANGED FROM i<2 FOR SIMPLE MC GENERATION
     for(size_t i=0; i<NTracks;++i){
       double xoffset=0.0;
       int nhits=0;
@@ -415,6 +439,8 @@ namespace protoana{
 
 
       art::Ptr<recob::Track> ptrack(trackListHandle, i);
+
+      //std::cout<<"Readout Test #11."<<i<<std::endl;   
 
       ///this block just saves the t0 values while I include entries with no T0s as well also this saves T0 coming from pandroaTrack alg only
       double t_zero=-999999;
@@ -453,16 +479,28 @@ namespace protoana{
       double this_crt2z0 = -DBL_MAX;
       double this_crt2z1 = -DBL_MAX;
 
+      // COMMENTED OUT FOR SIMPLE MC GENERATION
       bool test1=true;
-      // bool test2=true;
+      //bool test2=true;
       if(fmt0crt2.isValid()){
+
+	//std::cout<<"Readout Test #12a."<<i<<std::endl;   
+
 	auto const& vt0crt2 = fmt0crt2.at(i);
 	if (!vt0crt2.empty()){
+
+	  //std::cout<<"Readout Test #12b."<<i<<std::endl;   
+
 	  this_t0crt2 = vt0crt2[0]->Time();
+      // COMMENTED OUT FOR SIMPLE MC GENERATION
 	  test1=false;
 	}
 	
       }
+
+      //std::cout<<"Readout Test #12c."<<i<<std::endl;   
+
+      // COMMENTED OUT FOR SIMPLE MC GENERATION
       if(test1) continue;
       if (fmctcrt2.isValid()){
 	auto const& vctcrt2 = fmctcrt2.at(i);
@@ -506,6 +544,8 @@ namespace protoana{
       auto allHits=fmthm.at(i);
       double ticksoffset=0;
 
+      //std::cout<<"Readout Test #13."<<i<<std::endl;   
+
       // if (this_t0crt2 > -DBL_MAX) ticksoffset = this_t0crt2/500.+detProp.GetXTicksOffset(allHits[0]->WireID());
       if (this_t0crt2 > -DBL_MAX) ticksoffset = this_t0crt2/500.+detProp.GetXTicksOffset (allHits[0]->WireID().Plane, allHits[0]->WireID().TPC, allHits[0]->WireID().Cryostat);
       //  else if (this_t0crt1 > -DBL_MAX) ticksoffset = this_t0crt1/500.+detProp.GetXTicksOffset(allHits[0]->WireID());
@@ -518,8 +558,14 @@ namespace protoana{
       if(fmthm.isValid()){
 	auto vhit=fmthm.at(i);
 	auto vmeta=fmthm.data(i);
+
+	//std::cout<<"Readout Test #14."<<i<<std::endl;   
+
 	for (size_t ii = 0; ii<vhit.size(); ++ii){ //loop over all meta data hit
 	  bool fBadhit = false;
+
+	  //std::cout<<"Readout Test #15."<<i<<"."<<ii<<std::endl;   
+
 	  if (vmeta[ii]->Index() == static_cast<unsigned int>(std::numeric_limits<int>::max())){
 	    fBadhit = true;
 	    //cout<<"fBadHit"<<fBadhit<<endl;
@@ -533,7 +579,7 @@ namespace protoana{
 	    // cout<<"had valid point "<<fBadhit<<endl;
 	    continue;
 	  }
-	
+
 	  auto loc = tracklist[i]->LocationAtPoint(vmeta[ii]->Index());
 	  xpos=loc.X();
 	  ypos=loc.Y();
@@ -541,7 +587,13 @@ namespace protoana{
 	  //	cout<<"x, y, z "<<xpos<<"  "<<ypos<<"  "<<zpos<<endl;
 	  //	cout<<"BadHit"<<fBadhit<<endl;
 	  if (fBadhit) continue; //HY::If BAD hit, skip this hit and go next
+
+	  //std::cout<<"Readout Test #16."<<i<<"."<<ii<<std::endl;   
+
 	  if (zpos<-100) continue; //hit not on track
+
+	  //std::cout<<"Readout Test #17."<<i<<"."<<ii<<std::endl;   
+
 	  planenum=vhit[ii]->WireID().Plane;
 	  if(planenum==0){	 
 	    peakT_0.push_back(vhit[ii]->PeakTime());
@@ -566,9 +618,12 @@ namespace protoana{
 	    hitz_1.push_back(zpos);	
 	  }//planenum 1
 	  if(planenum==2){
-	    // Remove all hits within 30tt of other hits by looping over all other hits: 
+	    // Remove all hits within 30tt of other hits by looping over all other hits: --> REMOVED FOR SIMPLE MC
 	    bool removehit=false;
 	    for (size_t i2=0; i2<hitlist.size(); ++i2) {
+
+	      //std::cout<<"Readout Test #18."<<i<<"."<<ii<<"."<<i2<<std::endl;   
+
 	      if (vhit[ii].key() == hitlist[i2].key()) continue;
 	      if (vhit[ii]->Channel()!=hitlist[i2]->Channel()) continue;
 	      if ((vhit[ii]->PeakTime()+30<hitlist[i2]->PeakTime()-30) || (vhit[ii]->PeakTime()-30>hitlist[i2]->PeakTime()+30)) continue; 
@@ -576,6 +631,9 @@ namespace protoana{
 	      break;
 	    }
 	    if (removehit) continue;
+
+	    //std::cout<<"Readout Test #19."<<i<<"."<<ii<<std::endl;   
+
 	    // Normal procedure resumes (i.e. keep this if keeping all hits):
 	    nhits++;
 	    peakT_2.push_back(vhit[ii]->PeakTime()-this_t0crt2/500.0);
@@ -597,26 +655,55 @@ namespace protoana{
 	    hitz_wire2.push_back(xyzStart[2]);
 	    double truermsb=-1;
 
-	    //section for using tuth information
-	    unsigned int t0=vhit[ii]->PeakTime()-3*(vhit[ii]->RMS());
+	    //section for using truth information // changed from 3 to 5 RMS range
+	    unsigned int t0=vhit[ii]->PeakTime()-5*(vhit[ii]->RMS());
 	    if(t0<0) t0=0;
-	    unsigned int t1=vhit[ii]->PeakTime()+3*(vhit[ii]->RMS());
+	    unsigned int t1=vhit[ii]->PeakTime()+5*(vhit[ii]->RMS());
 	    if(t1>6000) t1=6000-1;
 	    
-	    // // RAWDIGITS CODE
+	    //std::cout<<"Readout Test #20."<<i<<"."<<ii<<std::endl;   
+
+	    // // RAWDIGITS CODE + CODE FOR SAVING HIT WAVEFORMS
 	    // double hit_rms=-9999;
 	    // std::cout<<"wirelist size, rawlist size "<<wirelist.size()<<"  "<<rawlist.size()<<std::endl;
-	    // double hit_t = -1;
-	    // for (unsigned int ich = 0; ich < (rawlist.empty()?wirelist.size():rawlist.size()); ++ich){
-	    //   std::vector<float> inputsignal(fWaveformSize);
+	    double hit_t = -1;
+	    // for (unsigned int ich = 0; ich < (rawlist.empty()?wirelist.size():rawlist.size()); ++ich){ 
+      for (unsigned int ich = 0; ich < wirelist.size(); ++ich){
+	       std::vector<float> inputsignal(fWaveformSize);
 	     
+	       if (!wirelist.empty() && evt.isRealData()){ // ^^TODO^^: Find alt for rawlist, wirelist
+	      	const auto & wire = wirelist[ich];
+	      	if(wirelist[ich]->Channel()!=vhit[ii]->Channel()) continue;
+	      	//art::Ptr<recob::Wire>   wire(wireHandle, wireIter);
+	      	const auto & signal = wire->Signal();
+	      	double hit_pk = -1;
+	
+	    	for (size_t itck = t0; itck <inputsignal.size(); ++itck){
+	     	  if(itck>t1) continue;
+	      	 inputsignal[itck] = signal[itck];
+	     	  if (inputsignal[itck]>hit_pk){
+	     	    hit_pk = inputsignal[itck];
+	     	    hit_t = itck;
+	     	  }
+	     	} // RAWDIGITS: Finding Peak Signal (also for new diffusion fit find peak time) 
+      
+        	std::cout<<"hitpeak time, hitraw peak time "<<vhit[ii]->PeakTime()<<"  "<<hit_t<<std::endl;
+	      	int hitindx=0;
+
+          // STORE: Signal for peakT-30 to peakT+30 ticks
+	      	for(size_t it1=hit_t-30;it1<hit_t+30;it1++){
+	      	  if(it1<1||it1>5999||it1>inputsignal.size()) continue;
+	      	  hit_signal[ntrks][nhits-1][hitindx]=signal[it1];
+	      	  hitindx++;
+	      	} // END: Store Signal
+	    
 	    //   if (!wirelist.empty() && evt.isRealData()){
 	    // 	const auto & wire = wirelist[ich];
 	    // 	if(wirelist[ich]->Channel()!=vhit[ii]->Channel()) continue;
 	    // 	//art::Ptr<recob::Wire>   wire(wireHandle, wireIter);
 	    // 	const auto & signal = wire->Signal();
 	    // 	double hit_pk = -1;
-	
+
 	    // 	for (size_t itck = t0; itck <inputsignal.size(); ++itck){
 	    // 	  if(itck>t1) continue;
 	    // 	  inputsignal[itck] = signal[itck];
@@ -634,9 +721,9 @@ namespace protoana{
 	    // 	}//storing signal for peakT-30 to peakT+30 ticks
 	    // 	double hit_ch = 0;
 	    // 	double hit_fwhh = 0;
-	    // 	double mean_t = 0;
-	    // 	double mean_t2 = 0;
-	    // 	for (size_t itck = t0; itck < inputsignal.size(); ++itck){
+	    //	double mean_t = 0;
+	    //  double mean_t2 = 0;
+	    //	for (size_t itck = t0; itck < inputsignal.size(); ++itck){
 	    // 	  if(itck>t1) continue;
 	    // 	  if (inputsignal[itck]>=0.5*hit_pk){
 	    // 	    ++hit_fwhh;
@@ -668,6 +755,7 @@ namespace protoana{
 	    // 	std::cout<<"median , pedestal , rawadc size "<<med_signal<<" "<<digitVec->GetPedestal()<<" "<<rawadc.size()<<std::endl;
 	    // 	////////////////////////////////
 
+      //  %%%%% CORRECT: RAWDIGITS Signal based on pedestal etc. %%%%% 
 	    // 	for (size_t itck = t0; itck <rawadc.size(); ++itck){
 	    // 	  if(itck>t1) continue;
 	    // 	  //  inputsignal[itck] = rawadc[itck] - digitVec->GetPedestal();
@@ -678,7 +766,9 @@ namespace protoana{
 	    // 	  }
 	    // 	}//itick loop
 	    // 	std::cout<<"hitpeak time, hitraw peak time "<<vhit[ii]->PeakTime()<<"  "<<hit_t<<std::endl;
-	    // 	int hitindex=0;
+	    
+      //  %%%%% GET: Hit Signal Array for RAWDIGITS %%%%% 
+      // 	int hitindex=0;
 	    // 	for(size_t it1=hit_t-30;it1<hit_t+30;it1++){
 	    // 	  if(it1<1|| it1>5999 || it1>rawadc.size()) continue;
 	    // 	  // hit_signal[ntrks][nhits-1][hitindex]=rawadc[it1]-digitVec->GetPedestal();
@@ -686,6 +776,7 @@ namespace protoana{
 	    // 	  hitindex++;
 	    // 	}
 	
+      //  %%%%% GET: RAWDIGITS RMS %%%%%
 	    // 	double hit_ch = 0;
 	    // 	double hit_fwhh = 0;
 	    // 	double mean_t = 0;
@@ -706,12 +797,20 @@ namespace protoana{
 	    // 	mean_t/=hit_ch;
 	    // 	mean_t2/=hit_ch;
 	    // 	hit_rms = sqrt(mean_t2-mean_t*mean_t);
-	    //   }
-	    // }//rawdigit channel loop
-	    // rms_raw2.push_back(hit_rms);
+	      } // END: RAWDIGITS RMS
+
+	    }  // END: Channel Loop RAWDIGITS LOOP END --> comment out ((IF NO RAWDIGITS!!!)) loop end above if using this endpoint
+	    
+      
+      // rms_raw2.push_back(hit_rms);
 	    // hit_peakTrawb.push_back(hit_t);
 	    // // RAWDIGITS CODE
+
+
 	    if(!evt.isRealData()){
+
+	      //std::cout<<"Readout Test #21."<<i<<"."<<ii<<std::endl;   
+
 	      const sim::SimChannel* chan=0;
 	      for(size_t sc=0;sc<fSimChannels.size();++sc){
 		if(fSimChannels[sc]->Channel()==vhit[ii]->Channel()) chan=fSimChannels[sc];
@@ -722,6 +821,9 @@ namespace protoana{
 		double mean_t=0;
 		double mean_t2=0;
 		double hit_rmsvalue=0;
+
+		//std::cout<<"Readout Test #22."<<i<<"."<<ii<<std::endl;   
+
 		for(auto mapitr = tdcidemap.begin(); mapitr != tdcidemap.end(); mapitr++){
 		  if(!((*mapitr).first>t0 && (*mapitr).first<=t1)) continue;
 		  // loop over the vector of IDE objects.
@@ -731,7 +833,7 @@ namespace protoana{
 		    hit_nelec+=idevec[iv].numElectrons;
 		  }//iv loop
 		  hit_ch+=hit_nelec;
-		  // std::cout<<"hit_ch "<<hit_ch<<std::endl; 
+		  std::cout<<"hit_ch "<<hit_ch<<std::endl; 
 		  int j=(*mapitr).first;
 		  mean_t+=double(j)*double(hit_nelec);
 		  double jterm=double(j)*double(j)*double(hit_nelec);
@@ -740,8 +842,11 @@ namespace protoana{
 		mean_t/=hit_ch;
 		mean_t2/=hit_ch;
 		hit_rmsvalue=sqrt(mean_t2-mean_t*mean_t);
-		//	std::cout<<"hit rms "<<hit_rmsvalue<<" reco rms "<<vhit[ii]->RMS()<<std::endl;
+		std::cout<<"hit rms "<<hit_rmsvalue<<" reco rms "<<vhit[ii]->RMS()<<std::endl;
 		truermsb=hit_rmsvalue;
+
+		//std::cout<<"Readout Test #23."<<i<<"."<<ii<<std::endl;   
+
 	      }//if(chan)
 	    }//!evt.IsRealData
 	    truerms.push_back(truermsb);
@@ -751,7 +856,14 @@ namespace protoana{
 	}//loop over vhit
       }//fmthm valid
       //hits and calorimetry loop
+
+      //std::cout<<"Readout Test #24."<<i<<std::endl;   
+
+      // COMMENTED OUT FOR SIMPLE MC GENERATION
       if(peakT_2.size()<10) continue;
+
+      //std::cout<<"Readout Test #25."<<i<<std::endl;   
+
       max_value=*std::max_element(peakT_2.begin(),peakT_2.end());
       min_value=*std::min_element(peakT_2.begin(),peakT_2.end());
       // if(max_value-min_value<4300) continue;
@@ -828,11 +940,19 @@ namespace protoana{
       T0_values.push_back(t_zero);
       crt2tickoffset.push_back(ticksoffset);
       t0crt2.push_back(this_t0crt2/500.0);
-    } // loop over trks...
+
+      //std::cout<<"Readout Test #26."<<i<<std::endl;   
+
+    } //loop over trks...
+
+    //std::cout<<"Readout Test #27"<<std::endl;   
+
     tot_trks.push_back(ntrks);
     fEventTree->Fill();
+
+    //std::cout<<"Readout Test #28"<<std::endl;   
+
   } // end of analyze function
-	   
   /////////////////// Defintion of reset function ///////////
   void hitrms::reset(){
     run = -9999;

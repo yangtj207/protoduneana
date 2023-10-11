@@ -15,41 +15,18 @@ protoana::ProtoDUNEBeamlineUtils::~ProtoDUNEBeamlineUtils(){
 
 }
 
-const beam::ProtoDUNEBeamEvent protoana::ProtoDUNEBeamlineUtils::GetBeamEvent(art::Event const & evt) const{
-  std::vector< art::Ptr< beam::ProtoDUNEBeamEvent > > beamVec;
-  auto beamHandle = evt.getValidHandle< std::vector< beam::ProtoDUNEBeamEvent> >(fBeamEventTag);
-  if( beamHandle.isValid() ){
-    art::fill_ptr_vector( beamVec, beamHandle );
-  }
-  const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0)); 
-  return beamEvent;
-}
-void protoana::ProtoDUNEBeamlineUtils::GetCurrent( art::Event const & evt ){
-
-  auto beamHandle = evt.getValidHandle<std::vector<beam::ProtoDUNEBeamEvent>>(fBeamEventTag);
-  
-  std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
-  if( beamHandle.isValid()){
-    art::fill_ptr_vector(beamVec, beamHandle);
-  }
-
+const beam::ProtoDUNEBeamEvent& protoana::ProtoDUNEBeamlineUtils::GetBeamEvent(art::Event const & evt) const{
   //Should just have one
-  const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0));
+  return evt.getProduct< std::vector< beam::ProtoDUNEBeamEvent> >(fBeamEventTag).front();
+}
 
-  Current = beamEvent.GetMagnetCurrent();
+void protoana::ProtoDUNEBeamlineUtils::GetCurrent( art::Event const & evt ){
+  Current = GetBeamEvent(evt).GetMagnetCurrent();
 }
 
 void protoana::ProtoDUNEBeamlineUtils::GetFibers( art::Event const & evt ){
  
-  auto beamHandle = evt.getValidHandle<std::vector<beam::ProtoDUNEBeamEvent>>(fBeamEventTag);
-  
-  std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
-  if( beamHandle.isValid()){
-    art::fill_ptr_vector(beamVec, beamHandle);
-  }
-
-  //Should just have one
-  const beam::ProtoDUNEBeamEvent & beamEvent = *(beamVec.at(0));
+  const beam::ProtoDUNEBeamEvent & beamEvent = GetBeamEvent(evt);
 
   for( size_t i = 0; i < AllDevices.size(); ++i ){
     std::string monitor = AllDevices[i];
@@ -709,16 +686,9 @@ std::vector<double> protoana::ProtoDUNEBeamlineUtils::GetBeamlineMassSquared(art
   std::vector<double> momenta;
   std::vector<double> result;
 
-  std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
-  auto beamHand = evt.getValidHandle<std::vector<beam::ProtoDUNEBeamEvent>>(fBeamEventTag);
-  if(beamHand.isValid())
+  auto const& beamEvents = evt.getProduct<std::vector<beam::ProtoDUNEBeamEvent>>(fBeamEventTag);
+  for(auto const& beamEvent : beamEvents)
   {
-    art::fill_ptr_vector(beamVec, beamHand);
-  }
-
-  for(size_t iBeamEvent=0; iBeamEvent < beamVec.size(); iBeamEvent++)
-  {
-    const beam::ProtoDUNEBeamEvent& beamEvent = *(beamVec.at(iBeamEvent));
     tofs.push_back(beamEvent.GetTOF());
 
     const std::vector<double> & beamMomenta = beamEvent.GetRecoBeamMomenta();
@@ -746,15 +716,9 @@ const std::tuple<double,double,int,int> protoana::ProtoDUNEBeamlineUtils::GetBea
   int ckov0 = -99999.;
   int ckov1 = -99999.;
 
-  std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
-  auto beamHand = evt.getValidHandle<std::vector<beam::ProtoDUNEBeamEvent>>(fBeamEventTag);
-  if(beamHand.isValid())
+  auto const& beamEvents = evt.getProduct<std::vector<beam::ProtoDUNEBeamEvent>>(fBeamEventTag);
+  for(auto const& beamEvent : beamEvents)
   {
-    art::fill_ptr_vector(beamVec, beamHand);
-  }
-  for(size_t iBeamEvent=0; iBeamEvent < beamVec.size(); iBeamEvent++)
-  {
-    const beam::ProtoDUNEBeamEvent& beamEvent = *(beamVec.at(iBeamEvent));
     tof = beamEvent.GetTOF();
     ckov0 = beamEvent.GetCKov0Status();
     ckov1 = beamEvent.GetCKov1Status();
@@ -781,15 +745,8 @@ const std::tuple<double,double,int,int,int,double,double,int,int,bool> protoana:
   int BITrigger = -99999.;
   bool areBIAndTimingMatched = false;
 
-  std::vector<art::Ptr<beam::ProtoDUNEBeamEvent>> beamVec;
-  auto beamHand = evt.getValidHandle<std::vector<beam::ProtoDUNEBeamEvent>>(fBeamEventTag);
-  if(beamHand.isValid())
-  {
-    art::fill_ptr_vector(beamVec, beamHand);
-  }
-  for(size_t iBeamEvent=0; iBeamEvent < beamVec.size(); iBeamEvent++)
-  {
-    const beam::ProtoDUNEBeamEvent& beamEvent = *(beamVec.at(iBeamEvent));
+  auto const& beamEvents = evt.getProduct<std::vector<beam::ProtoDUNEBeamEvent>>(fBeamEventTag);
+  for(auto const& beamEvent : beamEvents) {
     tof = beamEvent.GetTOF();
     tofChannel = beamEvent.GetTOFChan();
     ckov0 = beamEvent.GetCKov0Status();
@@ -801,12 +758,12 @@ const std::tuple<double,double,int,int,int,double,double,int,int,bool> protoana:
     areBIAndTimingMatched = beamEvent.CheckIsMatched();
 
     const std::vector<double> & beamMomenta = beamEvent.GetRecoBeamMomenta();
-    if (beamMomenta.size() > 0)
-    {
-        momentum = beamEvent.GetRecoBeamMomentum(0);
-    }
+    if (beamMomenta.empty()) {
     break;
   }
-  return std::make_tuple(momentum, tof, tofChannel, ckov0, ckov1, ckov0Pressure, ckov1Pressure, timingTrigger, BITrigger, areBIAndTimingMatched);
+
+    momentum = beamEvent.GetRecoBeamMomentum(0);
 }
 
+  return std::make_tuple(momentum, tof, tofChannel, ckov0, ckov1, ckov0Pressure, ckov1Pressure, timingTrigger, BITrigger, areBIAndTimingMatched);
+}

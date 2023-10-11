@@ -16,6 +16,8 @@ namespace protoana {
 class ThinSliceDataSet {
  public:
   ThinSliceDataSet() {};
+  //ThinSliceDataSet(const std::vector<double> & incident_bins,
+  //                 const std::vector<fhicl::ParameterSet> & selections);
   ThinSliceDataSet(const std::vector<double> & incident_bins,
                    const std::vector<fhicl::ParameterSet> & selections);
   ~ThinSliceDataSet() {};
@@ -50,6 +52,25 @@ class ThinSliceDataSet {
 
   TH1 * GetRebinnedSelectionHist(int id) {
     return fSelectionHistsRebinned.at(id);
+  };
+
+  void SetupExtraHists(const std::vector<fhicl::ParameterSet> & extra_hists);
+
+  void FillExtraHist(const std::string & name, double val, double weight=1.) {
+    if (fExtraHists.find(name) != fExtraHists.end()) {
+      fExtraHists.at(name)->Fill(val, weight);
+    }
+  };
+
+  std::map<std::string, TH1 *> & GetExtraHists() {
+    return fExtraHists;
+  };
+
+  //TODO PROTECT
+  TH1 * GetExtraHist(std::string name) {
+    if (fExtraHists.find(name) != fExtraHists.end())
+      return fExtraHists.at(name);
+    return 0x0;
   };
 
   void FillIncidentHist(const std::vector<double> & vals) {
@@ -115,11 +136,12 @@ class ThinSliceDataSet {
     }
   };
 
-  void GenerateStatFluctuation();
+  void GenerateStatFluctuation(bool poisson=false);
 
   void FillHistsFromSamples(
       const std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
-      double & flux, std::vector<double> & fluxes_by_beam);
+      double & flux, std::vector<double> & fluxes_by_beam,
+      bool fluctuate=false, const std::vector<int> & to_skip = {5,6});
 
  private:
   void Rebin1D(TH1 * sel_hist, TH1 * rebinned);
@@ -128,6 +150,7 @@ class ThinSliceDataSet {
   std::map<int, TH1 *> fSelectionHists;
   TH1D fIncidentHist;
   std::map<int, TH1 *> fSelectionHistsRebinned;
+  std::map<std::string, TH1 *> fExtraHists;
   TH1D fIncidentHistRebinned;
   bool fMadeRebinned = false;
   std::map<int, std::string> fSelectionNames;

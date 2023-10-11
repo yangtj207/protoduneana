@@ -16,6 +16,9 @@ class ThinSliceEvent {
     true_beam_mass = -999;
     reco_beam_endZ = -999;
     reco_beam_startY = -999.;
+    reco_beam_startX_SCE = -999.;
+    reco_beam_startY_SCE = -999.;
+    reco_beam_startZ_SCE = -999.;
     beam_inst_P = -999;
     pdg = -999;
     reco_beam_incidentEnergies = std::vector<double>();
@@ -36,6 +39,10 @@ class ThinSliceEvent {
     has_pi0_shower = false;
     true_daughter_PDGs = std::vector<int>();
     reco_beam_origin = -999;
+    reco_daughter_truncated_dEdX = std::vector<double>();
+    reco_daughter_chi2s_perhit = std::vector<double>();
+    stored_reco_energy = -999.;
+
   };
   /*
   ~ThinSliceEvent() {
@@ -99,6 +106,25 @@ class ThinSliceEvent {
     reco_beam_startY = y;
   };
 
+  double GetRecoStartX_SCE() const {
+    return reco_beam_startX_SCE;
+  };
+  void SetRecoStartX_SCE(double x) {
+    reco_beam_startX_SCE = x;
+  };
+  double GetRecoStartY_SCE() const {
+    return reco_beam_startY_SCE;
+  };
+  void SetRecoStartY_SCE(double y) {
+    reco_beam_startY_SCE = y;
+  };
+  double GetRecoStartZ_SCE() const {
+    return reco_beam_startZ_SCE;
+  };
+  void SetRecoStartZ_SCE(double z) {
+    reco_beam_startZ_SCE = z;
+  };
+
   double GetTrueEndP() const {
     return true_beam_endP;
   };
@@ -132,6 +158,19 @@ class ThinSliceEvent {
   };
   void SetTrueMass(double m) {
     true_beam_mass = m;
+  };
+
+  double GetVertexMichelScore() const {
+    return vertex_michel_score;
+  };
+  void SetVertexMichelScore(double v) {
+    vertex_michel_score = v;
+  };
+  double GetVertexNHits() const {
+    return vertex_nhits;
+  };
+  void SetVertexNHits(int v) {
+    vertex_nhits = v;
   };
 
   const std::vector<double> & GetRecoIncidentEnergies() const {
@@ -256,25 +295,117 @@ class ThinSliceEvent {
     return pdg;
   };
 
+  void SetStoredRecoEnergy(double e) {stored_reco_energy = e;};
+  double GetStoredRecoEnergy() {return stored_reco_energy;};
+
   void MakeG4RWBranch(const std::string & br, const std::vector<double> & ws) {
     g4rw_weights[br] = ws;
   };
   void MakeG4RWCoeff(const std::string & br, const std::vector<double> & cs) {
     g4rw_coeffs[br] = cs;
+
+    //MakeG4RWExtendCoeffs(br, cs);
   };
 
+  /*
+  void MakeG4RWExtendCoeffs(const std::string & br, const std::vector<double> & cs) {
+    g4rw_lower_coeffs[br] = GetExpCoeffs(.1, cs);
+
+    double wp2 = GetPolPrime2(2, coeffs);
+    double wp = GetPolPrime(2, coeffs);
+
+    if (wp2 < 0. && wp > 0.) {
+      double b = -1.*wp2/wp;
+      double a = GetPol(2., coeffs)/(1. - exp(-1.*b*2.));
+      g4rw_upper_coeffs[br] = {a, b};
+      //return a*(1. - exp(-1.*b*x));
+    }
+    else {
+      g4rw_upper_coeffs[br] = GetExpCoeffs(2., cs);
+    }
+  };*/
+
+  //For extending
+  double GetPol(double x, const std::vector<double> & coeffs) const {
+    double result = 0.; 
+    for (size_t i = 0; i < coeffs.size(); ++i) {
+      result += coeffs[i]*std::pow(x, i);
+    }
+    return result;
+  };
+  double GetPolPrime(double x, const std::vector<double> & coeffs) const {
+    double result = 0.; 
+    for (size_t i = 1; i < coeffs.size(); ++i) {
+      result += i*coeffs[i]*std::pow(x, i-1);
+    }
+    return result;
+  };
+  double GetPolPrime2(double x, const std::vector<double> & coeffs) const {
+    double result = 0.; 
+    for (size_t i = 2; i < coeffs.size(); ++i) {
+      result += i*(i-1)*coeffs[i]*std::pow(x, i-2);
+    }
+    return result;
+  };
+
+  std::pair<double, double> GetExpCoeffs(double x, const std::vector<double> & coeffs) const {
+    //std::cout << "Exp coeffs " << x << "\n";
+    //std::cout << GetPolPrime(x, coeffs) << " " << GetPol(x, coeffs) << "\n";
+    double b = GetPolPrime(x, coeffs)/GetPol(x, coeffs); 
+    //std::cout << exp(x*b) << "\n";
+    double a = GetPol(x, coeffs)/exp(x*b);
+    //std::cout << a << " " << b << std::endl;
+
+    return {a, b};
+  };
+
+  double GetLowerWeight(double x, const std::vector<double> & coeffs, double test_pt=.1) const {
+    auto exp_coeffs = GetExpCoeffs(test_pt, coeffs);
+    return exp_coeffs.first*exp(exp_coeffs.second*x);
+  };
+
+  double GetUpperWeight(double x, const std::vector<double> & coeffs) const {
+    double wp2 = GetPolPrime2(2, coeffs);
+    double wp = GetPolPrime(2, coeffs);
+
+    if (wp2 < 0. && wp > 0.) {
+      double b = -1.*wp2/wp;
+      double a = GetPol(2., coeffs)/(1. - exp(-1.*b*2.));
+      return a*(1. - exp(-1.*b*x));
+    }
+    else {
+      return GetLowerWeight(x, coeffs, 2.);
+    }
+  }
+
   //Get Weight from the polynomial defined by the coeffs
-  double GetG4RWCoeffWeight(const std::string & br, double input) const {
+  double GetG4RWCoeffWeight(const std::string & br, double input, bool extend=false) const {
     auto & coeffs = g4rw_coeffs.at(br);
     if (coeffs.size() == 0) {
       return 1.;
     }
 
-    double results = 0.;
+    //std::cout << GetLowerWeight(.1, coeffs) << " " << GetPol(.1, coeffs) << std::endl;
+    //std::cout << GetUpperWeight(2, coeffs) << " " << GetPol(2, coeffs) << std::endl;
+
+    if (extend && input < .1) {
+      double weight = GetLowerWeight(input, coeffs);
+      //std::cout << "Extended low " << std::endl;
+      //std::cout << weight << std::endl;
+      return weight;
+    }
+    else if (extend && input > 2.) {
+      //std::cout << "Extended high " << GetUpperWeight(input, coeffs) << std::endl;
+      return GetUpperWeight(input, coeffs);
+    }
+
+    /*double results = 0.;
     for (size_t i = 0; i < coeffs.size(); ++i) {
       results += coeffs[i]*std::pow(input, i); 
     }
-    return results;
+    std::cout << results << " " << GetPol(input, coeffs) << std::endl;
+    return results;*/
+    return GetPol(input, coeffs);
   };
 
   double GetG4RWWeight(const std::string & br, size_t i) const {
@@ -330,6 +461,18 @@ class ThinSliceEvent {
   void SetIsBeamScraper(bool val) {is_beam_scraper = val;};
   bool GetIsBeamScraper() const {return is_beam_scraper;};
 
+  void AddOneChi2PerHit(double val) {
+    reco_daughter_chi2s_perhit.push_back(val);
+  };
+  void SetChi2PerHit(std::vector<double> & vals) {reco_daughter_chi2s_perhit = vals;};
+  const std::vector<double> & GetChi2sPerHit() const {return reco_daughter_chi2s_perhit;};
+
+  void AddOneTrunc_dEdX(double val) {
+    reco_daughter_truncated_dEdX.push_back(val);
+  };
+  void SetTrunc_dEdXs(std::vector<double> & vals) {reco_daughter_truncated_dEdX = vals;};
+  const std::vector<double> & GetTrunc_dEdXs() const {return reco_daughter_truncated_dEdX;};
+
  private:
   int event_ID, subrun_ID, run_ID;
   int sample_ID;
@@ -339,6 +482,7 @@ class ThinSliceEvent {
   double true_beam_endP, true_beam_mass;
   double reco_beam_endZ, true_beam_startP, true_beam_endZ;
   double reco_beam_startY;
+  double reco_beam_startX_SCE, reco_beam_startY_SCE, reco_beam_startZ_SCE;
   double beam_inst_P;
   bool has_pi0_shower;
   std::vector<double> reco_beam_incidentEnergies,
@@ -357,6 +501,8 @@ class ThinSliceEvent {
                       track_pitch;
   std::map<std::string, std::vector<double>> g4rw_weights;
   std::map<std::string, std::vector<double>> g4rw_coeffs;
+  std::map<std::string, std::pair<double, double>> g4rw_upper_coeffs,
+                                                   g4rw_lower_coeffs;
   std::map<std::string, TSpline3*> g4rw_splines;
   int true_beam_ID;
   int reco_beam_true_byHits_ID;
@@ -364,6 +510,12 @@ class ThinSliceEvent {
   double leading_p_costheta, leading_piplus_costheta, leading_pi0_costheta;
   int reco_beam_origin = -999;
   bool is_beam_scraper;
+
+  std::vector<double> reco_daughter_truncated_dEdX,
+                      reco_daughter_chi2s_perhit;
+  double vertex_michel_score;
+  int vertex_nhits;
+  double stored_reco_energy = -999.;
 };
 }
 #endif

@@ -56,15 +56,14 @@ pdsp::MichelTiming::MichelTiming(fhicl::ParameterSet const& p)
 
 void pdsp::MichelTiming::analyze(art::Event const& e)
 {
-  std::vector < art::Ptr < recob::OpFlash > > flashList;
   auto flashListHandle = e.getHandle < std::vector < recob::OpFlash > >(fFlashModuleLabel);
-  if (flashListHandle) {
-    art::fill_ptr_vector(flashList, flashListHandle);
+  if (!flashListHandle) {
+    return;
   }
-  else return;
 
-  for (const auto & flash : flashList){
-    std::cout<<flash.key()<<" "<<flash->Time()<<" "<<flash->TotalPE()<<std::endl;
+  std::size_t i = 0;
+  for (const recob::OpFlash & flash : *flashListHandle){
+    std::cout<< i++ <<" "<<flash.Time()<<" "<<flash.TotalPE()<<std::endl;
   }
     
 

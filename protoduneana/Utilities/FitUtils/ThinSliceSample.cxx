@@ -215,3 +215,69 @@ void protoana::ThinSliceSample::RefillRebinnedHists() {
     }
   }
 }
+
+void protoana::ThinSliceSample::CalculateStatVariations() {
+  //std::map<int, std::vector<double>> stat_vars;
+  for (auto & sel_hist : fSelectionHists) {
+    auto * hist = sel_hist.second;
+    fStatVariations[sel_hist.first] = std::vector<double>(hist->GetNbinsX());
+    for (int i = 1; i <= hist->GetNbinsX(); ++i) {
+      double val = hist->GetBinContent(i);
+      fStatVariations[sel_hist.first][i-1] = (
+        val > 0. ? fRNG.PoissonD(val)/val : 0.);
+      //std::cout << fStatVariations[sel_hist.first][i-1] << std::endl;
+    }
+  }
+}
+
+double protoana::ThinSliceSample::GetStatVarWeight(int sel, double val) const {
+  int bin = GetSelectionHistBin(sel, val);
+  if (bin < 1) {
+    std::cout << "Warning found bin " << bin << " for " << sel << " " << val <<
+                 std::endl;
+    return 1.;
+  }
+
+  //bin-1 --> hists are 1-indexed vector is 0-indexed
+  return fStatVariations.at(sel)[bin-1];
+}
+
+void protoana::ThinSliceSample::FillExtraHist(
+    const std::string & name, double val, double weight) {
+//  if (fExtraHists.find(name) != fExtraHists.end()) {
+    fExtraHists.at(name)->Fill(val, weight);
+  //}
+}
+
+void protoana::ThinSliceSample::SetupExtraHists(
+    std::vector<fhicl::ParameterSet> & extra_hist_sets,
+    int i, int j) {
+  for (const auto & hist_set : extra_hist_sets) {
+    std::string category = hist_set.get<std::string>("Category");
+    std::string name = hist_set.get<std::string>("Name");
+    std::string title = hist_set.get<std::string>("Title");
+
+    bool fixed_bins = hist_set.get<bool>("DoFixedBins");
+
+    //NEED TO MAKE SURE THIS IS ENSURED
+    auto bins = hist_set.get<std::vector<double>>("Bins");
+    auto binning = hist_set.get<std::vector<double>>("Binning");
+
+    TString hist_name = TString::Format("%s_%s_%i_%i",
+                                        name.c_str(),
+                                        fSampleName.c_str(), i, j);
+
+    if (fixed_bins) {
+      fExtraHists[category] = new TH1D(
+        hist_name, title.c_str(), binning[0], binning[1], binning[2]
+      );
+    }
+    else {
+      fExtraHists[category] = new TH1D(
+        hist_name, title.c_str(), bins.size()-1, &bins[0]
+      );
+    }
+    fExtraHists[category]->SetDirectory(0);
+  }
+
+}
