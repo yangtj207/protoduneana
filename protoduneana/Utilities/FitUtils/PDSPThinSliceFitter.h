@@ -50,7 +50,7 @@ class PDSPThinSliceFitter {
   void NormalFit();
   void SetupTree();
   void WrapUpTree();
-  void Pulls();
+  //void Pulls();
   void Configure(std::string fcl_file);
   void DefineFitFunction();
   void MakeMinimizer();
@@ -75,9 +75,22 @@ class PDSPThinSliceFitter {
   void CalcApproxCrossSection(TH1D * xsec_hist);
   void GetFixFactors();
   void MakeThrowsTree(TTree & tree, std::vector<double> & branches);
+  bool DoHesse();
+  void SaveHesse();
+  void AdjustInitConds(size_t fit_attempt);
+  void ResetParameters();
+  void DoMinos1D();
+  void DoMinosConts();
+  void DoMultiConts();
+  void RunOneContour(size_t i, size_t j, unsigned int & npoints);
+  void GetCovarianceVals(TString dir);
   //void MakeThrowsArrays(std::vector<TVectorD *> & arrays);
 
   std::vector<double> GetBestFitParsVec();
+  void SetupExtraHists();
+  void SetupExtraHistsThrows();
+  void SaveExtraHists(TDirectory * dir);
+  void MakeTotalExtraHist(std::string category);
 
   ThinSliceDriver * fThinSliceDriver;
   std::map<int, std::vector<std::vector<ThinSliceSample>>> fSamples,
@@ -135,11 +148,11 @@ class PDSPThinSliceFitter {
   size_t fTotalFluxParameters = 0;
 
   //std::map<int, std::string> fSystParameterNames;
-  std::map<std::string, ThinSliceSystematic> fSystParameters;
+  std::map<std::string, ThinSliceSystematic> fSystParameters, fG4RWParameters;
   std::vector<std::vector<ThinSliceSystematic>> fSelVarSystPars;
   std::vector<std::string> fSystParameterNames;
   std::vector<double> fParLimits, fParLimitsUp;
-  size_t fTotalSystParameters = 0;
+  size_t fTotalSystParameters = 0, fTotalG4RWParameters = 0;
   std::map<std::string, size_t> fCovarianceBins;
   std::vector<size_t> fCovarianceBinsSimple;
   bool fAddSystTerm, fAddRegTerm, fAddDiffInQuadrature;
@@ -155,7 +168,7 @@ class PDSPThinSliceFitter {
   TRandom3 fRNG;
   std::map<int, std::vector<double>> fFakeDataScales;
   std::map<int, std::vector<double>> fBestFitSignalPars;
-  std::map<std::string, ThinSliceSystematic> fBestFitSystPars;
+  std::map<std::string, ThinSliceSystematic> fBestFitSystPars, fBestFitG4RWPars;
   std::map<int, double> fBestFitFluxPars;
   std::map<int, TH1*> fNominalXSecs, fNominalIncs;
   std::map<int, TH1*> fBestFitXSecs, fBestFitIncs;
@@ -174,8 +187,14 @@ class PDSPThinSliceFitter {
   std::map<int, int> fSelectionBins;
   std::vector<double> fSelVarSystVals;
   std::vector<fhicl::ParameterSet> fSampleSets;
+  std::vector<fhicl::ParameterSet> fExtraHistSets;
+  std::vector<std::string> fExtraHistCategories;
+  std::map<std::string, TH1 *> fExtraHistsTotal;
+  std::map<std::string, TH1 *> fExtraHistsThrows;
+  std::map<std::string, TMatrixD*> fExtraArraysThrows;
   std::map<int, std::string> fFluxTypes;
   int fMaxCalls, fMaxIterations, fPrintLevel;
+  int fCoutLevel;
   size_t fNFitSteps = 0;
   std::chrono::high_resolution_clock::time_point fTime;
   unsigned int fNScanSteps;
@@ -189,8 +208,13 @@ class PDSPThinSliceFitter {
   double fPitch, fPitchCorrection;
   std::string fSliceMethod;
   bool fMultinomial;
-  bool fDoFakeData, fDoThrows, fDoScans, fOnlySystScans, fDo1DShifts, fDoSysts,
-       fRunHesse, fSetSigLimits, fSetSystLimits, fSetSelVarLimits;
+  bool fDoFakeData, fDoThrows, fDoScans, fOnlySystScans, fOnlyG4RWScans, fDo1DShifts, fDoSysts,
+       fRunHesse, fRunMinos1D, fRunMinosConts, fSetSigLimits, fSetSystLimits,
+       fSetSelVarLimits, fRerunFit, fRequireGoodHesse,
+       fRemoveSigThrowLimits, fRunMultiConts,
+       fSignalContoursOnly;
+  size_t fFitAttempts;
+  unsigned int fNContourPoints;
   bool fFixVariables;
   bool fSetValsPreFit;
   std::vector<double> fPreFitVals;

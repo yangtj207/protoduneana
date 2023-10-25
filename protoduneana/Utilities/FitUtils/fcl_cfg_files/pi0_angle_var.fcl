@@ -1,8 +1,8 @@
 #include "asimov.fcl"
 
 MaxEntries: -1
-FluctuateStats: true 
-FluctuateInSamples: true 
+FluctuateStats: false
+FluctuateInSamples: false 
 SplitMC: false 
 
 AnalysisOptions.FakeDataRoutine: "AngleVar"

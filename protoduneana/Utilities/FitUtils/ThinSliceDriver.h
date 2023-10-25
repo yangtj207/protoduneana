@@ -33,6 +33,12 @@ class ThinSliceDriver {
     std::vector<double> & beam_fluxes,
     int split_val = 0) = 0;
 
+  virtual void FillDataHistsFromSamples(
+    ThinSliceDataSet & data_set,
+    const std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    double & flux, std::vector<double> & fluxes_by_beam, bool fluctuate
+  ) = 0;
+
   virtual void BuildFakeData(
     TTree * tree, const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
@@ -60,6 +66,7 @@ class ThinSliceDriver {
       const std::map<int, std::vector<double>> & signal_pars,
       const std::map<int, double> & flux_pars,
       const std::map<std::string, ThinSliceSystematic> & syst_pars,
+      const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
       bool fit_under_over, bool tie_under_over, bool use_beam_inst_P,
       bool fill_incident = false, std::map<int, TH1*> * fix_factors = 0x0) = 0;
 
@@ -139,6 +146,7 @@ class ThinSliceDriver {
       const std::map<int, bool> & signal_sample_checks,
       std::vector<double> & beam_energy_bins,
       const std::map<std::string, ThinSliceSystematic> & pars,
+      const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
       TFile & output_file) = 0;
   //virtual void WrapUpSysts(TFile & output_file) = 0;
 
@@ -153,6 +161,7 @@ class ThinSliceDriver {
     const std::map<int, std::vector<double>> & signal_pars,
     const std::map<int, double> & flux_pars,
     const std::map<std::string, ThinSliceSystematic> & syst_pars,
+    const std::map<std::string, ThinSliceSystematic> & g4rw_pars,
     bool fit_under_over, bool tie_under_over, bool use_beam_inst_P
     /*   const std::vector<ThinSliceEvent> & events,
        std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
@@ -161,14 +170,31 @@ class ThinSliceDriver {
        std::map<int, double> & nominal_fluxes,
        std::map<int, std::vector<std::vector<double>>> & fluxes_by_sample,
        std::vector<double> & beam_energy_bins, bool use_beam_inst_P*/) = 0;
+ virtual void SetupExtraHists(
+    ThinSliceDataSet & data_set, 
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
+    std::map<int, std::vector<std::vector<ThinSliceSample>>> & fake_samples) = 0;
 
-  void SetStatVar(bool set) {fStatVar = set;};
+ void SaveExtraHists(ThinSliceDataSet & data_set,
+                     TDirectory * plot_dir) {
+   plot_dir->cd();
+   for (auto & hist : data_set.GetExtraHists()) {
+     std::cout << "Writing " << hist.first << " " << hist.second << " " << hist.second->GetName() << std::endl;
+
+     hist.second->Write();
+   }
+ };
+
+ void SetStatVar(bool set) {fStatVar = set;};
+ void SetFillFakeInMain(bool set) {fFillFakeDataInMain = set;};
  protected:
   fhicl::ParameterSet fExtraOptions;
+  std::string fFakeDataRoutine;
 
   void ResetSamples(
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples);
   bool fStatVar = false;
+  bool fFillFakeDataInMain = false;
  private:
 };
 }

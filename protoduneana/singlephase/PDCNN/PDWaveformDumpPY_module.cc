@@ -163,12 +163,12 @@ void PDWaveformDumpPY::analyze(art::Event const& e)
       base = basehelp->GetXaxis()->GetBinCenter(basebinmax);
       basehelp->Delete();
 
-      float sum = 0;
+      // float sum = 0; // unused
       for(size_t j = 0; j < waveform.size(); ++j){
         waveform[j] = waveform[j]-base;
         waveformma[j] = waveformma[j]-base;
         waveformden[j] = waveformden[j]-base;
-        if (j>=1000 && j<1500) sum += waveformden[j];
+        // if (j>=1000 && j<1500) sum += waveformden[j]; // unused
       }
     
       c2numpy_uint32(&npywriter, e.id().run());

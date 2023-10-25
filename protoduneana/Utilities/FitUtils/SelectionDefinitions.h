@@ -2,12 +2,12 @@ class new_interaction_topology {
  private:
   double fEndZLow, fEndZHigh;
   double fThreshold;
-  bool fCexNPi0;
+  bool fCexNPi0, fSignalPastFV;
  public: 
   new_interaction_topology(double endz_low, double endz_high,
-                           double threshold, bool cex_nPi0)
+                           double threshold, bool cex_nPi0, bool sig_past_fv=false)
     : fEndZLow(endz_low), fEndZHigh(endz_high), fThreshold(threshold),
-      fCexNPi0(cex_nPi0) {}
+      fCexNPi0(cex_nPi0), fSignalPastFV(sig_past_fv) {}
 
   int operator()(int pdg, double endZ,
                  std::string process, int nPi0,
@@ -20,8 +20,10 @@ class new_interaction_topology {
       if (endZ < fEndZLow/*-.49375*/) {
         topology = 4;
       }
-      //After FV
-      else if (endZ > fEndZHigh/*222.10561*/) {
+      
+      else if ((endZ > fEndZHigh)/*222.10561*/ && //After FV
+               ((!fSignalPastFV) || //If we don't want to consider inel. ints past APA cut
+                (fSignalPastFV && process != "pi+Inelastic"))) { //If we want to consider inel past APA
         topology = 6;
       }
       else if (process == "pi+Inelastic") {
