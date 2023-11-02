@@ -1119,6 +1119,7 @@ private:
   bool fGetCalibratedShowerEnergy;
   bool fCheckSlicesForBeam;
   bool fCheckTruncation;
+  double fBeamInstPFix = 1.;
   // SparseNet params 
   /// Module label for input space points
   std::string fSpacePointLabel;
@@ -1183,6 +1184,8 @@ pduneana::PDSPAnalyzer::PDSPAnalyzer(fhicl::ParameterSet const& p)
   fGetCalibratedShowerEnergy(p.get<bool>("GetCalibratedShowerEnergy", false)),
   fCheckSlicesForBeam(p.get<bool>("CheckSlicesForBeam", false)),
   fCheckTruncation(p.get<bool>("CheckTruncation", false)),
+
+  fBeamInstPFix(p.get<double>("BeamInstPFix", 1.)),
 
   // SparseNet params
   fSpacePointLabel (p.get<std::string>    ("SpacePointLabel")), 
@@ -4394,6 +4397,10 @@ void pduneana::PDSPAnalyzer::BeamInstInfo(const art::Event & evt) {
   if( nMomenta > 0 ){
     beam_inst_P = momenta[0];
     if (fVerbose) std::cout << "reco P " << beam_inst_P << std::endl;
+
+    if (!evt.isRealData()) {
+      beam_inst_P *= fBeamInstPFix;
+    }
   }
 
   //Time of flight + channel combinations
@@ -5750,13 +5757,14 @@ void pduneana::PDSPAnalyzer::CheckForCrossingCosmics(
 
     const auto hits = pfpUtil.GetPFParticleHits(*c, evt, fPFParticleTag);
     //std::cout << "Got " << hits.size() << " in plane 2" << std::endl;
-    //bool in_apa3 = false;
+    bool in_apa3 = false;
     for (const auto * h : hits) {
       int tpc = h->WireID().TPC;
       int plane = h->WireID().planeID().Plane;
+      if (h->WireID().Wire > 45) std::cout << h->StartTick() << " " << h->EndTick() << std::endl;
       if (tpc == 1 && plane == 2) {
-        //in_apa3 = true;
-        cosmics_in_apa3.push_back(c);
+        if (!in_apa3) cosmics_in_apa3.push_back(c);
+        in_apa3 = true;
         break;
       }
     }
