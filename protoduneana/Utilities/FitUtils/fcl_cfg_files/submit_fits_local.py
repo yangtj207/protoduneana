@@ -27,6 +27,8 @@ parser.add_argument('--memory', type=str, default=None)
 parser.add_argument('--blacklist', type=str, nargs='+')
 parser.add_argument('--multiple', action='store_true')
 parser.add_argument('--extra_life', type=str, default=None)
+parser.add_argument('--tune', type=str, default=None)
+parser.add_argument('--tune_dir', type=str, default=None)
 
 parser.add_argument('--pduneana_tar', type=str, default='',
                     help='Optional Protoduneana tarball to be set up before NTupleProd')
@@ -76,10 +78,12 @@ cmd += ['-Oglobal.input_file=%s'%input_file]
 if 'toy' in args.type or 'alt_sce' in args.type or args.multiple:
   cmd += ['-Osubmit.N=%i'%args.N]
 
+arg_count = 7
 if args.data_input != '':
   data_input = args.data_input.replace('/pnfs/', 'root://fndca1.fnal.gov:1094//pnfs/fnal.gov/usr/')
-  cmd += ['-Oexecutable.arg_7=-d',
-          '-Oexecutable.arg_8=%s'%data_input]
+  cmd += [f'-Oexecutable.arg_{arg_count}=-d',
+          f'-Oexecutable.arg_{arg_count+1}={data_input}']
+  arg_count += 2
 
 ##Special commands for overriding some setup stuff
 if not args.pduneana_tar == '':
@@ -120,6 +124,33 @@ if args.extra_life:
   elif 'd' in args.extra_life:
     extra_life = 3600*24*int(args.extra_life.replace('d', ''))
   cmd +=[f'-Oglobal.extra_life={extra_life}']
+
+if args.tune and args.multiple:
+  cmd += [f'-Osubmit.f_5=dropbox://{args.tune_dir}/{args.tune}']
+  #cmd += [f'-Ojob_setup.prescript_5=head -n $((1+\\\\\\${{PROCESS}})) ${{CONDOR_DIR_INPUT}}/{args.tune}']
+  #cmd += [f'-Ojob_setup.prescript_6=export refit_file=$(head -n $((1+\\\\\\${{PROCESS}})) ${{CONDOR_DIR_INPUT}}/{args.tune})']
+  #cmd += [f'-Ojob_setup.prescript_5=head -n ${{PROCESS}} ${{CONDOR_DIR_INPUT}}/{args.tune}']
+  #cmd += [f'-Ojob_setup.prescript_6=export refit_file=$(head -n ${{PROCESS}} ${{CONDOR_DIR_INPUT}}/{args.tune})']
+  cmd += [f'-Ojob_setup.prescript_5=head -n ${{PROCESS}} ${{CONDOR_DIR_INPUT}}/{args.tune} | tail -n 1']
+  cmd += [f'-Ojob_setup.prescript_6=export refit_file=$(head -n ${{PROCESS}} ${{CONDOR_DIR_INPUT}}/{args.tune} | tail -n 1)']
+  cmd += [f'-Ojob_setup.prescript_7=python -m get_ratios $refit_file']
+  cmd += [f'-Ojob_setup.prescript_8=cat tune.txt']
+  cmd += [f'-Ojob_setup.prescript_9=ls ${{CONDIR_DIR_INPUT}}']
+  cmd += [f'-Oexecutable.arg_{arg_count}=--tune',
+          f'-Oexecutable.arg_{arg_count+1}=tune.txt',
+          f'-Oexecutable.arg_{arg_count+2}=--refit',
+          f'-Oexecutable.arg_{arg_count+3}=file.txt']
+elif args.tune:
+  cmd += [f'-Osubmit.f_5=dropbox://{args.tune_dir}/{args.tune}']
+  cmd += [f'-Ojob_setup.prescript_5=head -n 1 ${{CONDOR_DIR_INPUT}}/{args.tune}']
+  cmd += [f'-Ojob_setup.prescript_6=export refit_file=$(head -n 1 ${{CONDOR_DIR_INPUT}}/{args.tune})']
+  cmd += [f'-Ojob_setup.prescript_7=python -m get_ratios $refit_file']
+  cmd += [f'-Ojob_setup.prescript_8=cat tune.txt']
+  cmd += [f'-Ojob_setup.prescript_9=ls ${{CONDIR_DIR_INPUT}}']
+  cmd += [f'-Oexecutable.arg_{arg_count}=--tune',
+          f'-Oexecutable.arg_{arg_count+1}=tune.txt',
+          f'-Oexecutable.arg_{arg_count+2}=--refit',
+          f'-Oexecutable.arg_{arg_count+3}=file.txt']
 
 print(cmd)
 

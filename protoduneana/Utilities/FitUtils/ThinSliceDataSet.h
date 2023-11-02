@@ -19,7 +19,8 @@ class ThinSliceDataSet {
   //ThinSliceDataSet(const std::vector<double> & incident_bins,
   //                 const std::vector<fhicl::ParameterSet> & selections);
   ThinSliceDataSet(const std::vector<double> & incident_bins,
-                   const std::vector<fhicl::ParameterSet> & selections);
+                   const std::vector<fhicl::ParameterSet> & selections,
+                   const std::vector<double> & beam_bins);
   ~ThinSliceDataSet() {};
 
   const std::map<int, std::string> & GetSelectionNames() const {
@@ -32,6 +33,10 @@ class ThinSliceDataSet {
 
   std::map<int, TH1 *> & GetSelectionHists() {
     return fSelectionHists;
+  };
+
+  std::map<int, TH2D *> & GetBeamBinSelectionHists() {
+    return fBeamBinSelectionHists;
   };
 
   std::map<int, TH1 *> & GetRebinnedSelectionHists() {
@@ -136,17 +141,19 @@ class ThinSliceDataSet {
     }
   };
 
-  void GenerateStatFluctuation(bool poisson=false);
+  void GenerateStatFluctuation(std::vector<double> & beam_fluxes, bool poisson=false);
 
   void FillHistsFromSamples(
       const std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples,
       double & flux, std::vector<double> & fluxes_by_beam,
       bool fluctuate=false, const std::vector<int> & to_skip = {5,6});
 
+  void SetDirectory();
  private:
   void Rebin1D(TH1 * sel_hist, TH1 * rebinned);
   void Rebin2D(TH1 * sel_hist, TH1 * rebinned);
   void Rebin3D(TH1 * sel_hist, TH1 * rebinned);
+  std::map<int, TH2D *> fBeamBinSelectionHists;
   std::map<int, TH1 *> fSelectionHists;
   TH1D fIncidentHist;
   std::map<int, TH1 *> fSelectionHistsRebinned;

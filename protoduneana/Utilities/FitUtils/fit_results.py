@@ -7,9 +7,11 @@ from argparse import ArgumentParser as ap
 parser = ap()
 parser.add_argument('-o', type=str, required=True)
 parser.add_argument('-i', type=str, required=True)
+parser.add_argument('--pretune', type=str, default=None)
 parser.add_argument('--add_files', nargs='+', default=[])
 parser.add_argument('--add_covs', nargs='+', default=[])
 parser.add_argument('--fixed', action='store_true')
+parser.add_argument('--nothrows', action='store_true')
 args = parser.parse_args()
 
 
@@ -57,6 +59,25 @@ RT.gStyle.SetTitleX(.915)
 RT.gStyle.SetTitleY(.95)
 RT.gROOT.ForceStyle()
 #fIn = RT.TFile(sys.argv[1], "OPEN");
+
+prefit_names = [
+  "NominalAbsTotal", "NominalCexTotal",
+  "NominalRejectedIntTotal", "NominalAPA2Total",
+  "NominalFailedBeamCutsTotal", "NominalNoBeamTrackTotal",
+  "NominalMichelCutTotal"
+]
+
+prefit_hists = []
+
+total_prefit = 0.
+if args.pretune is not None:
+  fPretune = RT.TFile.Open(args.pretune)
+  for n in prefit_names:
+    prefit_hists.append(fPretune.Get(n))
+    prefit_hists[-1].SetDirectory(0)
+    total_prefit += prefit_hists[-1].Integral()
+  fPretune.Close()
+
 fIn = RT.TFile.Open(args.i);
 
 
@@ -82,6 +103,7 @@ for i in range(0, n_prim):
 postfit_label = postfit_leg.GetListOfPrimitives().At(postfit_leg.GetListOfPrimitives().GetSize()-1).GetLabel()
 print(postfit_label)
 
+'''
 nominal_xsec_canvas = fIn.Get("Throws/cXSecThrowAbsUnderflow")
 nominal_xsec_canvas.Draw()
 n_prim = RT.gPad.GetListOfPrimitives().GetSize()
@@ -94,6 +116,7 @@ nominal_xsec_label = nominal_xsec_leg.GetListOfPrimitives().At(nominal_xsec_leg.
 print(nominal_xsec_label)
 fake_xsec_label = nominal_xsec_leg.GetListOfPrimitives().At(nominal_xsec_leg.GetListOfPrimitives().GetSize()-1).GetLabel()
 print(fake_xsec_label)
+'''
 
 data_names = [
   "Data/Data_selected_Abs_hist", "Data/Data_selected_Cex_hist",
@@ -108,17 +131,10 @@ for n in data_names:
   data_hists.append(fIn.Get(n))
   total_data += data_hists[-1].Integral()
 
-prefit_names = [
-  "NominalAbsTotal", "NominalCexTotal",
-  "NominalRejectedIntTotal", "NominalAPA2Total",
-  "NominalFailedBeamCutsTotal", "NominalNoBeamTrackTotal",
-  "NominalMichelCutTotal"
-]
-prefit_hists = []
-total_prefit = 0.
-for n in prefit_names:
-  prefit_hists.append(fIn.Get(n))
-  total_prefit += prefit_hists[-1].Integral()
+if args.pretune is None:
+  for n in prefit_names:
+    prefit_hists.append(fIn.Get(n))
+    total_prefit += prefit_hists[-1].Integral()
 
 postfit_names = [
   "PostFitAbsTotal", "PostFitCexTotal",
@@ -324,96 +340,99 @@ for i in range(0, len(prefit_hists)):
   c.Write()
 
 
-abs_hist = fIn.Get("PostFitXSec/PostFitAbsHist")
-abs_xs = []
-for i in range(1, abs_hist.GetNbinsX()+1):
-  abs_xs.append(abs_hist.GetBinCenter(i))
-
-gr_abs = fIn.Get("Throws/grXSecThrowAbsUnderflow");
-n_abs = gr_abs.GetN()
-print(n_abs)
-abs_ys = []
-abs_eyhs = []
-abs_eyls = []
-for i in range(0, n_abs):
-  abs_ys.append(gr_abs.GetY()[i])
-  abs_eyhs.append(gr_abs.GetEYhigh()[i])
-  abs_eyls.append(gr_abs.GetEYlow()[i])
-new_gr_abs = RT.TGraphAsymmErrors(n_abs, array('d', abs_xs), array('d', abs_ys), array('d', [0.]*n_abs), array('d', [0.]*n_abs), array('d', abs_eyls), array('d', abs_eyhs))
-
-
-cex_hist = fIn.Get("PostFitXSec/PostFitCexHist")
-cex_xs = []
-for i in range(1, cex_hist.GetNbinsX()+1):
-  cex_xs.append(cex_hist.GetBinCenter(i))
-
-gr_cex = fIn.Get("Throws/grXSecThrowCexUnderflow");
-n_cex = gr_cex.GetN()
-cex_ys = []
-cex_eyhs = []
-cex_eyls = []
-for i in range(0, n_cex):
-  cex_ys.append(gr_cex.GetY()[i])
-  cex_eyhs.append(gr_cex.GetEYhigh()[i])
-  cex_eyls.append(gr_cex.GetEYlow()[i])
-new_gr_cex = RT.TGraphAsymmErrors(n_cex, array('d', cex_xs), array('d', cex_ys), array('d', [0.]*n_cex), array('d', [0.]*n_cex), array('d', cex_eyls), array('d', cex_eyhs))
-
-
-new_gr_abs.Write('abs_xsec')
-new_gr_cex.Write('cex_xsec')
-
-other_hist = fIn.Get("PostFitXSec/PostFitOtherInelHist")
-if other_hist:
-  other_xs = []
-  for i in range(1, other_hist.GetNbinsX()+1):
-    other_xs.append(other_hist.GetBinCenter(i))
+if not args.nothrows:
+  abs_hist = fIn.Get("PostFitXSec/PostFitAbsHist")
+  abs_xs = []
+  for i in range(1, abs_hist.GetNbinsX()+1):
+    abs_xs.append(abs_hist.GetBinCenter(i))
   
-  gr_other = fIn.Get("Throws/grXSecThrowOtherInelUnderflow");
-  n_other = gr_other.GetN()
-  other_ys = []
-  other_eyhs = []
-  other_eyls = []
-  for i in range(0, n_other):
-    other_ys.append(gr_other.GetY()[i])
-    other_eyhs.append(gr_other.GetEYhigh()[i])
-    other_eyls.append(gr_other.GetEYlow()[i])
-  new_gr_other = RT.TGraphAsymmErrors(n_other, array('d', other_xs), array('d', other_ys), array('d', [0.]*n_other), array('d', [0.]*n_other), array('d', other_eyls), array('d', other_eyhs))
-  new_gr_other.Write('other_xsec')
-
-corr = fIn.Get('Throws/xsec_corr')
-cov = fIn.Get('Throws/xsec_cov')
-
-if len(args.add_files) > 0:
-#if len(sys.argv) > 3:
-  for af, ac in zip(args.add_files, args.add_covs):
-    #extra_cov_file = RT.TFile(sys.argv[3], 'open')
-    extra_cov_file = RT.TFile(af, 'open')
-    #extra_cov = extra_cov_file.Get(sys.argv[4])
-    extra_cov = extra_cov_file.Get(ac)
-
-    for i in range(1, extra_cov.GetNbinsX()+1):
-      for j in range(1, extra_cov.GetNbinsX()+1):
-        cov.SetBinContent(i, j, cov.GetBinContent(i, j) + extra_cov.GetBinContent(i, j))
-
-  #for i in range(1, extra_cov.GetNbinsX()+1):
-  #  for j in range(1, extra_cov.GetNbinsX()+1):
-  for i in range(1, cov.GetNbinsX()+1):
-    for j in range(1, cov.GetNbinsX()+1):
-      corr.SetBinContent(i, j, cov.GetBinContent(i, j)/math.sqrt(cov.GetBinContent(i, i)*cov.GetBinContent(j, j)))
-
-if args.fixed:
-  hs = [fIn.Get('FixedPlots/FixedXSec/Fixed%sXSec'%n) for n in ['Abs', 'Cex', 'OtherInel']]
-  vals = [[h.GetBinContent(i) for i in range(1, h.GetNbinsX()+1)] for h in hs]
-  bins = [[h.GetBinCenter(i) for i in range(1, h.GetNbinsX()+1)] for h in hs]
-
-  grs = [RT.TGraph(len(vs), array('d', bs), array('d', vs)) for vs, bs in zip(vals, bins)]
-
-
-fOut.cd()
-corr.Write()
-cov.Write()
-if args.fixed:
-  for i in range(3):
-    grs[i].Write('gr_fixed_%s'%['Abs', 'Cex', 'OtherInel'][i])
+  if not args.nothrows:
+    gr_abs = fIn.Get("Throws/grXSecThrowAbsUnderflow");
+    n_abs = gr_abs.GetN()
+    print(n_abs)
+    abs_ys = []
+    abs_eyhs = []
+    abs_eyls = []
+    for i in range(0, n_abs):
+      abs_ys.append(gr_abs.GetY()[i])
+      abs_eyhs.append(gr_abs.GetEYhigh()[i])
+      abs_eyls.append(gr_abs.GetEYlow()[i])
+    new_gr_abs = RT.TGraphAsymmErrors(n_abs, array('d', abs_xs), array('d', abs_ys), array('d', [0.]*n_abs), array('d', [0.]*n_abs), array('d', abs_eyls), array('d', abs_eyhs))
+  
+  
+  cex_hist = fIn.Get("PostFitXSec/PostFitCexHist")
+  cex_xs = []
+  for i in range(1, cex_hist.GetNbinsX()+1):
+    cex_xs.append(cex_hist.GetBinCenter(i))
+  
+  gr_cex = fIn.Get("Throws/grXSecThrowCexUnderflow");
+  n_cex = gr_cex.GetN()
+  cex_ys = []
+  cex_eyhs = []
+  cex_eyls = []
+  for i in range(0, n_cex):
+    cex_ys.append(gr_cex.GetY()[i])
+    cex_eyhs.append(gr_cex.GetEYhigh()[i])
+    cex_eyls.append(gr_cex.GetEYlow()[i])
+  new_gr_cex = RT.TGraphAsymmErrors(n_cex, array('d', cex_xs), array('d', cex_ys), array('d', [0.]*n_cex), array('d', [0.]*n_cex), array('d', cex_eyls), array('d', cex_eyhs))
+  
+  
+  other_hist = fIn.Get("PostFitXSec/PostFitOtherInelHist")
+  if other_hist:
+    other_xs = []
+    for i in range(1, other_hist.GetNbinsX()+1):
+      other_xs.append(other_hist.GetBinCenter(i))
+    
+    if not args.nothrows:
+      gr_other = fIn.Get("Throws/grXSecThrowOtherInelUnderflow");
+      n_other = gr_other.GetN()
+      other_ys = []
+      other_eyhs = []
+      other_eyls = []
+      for i in range(0, n_other):
+        other_ys.append(gr_other.GetY()[i])
+        other_eyhs.append(gr_other.GetEYhigh()[i])
+        other_eyls.append(gr_other.GetEYlow()[i])
+      new_gr_other = RT.TGraphAsymmErrors(n_other, array('d', other_xs), array('d', other_ys), array('d', [0.]*n_other), array('d', [0.]*n_other), array('d', other_eyls), array('d', other_eyhs))
+      new_gr_other.Write('other_xsec')
+  
+  new_gr_abs.Write('abs_xsec')
+  new_gr_cex.Write('cex_xsec')
+  
+  corr = fIn.Get('Throws/xsec_corr')
+  cov = fIn.Get('Throws/xsec_cov')
+  
+  if len(args.add_files) > 0:
+  #if len(sys.argv) > 3:
+    for af, ac in zip(args.add_files, args.add_covs):
+      #extra_cov_file = RT.TFile(sys.argv[3], 'open')
+      extra_cov_file = RT.TFile(af, 'open')
+      #extra_cov = extra_cov_file.Get(sys.argv[4])
+      extra_cov = extra_cov_file.Get(ac)
+  
+      for i in range(1, extra_cov.GetNbinsX()+1):
+        for j in range(1, extra_cov.GetNbinsX()+1):
+          cov.SetBinContent(i, j, cov.GetBinContent(i, j) + extra_cov.GetBinContent(i, j))
+  
+    #for i in range(1, extra_cov.GetNbinsX()+1):
+    #  for j in range(1, extra_cov.GetNbinsX()+1):
+    for i in range(1, cov.GetNbinsX()+1):
+      for j in range(1, cov.GetNbinsX()+1):
+        corr.SetBinContent(i, j, cov.GetBinContent(i, j)/math.sqrt(cov.GetBinContent(i, i)*cov.GetBinContent(j, j)))
+  
+  if args.fixed:
+    hs = [fIn.Get('FixedPlots/FixedXSec/Fixed%sXSec'%n) for n in ['Abs', 'Cex', 'OtherInel']]
+    vals = [[h.GetBinContent(i) for i in range(1, h.GetNbinsX()+1)] for h in hs]
+    bins = [[h.GetBinCenter(i) for i in range(1, h.GetNbinsX()+1)] for h in hs]
+  
+    grs = [RT.TGraph(len(vs), array('d', bs), array('d', vs)) for vs, bs in zip(vals, bins)]
+  
+  
+  fOut.cd()
+  corr.Write()
+  cov.Write()
+  if args.fixed:
+    for i in range(3):
+      grs[i].Write('gr_fixed_%s'%['Abs', 'Cex', 'OtherInel'][i])
 fOut.Close();
-
+  

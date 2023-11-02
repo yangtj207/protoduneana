@@ -137,13 +137,24 @@ protoana::AbsCexDriver::AbsCexDriver(
     fDataCalibrationFactor = fRNG.Gaus(1., fDataCalibrationFactor);
     std::cout << "New cal factor: " << fDataCalibrationFactor << std::endl;
   }
+
+  fRandomFakeDataBeamShift = extra_options.get<bool>("RandomFakeDataBeamShift", false);
+  fRandomMCBeamShift = extra_options.get<bool>("RandomMCBeamShift", false);
+  fUseBeamShift = extra_options.get<bool>("UseBeamShift", false);
+
+  if (fUseBeamShift) {
+    fBeamShiftCovRoutineActive = true;
+    OpenBeamShiftInput();
+    GenerateBeamShiftUniverse();
+
+  }
 }
 
 void protoana::AbsCexDriver::FillMCEvents(
     TTree * tree, std::vector<ThinSliceEvent> & events,
     std::vector<ThinSliceEvent> & fake_data_events,
     int & split_val, const bool & do_split, const bool & shuffle,
-    int max_entries, const bool & do_fake_data) {
+    int max_entries, int max_fake_entries, const bool & do_fake_data) {
   std::cout << "Filling MC Events" << std::endl;
 
   int sample_ID, selection_ID, event, run, subrun;
@@ -272,8 +283,8 @@ void protoana::AbsCexDriver::FillMCEvents(
 
   split_val = nentries;
 
-  int /*events_start = 0,*/ events_end = nentries;
-  int fake_start = 0/*, fake_end = nentries*/;
+  int events_end = nentries;
+  int fake_start = 0;
 
   std::vector<int> event_list, fake_event_list;
 
@@ -317,8 +328,15 @@ void protoana::AbsCexDriver::FillMCEvents(
     }
   }
   else {
+    int nfake_entries = (max_fake_entries < 0 ? tree->GetEntries() : max_fake_entries);
+    if (max_fake_entries > tree->GetEntries()) {
+        std::string message = "Requested more fake_entries than in MC tree";
+        throw std::runtime_error(message);
+    }
     for (int i = 0; i < events_end; ++i) {
       event_list.push_back(i);
+    }
+    for (int i = 0; i < nfake_entries; ++i) {
       fake_event_list.push_back(i);
     }
   }
@@ -469,6 +487,7 @@ void protoana::AbsCexDriver::FillMCEvents(
 
     //ThinSliceEvent thin_slice_event(event, subrun, run);
     events.push_back(ThinSliceEvent(event, subrun, run));
+    events.back().SetMCStatVarWeight(fRNG.Poisson(1));
     events.back().SetSampleID(sample_ID);
     events.back().SetSelectionID(selection_ID);
     events.back().SetTrueInteractingEnergy(true_beam_interactingEnergy);
@@ -573,7 +592,7 @@ void protoana::AbsCexDriver::FillMCEvents(
   }
 
   if (do_fake_data) {
-    std::cout << "Filling fake data" << std::endl;
+    std::cout << "Filling fake data " << fake_event_list.size() << std::endl;
     //for (int i = fake_start; i < fake_end; ++i) {
     auto start_time = std::chrono::high_resolution_clock::now();
     for (int & i : fake_event_list) {
@@ -583,6 +602,7 @@ void protoana::AbsCexDriver::FillMCEvents(
       fake_data_events.push_back(ThinSliceEvent(event, subrun, run));
       if (!(fake_data_events.size() % 20000))
         std::cout << fake_data_events.size() << std::endl;
+      fake_data_events.back().SetMCStatVarWeight(fRNG.Poisson(1));
       fake_data_events.back().SetSampleID(sample_ID);
       fake_data_events.back().SetSelectionID(selection_ID);
       fake_data_events.back().SetTrueInteractingEnergy(true_beam_interactingEnergy);
@@ -706,7 +726,8 @@ void protoana::AbsCexDriver::FillMCEvents(
     auto delta =
         std::chrono::duration_cast<std::chrono::milliseconds>(
             new_time - start_time).count();
-    std::cout << "Filling fake data took " << delta << std::endl;
+    std::cout << "Filling " << fake_data_events.size() <<
+                 " fake data took " << delta << std::endl;
   }
 
   std::cout << "Filled MC Events" << std::endl;
@@ -839,7 +860,6 @@ void protoana::AbsCexDriver::BuildMCSamples(
     nominal_fluxes[flux_type] += 1.;
     this_sample->AddFlux();
     double val[1] = {0};
-    //if (selection_ID == 4) {
     if (std::find(fEndZSelections.begin(), fEndZSelections.end(), selection_ID)
         != fEndZSelections.end()) {
       TH1D * selected_hist
@@ -855,7 +875,6 @@ void protoana::AbsCexDriver::BuildMCSamples(
         val[0] = reco_beam_endZ;
       }
     }
-    //else if (selection_ID > 4) {
     else if (
         std::find(fOneBinSelections.begin(), fOneBinSelections.end(), selection_ID)
         != fOneBinSelections.end()) {
@@ -870,7 +889,6 @@ void protoana::AbsCexDriver::BuildMCSamples(
           if (deltaE > fEnergyFix) {
             energy[0] += deltaE; 
           }
-          //energy[0] += 1.e3*beam_shift_delta;
         }
       }
 
@@ -897,18 +915,19 @@ void protoana::AbsCexDriver::BuildMCSamples(
     //Fill the total incident hist with truth info
     //this_sample->FillTrueIncidentHist(good_true_incEnergies);
     this_sample->AddIncidentEnergies(good_true_incEnergies);
-    /*if (true_beam_incidentEnergies.size() > 0) {
-    this_sample->AddESliceEnergies(
-        {(true_beam_incidentEnergies)[0],
-         end_energy});
-    }*/
 
     FillExtraHistsMC(*this_sample, event, 1.);
 
-    this_sample->CalculateStatVariations();
 
   }
-
+  for (auto & it : samples) {
+    auto & samples_vec_2D = it.second;
+    for (auto & samples_vec : samples_vec_2D) {
+      for (auto & this_sample : samples_vec) {
+        this_sample.CalculateStatVariations();
+      }
+    }
+  }
 }
 
 void protoana::AbsCexDriver::RefillSampleLoop(
@@ -1014,6 +1033,7 @@ void protoana::AbsCexDriver::RefillSampleLoop(
     if ((fBeamShiftCovRoutineActive ||
          fRestrictBeamInstP)
         && bin == -1) {
+      //std::cout << "Skipping beam bin " << beam_inst_P << std::endl;
       continue;
     }
     //int bin = GetBeamBin(beam_energy_bins, (use_beam_inst_P ? beam_inst_P :
@@ -1204,6 +1224,11 @@ void protoana::AbsCexDriver::RefillSampleLoop(
     if (fStatVar) {
       //std::cout << "statvar " << this_sample->GetStatVarWeight(new_selection, val[0]) << std::endl;
       weight *= this_sample->GetStatVarWeight(new_selection, val[0]);
+    }
+
+    if (fUseMCStatVarWeight) {
+      //std::cout << event.GetMCStatVarWeight() << std::endl;
+      weight *= event.GetMCStatVarWeight();
     }
 
     std::lock_guard<std::mutex> guard(fRefillMutex);
@@ -2447,6 +2472,8 @@ void protoana::AbsCexDriver::BuildDataHists(
 
   TH1D & incident_hist = data_set.GetIncidentHist();
   std::map<int, TH1 *> & selected_hists = data_set.GetSelectionHists();
+  auto & beam_bin_selected_hists
+      = data_set.GetBeamBinSelectionHists();
 
   if (split_val < 0 || split_val > tree->GetEntries()) {
     flux = tree->GetEntries()/* - split_val*/;
@@ -2476,6 +2503,8 @@ void protoana::AbsCexDriver::BuildDataHists(
                sqrt(std::pow(beam_inst_P*1.e3, 2) + pi_mass_sq);
     //std::cout << "deltaE_scale: " << deltaE_scale << std::endl; 
     beam_fluxes[beam_bin] += 1.;
+
+    auto & beam_bin_sel_hist = beam_bin_selected_hists[selection_ID];
 
     ExtraHistDataVars extra_vars(selection_ID, reco_beam_endZ,
                                  reco_beam_startX, reco_beam_startY,
@@ -2562,6 +2591,7 @@ void protoana::AbsCexDriver::BuildDataHists(
     }
 
     selected_hists[selection_ID]->Fill(val);
+    beam_bin_sel_hist->Fill(val, 1.e3*beam_inst_P_scaled);
   }
   std::cout << "Data -- Skipped: " << n_skipped << std::endl;
   flux -= n_skipped;
@@ -6040,6 +6070,42 @@ void protoana::AbsCexDriver::SetupBeamShiftCovRoutine(fhicl::ParameterSet & rout
   fBeamShiftNominalP2 = routine.get<double>("NominalP2");
 }
 
+void protoana::AbsCexDriver::TurnOnFakeData() {
+  fFakeDataActive = true;
+  if (fBeamShiftCovUseInput && fUseBeamShift) {
+    fBeamShiftCovRoutineActive = true;
+    OpenBeamShiftInput(); 
+    GenerateBeamShiftUniverse();
+  }
+}
+
+void protoana::AbsCexDriver::TurnOffFakeData() {
+  fFakeDataActive = false;
+  //Reset the beam shift universe if needed
+  if (fUseBeamShift) {
+    GenerateBeamShiftUniverse();
+    fBeamShiftCovRoutineActive = true;
+  }
+}
+
+void protoana::AbsCexDriver::OpenBeamShiftInput() {
+
+  if (fOpenedBeamShiftInput) return;
+  auto * beam_shift_file = TFile::Open(fBeamShiftInputFileName.c_str());
+
+  fBeamShiftInputCentrals = (TVectorD*)beam_shift_file->Get("centrals");
+
+  fBeamShiftInputCov = (TMatrixD*)beam_shift_file->Get("covariance");
+
+  fBeamShiftInputChol = TDecompChol(*fBeamShiftInputCov);
+  fBeamShiftInputChol.Decompose();
+  fBeamShiftInputCovL = (TMatrixD*)fBeamShiftInputChol.GetU().Clone();
+  fBeamShiftInputCovL->Transpose(fBeamShiftInputChol.GetU());
+
+  beam_shift_file->Close();
+  fOpenedBeamShiftInput = true;
+}
+
 void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
     const std::vector<ThinSliceEvent> & events,
     std::map<int, std::vector<std::vector<ThinSliceSample>>> & nominal_samples,
@@ -6056,8 +6122,9 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
 
   fBeamShiftCovRoutineActive = true;
   if (fBeamShiftCovUseInput) {
+    OpenBeamShiftInput();
     //std::string beam_shift_input_file = routine.get<std::string>("InputName");
-    auto * beam_shift_file = TFile::Open(fBeamShiftInputFileName.c_str());
+    /*auto * beam_shift_file = TFile::Open(fBeamShiftInputFileName.c_str());
 
     fBeamShiftInputCentrals = (TVectorD*)beam_shift_file->Get("centrals");
     //fBeamShiftInputCentrals->SetDirectory(0);
@@ -6071,7 +6138,7 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
     fBeamShiftInputCovL->Transpose(fBeamShiftInputChol.GetU());
     //fBeamShiftInputChol.SetDirectory(0);
 
-    beam_shift_file->Close();
+    beam_shift_file->Close();*/
   }
 
   //Nominal samples -- get total histograms
@@ -6132,6 +6199,7 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
   //int fNCovarianceGens = 2;
   std::cout << "Generating covariance for beam shift" << std::endl;
   std::vector<std::vector<double>> all_new_vals;
+  fFakeDataActive = true;
   for (size_t gen_i = 0; gen_i < fNCovarianceGens; ++gen_i) {
 
     /*
@@ -6390,6 +6458,7 @@ void protoana::AbsCexDriver::CovarianceRoutineBeamShift(
   //Save the covariances in a new file
   //
   fBeamShiftCovRoutineActive = false;
+  fFakeDataActive = true;
 }
 
 //double protoana::AbsCexDriver::GetBeamShiftDelta(const std::vector<double> & energies) {
@@ -6464,25 +6533,33 @@ double protoana::AbsCexDriver::GetBeamShiftDelta(double init_energy) {
 void protoana::AbsCexDriver::GenerateBeamShiftUniverse() {
 
     if (fBeamShiftCovUseInput) {
-      TVectorD rand(3);
-      for (size_t i = 0; i < 3; ++i) rand[i] = fRNG.Gaus();
 
-      std::cout << "Using input covariance" << std::endl;
-      for (size_t i = 0; i < 3; ++i) {
-        for (size_t j = 0; j < 3; ++j) {
-          //std::cout << fBeamShiftInputChol.GetU()[i][j] << " ";
-          std::cout << (*fBeamShiftInputCovL)[i][j] << " ";
+      fCurrentBeamShiftP0 =  (*fBeamShiftInputCentrals)[0];
+      fCurrentBeamShiftP1 =  (*fBeamShiftInputCentrals)[1];
+      fCurrentBeamShiftP2 =  (*fBeamShiftInputCentrals)[2];
+
+      if ((fRandomFakeDataBeamShift && fFakeDataActive) ||
+          (fRandomMCBeamShift && !fFakeDataActive)) {
+        TVectorD rand(3);
+        for (size_t i = 0; i < 3; ++i) rand[i] = fRNG.Gaus();
+
+        std::cout << "Using input covariance" << std::endl;
+        for (size_t i = 0; i < 3; ++i) {
+          for (size_t j = 0; j < 3; ++j) {
+            //std::cout << fBeamShiftInputChol.GetU()[i][j] << " ";
+            std::cout << (*fBeamShiftInputCovL)[i][j] << " ";
+          }
+          std::cout << std::endl;
         }
-        std::cout << std::endl;
+        //TVectorD rand_times_chol = fBeamShiftInputChol.GetU()*rand;
+        TVectorD rand_times_chol = (*fBeamShiftInputCovL)*rand;
+        for (size_t i = 0; i < 3; ++i) {
+          std::cout << "\t" << rand_times_chol[i] << std::endl;
+        }
+        fCurrentBeamShiftP0 += rand_times_chol[0];
+        fCurrentBeamShiftP1 += rand_times_chol[1];
+        fCurrentBeamShiftP2 += rand_times_chol[2];
       }
-      //TVectorD rand_times_chol = fBeamShiftInputChol.GetU()*rand;
-      TVectorD rand_times_chol = (*fBeamShiftInputCovL)*rand;
-      for (size_t i = 0; i < 3; ++i) {
-        std::cout << "\t" << rand_times_chol[i] << std::endl;
-      }
-      fCurrentBeamShiftP0 =  (*fBeamShiftInputCentrals)[0] + rand_times_chol[0];
-      fCurrentBeamShiftP1 =  (*fBeamShiftInputCentrals)[1] + rand_times_chol[1];
-      fCurrentBeamShiftP2 =  (*fBeamShiftInputCentrals)[2] + rand_times_chol[2];
     }
 
     else {

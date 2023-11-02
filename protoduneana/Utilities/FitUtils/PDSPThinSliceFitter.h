@@ -31,12 +31,15 @@ namespace protoana {
 class PDSPThinSliceFitter {
  public:
   PDSPThinSliceFitter(std::string fcl_file, std::string output_file,
-                      std::string mc_file = "", std::string data_file = "");
+                      std::string mc_file = "", std::string data_file = "",
+                      std::string refit_file = "", std::string tune_file = "");
   void FillMCEvents();
   void BuildMCSamples();
+  void Tune(std::string tune_file);
   void SaveMCSamples();
   void GetNominalFluxes();
   void BuildDataHists();
+  void SaveDataSet();
   void InitializeMCSamples();
   void CompareDataMC(
       std::string extra_name, TDirectory * xsec_dir, TDirectory * plot_dir,
@@ -141,6 +144,7 @@ class PDSPThinSliceFitter {
 
   std::map<int, std::vector<double>> fSignalParameters;
   std::map<int, std::vector<std::string>> fSignalParameterNames;
+  std::map<int, std::vector<size_t>> fSignalFixedBins;
   size_t fTotalSignalParameters = 0;
 
   std::map<int, double> fFluxParameters;
@@ -149,6 +153,7 @@ class PDSPThinSliceFitter {
 
   //std::map<int, std::string> fSystParameterNames;
   std::map<std::string, ThinSliceSystematic> fSystParameters, fG4RWParameters;
+  bool fTuneG4RWPars;
   std::vector<std::vector<ThinSliceSystematic>> fSelVarSystPars;
   std::vector<std::string> fSystParameterNames;
   std::vector<double> fParLimits, fParLimitsUp;
@@ -182,6 +187,7 @@ class PDSPThinSliceFitter {
   //Configurable members
   std::string fMCFileName;
   std::string fDataFileName;
+  std::string fRefitFile = "";
   std::string fTreeName;
   std::vector<fhicl::ParameterSet> fSelectionSets;
   std::map<int, int> fSelectionBins;
@@ -221,7 +227,9 @@ class PDSPThinSliceFitter {
   std::map<std::string, double> fSystsToFix, fFixSystsPostFit;
   std::map<std::string, int> fSystParameterIndices;
   std::string fFakeDataRoutine;
-  bool fDoFluctuateStats, fFluctuateInSamples, fVaryMCStatsForFakeData;
+  bool fDoFluctuateStats, fFluctuateInSamples,
+       fVaryMCStats, fVaryMCStatsForFakeData,
+       fUseMCStatVarWeight, fUseMCStatVarWeightFakeData;
   bool fSplitMC, fShuffle;
   int fMaxEntries = -1, fMaxDataEntries = -1;
   int fSplitVal = 0;

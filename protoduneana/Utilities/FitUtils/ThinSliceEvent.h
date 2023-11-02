@@ -482,6 +482,9 @@ class ThinSliceEvent {
   void SetTrunc_dEdXs(std::vector<double> & vals) {reco_daughter_truncated_dEdX = vals;};
   const std::vector<double> & GetTrunc_dEdXs() const {return reco_daughter_truncated_dEdX;};
 
+  void SetMCStatVarWeight(double w) {mc_stat_var_weight = w;};
+  double GetMCStatVarWeight() const {return mc_stat_var_weight;};
+
  private:
   int event_ID, subrun_ID, run_ID;
   int sample_ID;
@@ -526,6 +529,7 @@ class ThinSliceEvent {
   double vertex_michel_score;
   int vertex_nhits;
   double stored_reco_energy = -999.;
+  double mc_stat_var_weight = 1.;
 };
 }
 #endif
