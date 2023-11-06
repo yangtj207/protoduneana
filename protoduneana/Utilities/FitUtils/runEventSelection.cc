@@ -117,6 +117,12 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
            .Define("reco_beam_fixed_interactingEnergy",
                    fixed_interacting_energy(80.),
                    {"reco_beam_incidentEnergies", "reco_beam_interactingEnergy"})
+           .Define("reco_beam_modified_interactingEnergy",
+                   modified_interacting_energy(80.),
+                   {"beam_inst_P", "reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
+           .Define("reco_beam_modified2_interactingEnergy",
+                   modified_interacting_energy(20.),
+                   {"beam_inst_P", "reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
            .Define("daughter_PDGs_types", daughter_PDG_types,
                    {"reco_daughter_PFP_true_byHits_PDG"});
 
@@ -165,6 +171,18 @@ auto DefineMC(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
                  selection_ID_inclusive(pset.get<bool>("DoMichel")),
                  {"primary_isBeamType", "primary_ends_inAPA3",
                   "passBeamCut", "vertex_cut"});
+
+  if (pset.get<bool>("DoFakeResAndSel", false)) {
+    auto fake_res_sel = pset.get<fhicl::ParameterSet>("FakeResSelPars");
+    double fake_res = fake_res_sel.get<double>("Resolution", 10.);
+    double fake_sel = fake_res_sel.get<double>("FakeSel", .05);
+
+    mc = mc.Redefine("reco_beam_interactingEnergy", fake_res_func(fake_res),
+                     {"true_beam_PDG", "true_beam_endP"})
+           .Redefine("selection_ID", fake_selection(fake_sel),
+                     {"new_interaction_topology"});
+  }
+
   std::cout << "Filtering MC" << std::endl;
   auto filtered = mc.Filter("true_beam_PDG == 211 || true_beam_PDG == -13");
   return filtered;
@@ -218,6 +236,12 @@ auto DefineData(ROOT::RDataFrame & frame, const fhicl::ParameterSet & pset) {
            .Define("reco_beam_fixed_interactingEnergy",
                    fixed_interacting_energy(80.),
                    {"reco_beam_incidentEnergies", "reco_beam_interactingEnergy"})
+           .Define("reco_beam_modified_interactingEnergy",
+                   modified_interacting_energy(80.),
+                   {"beam_inst_P", "reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
+           .Define("reco_beam_modified2_interactingEnergy",
+                   modified_interacting_energy(20.),
+                   {"beam_inst_P", "reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
            .Define("has_noPion_daughter",
                    secondary_noPion(
                        pset.get<double>("TrackScoreCut"),

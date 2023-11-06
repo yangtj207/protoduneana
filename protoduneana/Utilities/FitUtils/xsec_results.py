@@ -5,16 +5,6 @@ import sys
 from math import sqrt
 
 
-RT.gROOT.LoadMacro("~/protoDUNEStyle.C")
-RT.gROOT.SetBatch();
-RT.gStyle.SetOptStat(00000)
-RT.gStyle.SetErrorX(1.e-4)
-RT.gStyle.SetTitleAlign(33)
-RT.gStyle.SetTitleX(.5)
-tt = RT.TLatex();
-tt.SetNDC();
-
-
 parser = ap()
 
 parser.add_argument('-o', type=str, required=True)
@@ -38,6 +28,17 @@ parser.add_argument('--fixed', action='store_true')
 parser.add_argument('-v', action='store_true')
 
 args = parser.parse_args()
+
+RT.gROOT.LoadMacro("~/protoDUNEStyle.C")
+RT.gROOT.SetBatch();
+RT.gStyle.SetOptStat(00000)
+RT.gStyle.SetErrorX(1.e-4)
+RT.gStyle.SetTitleAlign(33)
+RT.gStyle.SetTitleX(.5)
+tt = RT.TLatex();
+tt.SetNDC();
+
+
 
 if args.p:
   t_prelim = RT.TLatex()
@@ -80,10 +81,12 @@ n_cex_abs = n_abs + gr_cex.GetN()
 n_total = n_cex_abs + gr_other.GetN()
 
 g4_xsecs = [fG4.Get('abs_KE').Clone(), fG4.Get('cex_KE').Clone()]
-other_grs = [fG4.Get('dcex_KE'), fG4.Get('inel_KE'), fG4.Get('prod_KE')]
-total = [other_grs[0].GetY()[i] + other_grs[1].GetY()[i] + other_grs[2].GetY()[i] for i in range(0, other_grs[0].GetN())]
-xs = [x for x in other_grs[0].GetX()]
-g4_xsecs.append(RT.TGraph(len(xs), array('d', xs), array('d', total)))
+#other_grs = [fG4.Get('dcex_KE'), fG4.Get('inel_KE'), fG4.Get('prod_KE')]
+#total = [other_grs[0].GetY()[i] + other_grs[1].GetY()[i] + other_grs[2].GetY()[i] for i in range(0, other_grs[0].GetN())]
+#xs = [x for x in other_grs[0].GetX()]
+#g4_xsecs.append(RT.TGraph(len(xs), array('d', xs), array('d', total)))
+g4_xsecs.append(fG4.Get('other_KE').Clone())
+
 
 g4_maxes = [max([y for y in g.GetY()]) for g in g4_xsecs]
 print(g4_maxes)

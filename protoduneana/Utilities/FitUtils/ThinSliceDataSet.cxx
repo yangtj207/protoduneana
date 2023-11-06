@@ -3,7 +3,8 @@
 
 protoana::ThinSliceDataSet::ThinSliceDataSet(
     const std::vector<double> & incident_bins,
-    const std::vector<fhicl::ParameterSet> & selections) {
+    const std::vector<fhicl::ParameterSet> & selections,
+    const std::vector<double> & beam_bins) {
   fIncidentHist = TH1D("Data_incident_hist",
                            "Data;Reconstructed KE (MeV)",
                            incident_bins.size() - 1,
@@ -26,6 +27,12 @@ protoana::ThinSliceDataSet::ThinSliceDataSet(
       fSelectionHists[it->get<int>("ID")] = new TH1D(
           sel_name.c_str(), title/*.c_str()"Data;Reconstructed KE (MeV)"*/,
           selected_bins[0].size() - 1, &selected_bins[0][0]);
+      sel_name += "beam_bin_";
+      fBeamBinSelectionHists[it->get<int>("ID")] = new TH2D(
+          sel_name.c_str(), title,
+          selected_bins[0].size() - 1, &selected_bins[0][0],
+          beam_bins.size() - 1, &beam_bins[0]
+      );
     }
     else if (selected_bins.size() == 2) {
       fSelectionHists[it->get<int>("ID")] = new TH2D(
@@ -146,6 +153,9 @@ void protoana::ThinSliceDataSet::MakeRebinnedHists() {
 }
 
 void protoana::ThinSliceDataSet::Refill1DRebinned() {
+
+  if (!fMadeRebinned) MakeRebinnedHists();
+
   for (auto it = fSelectionHists.begin(); it != fSelectionHists.end(); ++it) {
     for (int i = 1; i <= it->second->GetNbinsX(); ++i) {
       fSelectionHistsRebinned[it->first]->SetBinContent(
@@ -218,8 +228,14 @@ void protoana::ThinSliceDataSet::Rebin3D(TH1 * sel_hist, TH1 * rebinned) {
   }
 }
 
-void protoana::ThinSliceDataSet::GenerateStatFluctuation(bool poisson) {
+void protoana::ThinSliceDataSet::GenerateStatFluctuation(
+    std::vector<double> & beam_fluxes, bool poisson) {
 
+  std::cout << "Beam Fluxes" << std::endl;
+  for (auto & bf : beam_fluxes) {
+    std::cout << bf << std::endl;
+    bf = 0.;
+  }
   //bool retry = true;
   //while (retry) {
   //if (!poisson) {
@@ -228,8 +244,9 @@ void protoana::ThinSliceDataSet::GenerateStatFluctuation(bool poisson) {
       //fSelectionHistsRebinned[it->first]->Reset();
     }
 
-    int total = 0;
+    //int total = 0;
     std::cout << "Seed: " << fRNG.GetSeed() << std::endl;
+    /*
     for (int i = 0; i < fTotal; ++i) {
       double r = fRNG.Uniform();
       if (i < 10) std::cout << i << " " << r << std::endl;
@@ -256,7 +273,7 @@ void protoana::ThinSliceDataSet::GenerateStatFluctuation(bool poisson) {
         bin_total += it->second->GetBinContent(i);
       }
     }
-    std::cout << total << " " << bin_total << std::endl;
+    std::cout << total << " " << bin_total << std::endl;*/
 
   //}
   /*else {
@@ -295,6 +312,22 @@ void protoana::ThinSliceDataSet::GenerateStatFluctuation(bool poisson) {
       //fSelectionHistsRebinned[it->first]->Scale(new_total/fTotal);
     }
     */
+
+    for (auto & it : fBeamBinSelectionHists) {
+      auto * sel_hist = fSelectionHists[it.first];
+      for (int i = 1; i <= it.second->GetNbinsX(); ++i) {
+        for (int j = 1; j <= it.second->GetNbinsY(); ++j) {
+          double val = it.second->GetBinContent(i, j);
+          double r_val = fRNG.PoissonD(val);
+          sel_hist->AddBinContent(i, r_val);
+          beam_fluxes[j-1] += r_val;
+        }
+      }
+    }
+    std::cout << "New Beam Fluxes" << std::endl;
+    for (auto & bf : beam_fluxes) {
+      std::cout << bf << std::endl;
+    }
 
     Refill1DRebinned();
 
@@ -422,3 +455,15 @@ void protoana::ThinSliceDataSet::FillHistsFromSamples(
   std::cout << "Flux: " << flux << std::endl;
 }
 
+void protoana::ThinSliceDataSet::SetDirectory() {
+  for (auto & hist : fSelectionHists) {
+    hist.second->SetDirectory(0);
+  }
+  for (auto & hist : fSelectionHistsRebinned) {
+    hist.second->SetDirectory(0);
+  }
+
+  for (auto & hist : fExtraHists) {
+    hist.second->SetDirectory(0);
+  }
+}

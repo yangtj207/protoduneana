@@ -25,7 +25,8 @@ class ThinSliceDriver {
     TTree * tree, std::vector<ThinSliceEvent> & events,
     std::vector<ThinSliceEvent> & fake_data_events,
     int & split_val, const bool & do_split, const bool & shuffle,
-    int max_entries, const bool & do_fake_data) = 0;
+    int max_entries, int max_fake_entries,
+    const bool & do_fake_data) = 0;
 
   virtual void BuildDataHists(
     TTree * tree, ThinSliceDataSet & data_set, double & flux,
@@ -186,14 +187,21 @@ class ThinSliceDriver {
  };
 
  void SetStatVar(bool set) {fStatVar = set;};
+ void SetUseMCStatVarWeight(bool set) {fUseMCStatVarWeight = set;};
  void SetFillFakeInMain(bool set) {fFillFakeDataInMain = set;};
+
+ virtual void TurnOnFakeData() = 0;
+ virtual void TurnOffFakeData() = 0;
+
  protected:
   fhicl::ParameterSet fExtraOptions;
   std::string fFakeDataRoutine;
+  bool fFakeDataActive = false;
 
   void ResetSamples(
       std::map<int, std::vector<std::vector<ThinSliceSample>>> & samples);
   bool fStatVar = false;
+  bool fUseMCStatVarWeight = false;
   bool fFillFakeDataInMain = false;
  private:
 };

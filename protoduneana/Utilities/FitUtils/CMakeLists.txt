@@ -64,3 +64,4 @@ install_source()
 install_scripts()
 
 add_subdirectory(fcl_cfg_files)
+add_subdirectory(FitObjs)

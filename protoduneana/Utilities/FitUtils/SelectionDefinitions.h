@@ -1,3 +1,4 @@
+#include "TRandom3.h"
 class new_interaction_topology {
  private:
   double fEndZLow, fEndZHigh;
@@ -732,6 +733,63 @@ class vertex_michel_cut {
   
 };
 
+double densityEffect(double beta, double gamma) {
+ double lar_C = 5.215, lar_x0 = 0.201, lar_x1 = 3, lar_a = 0.196, lar_k = 3;
+ long double x = log10(beta * gamma);
+ 
+ if( x >= lar_x1 ) return 2*log(10)*x - lar_C;
+
+ else if ( lar_x0 <= x && x < lar_x1) return 2*log(10)*x - lar_C + lar_a * pow(( lar_x1 - x ) , lar_k );
+
+ else return  0.; //if x < lar_x0
+}
+
+double BetheBloch(double energy, double mass) {
+   //K ,rho,Z,A, charge, me, I, gamma,  wmax, pitch;
+   double K = 0.307, rho = 1.4, charge = 1, Z = 18,
+          A = 39.948, I = pow(10,-6)*10.5*18, //MeV
+          me = 0.51, //MeV me*c^2
+          pitch = 1;
+
+    //momentum = sqrt( pow(energy,2) - pow(massicle,2));
+    //beta = momentum/sqrt(pow(massicle,2) + pow(momentum,2));
+    //gamma =  1/sqrt(1 - pow(beta,2));
+
+    double gamma = (energy + mass) / mass;
+    double beta = sqrt( 1 - 1/pow(gamma,2));
+
+    double wmax = 2*me*pow(beta,2)*pow(gamma,2)/(1+2*gamma*me/mass + pow(me,2)/pow(mass,2));
+
+
+    double dEdX = pitch*(rho*K*Z*pow(charge,2))/(A*pow(beta,2))*(0.5*log(2*me*pow(gamma,2)*pow(beta,2)*wmax/pow(I,2)) - pow(beta,2) - densityEffect( beta, gamma )/2 );
+    //multiply by rho to have dEdX MeV/cm in LAr
+
+   return dEdX;
+}
+
+class modified_interacting_energy {
+  private:
+    double fEnergyFix;
+  public:
+    modified_interacting_energy(double fix_val = -1.) : fEnergyFix(fix_val) {}
+    double operator()(const double & beam_inst_P,
+                      const std::vector<double> & dedxs,
+                      const std::vector<double> & track_pitches) {
+     double energy = sqrt(beam_inst_P*beam_inst_P*1.e6 + 139.57*139.57) - 139.57;
+     for (size_t k = 0; k < dedxs.size(); ++k) {
+       double dedx = dedxs[k];
+       if (dedx > fEnergyFix && fEnergyFix > 0.) {
+         energy -= BetheBloch(energy, 139.57)*track_pitches[k];
+       }
+       else {
+         energy -= dedx*track_pitches[k];
+       }
+     }
+     return energy;
+    }
+};
+
+
 class fixed_interacting_energy {
   private:
    double fEnergyFix;
@@ -792,6 +850,49 @@ class exclude_runs {
     bool operator()(int run) {
       return (std::find(bad_runs.begin(), bad_runs.end(), run) ==
               bad_runs.end());
+    }
+};
+
+class fake_res_func {
+  private:
+    double fFakeRes;
+    TRandom3 fRNG = TRandom3(0);
+  public:
+    fake_res_func(double res) : fFakeRes(res) {}
+
+    double operator()(int true_beam_PDG, double true_p) {
+      if (true_beam_PDG != 211) return true_p;
+      if (true_p < 0.) return true_p;
+
+      return fRNG.Gaus(sqrt(true_p*true_p*1.e6 + 139.57*139.57) - 139.57, fFakeRes);
+    }
+};
+
+class fake_selection {
+  private:
+    double fFakeMix;
+    TRandom3 fRNG = TRandom3(0);
+    std::map<int, std::pair<int, int>> sels = {
+      {1, {2, 3}},
+      {2, {1, 3}},
+      {3, {1, 2}}
+    };
+  public:
+    fake_selection(double m) : fFakeMix(m) {}
+
+    int operator()(int id) {
+      double r = fRNG.Uniform(0., 1.);
+      if (id > 4)
+        return 4;
+      if (id == 4)
+        return 6;
+
+      if (r < fFakeMix)
+        return sels[id].first;
+      else if (r < 2*fFakeMix)
+        return sels[id].second;
+      else
+        return id;
     }
 };
 
