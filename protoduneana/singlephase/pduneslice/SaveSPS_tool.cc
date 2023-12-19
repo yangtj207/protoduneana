@@ -51,7 +51,7 @@ namespace dnn {
                   make_scalar_column<int32_t>("pdg"),
                   make_column<float, 1>(
                     "xyzq",                                // 1 means each element is a 1-d array
-                    {4},                             // extent of each array dimension
+                    4,                             // extent of each array dimension
                     1024/ (4 * sizeof(float)), // chunk size
                     {PropertyList{H5P_DATASET_CREATE}(&H5Pset_shuffle)(&H5Pset_deflate, 6u)}));
 
@@ -100,9 +100,9 @@ namespace dnn {
         }
         // Work out which IDE despoited the most charge in the hit if there was more than one.
         double maxe = -1;
-        double tote = 0;
+        //double tote = 0;
         for (std::map<int,double>::iterator ii = trkide.begin(); ii!=trkide.end(); ++ii){
-          tote += ii->second;
+          //tote += ii->second;
           if ((ii->second)>maxe){
             maxe = ii->second;
             trackid = ii->first;
