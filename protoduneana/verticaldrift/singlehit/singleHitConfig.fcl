@@ -1,0 +1,20 @@
+BEGIN_PROLOG
+
+SingleHit:
+{
+   module_type: "SingleHit"
+
+   HitLabel:          "gaushit"
+   SpacePointLabel:   "reco3d"
+   ClusterLabel:      "pandora"
+   TrackLabel:        "pandoraTrack"
+
+   ChannelWindow:     1
+   PeakTimeWindow:    20
+   CoincidenceWindow: 10
+
+   GeometryZWindow:   20
+   GeometryYWindow:   10
+}
+
+END_PROLOG
