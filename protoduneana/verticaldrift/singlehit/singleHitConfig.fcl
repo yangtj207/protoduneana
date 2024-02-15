@@ -1,20 +1,18 @@
 BEGIN_PROLOG
 
-SingleHit:
+singleHit:
 {
    module_type: "SingleHit"
+   LogLevel:     5
 
-   HitLabel:          "gaushit"
    SpacePointLabel:   "reco3d"
    ClusterLabel:      "pandora"
    TrackLabel:        "pandoraTrack"
+   HitLabel:          "prout"
 
    ChannelWindow:     1
    PeakTimeWindow:    20
    CoincidenceWindow: 10
-
-   GeometryZWindow:   20
-   GeometryYWindow:   10
 }
 
 END_PROLOG
