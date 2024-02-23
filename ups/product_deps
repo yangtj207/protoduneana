@@ -64,7 +64,7 @@ table_fragment_end
 product          version
 duneprototypes   v09_82_02d01
 cetbuildtools	 v8_20_00	-	only_for_build
-geant4reweight   v01_20_00
+geant4reweight   v01_20_03
 end_product_list
 
 
