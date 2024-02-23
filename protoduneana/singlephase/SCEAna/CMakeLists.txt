@@ -1,8 +1,8 @@
 cet_make_exec( plotdeltaz
                SOURCE plotdeltaz.C
                LIBRARIES
-               ROOT_BASIC_LIB_LIST
-               ${FHICLCPP}
+               ROOT::Core ROOT::Tree ROOT::Hist
+               fhiclcpp::fhiclcpp
                )
 
 install_scripts()

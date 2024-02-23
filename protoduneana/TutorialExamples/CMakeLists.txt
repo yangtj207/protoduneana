@@ -6,7 +6,7 @@ cet_build_plugin(ClusterCounter art::module
                         ROOT::Core
                         art_root_io::TFileService_service
 			messagefacility::MF_MessageLogger
-			ROOT_BASIC_LIB_LIST
+			ROOT::Core ROOT::Tree ROOT::Hist
 			BASENAME_ONLY
 )
 
@@ -19,7 +19,7 @@ cet_build_plugin(ClusterCounter2 art::module
                         ROOT::Core
                         art_root_io::TFileService_service
 			messagefacility::MF_MessageLogger
-			ROOT_BASIC_LIB_LIST
+			ROOT::Core ROOT::Tree ROOT::Hist
 			BASENAME_ONLY
 )
 
@@ -32,7 +32,7 @@ cet_build_plugin(ClusterCounter3 art::module
                         ROOT::Core
                         art_root_io::TFileService_service
 			messagefacility::MF_MessageLogger
-			ROOT_BASIC_LIB_LIST
+			ROOT::Core ROOT::Tree ROOT::Hist
 			BASENAME_ONLY
 )
 
@@ -49,7 +49,7 @@ cet_build_plugin(ClusterCounter4 art::module
                         ROOT::Core
                         art_root_io::TFileService_service
 			messagefacility::MF_MessageLogger
-			ROOT_BASIC_LIB_LIST
+			ROOT::Core ROOT::Tree ROOT::Hist
 			BASENAME_ONLY
 )
 
@@ -68,7 +68,7 @@ cet_build_plugin(ClusterCounter5 art::module
                         ROOT::Core
                         art_root_io::TFileService_service
 			messagefacility::MF_MessageLogger
-			ROOT_BASIC_LIB_LIST
+			ROOT::Core ROOT::Tree ROOT::Hist
 			BASENAME_ONLY
 )
 
@@ -83,7 +83,7 @@ cet_build_plugin(ReadSpacePointAndCnn art::module
                         ROOT::Core
                         art_root_io::TFileService_service
 			messagefacility::MF_MessageLogger
-			ROOT_BASIC_LIB_LIST
+			ROOT::Core ROOT::Tree ROOT::Hist
 			BASENAME_ONLY
 )
 
@@ -95,7 +95,7 @@ cet_build_plugin(ReadBeamInfo art::module
       ROOT::Core
       art_root_io::TFileService_service
       messagefacility::MF_MessageLogger
-      ROOT_BASIC_LIB_LIST
+      ROOT::Core ROOT::Tree ROOT::Hist
       BASENAME_ONLY
 )
 

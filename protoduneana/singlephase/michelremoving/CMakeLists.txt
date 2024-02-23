@@ -24,7 +24,7 @@ art_make(
   cetlib::cetlib 
   cetlib_except::cetlib_except
   fhiclcpp::fhiclcpp
-  ROOT_BASIC_LIB_LIST
+  ROOT::Core ROOT::Tree ROOT::Hist
   MODULE_LIBRARIES larana::OpticalDetector_OpDigiProperties_service
   larana::OpticalDetector_OpHitFinder
   larana::OpticalDetector
@@ -61,7 +61,7 @@ art_make(
   cetlib::cetlib 
   cetlib_except::cetlib_except
   fhiclcpp::fhiclcpp
-  ROOT_BASIC_LIB_LIST
+  ROOT::Core ROOT::Tree ROOT::Hist
   ProtoDUNEUtilities
   SERVICE_LIBRARIES
   larcorealg::Geometry
@@ -81,8 +81,8 @@ art_make(
   cetlib_except::cetlib_except
   fhiclcpp::fhiclcpp
   CLHEP
-  ROOT_BASIC_LIB_LIST
-  )
+  ROOT::Core ROOT::Tree ROOT::Hist
+  ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
 
 cet_remove_compiler_flags(CXX -pedantic)
 

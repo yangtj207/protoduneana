@@ -19,7 +19,7 @@ cet_build_plugin(PDSPmatch art::module
                         messagefacility::MF_MessageLogger
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
-                        ROOT_BASIC_LIB_LIST
+                        ROOT::Core ROOT::Tree ROOT::Hist
                         dunepdlegacy_rce_dataaccess
                         BASENAME_ONLY
 )
@@ -47,7 +47,7 @@ cet_build_plugin(PDSPmatchmc art::module
                         messagefacility::MF_MessageLogger
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
-                        ROOT_BASIC_LIB_LIST
+                        ROOT::Core ROOT::Tree ROOT::Hist
                         dunepdlegacy_rce_dataaccess
                         BASENAME_ONLY
 )

@@ -1,6 +1,6 @@
 
-include_directories( $ENV{IFDHC_FQ_DIR}/inc )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+include_directories( $ENV{IFDHC_FQ_DIR}/inc ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
 art_make( BASENAME_ONLY
           MODULE_LIBRARIES 
 	  dunesim::EventGenerator_ProtoDUNEbeamDataProducts
@@ -25,7 +25,7 @@ art_make( BASENAME_ONLY
           cetlib::cetlib 
 	  cetlib_except::cetlib_except
           ${CLHEP}
-          ROOT_BASIC_LIB_LIST
+          ROOT::Core ROOT::Tree ROOT::Hist
           ${SQLITE3}
           ${ROOT_EG}
           ifdh::ifdh 
@@ -34,7 +34,7 @@ art_make( BASENAME_ONLY
           art_root_io::tfile_support
 	  ROOT::Core
           art_root_io::TFileService_service
- )
+ ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
 
 
 install_headers()

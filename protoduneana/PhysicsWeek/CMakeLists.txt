@@ -16,7 +16,7 @@ cet_build_plugin(MichelHitCounter art::module
               art::Persistency_Provenance
               messagefacility::MF_MessageLogger
               cetlib::cetlib
-              ROOT_BASIC_LIB_LIST
+              ROOT::Core ROOT::Tree ROOT::Hist
               BASENAME_ONLY
 )
 
@@ -38,7 +38,7 @@ cet_build_plugin(VtxScore art::module
               art::Persistency_Provenance
               messagefacility::MF_MessageLogger
               cetlib::cetlib
-              ROOT_BASIC_LIB_LIST
+              ROOT::Core ROOT::Tree ROOT::Hist
               BASENAME_ONLY
 )
 
@@ -56,12 +56,12 @@ cet_build_plugin(MichelEventSelection art::module
               art::Framework_Principal
               art::Framework_Services_Registry
               art_root_io::tfile_support
-              ROOT::Core
+	      ROOT::Gpad
               art_root_io::TFileService_service
               art::Persistency_Provenance
               messagefacility::MF_MessageLogger
               cetlib::cetlib
-              ROOT_BASIC_LIB_LIST
+              ROOT::Core ROOT::Tree ROOT::Hist
               BASENAME_ONLY
 )
 

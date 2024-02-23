@@ -1,5 +1,5 @@
-include_directories ( ${CMAKE_CURRENT_SOURCE_DIR} )
-include_directories(AFTER $ENV{VALGRIND_INC})
+include_directories ( ${CMAKE_CURRENT_SOURCE_DIR} ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
+include_directories(AFTER $ENV{VALGRIND_INC}) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
 
 FILE (GLOB src_files *.cxx)
 
@@ -12,19 +12,19 @@ art_make_library( LIBRARY_NAME protodune_fitutils
 			    ${ART_ROOT_IO_TFILE_SUPPORT} 
 			    ${ART_ROOT_IO_TFILESERVICE_SERVICE}
 			    ${ART_PERSISTENCY_COMMON}
-			    canvas
-			    art_Persistency_Provenance
-			    cetlib cetlib_except
+			    canvas::canvas
+			    art::Persistency_Provenance
+			    cetlib::cetlib cetlib_except::cetlib_except
 			    ${ART_UTILITIES}
 			    ${MF_MESSAGELOGGER}
 			    ${FHICLCPP}
 			    ${CETLIB}
-			    ROOT_BASIC_LIB_LIST
-                            
+			    ROOT::Core ROOT::Tree ROOT::Hist
+			    ROOT::RooFit
 			    ${ROOT_ROOFITCORE}
 			    ${ROOT_ROOFIT}
-			    ${ROOT_ROOSTATS}
-			    ${ROOT_HISTFACTORY}
+			    ROOT::RooStats
+			    ROOT::HistFactory
 			    ${ROOT_FOAM}
 			    ${ROOT_GEOM}
 			    ${ROOT_MINUIT}
@@ -35,28 +35,28 @@ art_make_library( LIBRARY_NAME protodune_fitutils
 	    )
             #message(WARNING ${ROOT_TREEPLAYER})
 
-art_make_exec( NAME runProtoDUNEFit
+cet_make_exec( NAME runProtoDUNEFit
 	       SOURCE runProtoDUNEFit.cc
 	       LIBRARIES protodune_fitutils
-	    )
+	    ) ### MIGRATE-CHANGED (migrate-3.22.02) - art_make_exec() -> cet_make_exec()
 
-art_make_exec( NAME runEventSelection
+cet_make_exec( NAME runEventSelection
 	       SOURCE runEventSelection.cc
 	       LIBRARIES protodune_fitutils
                          ${ROOT_ROOTDATAFRAME}
                          ${ROOT_TREEPLAYER}
                          ${ROOT_ROOTVECOPS}
-	    )
+	    ) ### MIGRATE-CHANGED (migrate-3.22.02) - art_make_exec() -> cet_make_exec()
 
-art_make_exec( NAME Geant4ReweightSysts 
+cet_make_exec( NAME Geant4ReweightSysts 
 	       SOURCE Geant4ReweightSysts.cc
 	       LIBRARIES protodune_fitutils
-	    )
+	    ) ### MIGRATE-CHANGED (migrate-3.22.02) - art_make_exec() -> cet_make_exec()
 
-art_make_exec( NAME runPDSPThinSliceFit
+cet_make_exec( NAME runPDSPThinSliceFit
 	       SOURCE runPDSPThinSliceFit.c++
 	       LIBRARIES protodune_fitutils
-	     )
+	     ) ### MIGRATE-CHANGED (migrate-3.22.02) - art_make_exec() -> cet_make_exec()
 
 install_headers()
 install_fhicl()

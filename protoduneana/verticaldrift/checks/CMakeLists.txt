@@ -15,7 +15,7 @@ cet_build_plugin(	FitdQdx art::module
                         messagefacility::MF_MessageLogger
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
-                        ROOT_BASIC_LIB_LIST
+                        ROOT::Core ROOT::Tree ROOT::Hist
                         duneprototypes::ProtoDUNEDataUtils
 			ProtoDUNEUtilities
                         BASENAME_ONLY
@@ -38,7 +38,7 @@ cet_build_plugin(       CheckHitsAndTracks art::module
                         messagefacility::MF_MessageLogger
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
-                        ROOT_BASIC_LIB_LIST
+                        ROOT::Core ROOT::Tree ROOT::Hist
                         duneprototypes::ProtoDUNEDataUtils
                         ProtoDUNEUtilities
                         BASENAME_ONLY

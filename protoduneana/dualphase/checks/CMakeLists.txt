@@ -16,7 +16,7 @@ cet_build_plugin(       HitNormCheck art::module
                         messagefacility::MF_MessageLogger
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
-                        ROOT_BASIC_LIB_LIST
+                        ROOT::Core ROOT::Tree ROOT::Hist
                         BASENAME_ONLY
 )
 
@@ -37,7 +37,7 @@ cet_build_plugin(	CosmicsdQdx art::module
                         messagefacility::MF_MessageLogger
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
-                        ROOT_BASIC_LIB_LIST
+                        ROOT::Core ROOT::Tree ROOT::Hist
                         duneprototypes::ProtoDUNEDataUtils
 			ProtoDUNEUtilities
                         BASENAME_ONLY
@@ -60,7 +60,7 @@ cet_build_plugin(	TrackHitInfo art::module
                         messagefacility::MF_MessageLogger
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
-                        ROOT_BASIC_LIB_LIST
+                        ROOT::Core ROOT::Tree ROOT::Hist
                         duneprototypes::ProtoDUNEDataUtils
 			ProtoDUNEUtilities
                         BASENAME_ONLY

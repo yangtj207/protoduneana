@@ -23,11 +23,11 @@ art_make( MODULE_LIBRARIES
                         messagefacility::MF_MessageLogger
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
-			ROOT_BASIC_LIB_LIST
-                        ROOT_GENVECTOR
-                        ROOT_GEOM
+			ROOT::Core ROOT::Tree ROOT::Hist
+                        ROOT::GenVector
+                        ROOT::Geom
                         ProtoDUNEUtilities
-)
+) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
 
 install_headers()
 install_fhicl()

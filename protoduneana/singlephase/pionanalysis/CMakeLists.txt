@@ -23,11 +23,11 @@ art_make(BASENAME_ONLY
   larsim::MCCheater_BackTrackerService_service           
   larsim::MCCheater_ParticleInventoryService_service
   larreco::RecoAlg
-  ROOT_BASIC_LIB_LIST
+  ROOT::Core ROOT::Tree ROOT::Hist
   ProtoDUNEUtilities
   duneprototypes::ProtoDUNEDataUtils
   geant4reweight::ReweightBaseLib
-  )
+  ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
 
 cet_remove_compiler_flags(CXX -pedantic)
 
