@@ -249,7 +249,7 @@ gdmldir	product_dir	gdml
 #
 ####################################
 product		version		qual	flags		<table_format=2>
-duneprototypes	v09_82_02d01	-
+duneprototypes	v09_83_01d00	-
 geant4reweight	v01_20_03	-
 cetmodules	v3_22_02	-	only_for_build
 end_product_list
