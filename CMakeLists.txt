@@ -41,6 +41,7 @@ find_package( Boost REQUIRED ) # Needs to be first to cover for a missing transi
 find_package( Geant4 REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(...) -> find_package(REQUIRED ...)
 find_package(ROOT REQUIRED) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(...) -> find_package(REQUIRED ...)
 
+find_package( nufinder REQUIRED )
 find_package( dunecore REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(dunecore ...) -> find_package(dunecore REQUIRED ...)
 find_package( duneprototypes REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(duneprototypes ...) -> find_package(duneprototypes REQUIRED ...)
 find_package( dunecalib REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(dunecalib ...) -> find_package(dunecalib REQUIRED ...)
