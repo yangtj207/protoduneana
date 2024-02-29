@@ -1,5 +1,5 @@
 
-cet_build_plugin(       HitNormCheck art::module
+cet_build_plugin(       HitNormCheck art::module LIBRARIES
 			lardataobj::RecoBase
                         lardata::ArtDataHelper
                         lardata::Utilities
@@ -20,7 +20,7 @@ cet_build_plugin(       HitNormCheck art::module
                         BASENAME_ONLY
 )
 
-cet_build_plugin(	CosmicsdQdx art::module
+cet_build_plugin(	CosmicsdQdx art::module LIBRARIES
 			lardataobj::RecoBase
                         lardata::ArtDataHelper
                         lardata::Utilities
@@ -43,10 +43,10 @@ cet_build_plugin(	CosmicsdQdx art::module
                         BASENAME_ONLY
 )
 
-cet_build_plugin(	TrackHitInfo art::module
-			lardataobj_RecoBase
-                        lardata_ArtDataHelper
-                        lardata_Utilities
+cet_build_plugin(	TrackHitInfo art::module LIBRARIES
+			lardataobj::RecoBase
+                        lardata::ArtDataHelper
+                        lardata::Utilities
                         art::Framework_Core
                         art::Framework_Principal
                         art::Framework_Services_Registry

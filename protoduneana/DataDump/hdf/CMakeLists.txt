@@ -1,3 +1,5 @@
+include_directories(${HEP_HPC_INCLUDE_DIRS})
+
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
   art::Framework_Core
@@ -11,8 +13,8 @@ art_make(BASENAME_ONLY
   art::Persistency_Provenance
   art::Utilities
   messagefacility::MF_MessageLogger
-  cetlib 
-  cetlib_except
+  cetlib::cetlib
+  cetlib_except::cetlib_except
   lardataobj::RecoBase
   lardata::Utilities
   larcorealg::Geometry

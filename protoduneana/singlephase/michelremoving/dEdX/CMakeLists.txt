@@ -1,4 +1,4 @@
-cet_make_exec( dEdX_calibration 
+cet_make_exec( NAME dEdX_calibration 
                SOURCE protoDUNE_dEdx_calib.C
                LIBRARIES
 	       ROOT::Core ROOT::Tree ROOT::Hist ROOT::Gpad
@@ -17,6 +17,7 @@ art_make_library( LIBRARY_NAME protodune_dedx_fit
 			    fhiclcpp::fhiclcpp
 			    ROOT::Core ROOT::Tree ROOT::Hist ROOT::Gpad
                             CaloTools
+                            messagefacility::MF_MessageLogger
 	    )
 
 cet_make_exec( NAME runProtoDUNEdEdXFit

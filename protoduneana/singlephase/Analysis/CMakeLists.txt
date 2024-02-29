@@ -1,6 +1,7 @@
 art_make(BASENAME_ONLY
   MODULE_LIBRARIES
-  cetlib cetlib_except
+  cetlib::cetlib
+  cetlib_except::cetlib_except
   larsim::Simulation
   lardataobj::Simulation
   lardataobj::RecoBase

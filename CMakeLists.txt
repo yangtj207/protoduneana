@@ -36,7 +36,7 @@ cet_set_compiler_flags(DIAGS CAUTIOUS
 cet_report_compiler_flags() ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - add args: REPORT_THRESHOLD VERBOSE
 
 # these are minimum required versions, not the actual product versions
-find_package( Boost REQUIRED ) # Needs to be first to cover for a missing transitive ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(...) -> find_package(REQUIRED ...)
+find_package( Boost REQUIRED COMPONENTS system ) # Needs to be first to cover for a missing transitive ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(...) -> find_package(REQUIRED ...)
                   # dependency from artdaq_core.
 find_package( Geant4 REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(...) -> find_package(REQUIRED ...)
 find_package(ROOT REQUIRED) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(...) -> find_package(REQUIRED ...)
@@ -45,6 +45,7 @@ find_package( nufinder REQUIRED )
 find_package( dunecore REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(dunecore ...) -> find_package(dunecore REQUIRED ...)
 find_package( duneprototypes REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(duneprototypes ...) -> find_package(duneprototypes REQUIRED ...)
 find_package( dunecalib REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(dunecalib ...) -> find_package(dunecalib REQUIRED ...)
+find_package( nuevdb REQUIRED )
 find_package( duneopdet REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(duneopdet ...) -> find_package(duneopdet REQUIRED ...)
 find_package( dunesim REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(dunesim ...) -> find_package(dunesim REQUIRED ...)
 find_package( larcoreobj REQUIRED ) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(larcoreobj ...) -> find_package(larcoreobj REQUIRED ...)

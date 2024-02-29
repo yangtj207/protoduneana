@@ -1,4 +1,4 @@
-cet_make_exec( validate_calibration
+cet_make_exec( NAME validate_calibration
                SOURCE protoDUNE_validate_calib.C
                LIBRARIES
                ROOT::Core ROOT::Tree ROOT::Hist
@@ -6,7 +6,7 @@ cet_make_exec( validate_calibration
                fhiclcpp::fhiclcpp
                )
 
-cet_make_exec( calculate_calibration_constants
+cet_make_exec( NAME calculate_calibration_constants
                SOURCE calconst.C
                LIBRARIES
 	       ROOT::Core ROOT::Tree ROOT::Hist ROOT::Gpad
@@ -19,14 +19,14 @@ cet_make_library( LIBRARY_NAME CaloTools
                   ROOT::Core ROOT::Tree ROOT::Hist
                   )
 
-cet_make_exec( fitlangaumpv
+cet_make_exec( NAME fitlangaumpv
                SOURCE fitlangaumpv.C
                LIBRARIES
 	       ROOT::Core ROOT::Tree ROOT::Hist ROOT::Gpad
                CaloTools
                )
 
-cet_make_exec( murecombfit
+cet_make_exec( NAME murecombfit
                SOURCE murecombfit.C
                LIBRARIES
                ROOT::Core ROOT::Tree ROOT::Hist
@@ -34,10 +34,11 @@ cet_make_exec( murecombfit
 	       ROOT::Minuit
 	       cetlib::cetlib cetlib_except::cetlib_except
 	       fhiclcpp::fhiclcpp
+               messagefacility::MF_MessageLogger
                CaloTools
                )
 
-cet_make_exec( plotmurecombfitresult
+cet_make_exec( NAME plotmurecombfitresult
                SOURCE plotmurecombfitresult.C
                LIBRARIES
                ROOT::Core ROOT::Tree ROOT::Hist
@@ -45,10 +46,11 @@ cet_make_exec( plotmurecombfitresult
                ROOT::Minuit
                cetlib::cetlib cetlib_except::cetlib_except
                fhiclcpp::fhiclcpp
+               messagefacility::MF_MessageLogger
                CaloTools
                )
 
-cet_make_exec( resrangefit
+cet_make_exec( NAME resrangefit
                SOURCE resrangefit.C
                LIBRARIES
                ROOT::Core ROOT::Tree ROOT::Hist
@@ -56,16 +58,17 @@ cet_make_exec( resrangefit
 	       ROOT::Minuit
                cetlib::cetlib cetlib_except::cetlib_except
 	       fhiclcpp::fhiclcpp
+               messagefacility::MF_MessageLogger
                CaloTools
                )
 
-cet_make_exec( ConvertXCorrection
+cet_make_exec( NAME ConvertXCorrection
                SOURCE ConvertXCorrection.C
                LIBRARIES
                ROOT::Core ROOT::Tree ROOT::Hist
                )
 
-cet_make_exec( ConvertYZCorrection
+cet_make_exec( NAME ConvertYZCorrection
                SOURCE ConvertYZCorrection.C
                LIBRARIES
                ROOT::Core ROOT::Tree ROOT::Hist

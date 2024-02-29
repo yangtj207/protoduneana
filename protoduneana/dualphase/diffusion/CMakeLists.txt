@@ -1,4 +1,4 @@
-cet_build_plugin(	PlotSelectedTracks art::module
+cet_build_plugin(	PlotSelectedTracks art::module LIBRARIES
 			lardataobj::RecoBase
                         lardata::ArtDataHelper
                         lardata::Utilities
@@ -19,7 +19,7 @@ cet_build_plugin(	PlotSelectedTracks art::module
                         BASENAME_ONLY
 )
 
-cet_build_plugin(       GetAnodeCathodePulses art::module
+cet_build_plugin(       GetAnodeCathodePulses art::module LIBRARIES
                         lardataobj::RecoBase
                         lardata::ArtDataHelper
                         lardata::Utilities

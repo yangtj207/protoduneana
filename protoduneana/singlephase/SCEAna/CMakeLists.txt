@@ -1,4 +1,4 @@
-cet_make_exec( plotdeltaz
+cet_make_exec( NAME plotdeltaz
                SOURCE plotdeltaz.C
                LIBRARIES
                ROOT::Core ROOT::Tree ROOT::Hist

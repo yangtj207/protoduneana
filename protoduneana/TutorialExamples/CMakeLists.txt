@@ -1,4 +1,4 @@
-cet_build_plugin(ClusterCounter art::module
+cet_build_plugin(ClusterCounter art::module LIBRARIES
 			larcorealg::Geometry
 			larcore::Geometry_Geometry_service
                         art::Framework_Services_Registry
@@ -10,7 +10,7 @@ cet_build_plugin(ClusterCounter art::module
 			BASENAME_ONLY
 )
 
-cet_build_plugin(ClusterCounter2 art::module
+cet_build_plugin(ClusterCounter2 art::module LIBRARIES
 			lardataobj::RecoBase
 			larcorealg::Geometry
 			larcore::Geometry_Geometry_service
@@ -23,7 +23,7 @@ cet_build_plugin(ClusterCounter2 art::module
 			BASENAME_ONLY
 )
 
-cet_build_plugin(ClusterCounter3 art::module
+cet_build_plugin(ClusterCounter3 art::module LIBRARIES
 			lardataobj::RecoBase
 			larcorealg::Geometry
 			larcore::Geometry_Geometry_service
@@ -36,8 +36,9 @@ cet_build_plugin(ClusterCounter3 art::module
 			BASENAME_ONLY
 )
 
-cet_build_plugin(ClusterCounter4 art::module
+cet_build_plugin(ClusterCounter4 art::module LIBRARIES
                         lardataalg::DetectorInfo
+                        lardata::headers
 			lardataobj::RecoBase
 			larcorealg::Geometry
 			larcore::Geometry_Geometry_service
@@ -53,8 +54,9 @@ cet_build_plugin(ClusterCounter4 art::module
 			BASENAME_ONLY
 )
 
-cet_build_plugin(ClusterCounter5 art::module
+cet_build_plugin(ClusterCounter5 art::module LIBRARIES
                         lardataalg::DetectorInfo
+                        lardata::headers
 			lardataobj::RecoBase
 			larcorealg::Geometry
 			larcore::Geometry_Geometry_service
@@ -72,11 +74,13 @@ cet_build_plugin(ClusterCounter5 art::module
 			BASENAME_ONLY
 )
 
-cet_build_plugin(ReadSpacePointAndCnn art::module
+cet_build_plugin(ReadSpacePointAndCnn art::module LIBRARIES
 			lardata::ArtDataHelper
 			lardataobj::RecoBase
 			larcorealg::Geometry
 			larcore::Geometry_Geometry_service
+			larsim::MCCheater_BackTrackerService_service
+                        larsim::MCCheater_ParticleInventoryService_service
 			nusimdata::SimulationBase
                         art::Framework_Services_Registry
                         art_root_io::tfile_support
@@ -87,9 +91,13 @@ cet_build_plugin(ReadSpacePointAndCnn art::module
 			BASENAME_ONLY
 )
 
-cet_build_plugin(ReadBeamInfo art::module
+cet_build_plugin(ReadBeamInfo art::module LIBRARIES
       nusimdata::SimulationBase
       larcorealg::Geometry
+      larcore::Geometry_Geometry_service
+      lardata::Utilities
+      larsim::MCCheater_BackTrackerService_service
+      larsim::MCCheater_ParticleInventoryService_service
       art::Framework_Services_Registry
       art_root_io::tfile_support
       ROOT::Core

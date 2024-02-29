@@ -1,4 +1,4 @@
-cet_build_plugin(	FitdQdx art::module
+cet_build_plugin(	FitdQdx art::module LIBRARIES
 			lardataobj::RecoBase
                         lardata::ArtDataHelper
                         lardata::Utilities
@@ -21,7 +21,7 @@ cet_build_plugin(	FitdQdx art::module
                         BASENAME_ONLY
 )
 
-cet_build_plugin(       CheckHitsAndTracks art::module
+cet_build_plugin(       CheckHitsAndTracks art::module LIBRARIES
                         lardataobj::RecoBase
                         lardata::ArtDataHelper
                         lardata::Utilities

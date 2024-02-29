@@ -21,6 +21,7 @@ art_make(
   larsim::MCCheater_BackTrackerService_service           
   larsim::MCCheater_ParticleInventoryService_service
   larreco::RecoAlg
+  larrecodnn::ImagePatternAlgs_Keras
   ROOT::Core ROOT::Tree ROOT::Hist
   art_root_io::tfile_support
   ROOT::Core

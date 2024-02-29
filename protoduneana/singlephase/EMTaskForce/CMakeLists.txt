@@ -24,6 +24,7 @@ art_make(BASENAME_ONLY
   larreco::RecoAlg
   ROOT::Core ROOT::Tree ROOT::Hist
   duneprototypes::ProtoDUNEDataUtils
+  dunecalib::Calib
   ProtoDUNEUtilities
   art_root_io::tfile_support
   ROOT::Core

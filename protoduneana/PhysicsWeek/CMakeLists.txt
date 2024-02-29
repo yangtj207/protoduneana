@@ -1,4 +1,4 @@
-cet_build_plugin(MichelHitCounter art::module
+cet_build_plugin(MichelHitCounter art::module LIBRARIES
               larcorealg::Geometry
               larreco::Calorimetry
               larreco::RecoAlg_PMAlg
@@ -20,7 +20,7 @@ cet_build_plugin(MichelHitCounter art::module
               BASENAME_ONLY
 )
 
-cet_build_plugin(VtxScore art::module
+cet_build_plugin(VtxScore art::module LIBRARIES
               larcorealg::Geometry
               larreco::Calorimetry
               larreco::RecoAlg_PMAlg
@@ -43,7 +43,7 @@ cet_build_plugin(VtxScore art::module
 )
 
 
-cet_build_plugin(MichelEventSelection art::module
+cet_build_plugin(MichelEventSelection art::module LIBRARIES
               larcorealg::Geometry
               larreco::Calorimetry
               larreco::RecoAlg_PMAlg
@@ -51,6 +51,7 @@ cet_build_plugin(MichelEventSelection art::module
               larsim::MCCheater_ParticleInventoryService_service
               lardataobj::RecoBase
               lardata::ArtDataHelper
+              lardataalg::DetectorInfo
               nusimdata::SimulationBase
               art::Framework_Core
               art::Framework_Principal
