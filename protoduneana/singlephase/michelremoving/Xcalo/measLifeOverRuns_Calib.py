@@ -66,7 +66,7 @@ for i in runArray:
     os.system("root -l -b -q 'plotXCaloLifetime.C(\""+str(i)+"\",\"All\",\"mid\",\"third\",1)'")
     os.system("root -l -b -q 'plotXCaloLifetime.C(\""+str(i)+"\",\"All\",\"low\",\"third\",1)'")
     
-    """
+    
     os.system("root -l -b -q 'plotXCaloLifetimeAlt.C(\""+str(i)+"\",\"All\",\"high\",\"second\")'")
     os.system("root -l -b -q 'plotXCaloLifetimeAlt.C(\""+str(i)+"\",\"All\",\"mid\",\"second\")'")
     os.system("root -l -b -q 'plotXCaloLifetimeAlt.C(\""+str(i)+"\",\"All\",\"low\",\"second\")'")
@@ -103,7 +103,7 @@ for i in runArray:
     os.system("root -l -b -q 'plotXCaloLifetimeAlt.C(\""+str(i)+"\",\"All\",\"high\",\"third\",1)'")
     os.system("root -l -b -q 'plotXCaloLifetimeAlt.C(\""+str(i)+"\",\"All\",\"mid\",\"third\",1)'")
     os.system("root -l -b -q 'plotXCaloLifetimeAlt.C(\""+str(i)+"\",\"All\",\"low\",\"third\",1)'")
-    """
+    
 
 
 
