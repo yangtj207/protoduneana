@@ -23,5 +23,5 @@ art_make_library( LIBRARY_NAME protodune_dedx_fit
 cet_make_exec( NAME runProtoDUNEdEdXFit
 	       SOURCE runProtoDUNEdEdXFit.c++
 	       LIBRARIES protodune_dedx_fit 
-	    ) ### MIGRATE-CHANGED (migrate-3.22.02) - art_make_exec() -> cet_make_exec()
+	    )
 install_scripts()

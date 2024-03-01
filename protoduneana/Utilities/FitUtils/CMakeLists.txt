@@ -1,5 +1,5 @@
-include_directories ( ${CMAKE_CURRENT_SOURCE_DIR} ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
-include_directories(AFTER $ENV{VALGRIND_INC}) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
+include_directories ( ${CMAKE_CURRENT_SOURCE_DIR} )
+include_directories(AFTER $ENV{VALGRIND_INC})
 
 FILE (GLOB src_files *.cxx)
 
@@ -38,7 +38,7 @@ art_make_library( LIBRARY_NAME protodune_fitutils
 cet_make_exec( NAME runProtoDUNEFit
 	       SOURCE runProtoDUNEFit.cc
 	       LIBRARIES protodune_fitutils
-	    ) ### MIGRATE-CHANGED (migrate-3.22.02) - art_make_exec() -> cet_make_exec()
+	    )
 
 cet_make_exec( NAME runEventSelection
 	       SOURCE runEventSelection.cc
@@ -46,17 +46,17 @@ cet_make_exec( NAME runEventSelection
                          ${ROOT_ROOTDATAFRAME}
                          ${ROOT_TREEPLAYER}
                          ${ROOT_ROOTVECOPS}
-	    ) ### MIGRATE-CHANGED (migrate-3.22.02) - art_make_exec() -> cet_make_exec()
+	    )
 
 cet_make_exec( NAME Geant4ReweightSysts 
 	       SOURCE Geant4ReweightSysts.cc
 	       LIBRARIES protodune_fitutils
-	    ) ### MIGRATE-CHANGED (migrate-3.22.02) - art_make_exec() -> cet_make_exec()
+	    )
 
 cet_make_exec( NAME runPDSPThinSliceFit
 	       SOURCE runPDSPThinSliceFit.c++
 	       LIBRARIES protodune_fitutils
-	     ) ### MIGRATE-CHANGED (migrate-3.22.02) - art_make_exec() -> cet_make_exec()
+	     )
 
 install_headers()
 install_fhicl()

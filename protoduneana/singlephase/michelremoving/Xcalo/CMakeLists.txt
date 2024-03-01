@@ -1,4 +1,4 @@
-find_library(CaloTools ../scripts) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - prefer find_package() with custom Find<pkg>.cmake for transitivity, relocatability
+find_library(CaloTools ../scripts)
 cet_make_exec( NAME make_x_correction
                SOURCE protoDUNE_X_calib.C
                LIBRARIES
