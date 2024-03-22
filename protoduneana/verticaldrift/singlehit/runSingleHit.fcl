@@ -58,8 +58,10 @@ physics:
       TrackLabel:        "pandoroTrack"
       HitLabel:          "gaushit"
 
-      ChannelWindow:     1
-      PeakTimeWindow:    20
+      ChannelWindowInt:     1
+      ChannelWindowExt:     2
+      PeakTimeWindowInt:    20
+      PeakTimeWindowExt:    20
       CoincidenceWindow: 10
     }
 

@@ -131,9 +131,12 @@ private:
   // geometry 
   const geo::Geometry* fGeom;
 
-  int fChannelWd;
+  int fChannelWdInt;
+  int fChannelWdExt;
 
-  float fPeakTimeWd;
+  float fPeakTimeWdInt;
+  float fPeakTimeWdExt;
+
   float fCoincidenceWd;
 
   // working variables
@@ -148,7 +151,7 @@ private:
 
   void GetSingle(art::Event const & ev, std::string HitLabel, std::list<int> & index_list_single);
 
-  void GetIsolated(art::Event const & ev, std::string HitLabel, int const ChannelWd, float const PeakTimeWd, std::list<int> & index_list_single, std::list<int> & index_list_isolated);
+  void GetIsolated(art::Event const & ev, std::string HitLabel, int const ChannelWdInt, int const ChannelWdExt, float const PeakTimeWdInt, float const PeakTimeWdExt, std::list<int> & index_list_single, std::list<int> & index_list_isolated);
 
   void GetTimeCoincidence(art::Event const & ev, std::string HitLabel, const float CoincidenceWd, float const TimeInd1ToInd2, float const ADCtoEl, float const tick_in_mus, const recob::Hit & HitCol,
                                                                                   std::list<geo::WireID> & WireInd1,
@@ -172,8 +175,10 @@ pdvdana::SingleHit::SingleHit(fhicl::ParameterSet const& p)
     fTrackLabel(p.get<std::string>("TrackLabel")),
     fHitLabel(p.get<std::string>("HitLabel")),
 
-    fChannelWd(p.get<int>("ChannelWindow")),
-    fPeakTimeWd(p.get<float>("PeakTimeWindow")), //in ticktime
+    fChannelWdInt(p.get<int>("ChannelWindowInt")),
+    fChannelWdExt(p.get<int>("ChannelWindowExt")),
+    fPeakTimeWdInt(p.get<float>("PeakTimeWindowInt")), //in ticktime
+    fPeakTimeWdExt(p.get<float>("PeakTimeWindowExt")), //in ticktime 
     fCoincidenceWd(p.get<float>("CoincidenceWindow")) //in ticktime,
     
     // More initializers here.
@@ -200,7 +205,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
 
   // Single Isolated concideration
   GetSingle(   e, fHitLabel, lSingleIndex );
-  GetIsolated( e, fHitLabel, fChannelWd, fPeakTimeWd, lSingleIndex, lIsolatedIndex);
+  GetIsolated( e, fHitLabel, fChannelWdInt, fChannelWdExt, fPeakTimeWdInt, fPeakTimeWdExt, lSingleIndex, lIsolatedIndex);
 
   for(int index =0 ; index<fNHits; index++)
   {
@@ -395,7 +400,7 @@ void pdvdana::SingleHit::GetSingle(art::Event const & ev, std::string HitLabel, 
   } 
 }
 
-void pdvdana::SingleHit::GetIsolated(art::Event const & ev, std::string HitLabel, int const ChannelWd, float const PeakTimeWd, std::list<int> & index_list_single, std::list<int> & index_list_isolated)
+void pdvdana::SingleHit::GetIsolated(art::Event const & ev, std::string HitLabel, int const ChannelWdInt, int const ChannelWdExt, float const PeakTimeWdInt, float const PeakTimeWdExt,  std::list<int> & index_list_single, std::list<int> & index_list_isolated)
 {
   auto const hitlist = ev.getValidHandle<vector<recob::Hit>>(HitLabel);
   index_list_isolated = index_list_single;
@@ -406,10 +411,15 @@ void pdvdana::SingleHit::GetIsolated(art::Event const & ev, std::string HitLabel
 
   int   ChannelSingle   = -999;
   float PeakTimeSingle  = -999;
-  int   ChannelMin      = -999;
-  float PeakTimeMin     = -999;
-  int   ChannelMax      = -999;
-  float PeakTimeMax     = -999;
+
+  int   ChannelMinInt      = -999;
+  float PeakTimeMinInt     = -999;
+  int   ChannelMaxInt      = -999;
+  float PeakTimeMaxInt     = -999;
+  int   ChannelMinExt      = -999;
+  float PeakTimeMinExt     = -999;
+  int   ChannelMaxExt      = -999;
+  float PeakTimeMaxExt     = -999;
    
   if(not( index_list_isolated.empty()))
   {
@@ -421,10 +431,14 @@ void pdvdana::SingleHit::GetIsolated(art::Event const & ev, std::string HitLabel
 
       ChannelSingle   = -999;
       PeakTimeSingle  = -999;
-      ChannelMin      = -999;
-      PeakTimeMin     = -999;
-      ChannelMax      = -999;
-      PeakTimeMax     = -999;
+      ChannelMinInt      = -999;
+      PeakTimeMinInt     = -999;
+      ChannelMaxInt      = -999;
+      PeakTimeMaxInt     = -999;
+      ChannelMinExt      = -999;
+      PeakTimeMinExt     = -999;
+      ChannelMaxExt      = -999;
+      PeakTimeMaxExt     = -999;
 
       std::list<int>::iterator elem = index_list_isolated.begin();
 
@@ -433,14 +447,19 @@ void pdvdana::SingleHit::GetIsolated(art::Event const & ev, std::string HitLabel
         ChannelSingle   = (hitlist->at(*elem)).Channel();
         PeakTimeSingle  = (hitlist->at(*elem)).PeakTime();
       
-        ChannelMin      = ChannelSingle  - ChannelWd;
-        PeakTimeMin     = PeakTimeSingle - PeakTimeWd;
-        ChannelMax      = ChannelSingle  + ChannelWd;
-        PeakTimeMax     = PeakTimeSingle + PeakTimeWd;
+        ChannelMinInt      = ChannelSingle  - ChannelWdInt;
+        PeakTimeMinInt     = PeakTimeSingle - PeakTimeWdInt;
+        ChannelMaxInt      = ChannelSingle  + ChannelWdInt;
+        PeakTimeMaxInt     = PeakTimeSingle + PeakTimeWdInt;
+
+        ChannelMinExt      = ChannelMinInt  - ChannelWdExt;
+        PeakTimeMinExt     = PeakTimeMinInt - PeakTimeWdExt;
+        ChannelMaxExt      = ChannelMaxInt  + ChannelWdExt;
+        PeakTimeMaxExt     = PeakTimeMaxInt + PeakTimeWdExt;
         
-        if ((Channel >= ChannelMin)&&(Channel <= ChannelMax)&&(PeakTime >= PeakTimeMin)&&(PeakTime <= PeakTimeMax))
+        if ((Channel >= ChannelMinExt)&&(Channel <= ChannelMinInt)&&(Channel >= ChannelMaxInt)&&(Channel <= ChannelMaxExt)&&(PeakTime >= PeakTimeMinExt)&&(PeakTime <= PeakTimeMinInt)&&(PeakTime >= PeakTimeMaxInt)&&(PeakTime <= PeakTimeMaxExt))
         {
-          if (i != *elem)
+          if (i != *elem) //normally always true now
           {
             elem = index_list_isolated.erase(elem);
           }
@@ -449,10 +468,14 @@ void pdvdana::SingleHit::GetIsolated(art::Event const & ev, std::string HitLabel
         
         ChannelSingle   = -999;
         PeakTimeSingle  = -999;
-        ChannelMin      = -999;
-        PeakTimeMin     = -999;
-        ChannelMax      = -999;
-        PeakTimeMax     = -999;
+        ChannelMinInt      = -999;
+        PeakTimeMinInt     = -999;
+        ChannelMaxInt      = -999;
+        PeakTimeMaxInt     = -999;
+        ChannelMinExt      = -999;
+        PeakTimeMinExt     = -999;
+        ChannelMaxExt      = -999;
+        PeakTimeMaxExt     = -999;
       }
       
       PeakTime        = -999;
