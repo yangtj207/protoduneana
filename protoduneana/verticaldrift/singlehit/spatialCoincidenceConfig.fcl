@@ -1,0 +1,12 @@
+BEGIN_PROLOG
+
+spatialCoincidence:
+{
+   module_type:  "SpatialCoincidence"
+   LogLevel:     5
+
+   TestFlag:     true
+
+}
+
+END_PROLOG

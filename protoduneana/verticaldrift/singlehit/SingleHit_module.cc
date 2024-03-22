@@ -87,6 +87,8 @@ private:
   // Tree variables
   unsigned int fEventID = 0;
 
+  geo::WireID fWire;
+
   int fHitNumber   = -999;
   int fPlane       = -999;
   int fChannel     = -999;
@@ -104,19 +106,30 @@ private:
   float fIntegral       = -999.;
   float fSigmaIntegral  = -999.;
 
-  std::list<int>   lChannelInd1;
-  std::list<float> lEnergyInd1;
-  std::list<float> lPeakTimeInd1;
+  std::list<geo::WireID>   lWireInd1; //working variable
+  std::list<int>           lChannelInd1;
+  std::list<float>         lEnergyInd1;
+  std::list<float>         lPeakTimeInd1;
+  std::list<float>         lYInd1;
+  std::list<float>         lZInd1;
+  std::list<int>           lChIntersectInd1;
 
-  std::list<int>   lChannelInd2;
-  std::list<float> lEnergyInd2;
-  std::list<float> lPeakTimeInd2;
+  std::list<geo::WireID>   lWireInd2; //working variable
+  std::list<int>           lChannelInd2;
+  std::list<float>         lEnergyInd2;
+  std::list<float>         lPeakTimeInd2;
+  std::list<float>         lYInd2;
+  std::list<float>         lZInd2;
+  std::list<int>           lChIntersectInd2;
 
   //Input variables
   std::string fSpacePointLabel;
   std::string fClusterLabel;
   std::string fTrackLabel;
   std::string fHitLabel;
+
+  // geometry 
+  const geo::Geometry* fGeom;
 
   int fChannelWd;
 
@@ -138,12 +151,17 @@ private:
   void GetIsolated(art::Event const & ev, std::string HitLabel, int const ChannelWd, float const PeakTimeWd, std::list<int> & index_list_single, std::list<int> & index_list_isolated);
 
   void GetTimeCoincidence(art::Event const & ev, std::string HitLabel, const float CoincidenceWd, float const TimeInd1ToInd2, float const ADCtoEl, float const tick_in_mus, const recob::Hit & HitCol,
-                                                                                  std::list<int> & ChInd1,
-                                                                                  std::list<int> & ChInd2,
+                                                                                  std::list<geo::WireID> & WireInd1,
+                                                                                  std::list<geo::WireID> & WireInd2,
+                                                                                  std::list<int>   & ChannelInd1,
+                                                                                  std::list<int>   & ChannelInd2,
                                                                                   std::list<float> & EInd1,
                                                                                   std::list<float> & EInd2,
                                                                                   std::list<float> & PTInd1,
                                                                                   std::list<float> & PTInd2);
+
+  void GetSpatialCoincidence( geo::WireID & WireCol , std::list<geo::WireID> & WireInd1 , std::list<geo::WireID> & WireInd2 , std::list<int>  & ChInd1 , std::list<float> & YInd1 , std::list<float> & ZInd1 , std::list<int>  & ChIntersectInd1 , std::list<int>  & ChInd2 , std::list<float> & YInd2 , std::list<float> & ZInd2 , std::list<int>  & ChIntersectInd2 );
+
 };
 
 
@@ -161,6 +179,7 @@ pdvdana::SingleHit::SingleHit(fhicl::ParameterSet const& p)
     // More initializers here.
 {
   // Call appropriate consumes<>() for any products to be retrieved by this module.
+  fGeom    = &*art::ServiceHandle<geo::Geometry>();
 }
 
 void pdvdana::SingleHit::analyze(art::Event const& e)
@@ -186,6 +205,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   for(int index =0 ; index<fNHits; index++)
   {
     const recob::Hit& hit = HitList->at(index);
+    fWire                 = hit.WireID();
     fChannel              = hit.Channel();
     fPlane                = hit.WireID().Plane;
     fHitWidth             = hit.EndTick() - hit.StartTick();
@@ -200,12 +220,20 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
     fIntegral       = hit.Integral()/fADCtoEl;
     fSigmaIntegral  = hit.SigmaIntegral();
 
+    if( !lWireInd1.empty()     ) lWireInd1.clear();
+    if( !lWireInd2.empty()     ) lWireInd2.clear();
     if( !lChannelInd1.empty()  ) lChannelInd1.clear();
     if( !lChannelInd2.empty()  ) lChannelInd2.clear();
     if( !lEnergyInd1.empty()   ) lEnergyInd1.clear();
     if( !lEnergyInd2.empty()   ) lEnergyInd2.clear();
     if( !lPeakTimeInd1.empty() ) lPeakTimeInd1.clear();
     if( !lPeakTimeInd2.empty() ) lPeakTimeInd2.clear();
+    if( !lYInd1.empty()        ) lYInd1.clear();
+    if( !lZInd1.empty()        ) lZInd1.clear();
+    if( !lYInd2.empty()        ) lYInd2.clear();
+    if( !lZInd2.empty()        ) lZInd2.clear();
+    if( !lChIntersectInd1.empty()  ) lChIntersectInd1.clear();
+    if( !lChIntersectInd2.empty()  ) lChIntersectInd2.clear();
 
     if (fPlane == 2)
     {
@@ -213,17 +241,16 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
       ++fHitCounter;
 
       // Coincidence research
-      GetTimeCoincidence( e, fHitLabel, fCoincidenceWd, fTimeInd1ToInd2, fADCtoEl, ftick_in_mus, hit, lChannelInd1, lChannelInd2, lEnergyInd1, lEnergyInd2, lPeakTimeInd1, lPeakTimeInd2);
+      GetTimeCoincidence( e, fHitLabel, fCoincidenceWd, fTimeInd1ToInd2, fADCtoEl, ftick_in_mus, hit, lWireInd1, lWireInd2, lChannelInd1, lChannelInd2, lEnergyInd1, lEnergyInd2, lPeakTimeInd1, lPeakTimeInd2);
+      
       fCoincidence = 0;
-      std::cout<<"channel in coinc ind1 [ ";
-      for (auto ch : lChannelInd1)
+      if ( !lWireInd1.empty() || !lWireInd2.empty() ) fCoincidence += 1;
+      if ( !lWireInd1.empty() && !lWireInd2.empty() ) fCoincidence += 1;
+
+      if ( fCoincidence > 0 )
       {
-        std::cout<< ch <<" ";
+        GetSpatialCoincidence( fWire , lWireInd1 , lWireInd2 , lChannelInd1 , lYInd1 , lZInd1 , lChIntersectInd1 , lChannelInd2 , lYInd2 , lZInd2 , lChIntersectInd2 ); 
       }
-      std::cout<<" ]"<<std::endl;
-      if ( !lChannelInd1.empty() || !lChannelInd2.empty() ) fCoincidence += 1;
-      if ( !lChannelInd1.empty() && !lChannelInd2.empty() ) fCoincidence += 1;
-      std::cout<< "col hit num. "<< fHitNumber << " with "<< fCoincidence << " coincidences"<< std::endl;
     }
 
     if (fPlane != 2)
@@ -231,6 +258,8 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
       fHitNumber   = -1;
       fCoincidence = -999;
 
+      lWireInd1.clear();
+      lWireInd2.clear();
       lChannelInd1.clear();
       lChannelInd1.push_back(-1);
       lChannelInd2.clear();
@@ -243,6 +272,18 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
       lPeakTimeInd1.push_back(-1);
       lPeakTimeInd2.clear();
       lPeakTimeInd2.push_back(-1);
+      lYInd1.clear();
+      lYInd1.push_back(-999);
+      lZInd1.clear();
+      lZInd1.push_back(-999);
+      lYInd2.clear();
+      lYInd2.push_back(-999);
+      lZInd2.clear();
+      lZInd2.push_back(-999);
+      lChIntersectInd1.clear();
+      lChIntersectInd1.push_back(-999);
+      lChIntersectInd2.clear();
+      lChIntersectInd2.push_back(-999);
     }
   
     fCutHit = 0;
@@ -274,13 +315,20 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   lSingleIndex.clear();
   lIsolatedIndex.clear();
 
+  lWireInd1.clear();
+  lWireInd2.clear();
   lChannelInd1.clear();
   lChannelInd2.clear();
   lEnergyInd1.clear();
   lEnergyInd2.clear();
   lPeakTimeInd1.clear();
   lPeakTimeInd2.clear();
-
+  lYInd1.clear();
+  lZInd1.clear();
+  lYInd2.clear();
+  lZInd2.clear();
+  lChIntersectInd1.clear();
+  lChIntersectInd2.clear();
   // Implementation of required member function here.
 }
 
@@ -292,6 +340,7 @@ void pdvdana::SingleHit::beginJob()
 
   //add branches
   fAnaTree->Branch("eventID"    , &fEventID    );
+  fAnaTree->Branch("wireID"     , &fWire       );
   fAnaTree->Branch("hitNumber"  , &fHitNumber  );
   fAnaTree->Branch("plane"      , &fPlane      );
   fAnaTree->Branch("channel"    , &fChannel    );
@@ -309,13 +358,19 @@ void pdvdana::SingleHit::beginJob()
   fAnaTree->Branch("integral"         , &fIntegral      );
   fAnaTree->Branch("sigmaIntegral"    , &fSigmaIntegral );
 
-  fAnaTree->Branch("listChannelInd1"      , &lChannelInd1   );
-  fAnaTree->Branch("listEnergyInd1"       , &lEnergyInd1    );
-  fAnaTree->Branch("listPeakTimeInd1"     , &lPeakTimeInd1  );
-  fAnaTree->Branch("listChannelInd2"      , &lChannelInd2   );
-  fAnaTree->Branch("listEnergyInd2"       , &lEnergyInd2    );
-  fAnaTree->Branch("listPeakTimeInd2"     , &lPeakTimeInd2  );
+  fAnaTree->Branch("listChannelInd1"        , &lChannelInd1     );
+  fAnaTree->Branch("listEnergyInd1"         , &lEnergyInd1      );
+  fAnaTree->Branch("listPeakTimeInd1"       , &lPeakTimeInd1    );
+  fAnaTree->Branch("listYIntersecPointInd1" , &lYInd1           );
+  fAnaTree->Branch("listZIntersecPointInd1" , &lZInd1           );
+  fAnaTree->Branch("listChIntersecInd1"     , &lChIntersectInd1 );
 
+  fAnaTree->Branch("listChannelInd2"        , &lChannelInd2     );
+  fAnaTree->Branch("listEnergyInd2"         , &lEnergyInd2      );
+  fAnaTree->Branch("listPeakTimeInd2"       , &lPeakTimeInd2    );
+  fAnaTree->Branch("listYIntersecPointInd2" , &lYInd2           );
+  fAnaTree->Branch("listZIntersecPointInd2" , &lZInd2           );
+  fAnaTree->Branch("listChIntersecInd2"     , &lChIntersectInd2 );
 }
 
 void pdvdana::SingleHit::endJob()
@@ -336,7 +391,7 @@ void pdvdana::SingleHit::GetSingle(art::Event const & ev, std::string HitLabel, 
   {
     hit = hitlist->at(i);
     if(hit.Multiplicity()!=1) continue;
-    index_list_single.push_front(i);    
+    index_list_single.push_back(i);    
   } 
 }
 
@@ -373,7 +428,7 @@ void pdvdana::SingleHit::GetIsolated(art::Event const & ev, std::string HitLabel
 
       std::list<int>::iterator elem = index_list_isolated.begin();
 
-      while( elem !=index_list_isolated.end())
+      while( elem != index_list_isolated.end())
       {
         ChannelSingle   = (hitlist->at(*elem)).Channel();
         PeakTimeSingle  = (hitlist->at(*elem)).PeakTime();
@@ -407,8 +462,10 @@ void pdvdana::SingleHit::GetIsolated(art::Event const & ev, std::string HitLabel
 }
 
 void pdvdana::SingleHit::GetTimeCoincidence(art::Event const & ev, std::string HitLabel, float const CoincidenceWd, float const TimeInd1ToInd2, float const ADCtoEl, float const tick_in_mus, const recob::Hit & HitCol, 
-                                                                                  std::list<int> & ChInd1,
-                                                                                  std::list<int> & ChInd2,
+                                                                                  std::list<geo::WireID> & WireInd1,
+                                                                                  std::list<geo::WireID> & WireInd2,
+                                                                                  std::list<int>   & ChannelInd1,
+                                                                                  std::list<int>   & ChannelInd2,
                                                                                   std::list<float> & EInd1,
                                                                                   std::list<float> & EInd2,
                                                                                   std::list<float> & PTInd1,
@@ -438,8 +495,9 @@ void pdvdana::SingleHit::GetTimeCoincidence(art::Event const & ev, std::string H
     if (Plane == 0)
     {
       if ((PeakTime < StartTime1)||(PeakTime > EndTime)) continue;
-      //std::cout<<"Ind 1 : ch= "<< hit.Channel() << " peaktime = "<< PeakTime <<std::endl;
-      ChInd1.push_back(hit.Channel());
+
+      WireInd1.push_back(hit.WireID());
+      ChannelInd1.push_back(hit.Channel());
       EInd1.push_back(hit.SummedADC()/ADCtoEl);
       PTInd1.push_back(PeakTime*ftick_in_mus);
       continue;
@@ -447,15 +505,62 @@ void pdvdana::SingleHit::GetTimeCoincidence(art::Event const & ev, std::string H
     if (Plane == 1)
     {
       if ((PeakTime < StartTime2)||(PeakTime > EndTime)) continue;
-      //std::cout<<"Ind 2 : ch= "<< hit.Channel() << " peaktime = "<< PeakTime <<std::endl;
-      ChInd2.push_back(hit.Channel());
+
+      WireInd2.push_back(hit.WireID());
+      ChannelInd2.push_back(hit.Channel());
       EInd2.push_back(hit.SummedADC()/fADCtoEl);
       PTInd2.push_back(PeakTime*tick_in_mus);
     }
   }
 }
 
+void pdvdana::SingleHit::GetSpatialCoincidence( geo::WireID & WireCol , std::list<geo::WireID> & WireInd1 , std::list<geo::WireID> & WireInd2 , std::list<int>  & ChInd1,
+                                                                                                                                                std::list<float> & YInd1 , 
+                                                                                                                                                std::list<float> & ZInd1 ,
+                                                                                                                                                std::list<int>  & ChIntersectInd1 , 
+                                                                                                                                                std::list<int>  & ChInd2 ,
+                                                                                                                                                std::list<float> & YInd2 , 
+                                                                                                                                                std::list<float> & ZInd2 , 
+                                                                                                                                                std::list<int>  & ChIntersectInd2 )
+{
+  geo::Point_t point = geo::Point_t(-999,-999,-999);
+  bool drap;
 
+  std::list<int>::iterator ch1  = ChInd1.begin();
+  for (auto const elementInd1 : WireInd1)
+  {
+    if (WireCol.TPC != elementInd1.TPC )
+    {
+      ++ch1;
+      continue ;
+    }
+    drap = fGeom->WireIDsIntersect( WireCol , elementInd1 , point);
+    if ( drap )
+    {
+      YInd1.push_back(point.Y());
+      ZInd1.push_back(point.Z());
+      ChIntersectInd1.push_back(*ch1);
+    }
+    ++ch1;
+  }
+  std::list<int>::iterator ch2  = ChInd2.begin();
+  for (auto const elementInd2 : WireInd2)
+  { 
+    if (WireCol.TPC != elementInd2.TPC )
+    { 
+      ++ch2; 
+      continue ;
+    }
+    drap = fGeom->WireIDsIntersect( WireCol , elementInd2 , point);
+    if ( drap ) 
+    { 
+      YInd2.push_back(point.Y());
+      ZInd2.push_back(point.Z());
+      ChIntersectInd2.push_back(*ch2);
+    }
+    ++ch2;
+  }
+}
  
 
 DEFINE_ART_MODULE(pdvdana::SingleHit)
