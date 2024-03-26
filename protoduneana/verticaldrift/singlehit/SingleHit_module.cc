@@ -29,6 +29,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/TrackHitMeta.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
 
 #include "larevt/SpaceCharge/SpaceCharge.h"
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
@@ -122,6 +123,8 @@ private:
   std::list<float>         lZInd2;
   std::list<int>           lChIntersectInd2;
 
+  std::vector<std::vector<float>> lPoint;
+
   //Input variables
   std::string fSpacePointLabel;
   std::string fClusterLabel;
@@ -133,11 +136,14 @@ private:
 
   int fChannelWdInt;
   int fChannelWdExt;
+  int fMultiplicity;
 
   float fPeakTimeWdInt;
   float fPeakTimeWdExt;
 
   float fCoincidenceWd;
+  float fPitch;
+  float fPitchMultiplier;
 
   // working variables
   int fHitCounter = 0;
@@ -149,7 +155,7 @@ private:
   //function needed
   bool Inside( int k , std::list<int> liste);
 
-  void GetSingle(art::Event const & ev, std::string HitLabel, std::list<int> & index_list_single);
+  void GetSingle(art::Event const & ev, std::string HitLabel, std::list<int> & index_list_single, int const Multiplicity);
 
   void GetIsolated(art::Event const & ev, std::string HitLabel, int const ChannelWdInt, int const ChannelWdExt, float const PeakTimeWdInt, float const PeakTimeWdExt, std::list<int> & index_list_single, std::list<int> & index_list_isolated);
 
@@ -165,6 +171,8 @@ private:
 
   void GetSpatialCoincidence( geo::WireID & WireCol , std::list<geo::WireID> & WireInd1 , std::list<geo::WireID> & WireInd2 , std::list<int>  & ChInd1 , std::list<float> & YInd1 , std::list<float> & ZInd1 , std::list<int>  & ChIntersectInd1 , std::list<int>  & ChInd2 , std::list<float> & YInd2 , std::list<float> & ZInd2 , std::list<int>  & ChIntersectInd2 );
 
+  void GetSpacePoint( float pitch , float alpha , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 , std::vector<std::vector<float>> & listSP );
+
 };
 
 
@@ -177,10 +185,12 @@ pdvdana::SingleHit::SingleHit(fhicl::ParameterSet const& p)
 
     fChannelWdInt(p.get<int>("ChannelWindowInt")),
     fChannelWdExt(p.get<int>("ChannelWindowExt")),
+    fMultiplicity(p.get<int>("HitMultiplicity")),
     fPeakTimeWdInt(p.get<float>("PeakTimeWindowInt")), //in ticktime
     fPeakTimeWdExt(p.get<float>("PeakTimeWindowExt")), //in ticktime 
-    fCoincidenceWd(p.get<float>("CoincidenceWindow")) //in ticktime,
-    
+    fCoincidenceWd(p.get<float>("CoincidenceWindow")), //in ticktime,
+    fPitch(p.get<float>("Pitch")),
+    fPitchMultiplier(p.get<float>("PitchMultiplier"))    
     // More initializers here.
 {
   // Call appropriate consumes<>() for any products to be retrieved by this module.
@@ -204,7 +214,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   if( !lIsolatedIndex.empty() ) lIsolatedIndex.clear();
 
   // Single Isolated concideration
-  GetSingle(   e, fHitLabel, lSingleIndex );
+  GetSingle(   e, fHitLabel, lSingleIndex, fMultiplicity );
   GetIsolated( e, fHitLabel, fChannelWdInt, fChannelWdExt, fPeakTimeWdInt, fPeakTimeWdExt, lSingleIndex, lIsolatedIndex);
 
   for(int index =0 ; index<fNHits; index++)
@@ -239,6 +249,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
     if( !lZInd2.empty()        ) lZInd2.clear();
     if( !lChIntersectInd1.empty()  ) lChIntersectInd1.clear();
     if( !lChIntersectInd2.empty()  ) lChIntersectInd2.clear();
+    if( !lPoint.empty()   ) lPoint.clear();
 
     if (fPlane == 2)
     {
@@ -255,6 +266,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
       if ( fCoincidence > 0 )
       {
         GetSpatialCoincidence( fWire , lWireInd1 , lWireInd2 , lChannelInd1 , lYInd1 , lZInd1 , lChIntersectInd1 , lChannelInd2 , lYInd2 , lZInd2 , lChIntersectInd2 ); 
+        GetSpacePoint( fPitch , fPitchMultiplier , lYInd1 , lZInd1 , lEnergyInd1 , lYInd2 , lZInd2 , lEnergyInd2 , lPoint );
       }
     }
 
@@ -289,6 +301,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
       lChIntersectInd1.push_back(-999);
       lChIntersectInd2.clear();
       lChIntersectInd2.push_back(-999);
+      lPoint.clear();
     }
   
     fCutHit = 0;
@@ -334,6 +347,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   lZInd2.clear();
   lChIntersectInd1.clear();
   lChIntersectInd2.clear();
+  lPoint.clear();
   // Implementation of required member function here.
 }
 
@@ -376,6 +390,7 @@ void pdvdana::SingleHit::beginJob()
   fAnaTree->Branch("listYIntersecPointInd2" , &lYInd2           );
   fAnaTree->Branch("listZIntersecPointInd2" , &lZInd2           );
   fAnaTree->Branch("listChIntersecInd2"     , &lChIntersectInd2 );
+  fAnaTree->Branch("listOfPoint"            , &lPoint      );
 }
 
 void pdvdana::SingleHit::endJob()
@@ -387,7 +402,7 @@ bool pdvdana::SingleHit::Inside( int k , std::list<int> list){
   return (std::find(list.begin(), list.end(), k) != list.end());
 }
 
-void pdvdana::SingleHit::GetSingle(art::Event const & ev, std::string HitLabel, std::list<int> & index_list_single)
+void pdvdana::SingleHit::GetSingle(art::Event const & ev, std::string HitLabel, std::list<int> & index_list_single , int const Multiplicity)
 {
   auto const hitlist = ev.getValidHandle<vector<recob::Hit>>(HitLabel);
   recob::Hit hit = hitlist->at(0);
@@ -395,7 +410,7 @@ void pdvdana::SingleHit::GetSingle(art::Event const & ev, std::string HitLabel, 
   for (int i=0, sz=hitlist->size(); i!=sz; ++i)
   {
     hit = hitlist->at(i);
-    if(hit.Multiplicity()!=1) continue;
+    if(hit.Multiplicity() > Multiplicity) continue;
     index_list_single.push_back(i);    
   } 
 }
@@ -584,6 +599,43 @@ void pdvdana::SingleHit::GetSpatialCoincidence( geo::WireID & WireCol , std::lis
     ++ch2;
   }
 }
- 
 
+void pdvdana::SingleHit::GetSpacePoint( float pitch , float alpha , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 , std::vector<std::vector<float>> & listSP )
+{
+
+  std::list<float>::iterator z1t = ZInd1.begin();
+  std::list<float>::iterator e1t = EInd1.begin();
+
+  float dy, dz, dr;
+
+  for( auto const yind1 : YInd1)
+  {
+    std::list<float>::iterator z2t = ZInd2.begin();
+    std::list<float>::iterator e2t = EInd2.begin();
+    for ( auto const yind2 : YInd2)
+    {
+      dy = yind1 - yind2;
+      dz = *z1t - *z2t  ;
+      dr = TMath::Sqrt( dy*dy + dz*dz );
+
+      if ( dr <= pitch*alpha )
+      {
+        float y = ( (*e1t)*(yind1) + (*e2t)*(yind2) )/( *e1t + *e2t );
+        float z = ( (*e1t)*(*z1t) + (*e2t)*(*z2t) )/( *e1t + *e2t );
+
+        std::vector<float> point(3);
+        point[0] = -999;
+        point[1] = y;
+        point[2] = z;
+
+        listSP.push_back( point );     
+
+      }
+      ++e2t;
+      ++z2t;
+    }
+    ++e1t;
+    ++z1t;
+  }
+}
 DEFINE_ART_MODULE(pdvdana::SingleHit)
