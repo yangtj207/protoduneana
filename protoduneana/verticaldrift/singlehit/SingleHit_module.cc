@@ -123,7 +123,8 @@ private:
   std::list<float>         lZInd2;
   std::list<int>           lChIntersectInd2;
 
-  std::vector<std::vector<float>> lPoint;
+  std::list<float> lYPoint;
+  std::list<float> lZPoint;
 
   //Input variables
   std::string fSpacePointLabel;
@@ -171,7 +172,7 @@ private:
 
   void GetSpatialCoincidence( geo::WireID & WireCol , std::list<geo::WireID> & WireInd1 , std::list<geo::WireID> & WireInd2 , std::list<int>  & ChInd1 , std::list<float> & YInd1 , std::list<float> & ZInd1 , std::list<int>  & ChIntersectInd1 , std::list<int>  & ChInd2 , std::list<float> & YInd2 , std::list<float> & ZInd2 , std::list<int>  & ChIntersectInd2 );
 
-  void GetSpacePoint( float pitch , float alpha , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 , std::vector<std::vector<float>> & listSP );
+  void GetSpacePoint( float pitch , float alpha , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 , std::list<float> & listYSP, std::list<float> & listZSP );
 
 };
 
@@ -249,7 +250,8 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
     if( !lZInd2.empty()        ) lZInd2.clear();
     if( !lChIntersectInd1.empty()  ) lChIntersectInd1.clear();
     if( !lChIntersectInd2.empty()  ) lChIntersectInd2.clear();
-    if( !lPoint.empty()   ) lPoint.clear();
+    if( !lYPoint.empty()   ) lYPoint.clear();
+    if( !lZPoint.empty()   ) lZPoint.clear();
 
     if (fPlane == 2)
     {
@@ -266,7 +268,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
       if ( fCoincidence > 0 )
       {
         GetSpatialCoincidence( fWire , lWireInd1 , lWireInd2 , lChannelInd1 , lYInd1 , lZInd1 , lChIntersectInd1 , lChannelInd2 , lYInd2 , lZInd2 , lChIntersectInd2 ); 
-        GetSpacePoint( fPitch , fPitchMultiplier , lYInd1 , lZInd1 , lEnergyInd1 , lYInd2 , lZInd2 , lEnergyInd2 , lPoint );
+        GetSpacePoint( fPitch , fPitchMultiplier , lYInd1 , lZInd1 , lEnergyInd1 , lYInd2 , lZInd2 , lEnergyInd2 , lYPoint , lZPoint);
       }
     }
 
@@ -301,7 +303,10 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
       lChIntersectInd1.push_back(-999);
       lChIntersectInd2.clear();
       lChIntersectInd2.push_back(-999);
-      lPoint.clear();
+      lYPoint.clear();
+      lYPoint.push_back(-999);
+      lZPoint.clear();
+      lZPoint.push_back(-999);
     }
   
     fCutHit = 0;
@@ -347,7 +352,8 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   lZInd2.clear();
   lChIntersectInd1.clear();
   lChIntersectInd2.clear();
-  lPoint.clear();
+  lYPoint.clear();
+  lZPoint.clear();
   // Implementation of required member function here.
 }
 
@@ -390,7 +396,8 @@ void pdvdana::SingleHit::beginJob()
   fAnaTree->Branch("listYIntersecPointInd2" , &lYInd2           );
   fAnaTree->Branch("listZIntersecPointInd2" , &lZInd2           );
   fAnaTree->Branch("listChIntersecInd2"     , &lChIntersectInd2 );
-  fAnaTree->Branch("listOfPoint"            , &lPoint      );
+  fAnaTree->Branch("listOfYPoint"           , &lYPoint      );
+  fAnaTree->Branch("listOfZPoint"           , &lZPoint      );
 }
 
 void pdvdana::SingleHit::endJob()
@@ -600,7 +607,7 @@ void pdvdana::SingleHit::GetSpatialCoincidence( geo::WireID & WireCol , std::lis
   }
 }
 
-void pdvdana::SingleHit::GetSpacePoint( float pitch , float alpha , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 , std::vector<std::vector<float>> & listSP )
+void pdvdana::SingleHit::GetSpacePoint( float pitch , float alpha , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 , std::list<float> & listYSP, std::list<float> & listZSP )
 {
 
   std::list<float>::iterator z1t = ZInd1.begin();
@@ -623,13 +630,8 @@ void pdvdana::SingleHit::GetSpacePoint( float pitch , float alpha , std::list<fl
         float y = ( (*e1t)*(yind1) + (*e2t)*(yind2) )/( *e1t + *e2t );
         float z = ( (*e1t)*(*z1t) + (*e2t)*(*z2t) )/( *e1t + *e2t );
 
-        std::vector<float> point(3);
-        point[0] = -999;
-        point[1] = y;
-        point[2] = z;
-
-        listSP.push_back( point );     
-
+        listYSP.push_back( y );     
+        listZSP.push_back( z );
       }
       ++e2t;
       ++z2t;
