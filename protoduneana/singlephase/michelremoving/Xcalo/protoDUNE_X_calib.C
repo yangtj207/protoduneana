@@ -257,12 +257,12 @@ void protoDUNE_X_calib::Loop(TString mn)
     nentries = 200000;
     real_nentries = nentries;
   }
-  Long64_t nbytes = 0, nb = 0;
+  //Long64_t nbytes = 0, nb = 0;
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
   // for (Long64_t jentry=0; jentry<10000;jentry++)
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
-    nb = fChain->GetEntry(jentry);   nbytes += nb;
+    //nb = fChain->GetEntry(jentry);   nbytes += nb;
     if(jentry%10000==0) cout<<jentry<<"/"<<real_nentries<<endl;
     if(jentry==0){
       time1=evttime;
