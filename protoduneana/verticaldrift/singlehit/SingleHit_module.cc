@@ -125,6 +125,10 @@ private:
 
   std::list<float> lYPoint;
   std::list<float> lZPoint;
+  std::list<float> lEInd1Point;
+  std::list<float> lEInd2Point;
+  std::list<int>   lChInd1Point;
+  std::list<int>   lChInd2Point;
 
   //Input variables
   std::string fSpacePointLabel;
@@ -170,9 +174,16 @@ private:
                                                                                   std::list<float> & PTInd1,
                                                                                   std::list<float> & PTInd2);
 
-  void GetSpatialCoincidence( geo::WireID & WireCol , std::list<geo::WireID> & WireInd1 , std::list<geo::WireID> & WireInd2 , std::list<int>  & ChInd1 , std::list<float> & YInd1 , std::list<float> & ZInd1 , std::list<int>  & ChIntersectInd1 , std::list<int>  & ChInd2 , std::list<float> & YInd2 , std::list<float> & ZInd2 , std::list<int>  & ChIntersectInd2 );
+  void GetSpatialCoincidence( geo::WireID & WireCol , std::list<geo::WireID> & WireInd1 , std::list<geo::WireID> & WireInd2 ,
+                              std::list<int>  & ChInd1 , std::list<float> & YInd1 , std::list<float> & ZInd1 , std::list<int>  & ChIntersectInd1 ,
+                              std::list<int>  & ChInd2 , std::list<float> & YInd2 , std::list<float> & ZInd2 , std::list<int>  & ChIntersectInd2 );
 
-  void GetSpacePoint( float pitch , float alpha , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 , std::list<float> & listYSP, std::list<float> & listZSP );
+  void GetSpacePoint( float pitch , float alpha ,
+                      std::list<int> & ChIntersectInd1 , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1,
+                      std::list<int> & ChIntersectInd2 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 ,
+                      std::list<float> & listYSP       , std::list<float> & listZSP ,
+                      std::list<float> & listEind1SP   , std::list<float> & listEind2SP ,
+                      std::list<int> & listCh1SP       , std::list<int> & listCh2SP );
 
 };
 
@@ -252,6 +263,10 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
     if( !lChIntersectInd2.empty()  ) lChIntersectInd2.clear();
     if( !lYPoint.empty()   ) lYPoint.clear();
     if( !lZPoint.empty()   ) lZPoint.clear();
+    if( !lEInd1Point.empty()   )  lEInd1Point.clear();
+    if( !lEInd2Point.empty()   )  lEInd2Point.clear();
+    if( !lChInd1Point.empty()   )  lChInd1Point.clear();
+    if( !lChInd2Point.empty()   )  lChInd2Point.clear();
 
     if (fPlane == 2)
     {
@@ -268,7 +283,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
       if ( fCoincidence > 0 )
       {
         GetSpatialCoincidence( fWire , lWireInd1 , lWireInd2 , lChannelInd1 , lYInd1 , lZInd1 , lChIntersectInd1 , lChannelInd2 , lYInd2 , lZInd2 , lChIntersectInd2 ); 
-        GetSpacePoint( fPitch , fPitchMultiplier , lYInd1 , lZInd1 , lEnergyInd1 , lYInd2 , lZInd2 , lEnergyInd2 , lYPoint , lZPoint);
+        GetSpacePoint( fPitch , fPitchMultiplier , lChIntersectInd1 , lYInd1 , lZInd1 , lEnergyInd1 , lChIntersectInd2 , lYInd2 , lZInd2 , lEnergyInd2 , lYPoint , lZPoint , lEInd1Point , lEInd2Point , lChInd1Point , lChInd2Point);
       }
     }
 
@@ -307,6 +322,14 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
       lYPoint.push_back(-999);
       lZPoint.clear();
       lZPoint.push_back(-999);
+      lEInd1Point.clear();
+      lEInd1Point.push_back(-999);
+      lEInd2Point.clear();
+      lEInd2Point.push_back(-999);
+      lChInd1Point.clear();
+      lChInd1Point.push_back(-999);
+      lChInd2Point.clear();
+      lChInd2Point.push_back(-999);
     }
   
     fCutHit = 0;
@@ -354,6 +377,10 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   lChIntersectInd2.clear();
   lYPoint.clear();
   lZPoint.clear();
+  lEInd1Point.clear();
+  lEInd2Point.clear();
+  lChInd1Point.clear();
+  lChInd2Point.clear();
   // Implementation of required member function here.
 }
 
@@ -396,8 +423,14 @@ void pdvdana::SingleHit::beginJob()
   fAnaTree->Branch("listYIntersecPointInd2" , &lYInd2           );
   fAnaTree->Branch("listZIntersecPointInd2" , &lZInd2           );
   fAnaTree->Branch("listChIntersecInd2"     , &lChIntersectInd2 );
+
   fAnaTree->Branch("listOfYPoint"           , &lYPoint      );
   fAnaTree->Branch("listOfZPoint"           , &lZPoint      );
+  fAnaTree->Branch("listEInd1Point"         , &lEInd1Point  );
+  fAnaTree->Branch("listEInd2Point"         , &lEInd2Point  );
+  fAnaTree->Branch("listChInd1Point"        , &lChInd1Point );
+  fAnaTree->Branch("listChInd2Point"        , &lChInd2Point );
+
 }
 
 void pdvdana::SingleHit::endJob()
@@ -474,12 +507,13 @@ void pdvdana::SingleHit::GetIsolated(art::Event const & ev, std::string HitLabel
         ChannelMaxInt      = ChannelSingle  + ChannelWdInt;
         PeakTimeMaxInt     = PeakTimeSingle + PeakTimeWdInt;
 
+
         ChannelMinExt      = ChannelMinInt  - ChannelWdExt;
         PeakTimeMinExt     = PeakTimeMinInt - PeakTimeWdExt;
         ChannelMaxExt      = ChannelMaxInt  + ChannelWdExt;
         PeakTimeMaxExt     = PeakTimeMaxInt + PeakTimeWdExt;
         
-        if ((Channel >= ChannelMinExt)&&(Channel <= ChannelMinInt)&&(Channel >= ChannelMaxInt)&&(Channel <= ChannelMaxExt)&&(PeakTime >= PeakTimeMinExt)&&(PeakTime <= PeakTimeMinInt)&&(PeakTime >= PeakTimeMaxInt)&&(PeakTime <= PeakTimeMaxExt))
+        if ( ((Channel > ChannelMinExt)&&(Channel < ChannelMaxExt)&&(PeakTime > PeakTimeMinExt)&&(PeakTime < PeakTimeMaxExt)) && ((Channel <= ChannelMinInt)||(Channel >= ChannelMaxInt)||(PeakTime <= PeakTimeMinInt)||(PeakTime >= PeakTimeMaxInt)) )
         {
           if (i != *elem) //normally always true now
           {
@@ -607,9 +641,15 @@ void pdvdana::SingleHit::GetSpatialCoincidence( geo::WireID & WireCol , std::lis
   }
 }
 
-void pdvdana::SingleHit::GetSpacePoint( float pitch , float alpha , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 , std::list<float> & listYSP, std::list<float> & listZSP )
+void pdvdana::SingleHit::GetSpacePoint( float pitch , float alpha , 
+                                        std::list<int> & ChIntersectInd1 , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1, 
+                                        std::list<int> & ChIntersectInd2 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 , 
+                                        std::list<float> & listYSP       , std::list<float> & listZSP , 
+                                        std::list<float> & listEind1SP   , std::list<float> & listEind2SP , 
+                                        std::list<int> & listCh1SP       , std::list<int> & listCh2SP)
 {
 
+  std::list<int>::iterator  ch1t = ChIntersectInd1.begin();
   std::list<float>::iterator z1t = ZInd1.begin();
   std::list<float>::iterator e1t = EInd1.begin();
 
@@ -617,8 +657,10 @@ void pdvdana::SingleHit::GetSpacePoint( float pitch , float alpha , std::list<fl
 
   for( auto const yind1 : YInd1)
   {
+    std::list<int>::iterator  ch2t = ChIntersectInd2.begin();
     std::list<float>::iterator z2t = ZInd2.begin();
     std::list<float>::iterator e2t = EInd2.begin();
+
     for ( auto const yind2 : YInd2)
     {
       dy = yind1 - yind2;
@@ -632,12 +674,18 @@ void pdvdana::SingleHit::GetSpacePoint( float pitch , float alpha , std::list<fl
 
         listYSP.push_back( y );     
         listZSP.push_back( z );
+        listEind1SP.push_back( *e1t );
+        listEind2SP.push_back( *e2t );
+        listCh1SP.push_back( *ch1t );
+        listCh2SP.push_back( *ch2t );
       }
       ++e2t;
       ++z2t;
+      ++ch2t;
     }
     ++e1t;
     ++z1t;
+    ++ch1t;
   }
 }
 DEFINE_ART_MODULE(pdvdana::SingleHit)
