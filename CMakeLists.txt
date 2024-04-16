@@ -17,7 +17,7 @@ cmake_minimum_required (VERSION 3.20 FATAL_ERROR)
 
 find_package(cetmodules REQUIRED)
 project(protoduneana LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.83.01d00)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.89.01d00)
 
 # cetbuildtools contains our cmake modules
 
@@ -79,6 +79,7 @@ find_package( systematicstools REQUIRED )
 find_package( nusystematics REQUIRED )
 find_package( geant4reweight REQUIRED )
 #find_package( valgrind REQUIRED )
+find_package( nlohmann_json REQUIRED )
 
 if(DEFINED ENV{HEP_HPC_DIR} )
   find_package( hdf5 REQUIRED )

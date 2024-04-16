@@ -38,6 +38,7 @@ art_make_library( LIBRARY_NAME protodune_fitutils
 cet_make_exec( NAME runProtoDUNEFit
 	       SOURCE runProtoDUNEFit.cc
 	       LIBRARIES protodune_fitutils
+	       ${ROOT_ROOSTATS}
 	    )
 
 cet_make_exec( NAME runEventSelection
@@ -46,6 +47,9 @@ cet_make_exec( NAME runEventSelection
                          ${ROOT_ROOTDATAFRAME}
                          ${ROOT_TREEPLAYER}
                          ${ROOT_ROOTVECOPS}
+			 ROOT::Tree
+			 ROOT::Core
+			 ROOT::ROOTDataFrame
 	    )
 
 cet_make_exec( NAME Geant4ReweightSysts 

@@ -247,13 +247,6 @@ gdmldir	product_dir	gdml
 # * It is an error for more than one non-(<qual-trigger> == "-default-")
 #   entry to match for a given product.
 #
-####################################
-product		version		qual	flags		<table_format=2>
-duneprototypes	v09_83_01d00	-
-geant4reweight	v01_20_03	-
-cetmodules	v3_22_02	-	only_for_build
-end_product_list
-####################################
 
 ####################################
 # Qualifier table.
@@ -305,14 +298,6 @@ end_product_list
 #   *required* unless the only_for_build flag is specified, in which
 #   case it is optional.
 #
-####################################
-qualifier	duneprototypes	geant4reweight	notes
-c14:debug	c14:debug	c14:s120a:debug	-nq-
-c14:prof	c14:prof	c14:s120a:prof	-nq-
-e26:debug	e26:debug	e26:s120a:debug	-nq-
-e26:prof	e26:prof	e26:s120a:prof	-nq-
-end_qualifier_list
-####################################
 
 ####################################
 # Table fragment.
@@ -351,10 +336,28 @@ table_fragment_begin
 table_fragment_end
 ####################################
 
-####################################
-# Backmatter.
-#
-# Comments and editor-specific metadata.
+
+# With "product  version" table below, we now define depdendencies
+
+# Add the dependent product and version
+
+product          version
+duneprototypes   v09_89_01d00
+cetmodules	 v3_24_01	-	only_for_build
+geant4reweight   v01_20_07
+end_product_list
+
+
+# We now define allowed qualifiers and the corresponding qualifiers for the depdencies.
+# Make a table by adding columns before "notes".
+# e15  - with gcc 6.4.0 and -std=c++14
+qualifier	duneprototypes          geant4reweight          notes
+c14:debug	c14:debug               c14:debug:s131           -nq-
+c14:prof	c14:prof                c14:prof:s131            -nq-
+e26:debug	e26:debug               e26:debug:s131           -nq-
+e26:prof	e26:prof                e26:prof:s131            -nq-
+end_qualifier_list
+
 
 # Preserve tabs and formatting in emacs and vi / vim:
 
