@@ -15,7 +15,6 @@ cet_build_plugin(	SingleHit art::module
                         messagefacility::MF_MessageLogger
                         cetlib::cetlib 
                         cetlib_except::cetlib_except
-                        ROOT_BASIC_LIB_LIST
                         duneprototypes::ProtoDUNEDataUtils
 			ProtoDUNEUtilities
                         BASENAME_ONLY
