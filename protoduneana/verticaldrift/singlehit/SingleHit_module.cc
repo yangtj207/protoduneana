@@ -280,7 +280,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
     lChInd2Point.push_back(-999);
 
     fAnaTree->Fill();
-    continue;
+    return;
   } 
   if( !lSingleIndex.empty()   ) lSingleIndex.clear();
   if( !lIsolatedIndex.empty() ) lIsolatedIndex.clear();
