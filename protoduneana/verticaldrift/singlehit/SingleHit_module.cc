@@ -221,7 +221,67 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   //art::InputTag hittag(fHitLabel);
   auto const HitList = e.getValidHandle<vector<recob::Hit>>(fHitLabel);
   fNHits = HitList->size();
-  
+ 
+  if (fNHits == 0)
+  {
+    fChannel        = -999;
+    fPlane          = -999;
+    fHitWidth       = -999;
+
+    fEnergy         = -999;
+    fPeakTime       = -999;
+    fSigmaPeakTime  = -999;
+    fRMS            = -999;
+    fAmplitude      = -999;
+    fSigmaAmplitude = -999;
+    fGoodnessOfFit  = -999;
+    fIntegral       = -999;
+    fSigmaIntegral  = -999;
+
+    fHitNumber   = -999;
+    fCoincidence = -999;
+    lWireInd1.clear();
+    lWireInd2.clear();
+    lChannelInd1.clear();
+    lChannelInd1.push_back(-999);
+    lChannelInd2.clear();
+    lChannelInd2.push_back(-999);
+    lEnergyInd1.clear();
+    lEnergyInd1.push_back(-999);
+    lEnergyInd2.clear();
+    lEnergyInd2.push_back(-999);
+    lPeakTimeInd1.clear();
+    lPeakTimeInd1.push_back(-999);
+    lPeakTimeInd2.clear();
+    lPeakTimeInd2.push_back(-99);
+    lYInd1.clear();
+    lYInd1.push_back(-999);
+    lZInd1.clear();
+    lZInd1.push_back(-999);
+    lYInd2.clear();
+    lYInd2.push_back(-999);
+    lZInd2.clear();
+    lZInd2.push_back(-999);
+    lChIntersectInd1.clear();
+    lChIntersectInd1.push_back(-999);
+    lChIntersectInd2.clear();
+    lChIntersectInd2.push_back(-999);
+    lYPoint.clear();
+    lYPoint.push_back(-999);
+    lZPoint.clear();
+    lZPoint.push_back(-999);
+    lEInd1Point.clear();
+    lEInd1Point.push_back(-999);
+    lEInd2Point.clear();
+    lEInd2Point.push_back(-999);
+    lChInd1Point.clear();
+    lChInd1Point.push_back(-999);
+    lChInd2Point.clear();
+    lChInd2Point.push_back(-999);
+
+    fAnaTree->Fill();
+    continue;
+  } 
   if( !lSingleIndex.empty()   ) lSingleIndex.clear();
   if( !lIsolatedIndex.empty() ) lIsolatedIndex.clear();
 
