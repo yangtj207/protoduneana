@@ -1,4 +1,4 @@
-#include "pdhdana_MC_nosce.fcl"
+#include "pdhd_ana_MC_nosce.fcl"
 physics.producers.pandoracalo:           @local::pdune_sp_calomcsce
 physics.producers.pandoraShowercalo:     @local::pdune_sp_showercalomcsce
 physics.producers.pandora2calo:          @local::pdune_sp_alltrackcalomcsce

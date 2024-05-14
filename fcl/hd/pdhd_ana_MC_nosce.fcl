@@ -99,7 +99,7 @@ physics:
  }
 
  #reco: []
- reco: [ pandora, pandoraWriter, pandoraTrack, pandoraShower,
+ reco: [ fTruth, pandora, pandoraWriter, pandoraTrack, pandoraShower,
          pandoracalo, pandoracalonosce, pandorapid, pandoracali, pandoracalipid,
          pandoraShowercalo, pandoraShowercalonosce, anodepiercerst0,
          pandora2Track, pandora2calo, pandora2calonosce, pandora2pid,
@@ -107,11 +107,10 @@ physics:
          pandora2Showercalonosce ]
 
  filters: { 
-   #fTruth: @local::beam_filter
+   fTruth: @local::beam_filter
  }
 
  #fpath: [fTruth]
- fpath: []
 
  analyzers:
  {
@@ -127,7 +126,8 @@ physics:
 }
 
 outputs: {}
-#physics.filters.fTruth.PDG: [211, -13, 2212, 321, -11]
+physics.filters.fTruth.PDG: [211, -13, 2212, 321]
+physics.filters.fTruth.IsVerbose: true
 #physics.analyzers.pduneana.SelectEvents: ["fpath"]
 physics.analyzers.pduneana.CalorimetryTagSCE: "pandoracalo"
 physics.analyzers.pduneana.CalorimetryTagNoSCE: "pandoracalonosce" ##For no-SCE sample
