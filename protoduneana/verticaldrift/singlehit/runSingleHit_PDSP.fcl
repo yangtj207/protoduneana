@@ -51,6 +51,7 @@ physics:
       CoincidenceWindow:    10
       Pitch:                0.9 #in cm
       PitchMultiplier:      1.2
+      tagPD:                1
     }
   }
 

@@ -52,6 +52,7 @@ physics:
       CoincidenceWindow:    10
       Pitch:                0.9 #in cm
       PitchMultiplier:      1.2
+      tagPD:                0 # = 1 ->PDHD = 0 -> PDVD (for calib. factor)
     }
   }
 
