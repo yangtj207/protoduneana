@@ -149,6 +149,7 @@ private:
   float fCoincidenceWd;
   float fPitch;
   float fPitchMultiplier;
+  int   fTagHDVD;
 
   // working variables
   int fHitCounter = 0;
@@ -202,11 +203,14 @@ pdvdana::SingleHit::SingleHit(fhicl::ParameterSet const& p)
     fPeakTimeWdExt(p.get<float>("PeakTimeWindowExt")), //in ticktime 
     fCoincidenceWd(p.get<float>("CoincidenceWindow")), //in ticktime,
     fPitch(p.get<float>("Pitch")),
-    fPitchMultiplier(p.get<float>("PitchMultiplier"))    
+    fPitchMultiplier(p.get<float>("PitchMultiplier")),    
+    fTagHDVD(p.get<int>("tagPD"))
     // More initializers here.
 {
   // Call appropriate consumes<>() for any products to be retrieved by this module.
   fGeom    = &*art::ServiceHandle<geo::Geometry>();
+  if (fTagHDVD==1) fADCtoEl = fADCtoEl/5;
+
 }
 
 void pdvdana::SingleHit::analyze(art::Event const& e)
@@ -253,7 +257,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
     lPeakTimeInd1.clear();
     lPeakTimeInd1.push_back(-999);
     lPeakTimeInd2.clear();
-    lPeakTimeInd2.push_back(-99);
+    lPeakTimeInd2.push_back(-999);
     lYInd1.clear();
     lYInd1.push_back(-999);
     lZInd1.clear();
@@ -280,125 +284,127 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
     lChInd2Point.push_back(-999);
 
     fAnaTree->Fill();
-    return;
   } 
-  if( !lSingleIndex.empty()   ) lSingleIndex.clear();
-  if( !lIsolatedIndex.empty() ) lIsolatedIndex.clear();
 
-  // Single Isolated concideration
-  GetSingle(   e, fHitLabel, lSingleIndex, fMultiplicity );
-  GetIsolated( e, fHitLabel, fChannelWdInt, fChannelWdExt, fPeakTimeWdInt, fPeakTimeWdExt, lSingleIndex, lIsolatedIndex);
-
-  for(int index =0 ; index<fNHits; index++)
+  else
   {
-    const recob::Hit& hit = HitList->at(index);
-    fWire                 = hit.WireID();
-    fChannel              = hit.Channel();
-    fPlane                = hit.WireID().Plane;
-    fHitWidth             = hit.EndTick() - hit.StartTick();
+    if( !lSingleIndex.empty()   ) lSingleIndex.clear();
+    if( !lIsolatedIndex.empty() ) lIsolatedIndex.clear();
 
-    fEnergy         = hit.SummedADC()/fADCtoEl;
-    fPeakTime       = hit.PeakTime()*ftick_in_mus;
-    fSigmaPeakTime  = hit.SigmaPeakTime()*ftick_in_mus;
-    fRMS            = hit.RMS();
-    fAmplitude      = hit.PeakAmplitude();
-    fSigmaAmplitude = hit.SigmaPeakAmplitude();
-    fGoodnessOfFit  = hit.GoodnessOfFit();
-    fIntegral       = hit.Integral()/fADCtoEl;
-    fSigmaIntegral  = hit.SigmaIntegral();
+    // Single Isolated concideration
+    GetSingle(   e, fHitLabel, lSingleIndex, fMultiplicity );
+    GetIsolated( e, fHitLabel, fChannelWdInt, fChannelWdExt, fPeakTimeWdInt, fPeakTimeWdExt, lSingleIndex, lIsolatedIndex);
 
-    if( !lWireInd1.empty()     ) lWireInd1.clear();
-    if( !lWireInd2.empty()     ) lWireInd2.clear();
-    if( !lChannelInd1.empty()  ) lChannelInd1.clear();
-    if( !lChannelInd2.empty()  ) lChannelInd2.clear();
-    if( !lEnergyInd1.empty()   ) lEnergyInd1.clear();
-    if( !lEnergyInd2.empty()   ) lEnergyInd2.clear();
-    if( !lPeakTimeInd1.empty() ) lPeakTimeInd1.clear();
-    if( !lPeakTimeInd2.empty() ) lPeakTimeInd2.clear();
-    if( !lYInd1.empty()        ) lYInd1.clear();
-    if( !lZInd1.empty()        ) lZInd1.clear();
-    if( !lYInd2.empty()        ) lYInd2.clear();
-    if( !lZInd2.empty()        ) lZInd2.clear();
-    if( !lChIntersectInd1.empty()  ) lChIntersectInd1.clear();
-    if( !lChIntersectInd2.empty()  ) lChIntersectInd2.clear();
-    if( !lYPoint.empty()   ) lYPoint.clear();
-    if( !lZPoint.empty()   ) lZPoint.clear();
-    if( !lEInd1Point.empty()   )  lEInd1Point.clear();
-    if( !lEInd2Point.empty()   )  lEInd2Point.clear();
-    if( !lChInd1Point.empty()   )  lChInd1Point.clear();
-    if( !lChInd2Point.empty()   )  lChInd2Point.clear();
-
-    if (fPlane == 2)
+    for(int index =0 ; index<fNHits; index++)
     {
-      fHitNumber = fHitCounter;
-      ++fHitCounter;
+      const recob::Hit& hit = HitList->at(index);
+      fWire                 = hit.WireID();
+      fChannel              = hit.Channel();
+      fPlane                = hit.WireID().Plane;
+      fHitWidth             = hit.EndTick() - hit.StartTick();
 
-      // Coincidence research
-      GetTimeCoincidence( e, fHitLabel, fCoincidenceWd, fTimeInd1ToInd2, fADCtoEl, ftick_in_mus, hit, lWireInd1, lWireInd2, lChannelInd1, lChannelInd2, lEnergyInd1, lEnergyInd2, lPeakTimeInd1, lPeakTimeInd2);
-      
-      fCoincidence = 0;
-      if ( !lWireInd1.empty() || !lWireInd2.empty() ) fCoincidence += 1;
-      if ( !lWireInd1.empty() && !lWireInd2.empty() ) fCoincidence += 1;
+      fEnergy         = hit.SummedADC()/fADCtoEl;
+      fPeakTime       = hit.PeakTime()*ftick_in_mus;
+      fSigmaPeakTime  = hit.SigmaPeakTime()*ftick_in_mus;
+      fRMS            = hit.RMS();
+      fAmplitude      = hit.PeakAmplitude();
+      fSigmaAmplitude = hit.SigmaPeakAmplitude();
+      fGoodnessOfFit  = hit.GoodnessOfFit();
+      fIntegral       = hit.Integral()/fADCtoEl;
+      fSigmaIntegral  = hit.SigmaIntegral();
 
-      if ( fCoincidence > 0 )
+      if( !lWireInd1.empty()     ) lWireInd1.clear();
+      if( !lWireInd2.empty()     ) lWireInd2.clear();
+      if( !lChannelInd1.empty()  ) lChannelInd1.clear();
+      if( !lChannelInd2.empty()  ) lChannelInd2.clear();
+      if( !lEnergyInd1.empty()   ) lEnergyInd1.clear();
+      if( !lEnergyInd2.empty()   ) lEnergyInd2.clear();
+      if( !lPeakTimeInd1.empty() ) lPeakTimeInd1.clear();
+      if( !lPeakTimeInd2.empty() ) lPeakTimeInd2.clear();
+      if( !lYInd1.empty()        ) lYInd1.clear();
+      if( !lZInd1.empty()        ) lZInd1.clear();
+      if( !lYInd2.empty()        ) lYInd2.clear();
+      if( !lZInd2.empty()        ) lZInd2.clear();
+      if( !lChIntersectInd1.empty()  ) lChIntersectInd1.clear();
+      if( !lChIntersectInd2.empty()  ) lChIntersectInd2.clear();
+      if( !lYPoint.empty()   ) lYPoint.clear();
+      if( !lZPoint.empty()   ) lZPoint.clear();
+      if( !lEInd1Point.empty()   )  lEInd1Point.clear();
+      if( !lEInd2Point.empty()   )  lEInd2Point.clear();
+      if( !lChInd1Point.empty()   )  lChInd1Point.clear();
+      if( !lChInd2Point.empty()   )  lChInd2Point.clear();
+
+      if (fPlane == 2)
       {
-        GetSpatialCoincidence( fWire , lWireInd1 , lWireInd2 , lChannelInd1 , lYInd1 , lZInd1 , lChIntersectInd1 , lChannelInd2 , lYInd2 , lZInd2 , lChIntersectInd2 ); 
-        GetSpacePoint( fPitch , fPitchMultiplier , lChIntersectInd1 , lYInd1 , lZInd1 , lEnergyInd1 , lChIntersectInd2 , lYInd2 , lZInd2 , lEnergyInd2 , lYPoint , lZPoint , lEInd1Point , lEInd2Point , lChInd1Point , lChInd2Point);
+        fHitNumber = fHitCounter;
+        ++fHitCounter;
+
+        // Coincidence research
+        GetTimeCoincidence( e, fHitLabel, fCoincidenceWd, fTimeInd1ToInd2, fADCtoEl, ftick_in_mus, hit, lWireInd1, lWireInd2, lChannelInd1, lChannelInd2, lEnergyInd1, lEnergyInd2, lPeakTimeInd1, lPeakTimeInd2);
+      
+        fCoincidence = 0;
+        if ( !lWireInd1.empty() || !lWireInd2.empty() ) fCoincidence += 1;
+        if ( !lWireInd1.empty() && !lWireInd2.empty() ) fCoincidence += 1;
+
+        if ( fCoincidence > 0 )
+        {
+          GetSpatialCoincidence( fWire , lWireInd1 , lWireInd2 , lChannelInd1 , lYInd1 , lZInd1 , lChIntersectInd1 , lChannelInd2 , lYInd2 , lZInd2 , lChIntersectInd2 ); 
+          GetSpacePoint( fPitch , fPitchMultiplier , lChIntersectInd1 , lYInd1 , lZInd1 , lEnergyInd1 , lChIntersectInd2 , lYInd2 , lZInd2 , lEnergyInd2 , lYPoint , lZPoint , lEInd1Point , lEInd2Point , lChInd1Point , lChInd2Point);
+        }
       }
-    }
 
-    if (fPlane != 2)
-    {
-      fHitNumber   = -1;
-      fCoincidence = -999;
+      if (fPlane != 2)
+      {
+        fHitNumber   = -1;
+        fCoincidence = -999;
 
-      lWireInd1.clear();
-      lWireInd2.clear();
-      lChannelInd1.clear();
-      lChannelInd1.push_back(-1);
-      lChannelInd2.clear();
-      lChannelInd2.push_back(-1);
-      lEnergyInd1.clear();
-      lEnergyInd1.push_back(-1);
-      lEnergyInd2.clear();
-      lEnergyInd2.push_back(-1);
-      lPeakTimeInd1.clear();
-      lPeakTimeInd1.push_back(-1);
-      lPeakTimeInd2.clear();
-      lPeakTimeInd2.push_back(-1);
-      lYInd1.clear();
-      lYInd1.push_back(-999);
-      lZInd1.clear();
-      lZInd1.push_back(-999);
-      lYInd2.clear();
-      lYInd2.push_back(-999);
-      lZInd2.clear();
-      lZInd2.push_back(-999);
-      lChIntersectInd1.clear();
-      lChIntersectInd1.push_back(-999);
-      lChIntersectInd2.clear();
-      lChIntersectInd2.push_back(-999);
-      lYPoint.clear();
-      lYPoint.push_back(-999);
-      lZPoint.clear();
-      lZPoint.push_back(-999);
-      lEInd1Point.clear();
-      lEInd1Point.push_back(-999);
-      lEInd2Point.clear();
-      lEInd2Point.push_back(-999);
-      lChInd1Point.clear();
-      lChInd1Point.push_back(-999);
-      lChInd2Point.clear();
-      lChInd2Point.push_back(-999);
-    }
+        lWireInd1.clear();
+        lWireInd2.clear();
+        lChannelInd1.clear();
+        lChannelInd1.push_back(-1);
+        lChannelInd2.clear();
+        lChannelInd2.push_back(-1);
+        lEnergyInd1.clear();
+        lEnergyInd1.push_back(-1);
+        lEnergyInd2.clear();
+        lEnergyInd2.push_back(-1);
+        lPeakTimeInd1.clear();
+        lPeakTimeInd1.push_back(-1);
+        lPeakTimeInd2.clear();
+        lPeakTimeInd2.push_back(-1);
+        lYInd1.clear();
+        lYInd1.push_back(-999);
+        lZInd1.clear();
+        lZInd1.push_back(-999);
+        lYInd2.clear();
+        lYInd2.push_back(-999);
+        lZInd2.clear();
+        lZInd2.push_back(-999);
+        lChIntersectInd1.clear();
+        lChIntersectInd1.push_back(-999);
+        lChIntersectInd2.clear();
+        lChIntersectInd2.push_back(-999);
+        lYPoint.clear();
+        lYPoint.push_back(-999);
+        lZPoint.clear();
+        lZPoint.push_back(-999);
+        lEInd1Point.clear();
+        lEInd1Point.push_back(-999);
+        lEInd2Point.clear();
+        lEInd2Point.push_back(-999);
+        lChInd1Point.clear();
+        lChInd1Point.push_back(-999);
+        lChInd2Point.clear();
+        lChInd2Point.push_back(-999);
+      }
   
-    fCutHit = 0;
-    if ( Inside(index, lSingleIndex)   ) fCutHit+=1;
-    if ( Inside(index, lIsolatedIndex) ) fCutHit+=1;
+      fCutHit = 0;
+      if ( Inside(index, lSingleIndex)   ) fCutHit+=1;
+      if ( Inside(index, lIsolatedIndex) ) fCutHit+=1;
   
-    //Filling tree
-    fAnaTree->Fill();
-
+      //Filling tree
+      fAnaTree->Fill();
+    }
   }
   // setting variables values to initiale values
   fChannel     = -999;
