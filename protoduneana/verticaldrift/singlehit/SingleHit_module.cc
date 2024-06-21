@@ -49,7 +49,20 @@
 using std::vector;
 using std::string;
 
-typedef struct { double z, y, ECol, EInd1 ,EInd2 , PeakTime; int group, ch_Col, ch_Ind1, ch_Ind2; } point_t, *point;
+typedef struct { float z, y, ECol, EInd1 ,EInd2 , PeakTime; int group, ch_Col, ch_Ind1, ch_Ind2; } point_t, *point;
+
+typedef struct                                                                
+{                                                                                 
+  float Sumz , Sumy , SumECol , ECol , EInd1 , EInd2 , PeakTime;                  
+  int Npoint, NCol , NInd1 , NInd2;
+  std::list<int> lChannelCol , lChannelInd1 , lChannelInd2;
+} TempCluster ;                            
+                              
+typedef struct
+{ 
+  float z , y , ECol , EInd1 , EInd2 , PeakTime;
+  int Npoint, NCol , NInd1 , NInd2;
+} Cluster ; 
 
 namespace pdvdana {
   class SingleHit;
@@ -217,22 +230,11 @@ private:
                               std::list<int>  & ChInd2 , std::list<float> & YInd2 , std::list<float> & ZInd2 , std::list<int>  & ChIntersectInd2 );
 
   void GetListOf3ViewsPoint( float pitch , float alpha ,
-                      std::list<int> & ChIntersectInd1 , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1,
-       std::vector<float> vYPointByEvent;
-  std::vector<float> vZPointByEvent;
-
-  std::vector<float> vEnergyColByEvent;
-  std::vector<float> vEInd1PointByEvent;
-  std::vector<float> vEInd2PointByEvent;
-
-  std::vector<float> vPeakTimeColByEvent;
-
-  std::vector<int>   vChannelColByEvent
-  std::vector<int>   vChInd1PointByEvent;
-  std::vector<int>   vChInd2PointByEvent;                 std::list<int> & ChIntersectInd2 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 ,
-                      std::list<float> & listYSP       , std::list<float> & listZSP ,
-                      std::list<float> & listEind1SP   , std::list<float> & listEind2SP ,
-                      std::list<int> & listCh1SP       , std::list<int> & listCh2SP );
+                             std::list<int> & ChIntersectInd1 , std::list<float> YInd1 , std::list<float> ZInd1 , std::list<float> EInd1,
+                             std::list<int> & ChIntersectInd2 , std::list<float> YInd2 , std::list<float> ZInd2 , std::list<float> EInd2 ,
+                             std::list<float> & listYSP       , std::list<float> & listZSP ,
+                             std::list<float> & listEind1SP   , std::list<float> & listEind2SP ,
+                             std::list<int> & listCh1SP       , std::list<int> & listCh2SP );
 
   int GetYZIsolatedPoint( std::vector<float> vYPoint      , std::vector<float> vZPoint      ,
                           std::vector<float> vEInd1Point  , std::vector<float> vEInd2Point  ,
@@ -245,7 +247,31 @@ private:
                           std::vector<float> &vEColIsolated   , std::vector<float> &vPTIsolated ,
                           std::vector<float> &vEInd1Isolated  , std::vector<float> &vEInd2Isolated ,
                           std::vector<int>   &vChColIsolated  , std::vector<int>   &vChInd1Isolated ,
-                          std::vector<int>   &vChInd2Isolated )
+                          std::vector<int>   &vChInd2Isolated );
+
+  // CLUSTER FUNCTIONS
+  point gen_zy(int size , std::vector<float> vZ , std::vector<float> vY , 
+                          std::vector<float> vECol , std::vector<float> vPT, 
+                          std::vector<float> vEInd1 , std::vector<float> vEInd2 , 
+                          std::vector<int> vChCol , std::vector<int> vChInd1 , std::vector<int> vChInd2);
+  
+  int nearest(point pt, point cent, int n_cluster, float *d2);
+
+  float GetDist2D(float z0,float y0,float z1,float y1);
+
+  float mean(float z,float y);
+ 
+  void kpp(point pts, int len, point cent, int n_cent);
+
+  std::vector<std::vector<float> > lloyd(point pts, int len, int n_cluster);
+
+  std::vector<std::vector<float> > GetData(int len,point data);
+
+  std::vector<int> CheckCompletude(std::vector<std::vector<float> > &data,std::vector<std::vector<float> > &cluster, float RMS , float mult, int flag );
+
+  std::vector<int> CheckClusters(std::vector<std::vector<float> > &data,std::vector<std::vector<float> > &cluster, float RMS , float mult , float tmp);
+
+  std::vector<Cluster> GetCluster( int n_point , int n_cluster , point p );
 };
 
 
@@ -552,8 +578,8 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
 
   point v = gen_zy( PTS_iso , vZ_iso , vY_iso , vECol_iso , vPT_iso , vEInd1_iso , vEInd2_iso ,  vChCol_iso , vChInd1_iso , vChInd2_iso);
 
-  std::vector<std::vector<double> > dataPos = GetData(PTS_iso,v);
-  std::vector<std::vector<double> > clustersPos;
+  std::vector<std::vector<float> > dataPos = GetData(PTS_iso,v);
+  std::vector<std::vector<float> > clustersPos;
 
   std::vector<int> vchecks(2,0);
 
@@ -1097,7 +1123,7 @@ int pdvdana::SingleHit::GetXYZIsolatedPoint( std::vector<float> vYPoint      , s
 ///////////////////////////////////////////////////////////////////////////////////
 // CLUSTER FUNCTIONS
 
-point gen_zy(int size , std::vector<float> vZ , std::vector<float> vY , std::vector<float> vECol , std::vector<float> vPT, std::vector<float> vEInd1 , std::vector<float> vEInd2 , std::vector<int> vChCol , std::vector<int> vChInd1 , std::vector<int> vChInd2)
+point pdvdana::SingleHit::gen_zy(int size , std::vector<float> vZ , std::vector<float> vY , std::vector<float> vECol , std::vector<float> vPT, std::vector<float> vEInd1 , std::vector<float> vEInd2 , std::vector<int> vChCol , std::vector<int> vChInd1 , std::vector<int> vChInd2)
 {
   int i = 0;
   point p, pt = (point) malloc(sizeof(point_t) * size);
@@ -1119,31 +1145,11 @@ point gen_zy(int size , std::vector<float> vZ , std::vector<float> vY , std::vec
   return pt;
 }
 
-int nearest(point pt, point cent, int n_cluster, double *d2)
+int pdvdana::SingleHit::nearest(point pt, point cent, int n_cluster, float *d2)
 {
     int i, min_i;
     point c;
-    double d, min_d;
-
-#       define for_n for (c = cent, i = 0; i < n_cluster; i++, c++)
-    for_n {
-        min_d = HUGE_VAL;
-        min_i = pt->group;
-        for_n {
-            if (min_d > (d = dist2(c, pt))) {
-                min_d = d; min_i = i;
-            }
-        }
-    }
-    if (d2) *d2 = min_d;
-    return min_i;
-}
-
-int nearest(point pt, point cent, int n_cluster, double *d2)
-{
-    int i, min_i;
-    point c;
-    double d, min_d;
+    float d, min_d;
 
 #       define for_n for (c = cent, i = 0; i < n_cluster; i++, c++)
     for_n {
@@ -1160,22 +1166,22 @@ int nearest(point pt, point cent, int n_cluster, double *d2)
 }
 
 
-double GetDist2D(double z0,double y0,double z1,double y1){
-    double z = z0-z1;
-    double y = y0-y1;
+float pdvdana::SingleHit::GetDist2D(float z0,float y0,float z1,float y1){
+    float z = z0-z1;
+    float y = y0-y1;
     return z*z+y*y;
 }
 
-double mean(double z,double y){
+float pdvdana::SingleHit::mean(float z,float y){
     return (z+y)/2.;
 }
 
-void kpp(point pts, int len, point cent, int n_cent)
+void pdvdana::SingleHit::kpp(point pts, int len, point cent, int n_cent)
 {
 #       define for_len for (j = 0, p = pts; j < len; j++, p++)
     int j;
     int n_cluster;
-    double sum, *d = (double*)malloc(sizeof(double) * len);
+    float sum, *d = (float*)malloc(sizeof(float) * len);
 
     point p;
     cent[0] = pts[ rand() % len ];
@@ -1196,7 +1202,7 @@ void kpp(point pts, int len, point cent, int n_cent)
     free(d);
 }
 
-std::vector<std::vector<double> > lloyd(point pts, int len, int n_cluster)
+std::vector<std::vector<float>> pdvdana::SingleHit::lloyd(point pts, int len, int n_cluster)
 {
     int i, j, min_i;
     int changed;
@@ -1232,8 +1238,8 @@ std::vector<std::vector<double> > lloyd(point pts, int len, int n_cluster)
 
     for_n { c->group = i; }
 
-    std::vector<std::vector<double> > clusterPos;
-    std::vector<double> clusterPosZ,clusterPosY;
+    std::vector<std::vector<float> > clusterPos;
+    std::vector<float> clusterPosZ,clusterPosY;
 
     point result;
 
@@ -1248,10 +1254,10 @@ std::vector<std::vector<double> > lloyd(point pts, int len, int n_cluster)
 }
 
 
-std::vector<std::vector<double> > GetData(int len,point data){
+std::vector<std::vector<float>> pdvdana::SingleHit::GetData(int len,point data){
 
-    std::vector<std::vector<double> > dataPos;
-    std::vector<double> dataPosZ,dataPosY;
+    std::vector<std::vector<float> > dataPos;
+    std::vector<float> dataPosZ,dataPosY;
 
 
   for(int i = 0; i < len; i++, data++) {
@@ -1264,13 +1270,13 @@ std::vector<std::vector<double> > GetData(int len,point data){
     return dataPos;
 }
 
-std::vector<int> CheckCompletude(std::vector<std::vector<double> > &data,std::vector<std::vector<double> > &cluster, double RMS , double mult, int flag )
+std::vector<int> pdvdana::SingleHit::CheckCompletude(std::vector<std::vector<float> > &data,std::vector<std::vector<float> > &cluster, float RMS , float mult, int flag )
 {
     int Npts = data[0].size();
     int Ncls = cluster[0].size();
 
     int Nin = 0, Nin2 = 0, Nout = 0;
-    double dist;
+    float dist;
     int IDin[Npts];
 
     for(int j = 0;j<Npts;j++) IDin[j] = 0;
@@ -1305,7 +1311,7 @@ std::vector<int> CheckCompletude(std::vector<std::vector<double> > &data,std::ve
     return N;
 }
 
-std::vector<int> CheckClusters(std::vector<std::vector<double> > &data,std::vector<std::vector<double> > &cluster, double RMS , double mult , double tmp)
+std::vector<int> pdvdana::SingleHit::CheckClusters(std::vector<std::vector<float> > &data,std::vector<std::vector<float> > &cluster, float RMS , float mult , float tmp)
 {
 
     std::vector<int> v(2,0);
@@ -1321,25 +1327,25 @@ std::vector<int> CheckClusters(std::vector<std::vector<double> > &data,std::vect
     Nin2 = NComp[1];
     Nout = NComp[2];
 
-    printf("Counting : %.03f %.03f %.03f sum : %.02f \n",double(Nin)/double(Npts),double(Nin2)/double(Npts),double(Nout)/double(Npts),double(Nin+Nin2+Nout)/double(Npts));
+    printf("Counting : %.03f %.03f %.03f sum : %.02f \n",float(Nin)/float(Npts),float(Nin2)/float(Npts),float(Nout)/float(Npts),float(Nin+Nin2+Nout)/float(Npts));
 
 
-    if(double(Nin+Nin2)/double(Npts) > tmp && double(Nin)/double(Npts) < tmp)
+    if(float(Nin+Nin2)/float(Npts) > tmp && float(Nin)/float(Npts) < tmp)
     {
       v[0] = 2;
       v[1] = cluster[0].size();
       return v;
     }
-    else if(double(Nin)/double(Npts) < tmp)
+    else if(float(Nin)/float(Npts) < tmp)
     {
       v[0] = 0;
       v[1] = cluster[0].size();
       return v;
     }
-    //if(double(Nin)/double(Npts) < 0.99) return 0;
+    //if(float(Nin)/float(Npts) < 0.99) return 0;
 
 
-    double dist;
+    float dist;
     int IDoverlap[Ncls][Ncls];
     int overlap = 0;
 
@@ -1365,8 +1371,8 @@ std::vector<int> CheckClusters(std::vector<std::vector<double> > &data,std::vect
 
     if(overlap>0)
     {
-      vector<double> newclusterZ, newclusterY;
-      double meanZ, meanY;
+      vector<float> newclusterZ, newclusterY;
+      float meanZ, meanY;
 
       for(int i = 0;i<Ncls;i++)
       {
@@ -1392,8 +1398,8 @@ std::vector<int> CheckClusters(std::vector<std::vector<double> > &data,std::vect
         }
         else if(cluster[0][i] != 666)
         {
-          newclusterZ.push_back(meanZ/double(overlap));
-          newclusterY.push_back(meanY/double(overlap));
+          newclusterZ.push_back(meanZ/float(overlap));
+          newclusterY.push_back(meanY/float(overlap));
         }
       }
 
@@ -1410,15 +1416,15 @@ std::vector<int> CheckClusters(std::vector<std::vector<double> > &data,std::vect
     Nin2 = NComp[1];
     Nout = NComp[2];
 
-    printf("Counting : %.03f %.03f %.03f sum : %.02f \n",double(Nin)/double(Npts),double(Nin2)/double(Npts),double(Nout)/double(Npts),double(Nin+Nin2+Nout)/double(Npts));
+    printf("Counting : %.03f %.03f %.03f sum : %.02f \n",float(Nin)/float(Npts),float(Nin2)/float(Npts),float(Nout)/float(Npts),float(Nin+Nin2+Nout)/float(Npts));
 
-    if(double(Nin+Nin2)/double(Npts) > tmp && double(Nin)/double(Npts) < tmp)
+    if(float(Nin+Nin2)/float(Npts) > tmp && float(Nin)/float(Npts) < tmp)
     {
       v[0] = 2;
       v[1] = cluster[0].size();
       return v;
     }
-    else if(double(Nin)/double(Npts) < tmp)
+    else if(float(Nin)/float(Npts) < tmp)
     {
       v[0] = 0;
       v[1] = cluster[0].size();
@@ -1431,20 +1437,7 @@ std::vector<int> CheckClusters(std::vector<std::vector<double> > &data,std::vect
 
 }
 
-struct TempCluster
-{
-  double Sumz , Sumy , SumECol , ECol , EInd1 , EInd2 , PeakTime;
-  int Npoint, NCol , NInd1 , NInd2;
-  std::list<int> lChannelCol , lChannelInd1 , lChannelInd2;
-};
-
-struct Cluster
-{
-  double z , y , ECol , EInd1 , EInd2 , PeakTime;
-  int Npoint, NCol , NInd1 , NInd2;
-};
-
-std::vector<Cluster> GetCluster( int n_point , int n_cluster , point p )
+std::vector<Cluster> pdvdana::SingleHit::GetCluster( int n_point , int n_cluster , point p )
 {
 
   int k;
@@ -1458,8 +1451,8 @@ std::vector<Cluster> GetCluster( int n_point , int n_cluster , point p )
     int ChannelCol  = vp->ch_Col;
     int ChannelInd1 = vp->ch_Ind1;
     int ChannelInd2 = vp->ch_Ind2;
-    double ECol     = vp->ECol;
-    double PeakTime = vp->PeakTime;
+    float ECol     = vp->ECol;
+    float PeakTime = vp->PeakTime;
 
     //std::cout << " energy de colection hit " << k << " = " << ECol << std::endl;
     if (ClusterID >=  n_cluster)
