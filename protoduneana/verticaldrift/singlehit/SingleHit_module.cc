@@ -96,7 +96,7 @@ private:
 
   // Declare member data here.
   TTree *tHitTree;
-  TTree *fClustertree;
+  TTree *tClusterTree;
 
   // Hit Tree variables
   unsigned int fEventID = 0;
@@ -202,14 +202,14 @@ private:
 
   std::vector<float> vPeakTimeColByEvent;
 
-  std::vector<int>   vChannelColByEvent
+  std::vector<int>   vChannelColByEvent;
   std::vector<int>   vChInd1PointByEvent;
   std::vector<int>   vChInd2PointByEvent;
 
   //function needed
   bool Inside( int k , std::list<int> liste);
 
-  float GetDist( float x0 , float y0 , float z0 , float x1 , float y1 , float z1 )
+  float GetDist( float x0 , float y0 , float z0 , float x1 , float y1 , float z1 );
 
   void GetSingle(art::Event const & ev, std::string HitLabel, std::list<int> & index_list_single, int const Multiplicity);
 
@@ -236,18 +236,18 @@ private:
                              std::list<float> & listEind1SP   , std::list<float> & listEind2SP ,
                              std::list<int> & listCh1SP       , std::list<int> & listCh2SP );
 
-  int GetYZIsolatedPoint( std::vector<float> vYPoint      , std::vector<float> vZPoint      ,
-                          std::vector<float> vEInd1Point  , std::vector<float> vEInd2Point  ,
-                          std::vector<int>   vChInd1Point , std::vector<int>   vChInd2Point ,
-                          std::vector<float> vEnergyCol   , std::vector<float> vPeakTimeCol ,
-                          std::vector<int>   vChannelCol  ,
-			  float fElectronVelocity , float fTickToMus ,
-                          float radiusInt , float radiusExt   ,
-                          std::vector<float> &vZIsolated      , std::vector<float> &vYIsolated ,
-                          std::vector<float> &vEColIsolated   , std::vector<float> &vPTIsolated ,
-                          std::vector<float> &vEInd1Isolated  , std::vector<float> &vEInd2Isolated ,
-                          std::vector<int>   &vChColIsolated  , std::vector<int>   &vChInd1Isolated ,
-                          std::vector<int>   &vChInd2Isolated );
+  int GetXYZIsolatedPoint( std::vector<float> vYPoint      , std::vector<float> vZPoint      ,
+                           std::vector<float> vEInd1Point  , std::vector<float> vEInd2Point  ,
+                           std::vector<int>   vChInd1Point , std::vector<int>   vChInd2Point ,
+                           std::vector<float> vEnergyCol   , std::vector<float> vPeakTimeCol ,
+                           std::vector<int>   vChannelCol  ,
+                           float fElectronVelocity , float fTickToMus ,
+                           float radiusInt , float radiusExt   ,
+                           std::vector<float> &vZIsolated      , std::vector<float> &vYIsolated ,
+                           std::vector<float> &vEColIsolated   , std::vector<float> &vPTIsolated ,
+                           std::vector<float> &vEInd1Isolated  , std::vector<float> &vEInd2Isolated ,
+                           std::vector<int>   &vChColIsolated  , std::vector<int>   &vChInd1Isolated ,
+                           std::vector<int>   &vChInd2Isolated );
 
   // CLUSTER FUNCTIONS
   point gen_zy(int size , std::vector<float> vZ , std::vector<float> vY , 
@@ -255,6 +255,10 @@ private:
                           std::vector<float> vEInd1 , std::vector<float> vEInd2 , 
                           std::vector<int> vChCol , std::vector<int> vChInd1 , std::vector<int> vChInd2);
   
+  float dist2(point a, point b);
+
+  float randf(float m);
+
   int nearest(point pt, point cent, int n_cluster, float *d2);
 
   float GetDist2D(float z0,float y0,float z1,float y1);
@@ -286,8 +290,6 @@ pdvdana::SingleHit::SingleHit(fhicl::ParameterSet const& p)
    
     fRadiusInt(p.get<float>("RadiusInt")),
     fRadiusExt(p.get<float>("RadiusExt")),
-    fElectronVelocity(p.get<float>("ElectronVelocity")),
-    fTickTimeInMus(p.get<float>("TickTimeInMus")),
 
     fCoincidenceWd(p.get<float>("CoincidenceWindow")), //in mus,
     fTimePlane1ToPlane2(p.get<float>("TimePlane1ToPlane2")), //in mus,
@@ -307,11 +309,14 @@ pdvdana::SingleHit::SingleHit(fhicl::ParameterSet const& p)
 {
   // Call appropriate consumes<>() for any products to be retrieved by this module.
   fGeom    = &*art::ServiceHandle<geo::Geometry>();
-  //if (fTagHDVD==1) fADCtoEl = fADCtoEl/5;
-
+  auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataForJob();
+  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataForJob(clockData);
+  
+  fTickTimeInMus      = sampling_rate(clockData);
   fCoincidenceWd      = fCoincidenceWd/fTickTimeInMus;      // in tt
   fTimePlane1ToPlane2 = fTimePlane1ToPlane2/fTickTimeInMus; // in tt
 
+  fElectronVelocity   = detProp.DriftVelocity();
 }
 
 void pdvdana::SingleHit::analyze(art::Event const& e)
@@ -394,8 +399,8 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   // Single Isolated concideration
   GetSingle(   e, fHitLabel, lSingleIndex, fMultiplicity );
 
-  float fPeakTimeWdInt = ( fRadiusInt / fElectronVelocity )/fTickInMus;
-  float fPeakTimeWdInt = ( fRadiusExt / fElectronVelocity )/fTickInMus;
+  float fPeakTimeWdInt = ( fRadiusInt / fElectronVelocity )/fTickTimeInMus;
+  float fPeakTimeWdExt = ( fRadiusExt / fElectronVelocity )/fTickTimeInMus;
 
   GetTimeIsolation( e, fHitLabel, fPeakTimeWdInt, fPeakTimeWdExt, lSingleIndex, lIsolatedIndex);
 
@@ -511,20 +516,20 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
 
     // Retreiving hit info by event
 
-    std:::list<int>::iterator ch1 = lChIn1Point.begin();
-    std:::list<int>::iterator ch2 = lChIn2Point.begin();
-    std:::list<float>iterator e1  = lEIn1Point.begin();
-    std:::list<float>iterator e2  = lEIn2Point.begin();
-    std:::list<float>::iterator z = lZPoint.begin();
+    std::list<int>::iterator ch1  = lChInd1Point.begin();
+    std::list<int>::iterator ch2  = lChInd2Point.begin();
+    std::list<float>::iterator e1 = lEInd1Point.begin();
+    std::list<float>::iterator e2 = lEInd2Point.begin();
+    std::list<float>::iterator z  = lZPoint.begin();
 
     for ( auto const y : lYPoint)
     {
-      vYPointByEvent.push_pack( y );
-      vZPointByEvent.push_pack( z );
-      vEInd1PointByEvent.push_pack( e1 );
-      vEInd2PointByEvent.push_pack( e2 );
-      vChInd1PointByEvent.push_pack( ch1 );
-      vChInd2PointByEvent.push_pack( ch2 );
+      vYPointByEvent.push_back( y );
+      vZPointByEvent.push_back( *z );
+      vEInd1PointByEvent.push_back( *e1 );
+      vEInd2PointByEvent.push_back( *e2 );
+      vChInd1PointByEvent.push_back( *ch1 );
+      vChInd2PointByEvent.push_back( *ch2 );
 
       vEnergyColByEvent.push_back( fEnergy   );
       vPeakTimeColByEvent.push_back(  fPeakTime );
@@ -549,11 +554,11 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   std::vector<int>   vChInd1Isolated;
   std::vector<int>   vChInd2Isolated;
 
-  int nIso = GetYZIsolatedPoint( vYPointByEvent , vZPointByEvent , vEInd1PointByEvent , vEInd2PointByEvent , vChInd1PointByEvent , vChInd2PointByEvent , vEnergyColByEvent , vPeakTimeColByEvent , vChannelColByEvent , fElectronVelocity , fTickTimeInMus , fRadiusInt , fRadiusExt , vZIsolated , vYIsolated ,vEColIsolated , vPTIsolated , vEInd1Isolated , vEInd2Isolated , vChColIsolated , vChInd1Isolated , vChInd2Isolated );
+  int nIso = GetXYZIsolatedPoint( vYPointByEvent , vZPointByEvent , vEInd1PointByEvent , vEInd2PointByEvent , vChInd1PointByEvent , vChInd2PointByEvent , vEnergyColByEvent , vPeakTimeColByEvent , vChannelColByEvent , fElectronVelocity , fTickTimeInMus , fRadiusInt , fRadiusExt , vZIsolated , vYIsolated ,vEColIsolated , vPTIsolated , vEInd1Isolated , vEInd2Isolated , vChColIsolated , vChInd1Isolated , vChInd2Isolated );
 
   if (nIso == 0)
   {
-    std::cout << " THERE IS NO ISOLATED POINT IN EVENT " << k << std::endl;
+    std::cout << " THERE IS NO ISOLATED POINT IN EVENT " << fEventID << std::endl;
 
     NCluster = 0;
     vZCluster.push_back(-999);
@@ -573,12 +578,12 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   }
 
 
-  int PTS_iso = vZ_iso.size();
-  std::cout << " THERE IS " << PTS_iso << " ISOLATED POINTS IN EVENT " << k << std::endl;
+  int PTSIsolated = vZIsolated.size();
+  std::cout << " THERE IS " << PTSIsolated << " ISOLATED POINTS IN EVENT " << fEventID << std::endl;
 
-  point v = gen_zy( PTS_iso , vZ_iso , vY_iso , vECol_iso , vPT_iso , vEInd1_iso , vEInd2_iso ,  vChCol_iso , vChInd1_iso , vChInd2_iso);
+  point v = gen_zy( PTSIsolated , vZIsolated , vYIsolated , vEColIsolated , vPTIsolated , vEInd1Isolated , vEInd2Isolated ,  vChColIsolated , vChInd1Isolated , vChInd2Isolated);
 
-  std::vector<std::vector<float> > dataPos = GetData(PTS_iso,v);
+  std::vector<std::vector<float> > dataPos = GetData(PTSIsolated,v);
   std::vector<std::vector<float> > clustersPos;
 
   std::vector<int> vchecks(2,0);
@@ -588,12 +593,12 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   int check = 0;
   int threshold = fMinSizeCluster;
 
-  for(int i = 0;i<Nstep;i++)
+  for( int i = 0 ; i < fNumberConvStep ; i++ )
   {
     printf("%d %d %d ",i,K,check);
 
-    clustersPos = lloyd(v, PTS_iso, K);
-    vchecks = CheckClusters( dataPos , clustersPos , threshold , fClusterSizeMulti, Covering);
+    clustersPos = lloyd(v, PTSIsolated, K);
+    vchecks = CheckClusters( dataPos , clustersPos , threshold , fClusterSizeMulti, fCovering);
     check = vchecks[0];
 
     if(check == 1)  break;
@@ -601,7 +606,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
     {
       if (threshold < fMaxSizeCluster)
       {
-        threshold *= multi;
+        threshold *= fClusterSizeMulti;
         printf("Threshold increased \n");
         K = vchecks[1];
       }
@@ -619,10 +624,10 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
 
   printf("Data clustering ended successfully \n");
 
-  std::vector<Cluster> vCluster = GetCluster( PTS_iso , clustersPos[0].size() , v );
+  std::vector<Cluster> vCluster = GetCluster( PTSIsolated , clustersPos[0].size() , v );
   NCluster = vCluster.size();
 
-  for( int j = 0 ; j < N_cluster ; j++ )
+  for( int j = 0 ; j < NCluster ; j++ )
   {
     // Filling tree variables
     vZCluster.push_back(vCluster[j].z);
@@ -638,7 +643,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
     vNInd2Cluster.push_back(vCluster[j].NInd2);
 
   }
-  ClusterTree->Fill();
+  tClusterTree->Fill();
    
 
   // setting variables values to initiale values
@@ -767,7 +772,7 @@ void pdvdana::SingleHit::beginJob()
   tClusterTree = tfs->make<TTree>("ClusterTree","ClusterTree");
 
   tClusterTree->Branch("eventID"            , &fEventID       );
-  tClusterTree->Branch("NumberOfCluster"    , &fNCluster      );
+  tClusterTree->Branch("NumberOfCluster"    , &NCluster       );
   tClusterTree->Branch("Z"                  , &vZCluster      );
   tClusterTree->Branch("Y"                  , &vYCluster      );
   tClusterTree->Branch("EnergyCollection"   , &vEColCluster   );
@@ -788,7 +793,7 @@ void pdvdana::SingleHit::endJob()
 
 float pdvdana::SingleHit::GetDist( float x0 , float y0 , float z0 , float x1 , float y1 , float z1 )
 {
-  float z = x0-x1;
+  float x = x0-x1;
   float z = z0-z1;
   float y = y0-y1;
   return sqrt(x*x+z*z+y*y);
@@ -1036,7 +1041,7 @@ int pdvdana::SingleHit::GetXYZIsolatedPoint( std::vector<float> vYPoint      , s
                                             std::vector<int>   &vChInd2Isolated )
 {
 
-  if (listOfYPoint.size() != listOfZPoint.size())  throw std::invalid_argument( "BIG PROBLEM" );
+  if (vYPoint.size() != vZPoint.size())  throw std::invalid_argument( "BIG PROBLEM" );
 
 
   vZIsolated.clear();
@@ -1050,14 +1055,14 @@ int pdvdana::SingleHit::GetXYZIsolatedPoint( std::vector<float> vYPoint      , s
   vChInd2Isolated.clear();
 
   int nIso = 0;
-  int npoint = listOfYPoint.size();
+  int npoint = vYPoint.size();
   std::vector<int> vIsIsolated( npoint , -1 );
 
   for( int k = 0 ; k<npoint ; k++)
   {
     float zIs = vZPoint[k];
     float yIs = vYPoint[k];
-    float xIs = vPeakTime[k]/fElectronVelocity/fTickToMus;
+    float xIs = vPeakTimeCol[k]/fElectronVelocity/fTickToMus;
 
     int i = 0;
     bool flag = true;
@@ -1078,7 +1083,7 @@ int pdvdana::SingleHit::GetXYZIsolatedPoint( std::vector<float> vYPoint      , s
     {
       float y = vYPoint[i];
       float z = vZPoint[i];
-      float xIs = vPeakTime[i]/fElectronVelocity/fTickToMus;
+      float x = vPeakTimeCol[i]/fElectronVelocity/fTickToMus;
 
       float d = GetDist( xIs , yIs , zIs , x , y , z );
 
@@ -1116,12 +1121,23 @@ int pdvdana::SingleHit::GetXYZIsolatedPoint( std::vector<float> vYPoint      , s
     }
   }
 
-  if ( vZIsolated.size() != nIso ) throw std::invalid_argument( "BIG PROBLEM" );
+  if ( (int) vZIsolated.size() != nIso ) throw std::invalid_argument( "BIG PROBLEM" );
   return nIso;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 // CLUSTER FUNCTIONS
+
+float pdvdana::SingleHit::dist2(point a, point b)
+{
+    float z = a->z - b->z, y = a->y - b->y;
+    return z*z + y*y;
+}
+
+float pdvdana::SingleHit::randf(float m)
+{
+    return m * rand() / (RAND_MAX - 1.);
+}
 
 point pdvdana::SingleHit::gen_zy(int size , std::vector<float> vZ , std::vector<float> vY , std::vector<float> vECol , std::vector<float> vPT, std::vector<float> vEInd1 , std::vector<float> vEInd2 , std::vector<int> vChCol , std::vector<int> vChInd1 , std::vector<int> vChInd2)
 {
@@ -1147,9 +1163,11 @@ point pdvdana::SingleHit::gen_zy(int size , std::vector<float> vZ , std::vector<
 
 int pdvdana::SingleHit::nearest(point pt, point cent, int n_cluster, float *d2)
 {
-    int i, min_i;
+    int i = 0;
+    int  min_i = 0;
     point c;
-    float d, min_d;
+    float d = 0.0;
+    float  min_d = 0.0;
 
 #       define for_n for (c = cent, i = 0; i < n_cluster; i++, c++)
     for_n {
@@ -1243,9 +1261,9 @@ std::vector<std::vector<float>> pdvdana::SingleHit::lloyd(point pts, int len, in
 
     point result;
 
-    for(i = 0, result = cent; i < n_cluster; i++, cent++) {
-        clusterPosZ.push_back(cent->z);
-        clusterPosY.push_back(cent->y);
+    for(i = 0, result = cent; i < n_cluster; i++, result++) {
+        clusterPosZ.push_back(result->z);
+        clusterPosY.push_back(result->y);
     }
     clusterPos.push_back(clusterPosZ);
     clusterPos.push_back(clusterPosY);
@@ -1277,18 +1295,16 @@ std::vector<int> pdvdana::SingleHit::CheckCompletude(std::vector<std::vector<flo
 
     int Nin = 0, Nin2 = 0, Nout = 0;
     float dist;
-    int IDin[Npts];
+    std::vector<int> IDin(Npts,0);
 
-    for(int j = 0;j<Npts;j++) IDin[j] = 0;
-
-    for(int i = 0;i<cluster[0].size();i++)
+    for(int i = 0 ; i < Ncls ; i++ )
     {
         Nout = 0;
         for(int j = 0;j<Npts;j++)
         {
             if(IDin[j] == 0)
             {
-                dist = sqrt(GetDist(data[0][j],data[1][j],cluster[0][i],cluster[1][i]));
+                dist = sqrt(GetDist2D(data[0][j],data[1][j],cluster[0][i],cluster[1][i]));
                 // printf("Distance to cluster : %f %f \n",i,Nin,Nout);
                 if(dist <= RMS){ Nin++; IDin[j] = 1;}
                 else if(dist <= mult*RMS )
@@ -1346,20 +1362,16 @@ std::vector<int> pdvdana::SingleHit::CheckClusters(std::vector<std::vector<float
 
 
     float dist;
-    int IDoverlap[Ncls][Ncls];
+    std::vector<std::vector<int>> IDoverlap( Ncls , std::vector<int> (Ncls ,0));
     int overlap = 0;
 
-    for(int i = 0;i<Ncls;i++)
-        for(int j = i;j<Ncls;j++)
-            IDoverlap[i][j] = 0;
-
-    for(int i = 0;i<Ncls;i++)
+    for(int i = 0 ; i < Ncls ; i++)
     {
-        for(int j = i;j<Ncls;j++)
+        for(int j = i ; j < Ncls ; j++)
         {
             if(j > i)
             {
-                dist = sqrt(GetDist(cluster[0][j],cluster[1][j],cluster[0][i],cluster[1][i]));
+                dist = sqrt(GetDist2D(cluster[0][j],cluster[1][j],cluster[0][i],cluster[1][i]));
                 if(dist < 2.*RMS)
                 {
                     IDoverlap[i][j] = 1;
