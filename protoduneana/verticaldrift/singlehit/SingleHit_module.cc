@@ -261,6 +261,8 @@ private:
 
   int nearest(point pt, point cent, int n_cluster, float *d2);
 
+  int reallocate(point pt, std::vector<std::vector<float>> ClusterPosition , float threshold);
+
   float GetDist2D(float z0,float y0,float z1,float y1);
 
   float mean(float z,float y);
@@ -271,7 +273,7 @@ private:
 
   std::vector<std::vector<float> > GetData(int len,point data);
 
-  std::vector<int> CheckCompletude(std::vector<std::vector<float> > &data,std::vector<std::vector<float> > &cluster, float RMS , float mult, int flag );
+  std::vector<int> CheckCompletude(std::vector<std::vector<float> > &data,std::vector<std::vector<float> > &cluster, float RMS , float mult );
 
   std::vector<int> CheckClusters(std::vector<std::vector<float> > &data,std::vector<std::vector<float> > &cluster, float RMS , float mult , float tmp);
 
@@ -449,8 +451,8 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
       ++fHitCounter;
 
       // Coincidence research
-      GetListOfTimeCoincidenceHit( e, fHitLabel, fCoincidenceWd, fTimePlane1ToPlane2 , hit, lWireInd1, lWireInd2, lChannelInd1, lChannelInd2, lEnergyInd1, lEnergyInd2, lPeakTimeInd1, lPeakTimeInd2);
-      
+      //GetListOfTimeCoincidenceHit( e, fHitLabel, fCoincidenceWd, fTimePlane1ToPlane2 , hit, lWireInd1, lWireInd2, lChannelInd1, lChannelInd2, lEnergyInd1, lEnergyInd2, lPeakTimeInd1, lPeakTimeInd2);
+      GetListOfTimeCoincidenceHit( e, fHitLabel, 10 , 0 , hit, lWireInd1, lWireInd2, lChannelInd1, lChannelInd2, lEnergyInd1, lEnergyInd2, lPeakTimeInd1, lPeakTimeInd2);
       fCoincidence = 0;
       if ( !lWireInd1.empty() || !lWireInd2.empty() ) fCoincidence += 1;
       if ( !lWireInd1.empty() && !lWireInd2.empty() ) fCoincidence += 1;
@@ -524,6 +526,16 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
 
     for ( auto const y : lYPoint)
     {
+      if(( y == -999) || (*z == -999) || (*e1 == -999) || (*e2 == -999) || (*ch1 == -999) || (*ch2 == -999))
+      {
+        z++;
+        ch1++;
+        ch2++;
+        e1++;
+        e2++;
+	continue;
+      }
+
       vYPointByEvent.push_back( y );
       vZPointByEvent.push_back( *z );
       vEInd1PointByEvent.push_back( *e1 );
@@ -533,6 +545,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
 
       vEnergyColByEvent.push_back( fEnergy   );
       vPeakTimeColByEvent.push_back(  fPeakTime );
+      //vPeakTimeColByEvent.push_back( 0 );
       vChannelColByEvent.push_back( fChannel );
 
       z++;
@@ -577,7 +590,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
     return;
   }
 
-
+  std::cout << " THERE IS " << vYPointByEvent.size() << " POINTS IN EVENT " << fEventID << std::endl;
   int PTSIsolated = vZIsolated.size();
   std::cout << " THERE IS " << PTSIsolated << " ISOLATED POINTS IN EVENT " << fEventID << std::endl;
 
@@ -591,7 +604,7 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   int K = fNumberInitClusters;
 
   int check = 0;
-  int threshold = fMinSizeCluster;
+  float threshold = fMinSizeCluster;
 
   for( int i = 0 ; i < fNumberConvStep ; i++ )
   {
@@ -623,6 +636,13 @@ void pdvdana::SingleHit::analyze(art::Event const& e)
   printf("Cluster size : %lu x %lu \n",clustersPos.size(),clustersPos[0].size());
 
   printf("Data clustering ended successfully \n");
+
+  int j = 0;
+  point p;
+  for (j = 0, p = v; j < PTSIsolated ; j++, p++)
+  {
+    p->group = reallocate( p , clustersPos , threshold);
+  }
 
   std::vector<Cluster> vCluster = GetCluster( PTSIsolated , clustersPos[0].size() , v );
   NCluster = vCluster.size();
@@ -1183,6 +1203,26 @@ int pdvdana::SingleHit::nearest(point pt, point cent, int n_cluster, float *d2)
     return min_i;
 }
 
+int pdvdana::SingleHit::reallocate(point pt, std::vector<std::vector<float>> ClusterPosition , float threshold)
+{
+    int  min_i = pt->group;
+    float  min_d = HUGE_VAL;
+
+    for( int k = 0 ; k < (int) ClusterPosition[0].size() ; k++) 
+    {
+
+      float dist = sqrt(GetDist2D(pt->z,pt->y,ClusterPosition[0][k],ClusterPosition[1][k]));
+      if (min_d > dist ) 
+      {
+         min_d = dist; 
+	 min_i = k;
+      }
+     
+    }
+    if ( min_d > threshold ) return -1;
+    return min_i;
+}
+
 
 float pdvdana::SingleHit::GetDist2D(float z0,float y0,float z1,float y1){
     float z = z0-z1;
@@ -1288,7 +1328,7 @@ std::vector<std::vector<float>> pdvdana::SingleHit::GetData(int len,point data){
     return dataPos;
 }
 
-std::vector<int> pdvdana::SingleHit::CheckCompletude(std::vector<std::vector<float> > &data,std::vector<std::vector<float> > &cluster, float RMS , float mult, int flag )
+std::vector<int> pdvdana::SingleHit::CheckCompletude(std::vector<std::vector<float> > &data,std::vector<std::vector<float> > &cluster, float RMS , float mult )
 {
     int Npts = data[0].size();
     int Ncls = cluster[0].size();
@@ -1310,8 +1350,7 @@ std::vector<int> pdvdana::SingleHit::CheckCompletude(std::vector<std::vector<flo
                 else if(dist <= mult*RMS )
                 {
                   Nin2++;
-                  if (flag) IDin[j] = 1;
-                  else IDin[j] = 0;
+                  IDin[j] = 1;
                 }
                 else{ Nout++; }
             }
@@ -1338,10 +1377,12 @@ std::vector<int> pdvdana::SingleHit::CheckClusters(std::vector<std::vector<float
     int Nin = 0, Nin2 = 0, Nout = 0;
 
     std::vector<int> NComp(3,0);
-    NComp  =  CheckCompletude( data, cluster , RMS , mult , 1);
+    NComp  =  CheckCompletude( data, cluster , RMS , mult);
     Nin  = NComp[0];
     Nin2 = NComp[1];
     Nout = NComp[2];
+
+    //std::cout<< " Nin " << Nin << " Nin2 " << Nin2 << " Nout " << Nout << " Npst " << Npts << " Ncls " << Ncls << std::endl;
 
     printf("Counting : %.03f %.03f %.03f sum : %.02f \n",float(Nin)/float(Npts),float(Nin2)/float(Npts),float(Nout)/float(Npts),float(Nin+Nin2+Nout)/float(Npts));
 
@@ -1423,7 +1464,7 @@ std::vector<int> pdvdana::SingleHit::CheckClusters(std::vector<std::vector<float
 
     }
 
-    NComp = CheckCompletude( data, cluster , RMS , mult , 1);
+    NComp = CheckCompletude( data, cluster , RMS , mult );
     Nin  = NComp[0];
     Nin2 = NComp[1];
     Nout = NComp[2];
@@ -1475,6 +1516,13 @@ std::vector<Cluster> pdvdana::SingleHit::GetCluster( int n_point , int n_cluster
       continue;
     }
 
+    if (ClusterID ==  -1)
+    {
+      //std::cout << " issue with cluster size " << std::endl;
+      //std::cout << ClusterID << std::endl;
+      out++;
+      continue;
+    }
     vTempCluster[ClusterID].Sumz += ECol * ( vp->z );
     vTempCluster[ClusterID].Sumy += ECol * ( vp->y );
     vTempCluster[ClusterID].SumECol += ECol;
