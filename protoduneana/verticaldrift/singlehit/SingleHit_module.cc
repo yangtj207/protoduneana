@@ -174,7 +174,7 @@ private:
   float fTimePlane1ToPlane2; 
   float fPitch;
   float fPitchMultiplier;
-  int   fTagHDVD;
+  //int   fTagHDVD;  // commented out to make clang happy
 
   float fNumberInitClusters;
   float fMaxSizeCluster;
