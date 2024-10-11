@@ -15,12 +15,13 @@
 #include "art/Framework/Principal/SubRun.h"
 #include "art_root_io/TFileService.h"
 #include "canvas/Utilities/InputTag.h"
-#include "canvas/Persistency/Common/FindOne.h"
+#include "canvas/Persistency/Common/FindOneP.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "lardataobj/RawData/OpDetWaveform.h"
 #include "lardataobj/RecoBase/OpWaveform.h"
+#include "lardataobj/RecoBase/Hit.h"
 
 #include "TTree.h"
 #include "TH1D.h"
@@ -60,9 +61,19 @@ private:
   int run; // run number
   int event; // event number
   int daqch; // channel number
-  vector<short> onda; // waveform
-  vector<float> wn;   // wiener filtered
-  vector<float> ip;   // impulse
+  vector<short> waveform; // waveform
+  vector<float> wiener;   // wiener filtered
+  vector<float> impulse;  // impulse after removing responses
+  TTree *hittree;
+  int channel;
+  float peaktime;
+  float rms;
+  float peak;
+  float integral;
+  int multiplicity;
+  int localindex;
+  int starttick;
+  int endtick;
 };
 
 
@@ -81,24 +92,27 @@ void pdsp::PDWaveformDump::analyze(art::Event const& e)
     cout<<"wfListHandle invalid"<<endl;
     return;
   }
-
-  art::FindOne<recob::OpWaveform> assn(wfListHandle, e, "calpd");
-  art::FindOne<recob::OpWaveform> assn2(wfListHandle, e, "calpd:wiener");
-
-  auto op1ListHandle = e.getHandle< std::vector<recob::OpWaveform> >("calpd");
-  auto op2ListHandle = e.getHandle< std::vector<recob::OpWaveform> >("calpd:wiener");
-
   run = e.run();
   event = e.id().event();
+  //cout<<"run "<<run<<" event "<<event<<endl;
+  auto op1ListHandle = e.getHandle< std::vector<recob::OpWaveform> >("calpd");
+  auto op2ListHandle = e.getHandle< std::vector<recob::OpWaveform> >("calpd:wiener");
+  //cout<<op1ListHandle->size()<<" "<<op2ListHandle->size()<<endl;
+  art::FindOneP<recob::OpWaveform> assn(wfListHandle, e, "calpd");
+  //cout<<assn.size()<<endl;
+  art::FindOneP<recob::OpWaveform> assn2(wfListHandle, e, "calpd:wiener");
+  //cout<<assn2.size()<<endl;
+
   for (size_t i = 0; i<(*wfListHandle).size(); ++i){
     auto &wf = (*wfListHandle)[i];
-    auto &op1 = (*op1ListHandle)[i];
-    auto &op2 = (*op2ListHandle)[i];
+//    auto &op1 = (*op1ListHandle)[i];
+//    auto &op2 = (*op2ListHandle)[i];
     //for (auto const & wf : *wfListHandle){
     daqch = wf.ChannelNumber();
-    onda.clear();
-    ip.clear();
-    wn.clear();
+    waveform.clear();
+    wiener.clear();
+    impulse.clear();
+    //cout<<i<<" "<<assn.at(i).isAvailable()<<" "<<assn2.at(i).isAvailable()<<endl;
 //    std::vector<short> temp;
 //    for (unsigned short j = 0; j<wf.Waveform().size(); ++j){
 //      temp.push_back(wf.Waveform()[j]);
@@ -117,10 +131,24 @@ void pdsp::PDWaveformDump::analyze(art::Event const& e)
     basehelp->Delete();  
 
     for (unsigned short j = 0; j<wf.Waveform().size(); ++j){
-      onda.push_back(wf.Waveform()[j] - baseline);
-      ip.push_back(op1.Signal()[j]);
-      wn.push_back(op2.Signal()[j]);
+      waveform.push_back(wf.Waveform()[j] - baseline);
+//      wiener.push_back(op2.Signal()[j]);
+//      impulse.push_back(op1.Signal()[j]);
       //cout<<wf.Waveform()[j]<<" "<<op1.Signal()[j]<<" "<<op2.Signal()[j]<<" "<<wf.ChannelNumber()<<" "<<op1.Channel()<<" "<<op2.Channel()<<endl;
+    }
+    if (assn.at(i).isAvailable()){
+      auto &op = assn.at(i);
+      //cout<<op.key()<<" "<<op.id().value()<<endl;
+      for (unsigned short j = 0; j<op->Signal().size(); ++j){
+        impulse.push_back(op->Signal()[j]);
+      }
+    }
+    if (assn2.at(i).isAvailable()){
+      auto &op = assn2.at(i);
+      //cout<<op.key()<<" "<<op.id().value()<<endl;
+      for (unsigned short j = 0; j<op->Signal().size(); ++j){
+        wiener.push_back(op->Signal()[j]);
+      }
     }
 //    ip.clear();
 //    if (assn.isValid()){
@@ -142,6 +170,21 @@ void pdsp::PDWaveformDump::analyze(art::Event const& e)
 //    }
     pdtree->Fill();
   }
+
+  auto hitListHandle = e.getHandle< std::vector<recob::Hit> >("gausophit");
+  for (size_t i = 0; i<(*hitListHandle).size(); ++i){
+    auto &hit = (*hitListHandle)[i];
+    channel = hit.Channel();
+    peaktime = hit.PeakTime();
+    rms = hit.RMS();
+    peak = hit.PeakAmplitude();
+    integral = hit.Integral();
+    multiplicity = hit.Multiplicity();
+    localindex = hit.LocalIndex();
+    starttick = hit.StartTick();
+    endtick = hit.EndTick();
+    hittree->Fill();
+  }
 }
 
 void pdsp::PDWaveformDump::beginJob()
@@ -151,9 +194,20 @@ void pdsp::PDWaveformDump::beginJob()
   pdtree->Branch("run", &run);
   pdtree->Branch("event", &event);
   pdtree->Branch("daqch", &daqch);
-  pdtree->Branch("onda", &onda);
-  pdtree->Branch("wn", &wn);
-  pdtree->Branch("ip", &ip);
+  pdtree->Branch("waveform", &waveform);
+  pdtree->Branch("wiener", &wiener);
+  pdtree->Branch("impulse", &impulse);
+  hittree = tfs->make<TTree>("hittree", "hittree");
+  hittree->Branch("channel", &channel);
+  hittree->Branch("peaktime", &peaktime);
+  hittree->Branch("rms", &rms);
+  hittree->Branch("peak", &peak);
+  hittree->Branch("integral", &integral);
+  hittree->Branch("multiplicity", &multiplicity);
+  hittree->Branch("localindex", &localindex);
+  hittree->Branch("starttick", &starttick);
+  hittree->Branch("endtick", &endtick);
+                 
 }
 
 DEFINE_ART_MODULE(pdsp::PDWaveformDump)
